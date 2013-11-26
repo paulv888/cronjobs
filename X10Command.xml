@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<X10Command>
+	<CallerID>web</CallerID><Operation></Operation>
+	<Sender></Sender>
+	<HouseCode></HouseCode>
+	<Unit></Unit>
+	<Command></Command>
+	<CmdData></CmdData>
+	<GMTTime></GMTTime>
+</X10Command>
