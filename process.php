@@ -9,6 +9,7 @@ include_once 'includes/shared_ha.php';
 include_once 'includes/shared_gen.php';
 include_once 'includes/mysendmail.php';
 include_once 'thermo_process.php';
+include_once 'includes/nat_sessions.php';
 
 define( 'MYDEBUG', FALSE );
 //define( 'MYDEBUG', TRUE );
@@ -17,21 +18,27 @@ define( 'MYDEBUG', FALSE );
 //                with a dropdown selected remotekey and command = selected
 //                no schemes supported with dropdowns 
 //  
-if (isset($_POST["remotekey"])) {			// Called from remote
+if (isset($_POST["remotekey"])) {						// Called from remote with key number
 	$callsource = CALL_SOURCE_REMOTE_BUTTON;
 	$remotekeyid=$_POST["remotekey"];
 	$commandid=$_POST["command"];
 	$setvalue=$_POST["setvalue"];
 	if (substr($commandid, 0,1)=="S") {
 		$callsource = CALL_SOURCE_REMOTE_SCHEME;
-		$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well. in this case overloading $commandid 
+		$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well. in this case overloading $commandid OBSOLETE???
 		if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
 	}	
 	echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue);
 	exit;
 }
-/*
+if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal
+	$callsource = CALL_SOURCE_COMMAND;
+	$commandid=$_POST["command"];
+	echo process($callsource, NULL, $commandid);
+	exit;
+}
 
+/*
 	Process can execute following commands
 		1) single X10 command to HTPC over TCPbridge
 		2) post to a Rest service 
@@ -84,7 +91,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$schemeid = $commandid;
 		if (MYDEBUG) echo "CALL_SOURCE_REMOTE_SCHEME ".$schemeid."</p>";
 		break;
-	case CALL_SOURCE_HA_ALERT:       // process from alerts
+	case CALL_SOURCE_HA_ALERT:       	 // process from alerts
 		$sqlstr = "SELECT ha_alerts.id, ha_alerts_dd.schemeid FROM ha_alerts LEFT JOIN ha_alerts_dd ON ha_alerts.alertid = ha_alerts_dd.id WHERE (ha_alerts.id =".$alertid.")";
 		if (MYDEBUG) echo $sqlstr."</p>";
 		$resalerts = mysql_query($sqlstr);
@@ -92,6 +99,14 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$schemeid = $rowalerts['schemeid'];
 		break;
 	case CALL_SOURCE_TRADE_ALERT:        // process from trade alerts
+		break;
+	case CALL_SOURCE_COMMAND:        
+		if (MYDEBUG) echo "CALL_SOURCE_COMMAND ".$commandid."</p>";
+		if ($result=SendCommand($callsource, NULL, $commandid)) {
+			$feedback .= $result;
+		} else {
+			$feedback = FALSE;
+		}
 		break;
 	}
 	
@@ -102,8 +117,6 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";
 		$resschemesteps	= mysql_query($sqlstr);
 		while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
-//			if ($callsource == CALL_SOURCE_REMOTE_SCHEME) // expecting scheme_step as ID 
-//				{$schemeid = $rowshemesteps['id'];}
 			if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  ($rowshemesteps['value']>0 ? $rowshemesteps['value'] : 0),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
 							$feedback .= $result;
 			} else {
@@ -124,90 +137,111 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 }
 
 
-function SendCommand($callsource, $deviceid, $commandid,  $value = NULL, $alertid = NULL, $alert_textID = NULL) { 
+function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value = NULL, $alertid = NULL, $alert_textID = NULL) { 
 //
 //   Sends 1 single command to TCP, REST, EMAIL
 //	
 
 	// Handles 1 single Device
-	$resdevices = mysql_query("SELECT * FROM ha_mf_devices where myid =".$deviceid);
-	$rowdevices = mysql_fetch_array($resdevices);
+	if ($deviceid != NULL) {
+		$resdevices = mysql_query("SELECT * FROM ha_mf_devices where myid =".$deviceid);
+		$rowdevices = mysql_fetch_array($resdevices);
+		$resdevicelinks = mysql_query("SELECT * FROM ha_mf_device_links where id =".$rowdevices['devicelink']);
+		$rowdevicelinks = mysql_fetch_array($resdevicelinks);
+		$commandclassid = $rowdevices['commandclassid'];
+		if (MYDEBUG) echo "device ".$deviceid."</p>";
+		if (MYDEBUG) echo "targettype ".$rowdevicelinks['targettype']."</p>";
+	} else {
+		$commandclassid = COMMAND_CLASS_INTERNAL;
+	}
+	
 	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
-			"ha_mf_commands.myid=ha_mf_commands_detail.commandid WHERE ha_mf_commands.myid =".$commandid. " AND commandclassid = ".$rowdevices['commandclassid']);
-			
+			"ha_mf_commands.myid=ha_mf_commands_detail.commandid WHERE ha_mf_commands.myid =".$commandid. " AND commandclassid = ".$commandclassid);
 	$rowcommands = mysql_fetch_array($rescommands);
-	$resdevicelinks = mysql_query("SELECT * FROM ha_mf_device_links where id =".$rowdevices['devicelink']);
-	$rowdevicelinks = mysql_fetch_array($resdevicelinks);
 	
-	if (MYDEBUG) echo "device ".$deviceid."</p>";
 	if (MYDEBUG) echo "commandid ".$commandid."</p>";
-	if (MYDEBUG) echo "commandclassid ".$rowdevices['commandclassid']."</p>";
+	if (MYDEBUG) echo "commandclassid ".$commandclassid."</p>";
 	if (MYDEBUG) echo "value ".$value."</p>";
-	if (MYDEBUG) echo "targettype ".$rowdevicelinks['targettype']."</p>";
+	if (MYDEBUG) echo " command ". $rowcommands['command']."</p>";
 	
-	if ($rowcommands['commandclassid']==COMMAND_CLASS_3MFILTRETE) {								//  Hardcoded PHP
-			
-		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE deviceid ".$deviceid." commandid ".$commandid."</p>";
-		
+	switch ($commandclassid)
+	{
+	case COMMAND_CLASS_3MFILTRETE: 
+		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
-		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
 		$result = $func($deviceid, $value);
 		$feedback = newStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
-	} elseif ($rowcommands['commandclassid']==COMMAND_CLASS_EMAIL) {								// Email or SMS (Gateway/Device Hardcoded
-				
-				if (MYDEBUG) echo "COMMAND_CLASS_EMAIL alertid ".$alertsid." alert_textID ".$alert_textID."</p>";
-				
-				$restext = mysql_query("SELECT * FROM ha_alert_text where id =".$alert_textID);
-				$rowtext = mysql_fetch_array($restext);
-				
-				$subject= $rowtext['description'];
-				$message= $rowtext['message'];
-				$myresult = createMail($callsource,$alertid,$subject,$message);
-				$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
-	} else {
-		if ($rowdevicelinks['targettype']=="GET"){
-			echo "NOT TESTED</p>";
+		break;
+	case COMMAND_CLASS_EMAIL:
+		if (MYDEBUG) echo "COMMAND_CLASS_EMAIL alertid ".$alertsid." alert_textID ".$alert_textID."</p>";
+		$restext = mysql_query("SELECT * FROM ha_alert_text where id =".$alert_textID);
+		$rowtext = mysql_fetch_array($restext);
 			
-			$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
-			$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
-			$tcomm = str_replace("{unit}",$deviceid,$tcomm);
+		$subject= $rowtext['description'];
+		$message= $rowtext['message'];
+		$myresult = createMail($callsource,$alertid,$subject,$message);
+		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
+		break;
 
-		
-// /3?0262ABCDEF0F13FF=I=3
-			
-
-
-			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport']."/";
-			if (MYDEBUG) echo $url." ".$tcomm."</p>";
-			$get = restClient::get($url, $tcomm);
-			$feedback = ($get->getresponsecode()==200 ? $get->getresponse() : FALSE);
+	case COMMAND_CLASS_INSTEON:
+		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
+		$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
+		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
+		if ($rowcommands['commandclassid']==COMMAND_CLASS_INSTEON) {
+			if ($value>0) $value=255/100*$value;
+			$value = dec2hex($value,2);
+			if (MYDEBUG) echo "value ".$value."</p>";
 		}
-
-		if ($rowdevicelinks['targettype']=="REST"){
-			if ($rowcommands['commandclassid']==COMMAND_CLASS_INSTEON) {
-				$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
-				$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
-				$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-				if ($rowcommands['commandclassid']==COMMAND_CLASS_INSTEON) {
-					if ($value>0) $value=255/100*$value;
-					$value = dec2hex($value,2);
-					if (MYDEBUG) echo "value ".$value."</p>";
-				}
-				$tcomm = str_replace("{value}",$value,$tcomm);
-				if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
-				$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm;
-				if (MYDEBUG) echo $url."</p>";
-				$post = restClient::post($url);
-				$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
-				usleep(INSTEON_SLEEP_MICRO);
-				if ($feedback) {
-					$feedback = newStatus($deviceid,($commandid));
-					UpdateStatus($deviceid,($commandid == STATUS_OFF ? STATUS_OFF : STATUS_ON));
-				}
-			} 
+		$tcomm = str_replace("{value}",$value,$tcomm);
+		if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
+		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm;
+		if (MYDEBUG) echo $url."</p>";
+		$post = restClient::post($url);
+		$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
+		usleep(INSTEON_SLEEP_MICRO);
+		if ($feedback) {
+			$feedback = newStatus($deviceid,($commandid));
+			UpdateStatus($deviceid,($commandid == STATUS_OFF ? STATUS_OFF : STATUS_ON));
 		}
-		
+		break;
+	case COMMAND_CLASS_X10:
+		$xmlfile="X10Command.xml";
+		$x10 = simplexml_load_file($xmlfile);
+		OpenTCP($rowdevicelinks['targetaddress'], $rowdevicelinks['targetport']);
+		$x10[0]->CallerID = "web";
+		$x10[0]->Operation = "send";
+		$x10[0]->Sender = "plc";
+		$x10[0]->HouseCode = $rowdevices['code'];
+		$x10[0]->Unit = $rowdevices['unit'];
+		if ($commandid ==  STATUS_ON && $value!=100) {
+			$x10[0]->Command = "On";
+			$x10[0]->CmdData = NULL;
+			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			WriteTCP($x10[0]->asXML());
+			$x10[0]->Command = "Bright";
+			$x10[0]->CmdData = 100;
+			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			WriteTCP($x10[0]->asXML());
+			$x10[0]->Command = "Dim";
+			$x10[0]->CmdData = 100-$value;
+			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			WriteTCP($x10[0]->asXML());
+		} else {
+			$x10[0]->Command = $rowcommands['description'];
+			$x10[0]->CmdData = $value;
+			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			WriteTCP($x10[0]->asXML());
+		}
+		CloseTCP();
+		$feedback = newStatus($deviceid,$commandid);
+		break;
+	case COMMAND_CLASS_INTERNAL:
+		$func = $rowcommands['command'];
+		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
+		$feedback = $func($value);
+		break;
+	default:
 		if ($rowdevicelinks['targettype']=="POST"){
 			$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
 			$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
@@ -217,48 +251,13 @@ function SendCommand($callsource, $deviceid, $commandid,  $value = NULL, $alerti
 			$post = restClient::post($url, $tcomm);
 			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
 		}
-
-		if ($rowdevicelinks['targettype']=="TCP"){
-			if ($rowcommands['commandclassid']==COMMAND_CLASS_X10) {
-				$xmlfile="X10Command.xml";
-				$x10 = simplexml_load_file($xmlfile);
-				OpenTCP($rowdevicelinks['targetaddress'], $rowdevicelinks['targetport']);
-				$x10[0]->CallerID = "web";
-				$x10[0]->Operation = "send";
-				$x10[0]->Sender = "plc";
-				$x10[0]->HouseCode = $rowdevices['code'];
-				$x10[0]->Unit = $rowdevices['unit'];
-				if ($commandid ==  STATUS_ON && $value!=100) {
-					$x10[0]->Command = "On";
-					$x10[0]->CmdData = NULL;
-					$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
-					WriteTCP($x10[0]->asXML());
-					$x10[0]->Command = "Bright";
-					$x10[0]->CmdData = 100;
-					$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
-					WriteTCP($x10[0]->asXML());
-					$x10[0]->Command = "Dim";
-					$x10[0]->CmdData = 100-$value;
-					$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
-					WriteTCP($x10[0]->asXML());
-				} else {
-					$x10[0]->Command = $rowcommands['description'];
-					$x10[0]->CmdData = $value;
-					$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
-					WriteTCP($x10[0]->asXML());
-				}
-				CloseTCP();
-				$feedback = newStatus($deviceid,$commandid);
-			}
-		}  
-	} 
-
+		break;
+	}
 	return $feedback;
 } 
 
-function newStatus ($deviceid, $status) 
+function newStatus ($deviceid, $status) {
 // breaks if multiple keys for same device only 1 will be udated
-{
 //	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
 //	$rowmonitor = mysql_fetch_array($resmonitor);
 //	if ($rowmonitor) {
@@ -283,9 +282,8 @@ function newStatus ($deviceid, $status)
 }
 
 
-function setValue ($deviceid, $value) 
+function setValue ($deviceid, $value) {
 // breaks if multiple keys for same device only 1 will be udated
-{
 //	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
 //	$rowmonitor = mysql_fetch_array($resmonitor);
 //	if ($rowmonitor) {

@@ -18,9 +18,9 @@ define("EVENT_IN", 2);
 define("SOURCE_ARD_BRDIGE", 9);
 
 // Current Status Values
-define( 'STATUS_ON', 17 );
-define( 'STATUS_OFF', 20 );
-define( 'STATUS_UNKNOWN', 0 );
+define("STATUS_ON", 17 );
+define("STATUS_OFF", 20 );
+define("STATUS_UNKNOWN", 0 );
 
 // Commands from Device
 define("COMMAND_RESULT_OK", 1);
@@ -51,10 +51,11 @@ define("ERROR_RF_SEND_FAILED", 129);
 define("ERROR_READ_SENSOR", 130);
 
 // Front End Call types
-define('CALL_SOURCE_REMOTE_BUTTON', 1); 
-define('CALL_SOURCE_REMOTE_SCHEME', 2); 
-define('CALL_SOURCE_HA_ALERT', 3); 
-define('CALL_SOURCE_TRADE_ALERT', 4); 
+define("CALL_SOURCE_REMOTE_BUTTON", 1); 
+define("CALL_SOURCE_REMOTE_SCHEME", 2); 
+define("CALL_SOURCE_HA_ALERT", 3); 
+define("CALL_SOURCE_TRADE_ALERT", 4); 
+define("CALL_SOURCE_COMMAND", 5); 
 
 // These are Device Types
 //define("", );
