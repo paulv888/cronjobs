@@ -32,8 +32,6 @@ global $thermostats;
 
 $now = date( 'Y-m-d H:i:s' );
 
-echo "helllll";
-
 	$thermostatRec = $thermostats[$deviceid];
 	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
 	{

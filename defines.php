@@ -35,9 +35,9 @@ define("COMMAND_TOGGLE_HVAC", 132);
 
 // Command Types
 define ("COMMAND_CLASS_X10", 1);
-define ("COMMAND_CLASS_PHP", 2);
+define ("COMMAND_CLASS_3MFILTRETE", 2);
 define ("COMMAND_CLASS_EMAIL", 3);
-define ("COMMAND_CLASS_HTPC", 4);
+define ("COMMAND_CLASS_MEDIA", 4);
 define ("COMMAND_CLASS_SONYCAM",5);
 define ("COMMAND_CLASS_INTERNAL", 6);
 define ("COMMAND_CLASS_ARDUINO", 7);

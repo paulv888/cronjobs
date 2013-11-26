@@ -10,8 +10,8 @@ include_once 'includes/shared_gen.php';
 include_once 'includes/mysendmail.php';
 include_once 'thermo_process.php';
 
-//define( 'MYDEBUG', FALSE );
-define( 'MYDEBUG', TRUE );
+define( 'MYDEBUG', FALSE );
+//define( 'MYDEBUG', TRUE );
 // 
 // Called with remotekey or 
 //                with a dropdown selected remotekey and command = selected
@@ -145,13 +145,13 @@ function SendCommand($callsource, $deviceid, $commandid,  $value = NULL, $alerti
 	if (MYDEBUG) echo "value ".$value."</p>";
 	if (MYDEBUG) echo "targettype ".$rowdevicelinks['targettype']."</p>";
 	
-	if ($rowcommands['commandclassid']==COMMAND_CLASS_PHP) {								//  Hardcoded PHP
+	if ($rowcommands['commandclassid']==COMMAND_CLASS_3MFILTRETE) {								//  Hardcoded PHP
 			
-		if (MYDEBUG) echo "COMMAND_CLASS_PHP deviceid ".$deviceid." commandid ".$commandid."</p>";
+		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE deviceid ".$deviceid." commandid ".$commandid."</p>";
 		
 		$func = $rowcommands['command'];
-		if (MYDEBUG) echo "COMMAND_CLASS_PHP deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
-		$result = $func($deviceid);
+		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
+		$result = $func($deviceid, $value);
 		$feedback = newStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
 	} elseif ($rowcommands['commandclassid']==COMMAND_CLASS_EMAIL) {								// Email or SMS (Gateway/Device Hardcoded
@@ -228,7 +228,7 @@ function SendCommand($callsource, $deviceid, $commandid,  $value = NULL, $alerti
 				$x10[0]->Sender = "plc";
 				$x10[0]->HouseCode = $rowdevices['code'];
 				$x10[0]->Unit = $rowdevices['unit'];
-				if ($value!=100) {
+				if ($commandid ==  STATUS_ON && $value!=100) {
 					$x10[0]->Command = "On";
 					$x10[0]->CmdData = NULL;
 					$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
@@ -252,7 +252,7 @@ function SendCommand($callsource, $deviceid, $commandid,  $value = NULL, $alerti
 			}
 		}  
 	} 
-		
+
 	return $feedback;
 } 
 
@@ -300,5 +300,4 @@ function setValue ($deviceid, $value)
 	else 
 		return;
 }
-
 ?>
