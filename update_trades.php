@@ -415,8 +415,6 @@ function UpdateRowvalues() {
 
 	$queries=0;
 	// Cleanup Empty Rows created by form edit
-	$mysql='DELETE FROM `trd_pos_checklist` WHERE `checklist` = ""';
-	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
 	$mysql='DELETE FROM `trd_pos_notes` WHERE `notes` = ""';
 	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
 	$mysql='DELETE FROM `trd_pos_errors` WHERE `error` =0';

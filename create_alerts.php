@@ -9,7 +9,7 @@ include 'process.php';
 
 define("MY_DEVICE_ID", 97);
 
-define(MYDEBUG, TRUE);
+define('MYDEBUG', 1);
 
 echo Alerts()." Alerts generated <br/>\r\n";
 echo AlertsActions()." Alerts sent <br/>\r\n";
@@ -20,7 +20,7 @@ echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 function Alerts(){
 
 	$mysql="SELECT * ". 
-			" FROM  `ha_alerts_dd` WHERE active='Y'" ;
+			" FROM  `ha_alerts_dd` WHERE active='1'" ;
 	if (!$resalerts = mysql_query($mysql)) {
 		mySqlError($mysql); 
 		exit;
@@ -30,7 +30,6 @@ function Alerts(){
 	while ($rowalerts = mysql_fetch_array($resalerts)) {
 		// check if we are ready to generate
 		$date = getdate();
-		
 		if (is_int(strpos($rowalerts['generate_days'],(string)$date["wday"])) === true) {
 			if (checktime($rowalerts['generate_start'],$rowalerts['generate_end'])) {	// good 
 				$mysql=$rowalerts['sql'];
