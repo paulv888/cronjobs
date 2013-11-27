@@ -1,5 +1,5 @@
 <?php
-define( 'DEBUG', FALSE );
+//define( 'DEBUG', FALSE );
 
 function ReloadScreenShot() {
 	$url = 'http://htpc:8085/HipScreenShot.jpg';
@@ -29,6 +29,11 @@ function UpdateThermType($deviceID, $typeid){
     			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
 				  " Where(`myid` ='" . $deviceID . "')";
+	if (!mysql_query($mysql)) mySqlError($mysql);
+	$mysql = "Update `ha_weather_now` Set " .
+    			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
+    			  " `typeID` = " . $typeid . "" .
+				  " Where(`deviceID` ='" . $deviceID . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return 1;
 }

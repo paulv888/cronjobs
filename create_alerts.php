@@ -9,7 +9,7 @@ include 'process.php';
 
 define("MY_DEVICE_ID", 97);
 
-define('MYDEBUG', 1);
+//define('MYDEBUG', 1);
 
 echo Alerts()." Alerts generated <br/>\r\n";
 echo AlertsActions()." Alerts sent <br/>\r\n";

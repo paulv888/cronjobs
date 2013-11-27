@@ -33,6 +33,18 @@ define("COMMAND_OFF", 20);
 define("COMMAND_STREAM_DATA", 91);
 define("COMMAND_TOGGLE_HVAC", 132);
 
+// Signal Sources
+define ("SIGNAL_SOURCE_X10_RF", 1);
+define ("SIGNAL_SOURCE_X10_PLC", 2);
+define ("SIGNAL_SOURCE_REMOTE", 3);
+define ("SIGNAL_SOURCE_OUTSIDE_CAM", 4);
+define ("SIGNAL_SOURCE_CAM_BRIDGE", 5);
+define ("SIGNAL_SOURCE_PC_UPDATE_TEMPS", 6);
+define ("SIGNAL_SOURCE_PC_WEATHER_GOV", 7);
+define ("SIGNAL_SOURCE_WWW", 8);
+define ("SIGNAL_SOURCE_ARDBRIDGE", 9);
+define ("SIGNAL_SOURCE_THERMO_UPDATE_TEMPS", 10);
+
 // Command Types
 define ("COMMAND_CLASS_X10", 1);
 define ("COMMAND_CLASS_3MFILTRETE", 2);

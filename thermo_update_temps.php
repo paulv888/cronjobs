@@ -12,6 +12,7 @@ $yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
 	* This script updates the indoor and outdoor temperatures and today's and yesterday total run time for each thermostat
 	*/
 
+define ("MY_SOURCE",SIGNAL_SOURCE_THERMO_UPDATE_TEMPS);
 
 try
 {
@@ -27,7 +28,7 @@ try
 	$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
 	$cycleInsert = $pdo->prepare( $sql );
 
-	$sql = "INSERT INTO ha_weather_current ( time_date, mdate, temperature_c, set_point, ttrend, deviceID ) VALUES ('".mygmdate("Y-m-d H:i:s")."', '".mygmdate("Y-m-d H:i:s")."', ?, ?, ?, ?)";
+	$sql = "INSERT INTO ha_weather_current ( time_date, mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".mygmdate("Y-m-d H:i:s")."', '".mygmdate("Y-m-d H:i:s")."', '".MY_SOURCE."', ?, ?, ?, ?)";
 	$queryCurrent = $pdo->prepare($sql);
 	
 	$sql = "DELETE FROM {$dbConfig['table_prefix']}hvac_run_times WHERE date = ? AND deviceID = ?";
@@ -166,9 +167,13 @@ foreach( $thermostats as $thermostatRec )
 			if ($row = FetchRow($sql)) {
 				$last = new DateTime($row['time_date']);
 				$nowdt = new DateTime(mygmdate("Y-m-d H:i:s"));
-				if ($nowdt->diff($last, true)->h > 0) {
+				if ($nowdt->diff($last, true)->i > 5) {
 					logit( "Insert row into Weather Current" );
-					$queryCurrent->execute(array( to_celcius($stat->temp), to_celcius($target), $ttrend, $thermostatRec['deviceID']));
+					$ctemp = to_celcius($stat->temp);
+					if ( $ctemp == $row['temperature_c'] ) $ttrend = 0;
+					if ( $ctemp > $row['temperature_c'] ) $ttrend = 1;
+					if ( $ctemp < $row['temperature_c'] ) $ttrend = 2;
+					$queryCurrent->execute(array( $ctemp, to_celcius($target), $ttrend, $thermostatRec['deviceID']));
 				}
 			}
 
