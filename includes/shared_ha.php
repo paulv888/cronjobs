@@ -28,7 +28,7 @@ function UpdateThermType($deviceID, $typeid){
 	$mysql = "Update `ha_mf_devices` Set " .
     			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
-				  " Where(`myid` ='" . $deviceID . "')";
+				  " Where(`id` ='" . $deviceID . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	$mysql = "Update `ha_weather_now` Set " .
     			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .

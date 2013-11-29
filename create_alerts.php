@@ -51,12 +51,12 @@ function AlertsActions(){
 
 
 	$mysql='SELECT `ha_alerts`.`id` as `ha_alerts_id`, `ha_alerts`.`deviceID` as al_deviceID, `ha_alerts`.`alertid`, `ha_alerts`.`date_key`, `ha_alerts`.`action_date`, `ha_alerts_dd`.* , `ha_alert_text`.`description`, '.
-			' `ha_alert_text`.`message`, `ha_mf_commands`.`myid`, `ha_mf_commands_detail`.`command` '.
+			' `ha_alert_text`.`message`, `ha_mf_commands`.`id`, `ha_mf_commands_detail`.`command` '.
 			'FROM `ha_alerts_dd` '.
 			'LEFT JOIN `ha_alerts` ON `ha_alerts_dd`.`id`=`ha_alerts`.`alertid` '.
 			'LEFT JOIN `ha_alert_text` ON `ha_alerts_dd`.`alert_textID`=`ha_alert_text`.`id` '.
-			'LEFT JOIN `ha_mf_commands` ON `ha_alerts_dd`.`commandID`=`ha_mf_commands`.`myid` '.
-			'LEFT JOIN `ha_mf_commands_detail` ON `ha_mf_commands`.`myid`=`ha_mf_commands_detail`.`commandid` '.
+			'LEFT JOIN `ha_mf_commands` ON `ha_alerts_dd`.`commandID`=`ha_mf_commands`.`id` '.
+			'LEFT JOIN `ha_mf_commands_detail` ON `ha_mf_commands`.`id`=`ha_mf_commands_detail`.`commandid` '.
 	'WHERE `ha_alerts`.`processed` <> "1"';
 
 	if (!$resalerts = mysql_query($mysql)) {

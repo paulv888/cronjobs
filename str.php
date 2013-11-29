@@ -134,7 +134,7 @@ function doEventStatus(&$idata) {
 	$resevents=mysql_query($mysql);
 	if ($rowevents=mysql_fetch_array($resevents)) {
 		$repeatcount = $rowevents['repeatcount'] + 1;
-		$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`fabrik_internal_id` ='.$rowevents['fabrik_internal_id'];
+		$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
 		if (!mysql_query($mysql)) mySqlError($mysql);
 	} else {
 		//
@@ -152,7 +152,7 @@ function doEventStatus(&$idata) {
 		//
 		//	Get device type and monitorid
 		//
-		$mysql='SELECT `myid`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `myid` ='.$idata->DID;
+		$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$idata->DID;
 		$resdevice=mysql_query($mysql);
 		$rowdevice=mysql_fetch_array($resdevice);
 		$devicetype=$rowdevice['typeID'];

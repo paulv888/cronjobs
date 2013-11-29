@@ -167,7 +167,7 @@ foreach( $thermostats as $thermostatRec )
 			if ($row = FetchRow($sql)) {
 				$last = new DateTime($row['time_date']);
 				$nowdt = new DateTime(mygmdate("Y-m-d H:i:s"));
-				if ($nowdt->diff($last, true)->i > 5) {
+				if ($nowdt->diff($last, true)->h > 0) {
 					logit( "Insert row into Weather Current" );
 					$ctemp = to_celcius($stat->temp);
 					if ( $ctemp == $row['temperature_c'] ) $ttrend = 0;

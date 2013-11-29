@@ -144,7 +144,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 
 	// Handles 1 single Device
 	if ($deviceid != NULL) {
-		$resdevices = mysql_query("SELECT * FROM ha_mf_devices where myid =".$deviceid);
+		$resdevices = mysql_query("SELECT * FROM ha_mf_devices where id =".$deviceid);
 		$rowdevices = mysql_fetch_array($resdevices);
 		$resdevicelinks = mysql_query("SELECT * FROM ha_mf_device_links where id =".$rowdevices['devicelink']);
 		$rowdevicelinks = mysql_fetch_array($resdevicelinks);
@@ -156,7 +156,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	}
 	
 	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
-			"ha_mf_commands.myid=ha_mf_commands_detail.commandid WHERE ha_mf_commands.myid =".$commandid. " AND commandclassid = ".$commandclassid);
+			"ha_mf_commands.id=ha_mf_commands_detail.commandid WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid);
 	$rowcommands = mysql_fetch_array($rescommands);
 	
 	if (MYDEBUG) echo "commandid ".$commandid."</p>";

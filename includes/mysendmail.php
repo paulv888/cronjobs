@@ -6,7 +6,7 @@ define('CALL_SOURCE_REMOTE_SCHEME', 2);
 define('CALL_SOURCE_HA_ALERT', 3); 
 define('CALL_SOURCE_TRADE_ALERT', 4); 
 
-function createMail($callsource, $myid, &$subject, &$message){
+function createMail($callsource, $id, &$subject, &$message){
 // $type == TRADE_ALERT, HA_ALERT
 
 	switch ($callsource) {
@@ -293,7 +293,7 @@ function createMail($callsource, $myid, &$subject, &$message){
 			'LEFT JOIN `trd_pos_alerts` AS `trd_pos_alerts` ON `trd_pos_alerts`.`posid` = `trd_positions`.`id`  '. 
 			'LEFT JOIN `trd_positions` AS `trd_positions_1` ON `trd_positions_1`.`id` = `trd_pos_alerts`.`posid`  '. 
 			'LEFT JOIN `trd_alerts_dd` AS `trd_alerts_dd` ON `trd_alerts_dd`.`id` = `trd_pos_alerts`.`alert`  '. 
-			'WHERE `trd_pos_alerts`.`id` = "'.$myid.'"' ;
+			'WHERE `trd_pos_alerts`.`id` = "'.$id.'"' ;
 		//	'LEFT JOIN `trd_alert_actions` AS `trd_alert_actions` ON `trd_alerts_dd`.`actionid` = `trd_alert_actions`.`id`  '. 
 			break;
 		case CALL_SOURCE_HA_ALERT:
@@ -342,9 +342,9 @@ function createMail($callsource, $myid, &$subject, &$message){
 				'`ha_alerts`.`l5` AS `ha_alerts___l5`, `ha_alerts`.`v5` AS `ha_alerts___v5` '.
 				' FROM `ha_alerts`'.
 				' LEFT JOIN `ha_alerts_dd` AS `ha_alerts_dd` ON `ha_alerts_dd`.`id` = `ha_alerts`.`alertid` '.
-				' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`myid` = `ha_alerts`.`deviceID`'.
-				' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`myid` = `ha_mf_devices`.`locationID`'.
-				' WHERE `ha_alerts`.`id` = "'.$myid.'"';	
+				' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`id` = `ha_alerts`.`deviceID`'.
+				' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID`'.
+				' WHERE `ha_alerts`.`id` = "'.$id.'"';	
 
 			break;
 		case CALL_SOURCE_REMOTE_SCHEME:
@@ -355,7 +355,7 @@ function createMail($callsource, $myid, &$subject, &$message){
 					 
 					 ha_mf_locations:
 					 `ha_mf_locations___description`
-					 `ha_mf_locations___myid`
+					 `ha_mf_locations___id`
 					 
 				ha_remote_scheme_steps:
 					 `ha_remote_scheme_steps___alert_textID_raw` 
@@ -415,16 +415,16 @@ function createMail($callsource, $myid, &$subject, &$message){
 			'`ha_remote_scheme_steps`.`value` AS `ha_remote_scheme_steps___value_raw`, '.
 			'`ha_remote_scheme_steps`.`alert_textID` AS `ha_remote_scheme_steps___alert_textID_raw`, '.
 			'`ha_alert_text`.`description` AS `ha_remote_scheme_steps___alert_textID`, '.
-			'`ha_remote_schemes`.`id` AS `ha_remote_schemes___id`, `ha_mf_locations`.`myid` AS `ha_mf_locations___myid`, '.
+			'`ha_remote_schemes`.`id` AS `ha_remote_schemes___id`, `ha_mf_locations`.`id` AS `ha_mf_locations___id`, '.
 			'`ha_mf_locations`.`description` AS `ha_mf_locations___description`'.
 			' FROM `ha_remote_schemes` '.
 			' LEFT JOIN `ha_remote_scheme_steps` AS `ha_remote_scheme_steps` ON `ha_remote_scheme_steps`.`schemesID` = `ha_remote_schemes`.`id` '.
-			' LEFT JOIN `ha_mf_commands` AS `ha_mf_commands` ON `ha_mf_commands`.`myid` = `ha_remote_scheme_steps`.`commandID` '.
-			' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`myid` = `ha_remote_scheme_steps`.`deviceID` '.
+			' LEFT JOIN `ha_mf_commands` AS `ha_mf_commands` ON `ha_mf_commands`.`id` = `ha_remote_scheme_steps`.`commandID` '.
+			' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`id` = `ha_remote_scheme_steps`.`deviceID` '.
 			' LEFT JOIN `ha_alert_text` AS `ha_alert_text` ON `ha_alert_text`.`id` = `ha_remote_scheme_steps`.`alert_textID` '.
 			' LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes_0` ON `ha_remote_schemes_0`.`id` = `ha_remote_scheme_steps`.`schemesID` '.
-			' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`myid` = `ha_mf_devices`.`locationID` '.
-			' WHERE `ha_remote_scheme_steps`.`id` = "'.$myid.'"';
+			' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID` '.
+			' WHERE `ha_remote_scheme_steps`.`id` = "'.$id.'"';
  			break;
 	}
  

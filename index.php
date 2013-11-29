@@ -56,7 +56,7 @@ include 'defines.php';
 					$class = $rowremotekeys['class'];
 					($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 					if (strlen($rowremotekeys['device'])>0) {
-						$resdevice = mysql_query("SELECT * FROM ha_mf_devices Where myid =".$rowremotekeys['device']);
+						$resdevice = mysql_query("SELECT * FROM ha_mf_devices Where id =".$rowremotekeys['device']);
 						if  ($resdevice) {
 							$rowdevice = mysql_fetch_array($resdevice);
 							if  ($rowremotekeys['type_image'] == 1) {
@@ -83,7 +83,7 @@ include 'defines.php';
 								if  ($resmonitor) {
 									$rowmonitor = mysql_fetch_array($resmonitor);
 	//								if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
-										$link = ($rowmonitor['ln'] == LINK_OK ? '' : ($rowmonitor['ln'] == LINK_WARNING ? 'warning' : 'error'));
+										$link = ($rowmonitor['ln'] == LINK_OK ? '' : ($rowmonitor['ln'] == LINK_WARNING ? 'alert' : 'alert alert-error'));
 								}
 							}
 						}
