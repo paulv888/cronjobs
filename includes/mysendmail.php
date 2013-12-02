@@ -1,16 +1,13 @@
 <?PHP
 require_once 'myclasses/class.phpmailer.php' ;
 require_once 'logins.php' ;
-define('CALL_SOURCE_REMOTE_BUTTON', 1); 
-define('CALL_SOURCE_REMOTE_SCHEME', 2); 
-define('CALL_SOURCE_HA_ALERT', 3); 
-define('CALL_SOURCE_TRADE_ALERT', 4); 
+include_once 'defines.php';
 
 function createMail($callsource, $id, &$subject, &$message){
 // $type == TRADE_ALERT, HA_ALERT
 
 	switch ($callsource) {
-		case CALL_SOURCE_TRADE_ALERT:
+		case SIGNAL_SOURCE_TRADE_ALERT:
 			/*trd_positions:
 				`trd_positions___account_raw`
 				`trd_positions___buy_sell_raw`
@@ -296,7 +293,7 @@ function createMail($callsource, $id, &$subject, &$message){
 			'WHERE `trd_pos_alerts`.`id` = "'.$id.'"' ;
 		//	'LEFT JOIN `trd_alert_actions` AS `trd_alert_actions` ON `trd_alerts_dd`.`actionid` = `trd_alert_actions`.`id`  '. 
 			break;
-		case CALL_SOURCE_HA_ALERT:
+		case SIGNAL_SOURCE_HA_ALERT:
 			/* ha_alerts:
 				`ha_alerts___id`
 				`ha_alerts___deviceID`
@@ -347,7 +344,7 @@ function createMail($callsource, $id, &$subject, &$message){
 				' WHERE `ha_alerts`.`id` = "'.$id.'"';	
 
 			break;
-		case CALL_SOURCE_REMOTE_SCHEME:
+		case SIGNAL_SOURCE_REMOTE_SCHEME:
 			/*  ha_mf_devices:
 					 `ha_mf_devices___code`
 					 `ha_mf_devices___description`

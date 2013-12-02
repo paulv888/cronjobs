@@ -83,4 +83,92 @@ function udate($format, $utimestamp = null)
     return date(preg_replace('`(?<!\\\\)u`', $milliseconds, $format), $timestamp);
 }
 
+function logEvent($inout, $sourceID, $deviceID, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
+	// Do some validation first
+
+	// get device id
+	// get repeat cnt
+	$repeatcount=1;
+
+	//	      '
+	//        '  Check last Statuses for duplicate
+	//        '
+	//        mess = CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID)
+	//        If mCmd.Operation = "send" Then
+	//            OffSet = My.Settings.IgnoreSameSendMessageTime
+	//        Else
+	//            OffSet = My.Settings.IgnoreSameMessageTime
+	//        End If
+	//        mt = mCmd.oDTmS.oTime
+	//        For m As Integer = mStack.Count To 1 Step -1
+	//            If DateDiff(DateInterval.Second, mStack(m), mt) > OffSet Then mStack.Remove(m)
+	//        Next
+	//        If mStack.Contains(mess) Then
+	//            WriteEvent("UPDATE `homeautomation`.`ha_events` SET `repeatcount` = `repeatcount` + '1' " & _
+	//            "WHERE `mdate` = '" & mStack(mess) & "' and `inout` = '" & mIDs.InOutID & "' and `sourceID` ='" & mIDs.SourceID & _
+	//                                         "' and `deviceID` = '" & mIDs.DeviceID & "' and `commandID` = '" & mIDs.CommandID & "';")
+	//
+	//            FilterMonitorMessage = pvLogLevelDebug
+	//        Else
+	//            mStack.Add(mCmd.oDTmS.oTime, CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID))
+	//        End If
+
+	//
+	// Check for repeat statussues
+	//
+	$gmttime = mygmdate("Y-m-d H:i:s");
+	$ms = udate("u");
+	$time = date("Y-m-d H:i:s");
+
+	$mysql = 'SELECT * FROM `ha_events` ' .
+			' WHERE `inout` = '.$inout. ' AND `source` ='.$sourceID.' AND `deviceID` = '.$deviceID.' AND commandID = '.$commandID.
+			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.$gmttime.'"';
+
+	if (!$resevents=mysql_query($mysql)) {	
+		mySqlError($mysql);
+		return false;
+	}
+	if ($rowevents=mysql_fetch_array($resevents)) {
+		$repeatcount = $rowevents['repeatcount'] + 1;
+		$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
+		if (!mysql_query($mysql)) mySqlError($mysql);
+	} else {
+		//
+		//	Get device type and monitorid
+		//
+		$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$deviceID;
+		$resdevice=mysql_query($mysql);
+		$rowdevice=mysql_fetch_array($resdevice);
+		$devicetype=$rowdevice['typeID'];
+
+		$mysql= 'INSERT INTO `ha_events` (
+						`time_date` ,
+						`mdate` ,
+						`milliseconds` ,
+						`inout` ,
+						`source` ,
+						`typeID` ,
+						`deviceID` ,
+						`commandID` ,
+						`data` , 
+						`extdata` ,
+						`repeatcount` ,
+						`logLevel`
+					)
+					VALUES ( '.
+						'"'.$gmttime.'",'.
+						'"'.$gmttime.'",'. 
+					 	''.$ms.',' .		 				/* millisec 		*/
+						''.$inout.','. 					/*  in 				*/
+						''.$sourceID.','.			/* source arduino 	*/
+						''.$devicetype.','.
+						''.$deviceID.','.
+						''.$commandID.','.
+						'"'.$value.'",'.
+						'"'.$extdata.'",' .
+						''.$repeatcount.','.
+						 	'1)';
+		if (!mysql_query($mysql)) mySqlError($mysql);
+	}
+}
 ?>

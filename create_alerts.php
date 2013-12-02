@@ -69,11 +69,11 @@ function AlertsActions(){
 
 		if (checktime($rowalerts['send_start'],$rowalerts['send_end'])) {	  					// good 
 			if ($rowalerts['schemeid']>0) { 													// Scheme setup so run scheme
-				$result= process(CALL_SOURCE_HA_ALERT,"","",$rowalerts['ha_alerts_id']);
+				$result= process(SIGNAL_SOURCE_HA_ALERT,"","",$rowalerts['ha_alerts_id']);
 			} else {
 				$subject= $rowalerts['description'];
 				$message= $rowalerts['message'];
-				$myresult = createMail(CALL_SOURCE_HA_ALERT,$rowalerts['ha_alerts_id'],$subject,$message);
+				$myresult = createMail(SIGNAL_SOURCE_HA_ALERT,$rowalerts['ha_alerts_id'],$subject,$message);
 				$result=sendmail($rowalerts['command'], $subject, $message, 'VloHome');
 			}
 			if ($result) { 																// OK Message

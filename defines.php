@@ -22,6 +22,10 @@ define("STATUS_ON", 17 );
 define("STATUS_OFF", 20 );
 define("STATUS_UNKNOWN", 0 );
 
+// Current Status Values
+define("COMMAND_SEND", 1 );
+define("COMMAND_RECV", 2 );
+
 // Commands from Device
 define("COMMAND_RESULT_OK", 1);
 define("COMMAND_RESULT_ERROR", 2);
@@ -44,6 +48,12 @@ define ("SIGNAL_SOURCE_PC_WEATHER_GOV", 7);
 define ("SIGNAL_SOURCE_WWW", 8);
 define ("SIGNAL_SOURCE_ARDBRIDGE", 9);
 define ("SIGNAL_SOURCE_THERMO_UPDATE_TEMPS", 10);
+define ("SIGNAL_SOURCE_HA_WINXP", 11); 
+define ("SIGNAL_SOURCE_REMOTE_BUTTON", 12); 
+define ("SIGNAL_SOURCE_REMOTE_SCHEME", 13); 
+define ("SIGNAL_SOURCE_HA_ALERT", 14); 
+define ("SIGNAL_SOURCE_TRADE_ALERT", 15); 
+define ("SIGNAL_SOURCE_COMMAND", 16); 
 
 // Command Types
 define ("COMMAND_CLASS_X10", 1);
@@ -61,13 +71,6 @@ define("ERROR_CALIBRATE", 127);
 define("COMMAND_RF_TIMEOUT", 128);
 define("ERROR_RF_SEND_FAILED", 129);
 define("ERROR_READ_SENSOR", 130);
-
-// Front End Call types
-define("CALL_SOURCE_REMOTE_BUTTON", 1); 
-define("CALL_SOURCE_REMOTE_SCHEME", 2); 
-define("CALL_SOURCE_HA_ALERT", 3); 
-define("CALL_SOURCE_TRADE_ALERT", 4); 
-define("CALL_SOURCE_COMMAND", 5); 
 
 // These are Device Types
 //define("", );

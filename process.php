@@ -19,12 +19,12 @@ define( 'MYDEBUG', FALSE );
 //                no schemes supported with dropdowns 
 //  
 if (isset($_POST["remotekey"])) {						// Called from remote with key number
-	$callsource = CALL_SOURCE_REMOTE_BUTTON;
+	$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
 	$remotekeyid=$_POST["remotekey"];
 	$commandid=$_POST["command"];
 	$setvalue=$_POST["setvalue"];
 	if (substr($commandid, 0,1)=="S") {
-		$callsource = CALL_SOURCE_REMOTE_SCHEME;
+		$callsource = SIGNAL_SOURCE_REMOTE_SCHEME;
 		$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well. in this case overloading $commandid OBSOLETE???
 		if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
 	}	
@@ -32,7 +32,7 @@ if (isset($_POST["remotekey"])) {						// Called from remote with key number
 	exit;
 }
 if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal
-	$callsource = CALL_SOURCE_COMMAND;
+	$callsource = SIGNAL_SOURCE_COMMAND;
 	$commandid=$_POST["command"];
 	echo process($callsource, NULL, $commandid);
 	exit;
@@ -62,7 +62,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 	
 	switch ($callsource)
 	{
-	case CALL_SOURCE_REMOTE_BUTTON:    // Key pressed on remote
+	case SIGNAL_SOURCE_REMOTE_BUTTON:    // Key pressed on remote
 		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where id =".$remotekeyid);
 		$rowkeys = mysql_fetch_array($reskeys);
 		$schemeid=$rowkeys['scheme'];
@@ -87,21 +87,21 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 			}
 		} 
 		break;
-	case CALL_SOURCE_REMOTE_SCHEME:        // Received S12 
+	case SIGNAL_SOURCE_REMOTE_SCHEME:        // Received S12 
 		$schemeid = $commandid;
-		if (MYDEBUG) echo "CALL_SOURCE_REMOTE_SCHEME ".$schemeid."</p>";
+		if (MYDEBUG) echo "SIGNAL_SOURCE_REMOTE_SCHEME ".$schemeid."</p>";
 		break;
-	case CALL_SOURCE_HA_ALERT:       	 // process from alerts
+	case SIGNAL_SOURCE_HA_ALERT:       	 // process from alerts
 		$sqlstr = "SELECT ha_alerts.id, ha_alerts_dd.schemeid FROM ha_alerts LEFT JOIN ha_alerts_dd ON ha_alerts.alertid = ha_alerts_dd.id WHERE (ha_alerts.id =".$alertid.")";
 		if (MYDEBUG) echo $sqlstr."</p>";
 		$resalerts = mysql_query($sqlstr);
 		$rowalerts = mysql_fetch_array($resalerts);
 		$schemeid = $rowalerts['schemeid'];
 		break;
-	case CALL_SOURCE_TRADE_ALERT:        // process from trade alerts
+	case SIGNAL_SOURCE_TRADE_ALERT:        // process from trade alerts
 		break;
-	case CALL_SOURCE_COMMAND:        
-		if (MYDEBUG) echo "CALL_SOURCE_COMMAND ".$commandid."</p>";
+	case SIGNAL_SOURCE_COMMAND:        
+		if (MYDEBUG) echo "SIGNAL_SOURCE_COMMAND ".$commandid."</p>";
 		if ($result=SendCommand($callsource, NULL, $commandid)) {
 			$feedback .= $result;
 		} else {
@@ -172,6 +172,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$result = $func($deviceid, $value);
 		$feedback = newStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
+		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;
 	case COMMAND_CLASS_EMAIL:
 		if (MYDEBUG) echo "COMMAND_CLASS_EMAIL alertid ".$alertsid." alert_textID ".$alert_textID."</p>";
@@ -182,6 +183,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$message= $rowtext['message'];
 		$myresult = createMail($callsource,$alertid,$subject,$message);
 		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
+		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;
 
 	case COMMAND_CLASS_INSTEON:
@@ -199,6 +201,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if (MYDEBUG) echo $url."</p>";
 		$post = restClient::post($url);
 		$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
+		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		usleep(INSTEON_SLEEP_MICRO);
 		if ($feedback) {
 			$feedback = newStatus($deviceid,($commandid));
@@ -214,7 +217,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$x10[0]->Sender = "plc";
 		$x10[0]->HouseCode = $rowdevices['code'];
 		$x10[0]->Unit = $rowdevices['unit'];
-		if ($commandid ==  STATUS_ON && $value!=100) {
+		if ($commandid ==  STATUS_ON && $value>0 && $value<100) {
 			$x10[0]->Command = "On";
 			$x10[0]->CmdData = NULL;
 			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
@@ -235,11 +238,13 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		}
 		CloseTCP();
 		$feedback = newStatus($deviceid,$commandid);
+		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;
 	case COMMAND_CLASS_INTERNAL:
 		$func = $rowcommands['command'];
 		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
 		$feedback = $func($value);
+		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;
 	default:
 		if ($rowdevicelinks['targettype']=="POST"){
@@ -250,6 +255,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			if (MYDEBUG) echo $url.$tcomm."</p>";
 			$post = restClient::post($url, $tcomm);
 			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
+			logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		}
 		break;
 	}
