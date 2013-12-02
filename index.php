@@ -55,20 +55,20 @@ include 'defines.php';
 				if ($rowremotekeys) {
 					$class = $rowremotekeys['class'];
 					($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
-					if (strlen($rowremotekeys['device'])>0) {
-						$resdevice = mysql_query("SELECT * FROM ha_mf_devices Where id =".$rowremotekeys['device']);
-						if  ($resdevice) {
-							$rowdevice = mysql_fetch_array($resdevice);
+					if (strlen($rowremotekeys['deviceID'])>0) {
+						$resdevices = mysql_query("SELECT * FROM ha_mf_devices Where id =".$rowremotekeys['deviceID']);
+						if  ($resdevices) {
+							$rowdevices = mysql_fetch_array($resdevices);
 							if  ($rowremotekeys['type_image'] == 1) {
-								if ($rowdevice) {
-									$type = "type".$rowdevice['typeID'] ;
+								if ($rowdevices) {
+									$type = "type".$rowdevices['typeID'] ;
 								} else {
 									$type = "";
 								}
 							}
-
-							if ($rowdevice['monitortypeID']==MONITOR_STATUS || $rowdevice['monitortypeID']==MONITOR_LINK_STATUS) {
-								$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowremotekeys['device']);
+							$status = '';
+							if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
+								$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowremotekeys['deviceID']);
 								if  ($resmonitor) {
 									$rowmonitor = mysql_fetch_array($resmonitor);
 									if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
@@ -78,12 +78,12 @@ include 'defines.php';
 									}
 								}
 							}
-							if ($rowdevice['monitortypeID']==MONITOR_LINK || $rowdevice['monitortypeID']==MONITOR_LINK_STATUS) {
-								$resmonitor = mysql_query("SELECT ln FROM ha_vw_monitor_link_status WHERE deviceID =".$rowremotekeys['device']);
+							$link = '';
+							if ($rowdevices['monitortypeID']==MONITOR_LINK || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
+								$resmonitor = mysql_query("SELECT ln FROM ha_vw_monitor_link_status WHERE deviceID =".$rowremotekeys['deviceID']);
 								if  ($resmonitor) {
 									$rowmonitor = mysql_fetch_array($resmonitor);
-	//								if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
-										$link = ($rowmonitor['ln'] == LINK_OK ? '' : ($rowmonitor['ln'] == LINK_WARNING ? 'alert' : 'alert alert-error'));
+										$link = ($rowmonitor['ln'] == LINK_OK ? '' : ($rowmonitor['ln'] == LINK_WARNING ? 'btn-warning' : 'btn-danger'));
 								}
 							}
 						}

@@ -68,10 +68,10 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$schemeid=$rowkeys['scheme'];
 		
 		if ($schemeid <=0) {  												// not a scheme, execute here now
-			if ($commandid===NULL) { $commandid=$rowkeys['command'];}  		// for dropdowns getting command in dowhat, so take this.     
+			if ($commandid===NULL) { $commandid=$rowkeys['commandID'];}  		// for dropdowns getting command in dowhat, so take this.     
 			if ($commandid==COMMAND_TOGGLE) {   // Special handling for toggle
 				if ($setvalue==100) {
-					$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowkeys['device']);
+					$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowkeys['deviceID']);
 					$rowmonitor = mysql_fetch_array($resmonitor);
 					if ($rowmonitor) {
 						$commandid = ($rowmonitor['status'] == STATUS_ON ? STATUS_OFF : STATUS_ON); // toggle on/off
@@ -80,7 +80,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 						$commandid = STATUS_ON;						
 				}
 			}
-			if ($result=SendCommand($callsource, $rowkeys['device'], $commandid,  $setvalue)) {
+			if ($result=SendCommand($callsource, $rowkeys['deviceID'], $commandid,  $setvalue)) {
 				$feedback .= $result;
 			} else {
 				$feedback = FALSE;
@@ -261,7 +261,7 @@ function newStatus ($deviceid, $status) {
 //	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
 //	$rowmonitor = mysql_fetch_array($resmonitor);
 //	if ($rowmonitor) {
-		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where device =".$deviceid);
+		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$deviceid);
 		while ($rowkeys = mysql_fetch_array($reskeys)) {
 			if ($rowkeys['inputtype']== "button") {
 				if ($status == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
@@ -287,7 +287,7 @@ function setValue ($deviceid, $value) {
 //	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
 //	$rowmonitor = mysql_fetch_array($resmonitor);
 //	if ($rowmonitor) {
-		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where device =".$deviceid);
+		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$deviceid);
 		while ($rowkeys = mysql_fetch_array($reskeys)) {
 			if ($rowkeys['inputtype']== "field") {
 				$feedback[]=$rowkeys['id']." val: $value";
