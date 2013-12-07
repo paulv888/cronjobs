@@ -71,26 +71,7 @@ $(document).ready(function(){
 		lastKey= $(this).attr('remotekey');
 		$.post("process.php", { remotekey:$(this).attr('remotekey'), setvalue:s = $('#setval').find(":selected").val() },
 		function(data){
-			var temp = new Array();
-			temp = data.split(';');
-			if (temp[0] != 'OK') $(".message").html(data);
-			jQuery.each(temp, function() {
-				var temp1 = new Array();
-				temp1 = this.split(' ');
-				if (temp1[0] == 'OK') return;
-				if (temp1[2] != null) 
-				{
-					//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
-					$('[remotekey=' + temp1[0] + ']').each(function(index){
-							$(this).html(temp1[2]);
-						});
-				} else {
-					$('[remotekey=' + temp1[0] + ']').each(function(index){
-							$(this).removeClass("off on").addClass(temp1[1]);
-						});
-				}
-				return (this.length !== 0); // will stop running after "three"
-			});
+			processData(data);
 		});
 		return false;
 	 });
@@ -112,39 +93,42 @@ $(document).ready(function(){
 		var s = $(this).parent().find("option:selected").val();
 		$.post("process.php", { remotekey:$(this).attr('value') , command:$(this).parent().find("option:selected").val() },
 				function(data){
-					var temp = new Array();
-					temp = data.split(';');
-					if (temp[0] != 'OK') $(".message").html(data);
+					processData(data);
 				}); 
 	return false;
 	});
 
+function processData(data) {
+	var temp = new Array();
+	temp = data.split(';');
+	if (temp[0] != 'OK') $(".message").html(data);
+	jQuery.each(temp, function() {
+		var temp1 = new Array();
+		temp1 = this.split(' ');
+		if (temp1[0] == 'OK') return;
+		if (temp1[2] != null) 
+		{
+			//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
+			$('[remotekey=' + temp1[0] + ']').each(function(index){
+					$(this).html(temp1[2]);
+				});
+		} else {
+			$('[remotekey=' + temp1[0] + ']').each(function(index){
+					$(this).removeClass("off on").addClass(temp1[1]);
+				});
+		}
+		return (this.length !== 0); // will stop running after "three"
+	});
+}
+
+	
 	//this is the function that handle switch applications (go button)
 	$("#UpLast").click(function(){
 		$(".message").html('');
 		if (lastKey != null) { 
 			$.post("process.php", { remotekey:lastKey, setvalue:s = $('#setval').find(":selected").val() },
 			function(data){
-				var temp = new Array();
-				temp = data.split(';');
-				if (temp[0] != 'OK') $(".message").html(data);
-				jQuery.each(temp, function() {
-					var temp1 = new Array();
-					temp1 = this.split(' ');
-					if (temp1[0] == 'OK') return;
-					if (temp1[2] != null) 
-					{
-						//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
-						$('[remotekey=' + temp1[0] + ']').each(function(index){
-								$(this).html(temp1[2]);
-							});
-					} else {
-						$('[remotekey=' + temp1[0] + ']').each(function(index){
-								$(this).removeClass("off on").addClass(temp1[1]);
-							});
-					}
-					return (this.length !== 0); // will stop running after "three"
-				});
+				processData(data);
 			});
 		};
 		return false;
@@ -155,9 +139,7 @@ $(document).ready(function(){
 		$(".message").html('');
 		$.post("process.php", { remotekey:$(this).attr('value') , command:$(this).parent().find("option:selected").val() },
 				function(data){
-					var temp = new Array();
-					temp = data.split(';');
-					if (temp[0] != 'OK') $(".message").html(data);
+					processData(data);
 				}); 
 		return false;
 	 });

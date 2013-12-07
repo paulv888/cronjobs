@@ -1,6 +1,6 @@
 <?php
 // process configuration
-define("INSTEON_SLEEP_MICRO", 300000); // 300mS
+define("INSTEON_SLEEP_MICRO", 500000); // 500mS
 
 // Monitor Link Values
 define("MONITOR_LINK", 2);
@@ -11,6 +11,10 @@ define("MONITOR_LINK_STATUS", 4);
 define("LINK_ERROR", 1);
 define("LINK_WARNING", 2);
 define("LINK_OK", 3);
+
+// Link Values
+define("LINK_DOWN", 0);
+define("LINK_UP", 1);
 
 // Event log values
 define("EVENT_OUT", 1);
@@ -45,7 +49,7 @@ define ("SIGNAL_SOURCE_OUTSIDE_CAM", 4);
 define ("SIGNAL_SOURCE_CAM_BRIDGE", 5);
 define ("SIGNAL_SOURCE_PC_UPDATE_TEMPS", 6);
 define ("SIGNAL_SOURCE_PC_WEATHER_GOV", 7);
-define ("SIGNAL_SOURCE_WWW", 8);
+define ("SIGNAL_SOURCE_TCP_BRIDGE", 8);
 define ("SIGNAL_SOURCE_ARDBRIDGE", 9);
 define ("SIGNAL_SOURCE_THERMO_UPDATE_TEMPS", 10);
 define ("SIGNAL_SOURCE_HA_WINXP", 11); 
@@ -54,6 +58,7 @@ define ("SIGNAL_SOURCE_REMOTE_SCHEME", 13);
 define ("SIGNAL_SOURCE_HA_ALERT", 14); 
 define ("SIGNAL_SOURCE_TRADE_ALERT", 15); 
 define ("SIGNAL_SOURCE_COMMAND", 16); 
+define ("SIGNAL_MONITOR_DEVICES", 17); 
 
 // Command Types
 define ("COMMAND_CLASS_X10", 1);
@@ -65,15 +70,19 @@ define ("COMMAND_CLASS_INTERNAL", 6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
 
-// Data field from Device 
 // These are Internal Commands
 define("ERROR_CALIBRATE", 127);
 define("COMMAND_RF_TIMEOUT", 128);
 define("ERROR_RF_SEND_FAILED", 129);
 define("ERROR_READ_SENSOR", 130);
+define("COMMAND_LINK_STATUS", 151);
 
 // These are Device Types
 //define("", );
 define("DEV_TYPE_HEAT", 19);
 define("DEV_TYPE_COOL", 18);
+
+// Alerts
+define("ALERT_CHANGED_NETWORK_DEVICE", 21);
+define("ALERT_NEW_NETWORK_DEVICE", 22);
 ?>

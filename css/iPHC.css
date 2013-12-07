@@ -126,18 +126,18 @@ table {width:100%}
 	background-image:url('../images/type19.png');
 }
 
-.button {
+.button, .jumpbutton {
     border-radius: 0.5em 0.5em 0.5em 0.5em;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     cursor: pointer;
-    font: 10px/100% Arial,Helvetica,sans-serif;
+    font: 12px/100% Arial,Helvetica,sans-serif;
+	font-weight: bold;
 	width:90%;
 	margin-left: 5%;
 	height: 95%;
 	display: inline-block;
     outline: medium none;
     text-align: center;
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
     vertical-align: baseline;
 	background-image: -moz-linear-gradient(center top , #777777, #000000);
 	background-image: -webkit-linear-gradient(top , #777777, #000000);
@@ -145,11 +145,14 @@ table {width:100%}
     color: #D7D7D7;
 	overflow: hidden;
 }
-.button:hover {
+.jumpbutton  {
+	width:30%;
+}
+.button:hover , .jumpbutton:hover{
     text-decoration: none;
     background-image: -moz-linear-gradient(center top , #444444, #000000);
 }
-.button:active {
+.button:active , .jumpbutton:active{
     position: relative;
     top: 1px;
     background-image: -moz-linear-gradient(center top , #000000, #444444);
@@ -202,10 +205,6 @@ table {width:100%}
 }
 .keyscellempty {
 }
-.formdropdownlist {
-}
-
-
 .remotedivs  {
 	background:#fff; 
 	border:3px solid #edeae3; 
@@ -305,6 +304,7 @@ div#spinner
 	-webkit-box-shadow: 2px 3px 4px #E4D8BA;
 	background-repeat:no-repeat;
 	background-position:center center;
+    text-shadow: -1px 0 white, 0 1px white, 1px 0 white, 0 -1px white;
 	border: none;
     color: #000;
 }
@@ -416,4 +416,15 @@ div#spinner
 }
 .btn-group.open .btn-danger.dropdown-toggle {
   background-color: #bd362f;
+}
+.hidden {
+	display: none;
+}
+.controlselect {
+	font-size:  15px;
+	margin-left: 10px;
+}
+.formdropdownlist {
+	height: 95%;
+	text-align:center; 
 }

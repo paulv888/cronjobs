@@ -133,7 +133,7 @@ include 'defines.php';
 		   	    			echo '<form class="formdropdown" name=control method="GET" value="'.$rowremotekeys['id'].'">';
 				      		echo '<select ';
 		   	    			if (strlen($cellid)>1) echo ' id='.$cellid;
-		   	    			echo ' name="controlselect">';
+		   	    			echo ' class="controlselect">';
 				      		$first= true;
 			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
 			   	    		foreach ($options as &$optionstring) {
@@ -153,14 +153,16 @@ include 'defines.php';
 		   	    			echo '<form class="formdropdownlist" name=control method="GET" value="'.$rowremotekeys['id'].'">';
 				      		echo '<select ';
 		   	    			if (strlen($cellid)>1) echo ' id='.$cellid;
-		   	    			echo ' name="controlselect">';
+		   	    			echo ' class="controlselect">';
 			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
 			   	    		foreach ($options as &$optionstring) {
 			   	    			$option = explode(",",$optionstring);
 			   	    			echo "<option value='$option[0]'>$option[1]</option>";
 			   	    		}
 			   	    		echo '</select>';
-			   	    		echo '<button type="submit" class="jump" ';
+			   	    		echo '<button type="submit" class="jump';
+							if (strlen($class)>1) echo ' '.$class;
+							echo '"';
 			   	    		echo 'value="'.$rowremotekeys['id'].'">';
 		   	    			if (strlen($rowremotekeys['picture'])>0) echo '<img src="'.$rowremotekeys['picture'].'">';
 			   	    		if (strlen($rowremotekeys['picture'])==0) echo $rowremotekeys['name']; 

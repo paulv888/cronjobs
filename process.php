@@ -9,7 +9,7 @@ include_once 'includes/shared_ha.php';
 include_once 'includes/shared_gen.php';
 include_once 'includes/mysendmail.php';
 include_once 'thermo_process.php';
-include_once 'includes/nat_sessions.php';
+include_once 'includes/2701HG-B.php';
 
 define( 'MYDEBUG', FALSE );
 //define( 'MYDEBUG', TRUE );
@@ -117,8 +117,8 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";
 		$resschemesteps	= mysql_query($sqlstr);
 		while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
-			if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  ($rowshemesteps['value']>0 ? $rowshemesteps['value'] : 0),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
-							$feedback .= $result;
+			if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  ($rowshemesteps['value']>0 ? $rowshemesteps['value'] : NULL),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
+				$feedback .= $result;
 			} else {
 				$feedback = FALSE;
 			}
@@ -130,8 +130,6 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		if ($rowkeys['show_result']) 
 			return $feedback;
 	
-	if (MYDEBUG) echo " feedback: ".$feedback."</p>";
-
 	return ($feedback ? "OK;".$feedback : false);
 			
 }
@@ -191,7 +189,9 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 		if ($rowcommands['commandclassid']==COMMAND_CLASS_INSTEON) {
+			if ($value>100) $value=100;
 			if ($value>0) $value=255/100*$value;
+			if ($value == NULL && $commandid == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
 			$value = dec2hex($value,2);
 			if (MYDEBUG) echo "value ".$value."</p>";
 		}

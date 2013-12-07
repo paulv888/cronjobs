@@ -22,6 +22,9 @@ try
 	$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_status( deviceID, date, start_date_heat, start_date_cool, start_date_fan, heat_status, cool_status, fan_status ) VALUES( ?, ?, ?, ?, ?, ?, ?, ? )";
 	$queryInsert = $pdo->prepare( $sql );
 
+	$sql = "UPDATE ha_mf_devices_thermostat SET tstat_uuid = ?, model = ?, fw_version = ?, wlan_fw_version = ? WHERE deviceID = ?";
+	$queryUpdateSysInfo = $pdo->prepare( $sql );
+
 	$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
 	$queryUpdate = $pdo->prepare( $sql );
 
@@ -58,13 +61,13 @@ foreach( $thermostats as $thermostatRec )
 			logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['deviceID']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
 			$stat = new Stat( $thermostatRec);
 
-			//$sysInfo = $stat->getSysInfo();
-//			$stat->getSysInfo();
-			//$uuid = $sysInfo['uuid'];
-			//sleep(2); // allow thermostat to catch up
-			//$model = $stat->getModel();
-//			$stat->getModel();
-
+/*			$sysInfo = $stat->getSysInfo();
+			$stat->getSysInfo();
+			sleep(2); // allow thermostat to catch up
+			$model = $stat->getModel();
+			$stat->getModel();
+			$queryUpdateSysInfo->execute( array( $sysInfo['uuid'], $model, $sysInfo['fw_version'], $sysInfo['wlan_fw_version'], $thermostatRec['deviceID'] ) );
+*/			
 			// Get thermostat state
 			$statData = $stat->getStat();
 			$heatStatus = ($stat->tstate == 1) ? true : false;

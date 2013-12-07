@@ -14,33 +14,41 @@ function ReadCurlReturn($mpost) {
 	return $myreturn;
 }
 
-function UpdateMyLink($deviceID){
+function UpdateMyLink($deviceid, $link = 1, $callsource = 0, $commandid = 0){
 
+//      echo "*************".$deviceid."*************";
+
+	$mysql = "SELECT link FROM `ha_vw_monitor_combined` WHERE deviceID = ".$deviceid; 
+	if ($row = FetchRow($mysql)) {
+		$prevlink = $row['link'];
+		if ($prevlink != $link) logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == 1 ? "Up" : "Down"));
+	}
 	$mysql = "Update `ha_vw_monitor_combined` Set " .
-    			  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
-    			  " Where(`deviceid` ='" . $deviceID . "')";
+    			  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
+    			  " `link` = '" . $link . "'" .
+    			  " Where(`deviceid` ='" . $deviceid . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return 1;
 }
 
-function UpdateThermType($deviceID, $typeid){
+function UpdateThermType($deviceid, $typeid){
 
 	$mysql = "Update `ha_mf_devices` Set " .
     			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
-				  " Where(`id` ='" . $deviceID . "')";
+				  " Where(`id` ='" . $deviceid . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	$mysql = "Update `ha_weather_now` Set " .
     			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
-				  " Where(`deviceID` ='" . $deviceID . "')";
+				  " Where(`deviceID` ='" . $deviceid . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return 1;
 }
 
-function UpdateWeatherNow($deviceID,$temp,$set_point){
+function UpdateWeatherNow($deviceid,$temp,$set_point){
 	
-	$mysql = "SELECT temperature_c FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
+	$mysql = "SELECT temperature_c FROM ha_weather_now  WHERE deviceID = ".$deviceid; 
 	if ($row = FetchRow($mysql)) {
 		$ttrend = 0;
 		if ($temp>$row['temperature_c']) $ttrend=1;
@@ -48,16 +56,15 @@ function UpdateWeatherNow($deviceID,$temp,$set_point){
 	}
 			
 	$mysql = "UPDATE ha_weather_now SET time_date = '" . mygmdate("Y-m-d H:i:s"). "', mdate = '". mygmdate("Y-m-d H:i:s")."'," .
-				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend." WHERE deviceID = ".$deviceID;
+				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend." WHERE deviceID = ".$deviceid;
 
 	if (!mysql_query($mysql)) mySqlError($mysql);
 }
 			
 function UpdateStatus ($deviceid,$status) 
 {
-//		UPDATE `homeautomation`.`ha_vw_monitor_combined` SET `status` = '19' WHERE `ha_vw_monitor_combined`.`deviceID` =60;
+
 	$now = date( 'Y-m-d H:i:s' );
-//	$dstatus = ($status) ? STATUS_ON : STATUS_OFF;
 	$mysql = "SELECT status, statusDate FROM ha_vw_monitor_combined WHERE deviceID = ".$deviceid;
 	if ($row = FetchRow($mysql)) {
 		if ($row['status'] != $status ) {	
@@ -83,7 +90,7 @@ function udate($format, $utimestamp = null)
     return date(preg_replace('`(?<!\\\\)u`', $milliseconds, $format), $timestamp);
 }
 
-function logEvent($inout, $sourceID, $deviceID, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
+function logEvent($inout, $sourceID, $deviceid, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
 	// Do some validation first
 
 	// get device id
@@ -121,8 +128,13 @@ function logEvent($inout, $sourceID, $deviceID, $commandID, $value = Null, $extd
 	$time = date("Y-m-d H:i:s");
 
 	$mysql = 'SELECT * FROM `ha_events` ' .
-			' WHERE `inout` = '.$inout. ' AND `source` ='.$sourceID.' AND `deviceID` = '.$deviceID.' AND commandID = '.$commandID.
+			' WHERE `inout` = '.$inout. ' AND `source` ='.$sourceID.' AND commandID = '.$commandID.
 			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.$gmttime.'"';
+	if ($deviceid == NULL) {
+		$mysql .= ' AND `deviceID` IS NULL';
+	} else {
+		$mysql .= ' AND `deviceID` = '.$deviceid;
+	}
 
 	if (!$resevents=mysql_query($mysql)) {	
 		mySqlError($mysql);
@@ -136,11 +148,14 @@ function logEvent($inout, $sourceID, $deviceID, $commandID, $value = Null, $extd
 		//
 		//	Get device type and monitorid
 		//
-		$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$deviceID;
-		$resdevice=mysql_query($mysql);
-		$rowdevice=mysql_fetch_array($resdevice);
-		$devicetype=$rowdevice['typeID'];
-
+		$devicetype= NULL;
+		if ($deviceid != NULL) {
+			$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$deviceid;
+			$resdevice=mysql_query($mysql);
+			$rowdevice=mysql_fetch_array($resdevice);
+			$devicetype=$rowdevice['typeID'];
+		}
+		
 		$mysql= 'INSERT INTO `ha_events` (
 						`time_date` ,
 						`mdate` ,
@@ -161,8 +176,8 @@ function logEvent($inout, $sourceID, $deviceID, $commandID, $value = Null, $extd
 					 	''.$ms.',' .		 				/* millisec 		*/
 						''.$inout.','. 					/*  in 				*/
 						''.$sourceID.','.			/* source arduino 	*/
-						''.$devicetype.','.
-						''.$deviceID.','.
+						'"'.$devicetype.'",'.
+						'"'.$deviceid.'",'.
 						''.$commandID.','.
 						'"'.$value.'",'.
 						'"'.$extdata.'",' .

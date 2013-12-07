@@ -7,7 +7,7 @@ include_once 'includes/shared_gen.php';
 include 'myclasses/Position.class.php';
 include 'myclasses/Orders.class.php';
 include 'includes/yahoostreamer.php';
-include 'includes/mysendmail.php';
+include_once 'includes/mysendmail.php';
 define("MY_DEVICE_ID", 103);
 
 // TODO: Error Handling http://www.w3schools.com/php/php_error.asp
