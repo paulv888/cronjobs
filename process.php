@@ -10,6 +10,7 @@ include_once 'includes/shared_gen.php';
 include_once 'includes/mysendmail.php';
 include_once 'thermo_process.php';
 include_once 'includes/2701HG-B.php';
+include_once 'includes/create_alerts.php';
 
 define( 'MYDEBUG', FALSE );
 //define( 'MYDEBUG', TRUE );
@@ -156,6 +157,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 			"ha_mf_commands.id=ha_mf_commands_detail.commandid WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid);
 	$rowcommands = mysql_fetch_array($rescommands);
+	if (!$rowcommands)  mySqlError($mysql);
 	
 	if (MYDEBUG) echo "commandid ".$commandid."</p>";
 	if (MYDEBUG) echo "commandclassid ".$commandclassid."</p>";

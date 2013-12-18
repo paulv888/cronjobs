@@ -34,7 +34,7 @@ $endtime = '2000';
 if(date('Hi')>$starttime and date('Hi')<$endtime) {
 	echo AlertsActions()." Alerts sent <br/>\r\n";
 } else {
-	echo "Not sending Alerts. ". date('H:i')." outside $starttime - $endtime";
+	echo "Not sending Alerts. ". date('H:i')." outside $starttime - $endtime<br/>\r\n";
 }
 echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
@@ -717,7 +717,7 @@ function UpdateRowvalues() {
 function Alerts(){
 
 	$mysql="SELECT * ". 
-			" FROM  `trd_alerts_dd` WHERE active='Y'" ;
+			" FROM  `trd_alerts_dd` WHERE active=1" ;
 	if (!$resalerts = mysql_query($mysql)) {
 		//echo "Nothing to do<br/>\r\n";
 		exit;
