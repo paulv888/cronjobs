@@ -270,7 +270,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	case COMMAND_CLASS_X10:
 		$xmlfile="X10Command.xml";
 		$x10 = simplexml_load_file($xmlfile);
-		OpenTCP($rowdevicelinks['targetaddress'], $rowdevicelinks['targetport']);
+		OpenTCP($rowdevicelinks['targetaddress'], $rowdevicelinks['targetport'],"X10");
 		$x10[0]->CallerID = "web";
 		$x10[0]->Operation = "send";
 		$x10[0]->Sender = "plc";
