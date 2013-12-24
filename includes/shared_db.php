@@ -79,6 +79,15 @@ function CopyRow($my_table,$where,$posid) {
 		}
 	}
 }
+
+function RunQuery($mysql) {
+	$res = mysql_query($mysql);
+	if (!$res) {
+		mySqlError($mysql); 
+		exit;
+	}
+	return true;
+}
    
 function mySqlError($mysql) {
 		global $mysql_link;

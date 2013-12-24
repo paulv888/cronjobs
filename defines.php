@@ -70,6 +70,17 @@ define ("COMMAND_CLASS_INTERNAL", 6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
 
+// Scheme Condition Types
+define ("SCHEME_CONDITION_DEVICE_STATUS", 1);
+define ("SCHEME_CONDITION_SYSTEM_STATUS", 2);
+define ("SCHEME_CONDITION_TIME", 3);
+
+// System Status
+define ("SYSTEM_STATUS_ARE_HOME", 1);
+define ("SYSTEM_STATUS_ALARM_ARMED", 2);
+define ("SYSTEM_STATUS_DAY_LIGHT", 3);
+define ("SYSTEM_STATUS_PAUL_TRIP", 4);
+
 // These are Internal Commands
 define("ERROR_CALIBRATE", 127);
 define("COMMAND_RF_TIMEOUT", 128);

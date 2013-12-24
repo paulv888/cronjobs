@@ -13,6 +13,10 @@ function roundUpToAny($n,$x) {
     return round(($n+$x/2)/$x,0,PHP_ROUND_HALF_DOWN)*$x;
 }
 
+function IsNullOrEmptyString($question){
+    return (!isset($question) || trim($question)==='');
+}
+
 function dec2hex($num,$count=0)
 {
         $ret = "";

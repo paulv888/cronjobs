@@ -111,21 +111,8 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		break;
 	}
 	
-	if ($schemeid>0) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey, c) derived from alerts
-
-		$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
-		$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
-		$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";
-		$resschemesteps	= mysql_query($sqlstr);
-		while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
-			if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  ($rowshemesteps['value']>0 ? $rowshemesteps['value'] : NULL),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
-				$feedback .= $result;
-			} else {
-				$feedback = FALSE;
-			}
-		}
-	}
-
+	
+	if ($schemeid>0)  $feedback .= RunScheme ( $schemeid, $callsource);
 	
 	if ($rowkeys) 
 		if ($rowkeys['show_result']) 
@@ -134,6 +121,77 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 	return ($feedback ? "OK;".$feedback : false);
 			
 }
+
+
+function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey, c) derived from alerts
+
+// Check conditions
+	preg_match ( "/^[1-9][0-9]*/", $schemeid, $matches);
+	$schemeid = $matches[0];
+	
+	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeid;
+	
+	if (!$rescond = mysql_query($mysql)) {
+		mySqlError($mysql); 
+		exit;
+	}
+	
+	while ($rowcond = mysql_fetch_assoc($rescond)) {	
+		switch ($rowcond['type'])
+		{
+		case SCHEME_CONDITION_DEVICE_STATUS: 
+			if (MYDEBUG) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
+			echo "Not Implemented</p>";
+			break;
+		case SCHEME_CONDITION_SYSTEM_STATUS: 
+			if (MYDEBUG) echo "SCHEME_CONDITION_SYSTEM_STATUS</p>";
+			$rowconf = FetchRow("SELECT * FROM `ha_configuration` WHERE id = 1");
+			$condvalue = $rowcond['status'];
+			switch ($rowcond['system'])
+			{
+			case SYSTEM_STATUS_ARE_HOME: 
+				if (MYDEBUG) echo "SYSTEM_STATUS_ARE_HOME</p>";
+				$testvalue = $rowconf['are_home'];
+				break;
+			case SYSTEM_STATUS_ALARM_ARMED: 
+				if (MYDEBUG) echo "SYSTEM_STATUS_ALARM_ARMED</p>";
+				$testvalue = $rowconf['alarm_armed'];
+				break;
+			case SYSTEM_STATUS_DAY_LIGHT: 
+				if (MYDEBUG) echo "SYSTEM_STATUS_DAY_LIGHT</p>";
+				$testvalue = $rowconf['day_light'];
+				break;
+			case SYSTEM_STATUS_PAUL_TRIP: 
+				if (MYDEBUG) echo "SYSTEM_STATUS_PAUL_TRIP</p>";
+				$testvalue = $rowconf['paul_trip'];
+				break;
+			}
+			if ($condvalue <> $testvalue) {
+				if (MYDEBUG) echo "Condition fail: confd". $condvalue. " ,test: ". $testvalue. "<>".$confvalue <> $testvalue."</p>";
+				return 1;
+			}
+			break;
+		case SCHEME_CONDITION_TIME: 
+			if (MYDEBUG) echo "SCHEME_CONDITION_TIME</p>";
+			echo "Not Implemented</p>";
+			break;
+		}
+	}
+
+	$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
+	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
+	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";
+	$resschemesteps	= mysql_query($sqlstr);
+	while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
+		if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  (!IsNullOrEmptyString($rowshemesteps['value']) ? $rowshemesteps['value'] : NULL),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
+			$feedback .= $result;
+		} else {
+			$feedback = FALSE;
+		}
+	}
+	return $feedback;
+}
+
 
 
 function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value = NULL, $alertid = NULL, $alert_textID = NULL) { 
@@ -185,7 +243,6 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
 		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;
-
 	case COMMAND_CLASS_INSTEON:
 		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
 		$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
@@ -244,7 +301,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		break;
 	case COMMAND_CLASS_INTERNAL:
 		$func = $rowcommands['command'];
-		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']."</p>";
+		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']." value ". $value."</p>";
 		$feedback = $func($value);
 		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;

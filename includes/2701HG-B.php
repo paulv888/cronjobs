@@ -21,6 +21,32 @@ function deviceList() {
 	return $result;
 }
 
+
+function trHost() {
+	$mysql="SELECT `id`,`ip` ". 
+			" FROM  `net_iplookup`"   .
+			" WHERE ip=name and processed<>1 LIMIT 5000";  
+
+	$res = mysql_query($mysql);
+
+	if (!$res) mySqlError();
+
+	// While a row of data exists, put that row in $row as an associative array
+	// Note: If you're expecting just one row, no need to use a loop
+	// Note: If you put extract($row); inside the following loop, you'll
+	//       then create $userid, $fullname, and $userstatus
+	while ($row = mysql_fetch_assoc($res)) {
+		$ip =$row['ip'];
+
+		$hostname = gethostbyaddr($ip);
+		echo $ip." ".$hostname."</br>";
+	   	$mysql = "UPDATE `net_iplookup` SET `processed` = 1, `name`='".$hostname."' WHERE id =".$row['id'];
+		if (!mysql_query($mysql))  mySqlError($mysql);
+//		usleep(2000);
+ 	}
+}
+
+
 function MoveHistory() {
     $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
 	$result=mysql_query($mysql);
@@ -122,6 +148,54 @@ function GetSessions() {
 	return $sessions;
 }
 
+function findRemoteName($ip) {
+	$mysql="SELECT * FROM  `net_iplookup` WHERE ip='".$ip."';";  
+
+	$res = mysql_query($mysql);
+
+	if (!$res) mySqlError();
+
+	if ($row=FetchRow($mysql)) {
+		$last = new DateTime($row['date_time']);
+		$nowdt = new DateTime();
+		/*echo "<pre>";
+		print_r ($last);
+		print_r ($nowdt);
+		echo  $nowdt->diff($last, true)->days."</br>";
+		echo "</pre>";*/
+		if ($nowdt->diff($last, true)->days < 30) {
+			return $row['name'];			
+		}
+	}
+	$hostname = gethostbyaddr($ip);
+	echo $ip." ".$hostname."</br>";
+
+	if ($row) {
+		$processed = $row['processed'] + 1;
+	   	$mysql = "UPDATE `net_iplookup` SET `processed` =".$processed.", `name`='".$hostname."' WHERE id =".$row['id'];
+		if (!mysql_query($mysql))  mySqlError($mysql);
+	} else {
+		$mysql = "INSERT INTO `net_iplookup` (ip, name, processed) values ('".$ip."','".$hostname."', 1)";
+		if (!mysql_query($mysql))  mySqlError($mysql);
+	}
+
+	return  $hostname;
+}
+
+function findLocalName($ip) {
+	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
+
+	$res = mysql_query($mysql);
+
+	if (!$res) mySqlError();
+
+	if ($row=FetchRow($mysql)) {
+		return  $row['name'];
+	} 
+	return "***Unknown";
+}
+
+
 function FindAddress($ip) {
 	$mysql="SELECT * ". 
 			" FROM  `net_iplookup`" .  
@@ -159,17 +233,18 @@ function ImportSessions() {
 			}
 
 		$local = explode("=", $session['l']);
-		$localid= FindAddress($local['0']); 
+		$localname= findLocalName($local['0']); 
 		$remote = explode("=", $session['f']);
-		$remoteid= FindAddress($remote['0']); 
+		$remotename= findRemoteName($remote['0']); 
 		$firew = explode("=", $session['n']);
-		$firewid= FindAddress($firew['0']); 
 		$mysql= 'INSERT INTO `net_sessions` (
 					`sessionid` ,
 					`protocol` ,
 					`local_address` ,
+					`local_name` ,
 					`local_port` ,
 					`remote_address` ,
+					`remote_name` ,
 					`remote_port` ,
 					`firewall_address` ,
 					`firewall_port` ,
@@ -196,11 +271,13 @@ function ImportSessions() {
 				VALUES (' . 
 					'"'.$session['sess'].'",'.
 					'"'.$session['proto'].'",'.
-					'"'.$localid.'",'.
+					'"'.$local['0'].'",'.
+					'"'.$localname.'",'.
 					'"'.$local[1].'",'.
-					'"'.$remoteid.'",'.
+					'"'.$remote['0'].'",'.
+					'"'.$remotename.'",'.
 					'"'.$remote[1].'",'.
-					'"'.$firewid.'",'.
+					'"'.$firew['0'].'",'.
 					'"'.$firew[1].'",'.
 					'"'.$session['TCPstate'].'",'.
 					'"'.$session['last_used'].'",'.
@@ -296,7 +373,12 @@ function GetDeviceList() {
 		$resdevices = mysql_query($mysql);
 		if ($rowdevice = mysql_fetch_array($resdevices)) {
 			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
-				$labels = array("l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection);
+				$mysql="SELECT * ". 
+					" FROM  `ha_mf_devices`" .  
+					" WHERE ipaddressID =".$rowdevice['id'];  
+				$resdev = mysql_query($mysql);
+				if ($rowdev = mysql_fetch_array($resdev)) $deviceid = $rowdev['id']; else $deviceid = 0;
+				$labels = array("l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceid);
 				$values = array("v1" => $rowdevice['name'],"v2" => $name, "v3" => $rowdevice['ip'],"v4" => $ip);
 				echo Alerts(ALERT_CHANGED_NETWORK_DEVICE,$labels,$values)." Alerts generated <br/>\r\n";
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 

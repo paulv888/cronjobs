@@ -14,20 +14,57 @@ function ReadCurlReturn($mpost) {
 	return $myreturn;
 }
 
-function UpdateMyLink($deviceid, $link = 1, $callsource = 0, $commandid = 0){
+function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0){
 
 //      echo "*************".$deviceid."*************";
 
-	$mysql = "SELECT link FROM `ha_vw_monitor_combined` WHERE deviceID = ".$deviceid; 
+	$mysql = "SELECT * FROM `ha_mf_monitor_link` WHERE deviceID = ".$deviceid; 
 	if ($row = FetchRow($mysql)) {
 		$prevlink = $row['link'];
-		if ($prevlink != $link) logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == 1 ? "Up" : "Down"));
-	}
-	$mysql = "Update `ha_vw_monitor_combined` Set " .
-    			  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
-    			  " `link` = '" . $link . "'" .
-    			  " Where(`deviceid` ='" . $deviceid . "')";
-	if (!mysql_query($mysql)) mySqlError($mysql);
+		if ($prevlink != $link) { 					// status changed
+			if ($prevlink == LINK_UP) { 			// Link was up, wait for error time before acknowledge as error
+				if ($row['frequency2'] != Null) {
+					$temp = explode(" ", $row['frequency2']);
+					$temp2 = explode(":", $temp[1]);
+					$min = $temp[0]*1440 + $temp2[0]*60 + $temp2[1];
+					$last = strtotime($row['mdate']);
+					$nowdt = strtotime(date("Y-m-d H:i:s"));
+//					echo $row['mdate']."</br>";
+//					echo date("Y-m-d H:i:s")."</br>";
+//					echo abs($nowdt-$last) / 60 . "min</br>";
+					if (abs($nowdt-$last) / 60 > $min) {
+						echo "Really offline"."</br>";
+						logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == LINK_UP ? "Up" : "Down"));
+						$mysql = "Update `ha_vw_monitor_combined` Set " .
+								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
+								  " `link` = '" . $link . "'" .
+								  " Where(`deviceid` ='" . $deviceid . "')";
+						if (!mysql_query($mysql)) mySqlError($mysql);
+						if ($row['on_change']) echo RunScheme ($row['on_change'], $callsource);
+					} else {
+						echo "Not offline yet"."</br>";
+					}
+				}
+			} else {   								// previous was down update to online and log event
+				echo "Previous was down update to online and log event"."</br>";
+				logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == LINK_UP ? "Up" : "Down"));
+				$mysql = "Update `ha_vw_monitor_combined` Set " .
+						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
+						  " `link` = '" . $link . "'" .
+						  " Where(`deviceid` ='" . $deviceid . "')";
+				if (!mysql_query($mysql)) mySqlError($mysql);
+				if ($row['on_change']) echo RunScheme ( $row['on_change'], $callsource);
+			}
+		} else {
+			if ($link == LINK_UP) { 			// Link is up, update time
+				echo "Up and same as prev status only update time"."</br>";
+				$mysql = "Update `ha_vw_monitor_combined` Set " .
+						  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
+						  " Where(`deviceid` ='" . $deviceid . "')";
+				if (!mysql_query($mysql)) mySqlError($mysql);
+			}
+		}
+	} 
 	return 1;
 }
 

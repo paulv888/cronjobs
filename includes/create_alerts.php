@@ -37,7 +37,7 @@ function AlertsActions(){
 				$subject= $rowalerts['description'];
 				$message= $rowalerts['message'];
 				$myresult = createMail(SIGNAL_SOURCE_HA_ALERT,$rowalerts['ha_alerts_id'],$subject,$message);
-				$result=sendmail($rowalerts['command'], $subject, $message, 'VloHome');
+				$result= sendmail($rowalerts['command'], $subject, $message, 'VloHome');
 			}
 			if ($result) { 																// OK Message
 				$send++;
@@ -81,6 +81,9 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 		$mysql="SELECT * ". 
 				" FROM  `ha_alerts_dd` WHERE active='1'" ;
 	} else {
+		preg_match ( "/^[1-9][0-9]*/", $alertid, $matches);
+		$alertid = $matches[0];
+
 		$mysql="SELECT * ". 
 				" FROM  `ha_alerts_dd` WHERE active='2' AND id = ".$alertid ;
 	}
@@ -112,7 +115,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 				if (mysql_query($mysql)) {
 					$inserts+=mysql_affected_rows();
 				} else {
-					if (mysql_errno()<>1062) mySqlError($sql); 
+					if (mysql_errno()<>1062) mySqlError($mysql); 
 				}
 			}
 		}

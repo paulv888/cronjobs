@@ -4,6 +4,7 @@ include_once 'defines.php';
 include_once 'includes/shared_db.php';
 include_once 'includes/shared_ha.php';
 include_once 'includes/shared_gen.php';
+include_once 'process.php';
 
 function monitorDevices() {
 	$mysql = 'SELECT * FROM `ha_vw_monitor_combined` WHERE `linkmonitor` = "POLL"';
@@ -40,7 +41,7 @@ function monitorDevice($deviceid, $pingport, $montype) {
 	}
 	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceid</br>";
 	UpdateMyLink($deviceid, $curlink, SIGNAL_MONITOR_DEVICES, COMMAND_LINK_STATUS);
-	if ($montype == MONITOR_STATUS || $montype == MONITOR_LINK_STATUS) UpdateStatus ($deviceid,$statverb) ;
+	if ($montype == MONITOR_STATUS || $montype == MONITOR_LINK_STATUS) UpdateStatus ($deviceid,$curstat) ;
 }
 
 function pingip($host, $port, $timeout)

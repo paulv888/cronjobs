@@ -1,4 +1,5 @@
 //This Javascript hides the iPhones Navigation Bar and sets the window width
+//This Javascript hides the iPhones Navigation Bar and sets the window width
 var isMSIE = /*@cc_on!@*/0;
 var lastKey = null;
 if (isMSIE) {
@@ -114,7 +115,7 @@ function processData(data) {
 				});
 		} else {
 			$('[remotekey=' + temp1[0] + ']').each(function(index){
-					$(this).removeClass("off on").addClass(temp1[1]);
+					$(this).removeClass("off on unknown").addClass(temp1[1]);
 				});
 		}
 		return (this.length !== 0); // will stop running after "three"
