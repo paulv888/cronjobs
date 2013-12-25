@@ -33,6 +33,7 @@ function OpenTCP($host,$service_port, $for) {
 		$errormsg = socket_strerror($errorcode);
 		echo $errorcode.$errormsg."</br>";
 	}
+	return socket;
 }
 
 function WriteTCP($command) {
