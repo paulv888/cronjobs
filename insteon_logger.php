@@ -53,12 +53,12 @@ if(version_compare(PHP_VERSION, "5.3.0", '<')){
 	declare(ticks = 1);
 }
 
-pcntl_signal(SIGTERM, "signal_handler");
-pcntl_signal(SIGHUP, "signal_handler");
-pcntl_signal(SIGINT, "signal_handler");
+//pcntl_signal(SIGTERM, "signal_handler");
+//pcntl_signal(SIGHUP, "signal_handler");
+//pcntl_signal(SIGINT, "signal_handler");
 
 if(version_compare(PHP_VERSION, "5.3.0", '>=')){
-	pcntl_signal_dispatch();
+//	pcntl_signal_dispatch();
 	console::log("Signal dispatched");
 }
 

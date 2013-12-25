@@ -98,7 +98,7 @@ $plmcmd = array (
 );
 
 //#create a backwards lookup on hexdec code
-$plmcmd2string = array_reverse($plmcmd);
+$plmcmd2string = array_flip($plmcmd);
 
 $plmcmdlen = array (
 	'0250' => array (11, 11),
