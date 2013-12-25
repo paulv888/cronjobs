@@ -15,6 +15,9 @@ echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 
 function UpdateTemps() {
+	global $pdo;
+	global $thermostats;
+	
 	$today = date( 'Y-m-d' );
 	$yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
 	

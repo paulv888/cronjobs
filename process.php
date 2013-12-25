@@ -295,7 +295,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 		}
-		CloseTCP();
+		CloseTCP("X10");
 		$feedback = newStatus($deviceid,$commandid);
 		logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, $value);
 		break;

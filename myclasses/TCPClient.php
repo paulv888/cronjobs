@@ -33,7 +33,7 @@ function OpenTCP($host,$service_port, $for) {
 		$errormsg = socket_strerror($errorcode);
 		echo $errorcode.$errormsg."</br>";
 	}
-	return socket;
+	return $socket;
 }
 
 function WriteTCP($command) {
@@ -50,12 +50,14 @@ function ReadTCP() {
 	return $resp;
 }
 
-function CloseTCP(){
+function CloseTCP($for){
 
 	global $socket;
 	
-	$line = "?Close?";
-	socket_write($socket, $line, strlen ($line));
+	if ($for == "X10") {	
+		$line = "?Close?";
+		socket_write($socket, $line, strlen ($line));
+	}
 	socket_close($socket);
 }
 ?>
