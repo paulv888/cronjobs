@@ -45,7 +45,7 @@ function mysql_insert_assoc ($my_table, $my_array) {
        $sql = "INSERT INTO $my_table ";
 
        // create comma-separated string of column names, enclosed in parentheses
-       $sql .= "(" . implode(", ", $columns) . ")";
+       $sql .= "(`" . implode("`, `", $columns) . "`)";
        $sql .= " values ";
 
        // create comma-separated string of values, enclosed in parentheses

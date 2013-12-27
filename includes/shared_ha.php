@@ -34,7 +34,8 @@ function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 
 //					echo abs($nowdt-$last) / 60 . "min</br>";
 					if (abs($nowdt-$last) / 60 > $min) {
 						echo "Really offline"."</br>";
-						logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == LINK_UP ? "Up" : "Down"));
+						$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
+						logEvent($log);
 						$mysql = "Update `ha_vw_monitor_combined` Set " .
 								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 								  " `link` = '" . $link . "'" .
@@ -47,7 +48,8 @@ function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 
 				}
 			} else {   								// previous was down update to online and log event
 				echo "Previous was down update to online and log event"."</br>";
-				logEvent(COMMAND_SEND, $callsource, $deviceid, $commandid, ($link == LINK_UP ? "Up" : "Down"));
+				$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
+				logEvent($log);
 				$mysql = "Update `ha_vw_monitor_combined` Set " .
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 						  " `link` = '" . $link . "'" .
@@ -127,7 +129,8 @@ function udate($format, $utimestamp = null)
     return date(preg_replace('`(?<!\\\\)u`', $milliseconds, $format), $timestamp);
 }
 
-function logEvent($inout, $sourceID, $deviceid, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
+function logEvent($log) {
+	//	$inout, $source, $deviceID, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
 	// Do some validation first
 
 	// get device id
@@ -165,13 +168,9 @@ function logEvent($inout, $sourceID, $deviceid, $commandID, $value = Null, $extd
 	$time = date("Y-m-d H:i:s");
 
 	$mysql = 'SELECT * FROM `ha_events` ' .
-			' WHERE `inout` = '.$inout. ' AND `source` ='.$sourceID.' AND commandID = '.$commandID.
-			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.$gmttime.'"';
-	if ($deviceid == NULL) {
-		$mysql .= ' AND `deviceID` IS NULL';
-	} else {
-		$mysql .= ' AND `deviceID` = '.$deviceid;
-	}
+			' WHERE `inout` = '.$log['inout']. ' AND `source` ='.$log['source'].' AND commandID = '.$log['commandID'].
+			' AND  DATE_ADD(`mdate`,INTERVAL 10 SECOND) > "'.$gmttime.'"';
+	if (array_key_exists("deviceID",$log )) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
 
 	if (!$resevents=mysql_query($mysql)) {	
 		mySqlError($mysql);
@@ -185,42 +184,20 @@ function logEvent($inout, $sourceID, $deviceid, $commandID, $value = Null, $extd
 		//
 		//	Get device type and monitorid
 		//
-		$devicetype= NULL;
-		if ($deviceid != NULL) {
-			$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$deviceid;
+		$log['typeID'] = NULL;
+		if (array_key_exists("deviceID",$log )) {
+			$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ='.$log['deviceID'];
 			$resdevice=mysql_query($mysql);
 			$rowdevice=mysql_fetch_array($resdevice);
-			$devicetype=$rowdevice['typeID'];
+			$log['typeID'] = $rowdevice['typeID'];
 		}
 		
-		$mysql= 'INSERT INTO `ha_events` (
-						`time_date` ,
-						`mdate` ,
-						`milliseconds` ,
-						`inout` ,
-						`source` ,
-						`typeID` ,
-						`deviceID` ,
-						`commandID` ,
-						`data` , 
-						`extdata` ,
-						`repeatcount` ,
-						`logLevel`
-					)
-					VALUES ( '.
-						'"'.$gmttime.'",'.
-						'"'.$gmttime.'",'. 
-					 	''.$ms.',' .		 				/* millisec 		*/
-						''.$inout.','. 					/*  in 				*/
-						''.$sourceID.','.			/* source arduino 	*/
-						'"'.$devicetype.'",'.
-						'"'.$deviceid.'",'.
-						''.$commandID.','.
-						'"'.$value.'",'.
-						'"'.$extdata.'",' .
-						''.$repeatcount.','.
-						 	'1)';
-		if (!mysql_query($mysql)) mySqlError($mysql);
+		$log['time_date'] = $gmttime;
+		$log['mdate'] = $gmttime;
+		$log['milliseconds'] = udate("u");
+		if (!array_key_exists("logLevel",$log )) $log['logLevel'] = 1;
+		
+		mysql_insert_assoc ("ha_events", $log);
 	}
 }
 ?>
