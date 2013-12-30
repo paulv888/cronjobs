@@ -319,27 +319,38 @@ class SocketTransport
 	 */
 	public function readAll()
 	{
-		$d = "";
-		$r = 0;
-		$readTimeout = socket_get_option($this->socket,SOL_SOCKET,SO_RCVTIMEO);
-		$buf = '';
-		$r += socket_recv($this->socket,$buf,1000,MSG_DONTWAIT);
-		if ($r === false) throw new SocketTransportException('Could not read '.$length.' bytes from socket; '.socket_strerror(socket_last_error()), socket_last_error());
-		$d .= $buf;
-		
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+			return  $this->readAll_windows();
+		} else {
+			return $this->readAll_other();
+		}
+	}
+	private function readAll_Other()
+	{
+	
 		// wait for data to be available, up to timeout
 		$r1 = array($this->socket);
 		$w = null;
 		$e = array($this->socket);
+		$readTimeout = socket_get_option($this->socket,SOL_SOCKET,SO_RCVTIMEO);
 		$res = socket_select($r1,$w,$e,$readTimeout['sec'],$readTimeout['usec']);
 		
 		// check
 		if ($res === false) throw new SocketTransportException('Could not examine socket; '.socket_strerror(socket_last_error()), socket_last_error());
 		if (!empty($e)) throw new SocketTransportException('Socket exception while waiting for data; '.socket_strerror(socket_last_error()), socket_last_error());
-		if (empty($r1)) return false;//throw new SocketTransportException('Timed out waiting for data on socket');
+		if (empty($r1)) return false; // Nothing to read, return;
+
+		$d = "";
+		$r = 0;
+		$buf = '';
+		$r += socket_recv($this->socket,$buf,1000,MSG_DONTWAIT);
+		if ($r === false) throw new SocketTransportException('Could not read '.$length.' bytes from socket; '.socket_strerror(socket_last_error()), socket_last_error());
+		$d .= $buf;
 		return $d;
 	}
-	public function windoes_readAll()
+
+
+	private function readAll_windows()
 	{
 		//
 		// Wait here max of timeout, if nothing received return
@@ -362,7 +373,6 @@ class SocketTransport
 			return $d;
 		}
 	}	
-
 	/**
 	 * Write (all) data to the socket.
 	 * Timeout throws SocketTransportException

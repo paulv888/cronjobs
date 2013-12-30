@@ -29,12 +29,12 @@ function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 
 					$min = $temp[0]*1440 + $temp2[0]*60 + $temp2[1];
 					$last = strtotime($row['mdate']);
 					$nowdt = strtotime(date("Y-m-d H:i:s"));
-//					echo $row['mdate']."</br>";
-//					echo date("Y-m-d H:i:s")."</br>";
-//					echo abs($nowdt-$last) / 60 . "min</br>";
+//					echo $row['mdate']."</br>\n";
+//					echo date("Y-m-d H:i:s")."</br>\n";
+//					echo abs($nowdt-$last) / 60 . "min</br>\n";
 					if (abs($nowdt-$last) / 60 > $min) {
-						echo "Really offline"."</br>";
-						$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
+						echo "Down, Previous was up; Time expired"."</br>\n";
+						$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
 						logEvent($log);
 						$mysql = "Update `ha_vw_monitor_combined` Set " .
 								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
@@ -43,12 +43,12 @@ function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 
 						if (!mysql_query($mysql)) mySqlError($mysql);
 						if ($row['on_change']) echo RunScheme ($row['on_change'], $callsource);
 					} else {
-						echo "Not offline yet"."</br>";
+						echo "Down, Previous was up; Time expired"."</br>\n";
 					}
 				}
 			} else {   								// previous was down update to online and log event
-				echo "Previous was down update to online and log event"."</br>";
-				$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
+				echo "Up, Previous was down; Update to online and log event"."</br>\n";
+				$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
 				logEvent($log);
 				$mysql = "Update `ha_vw_monitor_combined` Set " .
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
@@ -59,7 +59,7 @@ function UpdateMyLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 
 			}
 		} else {
 			if ($link == LINK_UP) { 			// Link is up, update time
-				echo "Up and same as prev status only update time"."</br>";
+//				echo "Up and same as prev status only update time"."</br>\n";
 				$mysql = "Update `ha_vw_monitor_combined` Set " .
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
 						  " Where(`deviceid` ='" . $deviceid . "')";
@@ -167,10 +167,16 @@ function logEvent($log) {
 	$ms = udate("u");
 	$time = date("Y-m-d H:i:s");
 
+	if (!array_key_exists("deviceID",$log )) $log['deviceID'] = Null;
+	if (!array_key_exists("commandID",$log )) $log['commandID'] = Null;
+	if (!array_key_exists("inout",$log )) $log['inout'] = Null;
+	if (!array_key_exists("sourceID",$log )) $log['sourceID'] = Null;
+	
 	$mysql = 'SELECT * FROM `ha_events` ' .
-			' WHERE `inout` = '.$log['inout']. ' AND `source` ='.$log['source'].' AND commandID = '.$log['commandID'].
+			' WHERE `inout` = '.$log['inout']. ' AND `sourceID` ='.$log['sourceID'].' AND commandID = '.$log['commandID'].
 			' AND  DATE_ADD(`mdate`,INTERVAL 10 SECOND) > "'.$gmttime.'"';
-	if (array_key_exists("deviceID",$log )) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
+
+	if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
 
 	if (!$resevents=mysql_query($mysql)) {	
 		mySqlError($mysql);
@@ -185,7 +191,7 @@ function logEvent($log) {
 		//	Get device type and monitorid
 		//
 		$log['typeID'] = NULL;
-		if (array_key_exists("deviceID",$log )) {
+		if ($log['deviceID'] != Null) {
 			$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ='.$log['deviceID'];
 			$resdevice=mysql_query($mysql);
 			$rowdevice=mysql_fetch_array($resdevice);

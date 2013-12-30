@@ -7,7 +7,10 @@ include_once 'includes/shared_gen.php';
 include_once 'process.php';
 
 function monitorDevices() {
-	$mysql = 'SELECT * FROM `ha_vw_monitor_combined` WHERE `linkmonitor` = "POLL"';
+	$mysql = 'SELECT `ha_mf_devices`.`id` AS `deviceID` , `ha_mf_devices`.`monitortypeID` AS `monitortypeID` , `ha_mf_monitor_link`.`linkmonitor` AS `linkmonitor` , '.
+			'`ha_mf_monitor_link`.`pingport` AS `pingport` FROM ha_mf_devices '.
+			' LEFT JOIN `ha_mf_monitor_link` ON `ha_mf_devices`.`id` = `ha_mf_monitor_link`.`deviceID` '.
+			' WHERE (`ha_mf_devices`.`monitortypeID` > 1 AND `linkmonitor` = "POLL")';
 	
 	if (!$reslinks = mysql_query($mysql)) {
 		mySqlError($mysql); 

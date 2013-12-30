@@ -230,7 +230,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$result = $func($deviceid, $value);
 		$feedback = newStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
-		$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		break;
 	case COMMAND_CLASS_EMAIL:
@@ -242,7 +242,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$message= $rowtext['message'];
 		$myresult = createMail($callsource,$alertid,$subject,$message);
 		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
-		$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		break;
 	case COMMAND_CLASS_INSTEON:
@@ -262,7 +262,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if (MYDEBUG) echo $url."</p>";
 		$post = restClient::post($url);
 		$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
-		$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		usleep(INSTEON_SLEEP_MICRO);
 		if ($feedback) {
@@ -300,14 +300,14 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		}
 		CloseTCP("X10");
 		$feedback = newStatus($deviceid,$commandid);
-		$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		break;
 	case COMMAND_CLASS_INTERNAL:
 		$func = $rowcommands['command'];
 		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']." value ". $value."</p>";
 		$feedback = $func($value);
-		$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		break;
 	default:
@@ -319,7 +319,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			if (MYDEBUG) echo $url.$tcomm."</p>";
 			$post = restClient::post($url, $tcomm);
 			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
-			$log = Array ('inout' => COMMAND_SEND, 'source' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+			$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 			logEvent($log);
 		}
 		break;
