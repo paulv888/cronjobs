@@ -15,7 +15,13 @@ $.ajaxSetup({
     complete:function(){
         // hide gif here, eg:
         $("div#spinner").hide();
-    }
+    },
+    error:function(){
+        // hide gif here, eg:
+        $("div#spinner").hide();
+		alert ("Error");
+    },
+	timeout: 30000 // sets timeout to 3 seconds
 });
 var spinnerVisible = false;
 function showProgress() {
@@ -106,7 +112,7 @@ function processData(data) {
 	jQuery.each(temp, function() {
 		var temp1 = new Array();
 		temp1 = this.split(' ');
-		if (temp1[0] == 'OK') return;
+		if (temp1[0].indexOf('OK') > -1) return;
 		if (temp1[2] != null) 
 		{
 			//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
@@ -130,7 +136,10 @@ function processData(data) {
 			$.post("process.php", { remotekey:lastKey, setvalue:s = $('#setval').find(":selected").val() },
 			function(data){
 				processData(data);
-			});
+			})
+			.error(function() {
+				alert ("error");
+			})
 		};
 		return false;
 	});

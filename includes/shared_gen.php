@@ -1,6 +1,4 @@
 <?php
-define( 'DEBUG', FALSE );
-
 function to_celcius($f) {
  return roundUpToAny((5/9)*($f-32),0.5);
 }

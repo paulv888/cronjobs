@@ -1,8 +1,5 @@
 <?php
 //require 'thermo_config.php';
-require 'connect-db.php';
-include_once 'defines.php';
-require 'myclasses/thermo_lib.php';
 
 // Future logging method
 function logIt( $msg )
@@ -22,7 +19,7 @@ function doError( $msg )
 global $timezone;
 
 // Set timezone for all PHP functions
-date_default_timezone_set( $timezone );
+//date_default_timezone_set( $timezone );
 
 // Always connect to the database, don't wait for a request to connect
 $pdo = new PDO( $dbConfig['dsn'], $dbConfig['username'], $dbConfig['password'] );

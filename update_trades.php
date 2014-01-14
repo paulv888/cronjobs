@@ -1,13 +1,6 @@
 <?php
-require 'connect-db.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
-include 'myclasses/Position.class.php';
-include 'myclasses/Orders.class.php';
-include 'includes/yahoostreamer.php';
-include_once 'includes/mysendmail.php';
+require_once 'includes.php';
+
 define("MY_DEVICE_ID", 103);
 
 // TODO: Error Handling http://www.w3schools.com/php/php_error.asp
@@ -28,15 +21,15 @@ echo MoveTransactionsPositions()." Positions Opened or Closed  <br/>\r\n";
 echo GetPrices("trd_indexes", "trd_idx_performance"). " Indexes Updated <br/>\r\n";
 echo GetPrices("trd_positions","trd_pos_performance"). " Open Positions Prices Updated <br/>\r\n";
 echo UpdateRowvalues()." Calculation Queries Executed <br/>\r\n";
-echo Alerts()." Alerts generated <br/>\r\n";
+echo AlertsTR()." Alerts generated <br/>\r\n";
 $starttime = '0700';
 $endtime = '2000';
 if(date('Hi')>$starttime and date('Hi')<$endtime) {
-	echo AlertsActions()." Alerts sent <br/>\r\n";
+	echo AlertsActionsTR()." Alerts sent <br/>\r\n";
 } else {
 	echo "Not sending Alerts. ". date('H:i')." outside $starttime - $endtime<br/>\r\n";
 }
-echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 
 function FindInFlex($flexresponse, $symbol) {
@@ -714,7 +707,7 @@ function UpdateRowvalues() {
 	Return $queries;
 } 
 
-function Alerts(){
+function AlertsTR(){
 
 	$mysql="SELECT * ". 
 			" FROM  `trd_alerts_dd` WHERE active=1" ;
@@ -734,7 +727,7 @@ function Alerts(){
 
 }
 
-function AlertsActions(){
+function AlertsActionsTR(){
 
 
 	$mysql="SELECT trd_pos_alerts.id as id, `trd_pos_alerts`.`action_date`, `trd_alert_actions`.`email`, `trd_alert_actions`.`description`, ".

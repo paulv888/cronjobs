@@ -1,14 +1,10 @@
 <?php
-require 'connect-db.php';
-include_once 'defines.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
+require_once 'includes.php';
 
 define("MY_DEVICE_ID", 135);
 
 echo UpdateRowvalues()." Calculation Queries Executed <br/>\r\n";
-echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 function UpdateRowvalues() {
 

@@ -1,24 +1,15 @@
 <?php 
-require 'connect-db.php';
-include_once 'defines.php';
-include_once 'myclasses/RestClient.class.php';
-include_once 'myclasses/TCPClient.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
-include_once 'includes/mysendmail.php';
-include_once 'thermo_process.php';
-include_once 'includes/2701HG-B.php';
-include_once 'includes/create_alerts.php';
+require_once 'includes.php';
 
-define( 'MYDEBUG', FALSE );
-//define( 'MYDEBUG', TRUE );
+//define( 'MYDEBUG', FALSE );
+define( 'MYDEBUG', TRUE );
+
 // 
 // Called with remotekey or 
 //                with a dropdown selected remotekey and command = selected
 //                no schemes supported with dropdowns 
 //  
+
 if (isset($_POST["remotekey"])) {						// Called from remote with key number
 	$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
 	$remotekeyid=$_POST["remotekey"];
@@ -75,10 +66,10 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 					$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowkeys['deviceID']);
 					$rowmonitor = mysql_fetch_array($resmonitor);
 					if ($rowmonitor) {
-						$commandid = ($rowmonitor['status'] == STATUS_ON ? STATUS_OFF : STATUS_ON); // toggle on/off
+						$commandid = ($rowmonitor['status'] == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
 					}
 				} else {
-						$commandid = STATUS_ON;						
+						$commandid = COMMAND_ON;						
 				}
 			}
 			if ($result=SendCommand($callsource, $rowkeys['deviceID'], $commandid,  $setvalue)) {
@@ -123,7 +114,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 }
 
 
-function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey, c) derived from alerts
+function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alertid = NULL) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey, c) derived from alerts
 
 // Check conditions
 	preg_match ( "/^[1-9][0-9]*/", $schemeid, $matches);
@@ -157,9 +148,9 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME) {      
 				if (MYDEBUG) echo "SYSTEM_STATUS_ALARM_ARMED</p>";
 				$testvalue = $rowconf['alarm_armed'];
 				break;
-			case SYSTEM_STATUS_DAY_LIGHT: 
-				if (MYDEBUG) echo "SYSTEM_STATUS_DAY_LIGHT</p>";
-				$testvalue = $rowconf['day_light'];
+			case SYSTEM_STATUS_IS_DARK: 
+				if (MYDEBUG) echo "SYSTEM_STATUS_IS_DARK</p>";
+				$testvalue = $rowconf['is_dark'];
 				break;
 			case SYSTEM_STATUS_PAUL_TRIP: 
 				if (MYDEBUG) echo "SYSTEM_STATUS_PAUL_TRIP</p>";
@@ -182,6 +173,7 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME) {      
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
 	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";
 	$resschemesteps	= mysql_query($sqlstr);
+	$feedback = '';
 	while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
 		if ($result=SendCommand($callsource, $rowshemesteps['deviceID'], $rowshemesteps['commandID'],  (!IsNullOrEmptyString($rowshemesteps['value']) ? $rowshemesteps['value'] : NULL),$alertid,($rowshemesteps['alert_textID']>0 ? $rowshemesteps['alert_textID'] : 0))) {
 			$feedback .= $result;
@@ -213,10 +205,14 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	}
 	
 	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
-			"ha_mf_commands.id=ha_mf_commands_detail.commandid WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid);
-	$rowcommands = mysql_fetch_array($rescommands);
-	if (!$rowcommands)  mySqlError($mysql);
-	
+			"ha_mf_commands.id=ha_mf_commands_detail.commandid WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1");
+	if (!$rowcommands = mysql_fetch_array($rescommands))  {
+		mySqlError($mysql);
+		return false;			// error abort
+	} elseif (!mysql_num_rows($rescommands)) {
+			return true;		// device not in use or command not found, just skip it
+	}		
+
 	if (MYDEBUG) echo "commandid ".$commandid."</p>";
 	if (MYDEBUG) echo "commandclassid ".$commandclassid."</p>";
 	if (MYDEBUG) echo "value ".$value."</p>";
@@ -228,7 +224,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
 		$result = $func($deviceid, $value);
-		$feedback = newStatus($deviceid, $result[0]);
+		$feedback = verbStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
 		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
@@ -266,8 +262,8 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		logEvent($log);
 		usleep(INSTEON_SLEEP_MICRO);
 		if ($feedback) {
-			$feedback = newStatus($deviceid,($commandid));
-			UpdateStatus($deviceid,($commandid == STATUS_OFF ? STATUS_OFF : STATUS_ON));
+			$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
+			UpdateStatus($deviceid, $commandid, $callsource);
 		}
 		break;
 	case COMMAND_CLASS_X10:
@@ -279,7 +275,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$x10[0]->Sender = "plc";
 		$x10[0]->HouseCode = $rowdevices['code'];
 		$x10[0]->Unit = $rowdevices['unit'];
-		if ($commandid ==  STATUS_ON && $value>0 && $value<100) {
+		if ($commandid ==  COMMAND_ON && $value>0 && $value<100) {
 			$x10[0]->Command = "On";
 			$x10[0]->CmdData = NULL;
 			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
@@ -299,7 +295,12 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			WriteTCP($x10[0]->asXML());
 		}
 		CloseTCP("X10");
-		$feedback = newStatus($deviceid,$commandid);
+		$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
+		// TODO: if device not on remote verbStatus gives null, halting processing schema/alert
+		if ($feedback == NULL) $feedback = true;
+		//echo "feedback***" . $feedback."***</p>";
+		// handled in TCP bridge
+		//UpdateStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
 		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		break;
@@ -327,7 +328,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	return $feedback;
 } 
 
-function newStatus ($deviceid, $status) {
+function verbStatus ($deviceid, $status) {
 // breaks if multiple keys for same device only 1 will be udated
 //	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
 //	$rowmonitor = mysql_fetch_array($resmonitor);

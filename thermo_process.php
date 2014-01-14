@@ -1,7 +1,4 @@
 <?php
-require(dirname(__FILE__).'/thermo_common.php');
-include_once 'includes/shared_ha.php';
-
 //touch( '/home/fratell1/freitag.theinscrutable.us/thermo2/scripts/thermo_update_status.start' );
 
 /**
@@ -46,7 +43,7 @@ $now = date( 'Y-m-d H:i:s' );
 			$feedback[] = $stat->Toggle($status);
 			$feedback[]=to_celcius($stat->ttemp);
 
-			UpdateStatus($thermostatRec['deviceID'],$feedback[0]);
+			UpdateStatus($thermostatRec['deviceID'],NULL,SIGNAL_SOURCE_THERMO_UPDATE_TEMPS,$feedback[0]);
 			UpdateWeatherNow( $thermostatRec['deviceID'], to_celcius($stat->temp), $feedback[1]);
 
 			return $feedback;
@@ -100,7 +97,7 @@ $now = date( 'Y-m-d H:i:s' );
 			$feedback[]=$stat->getTargetOnOff();
 			$feedback[]=to_celcius($stat->TempAdd($addtemp));
 
-			UpdateStatus($thermostatRec['deviceID'],$feedback[0]);
+			UpdateStatus($thermostatRec['deviceID'],NULL,SIGNAL_SOURCE_THERMO_UPDATE_TEMPS,$feedback[0]);
 			UpdateWeatherNow( $thermostatRec['deviceID'], to_celcius($stat->temp), $feedback[1]);
 			
 			return $feedback;

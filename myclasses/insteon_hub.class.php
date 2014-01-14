@@ -1,6 +1,4 @@
 <?php
-include_once 'defines.php';
-
 class InsteonHub
 {
 protected $socket;
@@ -61,7 +59,7 @@ private static $inout_a = Array (
 		//$this->transport->setRecvTimeout(900000); // 15 min
 		//$this->transport->setSendTimeout(30000);
 
-		if (MYDEBUG) $this->transport->debug = true;
+		if (DEBUG_INSTEON) $this->transport->debug = true;
 		
 		$this->inst_coder = new InsteonCoder();
 		
@@ -69,7 +67,6 @@ private static $inout_a = Array (
 		$this->incompl_messages = new SplQueue();
 		
 		$this->last = strtotime(date("Y-m-d H:i:s"));
-		echo date("Y-m-d H:i:s").": ".UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 		
 		$return=$this->transport->open() && $this->transport->write(hex2bin("0273"));
 		
@@ -90,16 +87,16 @@ private static $inout_a = Array (
 			$result = $this->transport->readAll();
 			if ($result) {
 				$plm_decode_result = $this->inst_coder->plm_decode(bin2hex($result));
-				$nowdt = strtotime(date("Y-m-d H:i:s"));
-				if ((int)(abs($nowdt-$this->last) / 60)>=14) {
-					$this->last = strtotime(date("Y-m-d H:i:s"));
-					echo date("Y-m-d H:i:s").": ".UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
-					$this->transport->write(hex2bin("0273"));
-				}
-				if (MYDEBUG) print_r($plm_decode_result);
+				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
+				if (DEBUG_INSTEON) print_r($plm_decode_result);
 				$this->addMessage($plm_decode_result);		
 			} else {
-//				$result = $this->transport->write(hex2bin("0273"));
+				// havent heard anything for 15min, check if still alive.
+				$nowdt = strtotime(date("Y-m-d H:i:s"));
+				if ((int)(abs($nowdt-$this->last) / 60)>=15) {
+					$this->last = strtotime(date("Y-m-d H:i:s"));
+					$this->transport->write(hex2bin("0273"));
+				}
 			}
 		}
 		return $this->messages->dequeue();
@@ -116,8 +113,9 @@ private static $inout_a = Array (
 				$incompl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 				$this->incompl_messages->enqueue($incompl); 
 				return ;								
-			} else {											// Complete messages and push				
-				foreach ($this->incompl_messages as $incompl) {
+			} else {													// Complete messages and push				
+				unset ($newincompl);
+				foreach ($this->incompl_messages as $incompl) {			// Handle many addresses with 1 command
 					if ($incompl['code'] == $x10['code'] && $incompl['plmcmdID'] == $plm_decode_result['plmcmdID']) {
 						$compl = $incompl;
 						$compl['commandID'] = $x10['commandID'];
@@ -125,20 +123,39 @@ private static $inout_a = Array (
 						$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 						$compl ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 						$this->messages->enqueue($compl);
+						//if (DEBUG_INSTEON) print_r($compl);
+						if ($compl['commandID'] == 5) {			// Push extra message for status request response (does not have an Unit Code)
+							$newincompl ['code'] = $compl['code'];
+							$newincompl ['unit'] = $compl['unit'];
+							$newincompl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
+							$newincompl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
+						}
 					} 			
 					$this->incompl_messages->dequeue(); // dequeue , different code or handled message  
 					// Should only trow old ones away... 
 				}
+				if (isset($newincompl)) $this->incompl_messages->enqueue($newincompl); 
+				//echo "3pushing newincompl".$this->incompl_messages->count()."\n";
 			}
-		}
-		if (array_key_exists("insteon",$plm_decode_result)) {
-			$insteon = $plm_decode_result['insteon'];
+		} else {
 			$compl['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
 			$compl['code'] = "I";
-			if (array_key_exists("from",$plm_decode_result)) $compl['unit'] = strtoupper($plm_decode_result['from']); else $compl['unit']  = strtoupper($plm_decode_result['to']);
-			if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
-			if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
-			$compl['commandID'] = $insteon['commandID'];
+			if (array_key_exists("from",$plm_decode_result)) {
+				$compl['unit'] = strtoupper($plm_decode_result['from']);
+			} elseif (array_key_exists("to",$plm_decode_result)) {
+ 				$compl['unit']  = strtoupper($plm_decode_result['to']);
+			} else {
+				$compl['unit'] = NULL;
+			}
+			if (array_key_exists("insteon",$plm_decode_result)) {
+				$insteon = $plm_decode_result['insteon'];
+				if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
+				if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
+				$rescommands = mysql_query("SELECT * FROM ha_mf_commands_detail WHERE ha_mf_commands_detail.id =".$insteon['commandID']);
+				$rowcommands = mysql_fetch_array($rescommands);
+				if (!$rowcommands)  mySqlError($mysql);
+				$compl['commandID'] = $rowcommands['commandid'];
+			}
 			$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 			$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 			$compl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
@@ -151,3 +168,4 @@ private static $inout_a = Array (
 		$this->transport->close();
 	}
 }
+?>

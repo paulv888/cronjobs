@@ -1,15 +1,11 @@
 <?php
-require(dirname(__FILE__).'/thermo_common.php');
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
+require_once 'includes.php';
 
 
 define("MY_DEVICE_ID", 136);
 
 echo UpdateTemps();
-echo UpdateMylink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 
 
@@ -148,7 +144,7 @@ function UpdateTemps() {
 						$newStartDateFan = null;
 					}
 	
-					UpdateStatus($thermostatRec['deviceID'],$stat->getTargetOnOff());
+					UpdateStatus($thermostatRec['deviceID'],NULL, SIGNAL_SOURCE_THERMO_UPDATE_TEMPS, $stat->getTargetOnOff());
 					
 					// update the status table
 					logIt( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for UUID $stat->uuid" );
@@ -209,7 +205,7 @@ function UpdateTemps() {
 				logIt( "Run Time Yesterday - Inserting RTH {$stat->runTimeHeatYesterday} RTC {$stat->runTimeCoolYesterday} U $stat->uuid T $yesterday" );
 				$queryRunInsert->execute( array($thermostatRec['deviceID'], $yesterday, $stat->runTimeHeatYesterday, $stat->runTimeCoolYesterday) );
 				
-				echo UpdateMylink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
+				echo UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
 	
 			}
 			catch( Exception $e )

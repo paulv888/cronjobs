@@ -1,8 +1,4 @@
-<?PHP
-require_once 'myclasses/class.phpmailer.php' ;
-require_once 'logins.php' ;
-include_once 'defines.php';
-
+<?php
 function createMail($callsource, $id, &$subject, &$message){
 // $type == TRADE_ALERT, HA_ALERT
 
@@ -425,26 +421,27 @@ function createMail($callsource, $id, &$subject, &$message){
  			break;
 	}
  
-	if (!$resdata = mysql_query($mysql)) {	
-		mySqlError($mysql);
-		return false;
-	}
-
-	
-	if ($data = mysql_fetch_assoc($resdata)) {
-//	echo "<pre>"; print_r ($data); echo "</pre>";
-		foreach ($data as $key => $value) {
-			$pattern[$key]="/\{".$key."\}/";
+	if (isset($mysql)) {
+		if (!$resdata = mysql_query($mysql)) {	
+			mySqlError($mysql);
+			return false;
 		}
-		$subject=preg_replace($pattern, $data, $subject);
-		$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
-		$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
-		$message=preg_replace($pattern, $data, $message);
-		return TRUE;
-	} else {
-		return FALSE;
+
+		if ($data = mysql_fetch_assoc($resdata)) {
+	//	echo "<pre>"; print_r ($data); echo "</pre>";
+			foreach ($data as $key => $value) {
+				$pattern[$key]="/\{".$key."\}/";
+			}
+			$subject=preg_replace($pattern, $data, $subject);
+			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
+			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
+			$message=preg_replace($pattern, $data, $message);
+			return TRUE;
+		} else {
+			return FALSE;
+		}
 	}
-	
+	return true;
 }
 
 

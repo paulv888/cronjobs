@@ -1,22 +1,13 @@
 <?php
-// PHP 5
-
-// class definition
-class Position {
-    // define properties
-
-	// constructor
-    public function __construct() {
-    }
-
-    // define methods
+class Position
+{
     public function Add($position) {
-
-    global $mysql_link;
-    //	ticker	name 	status 	buy_sell 	type 	entry_strategy 	
-    //	stop 	target 	trend 	source 	exit_strategy 	win_ratio 	pot_loss 	next_earning_date
-    echo "Open Position: ".$position['ticker']."<br/>\r\n";
-    	$mysql="INSERT INTO `trd_positions` (".
+		global $mysql_link;
+		//	ticker	name 	status 	buy_sell 	type 	entry_strategy 	
+		//	stop 	target 	trend 	source 	exit_strategy 	win_ratio 	pot_loss 	next_earning_date
+		echo "Open Position: ".$position['ticker']."<br/>\r\n";
+    
+		$mysql="INSERT INTO `trd_positions` (".
     		"ticker, ".
     		"name, ".
     		"status, ".
@@ -48,11 +39,11 @@ class Position {
 
 	public function Update($position) {
 
-    global $mysql_link;
-    //	ticker	name 	status 	buy_sell 	type 	entry_strategy 	
-    //	stop 	target 	trend 	source 	exit_strategy 	win_ratio 	pot_loss 	next_earning_date
-    echo "Update Position: ".$position['ticker']."<br/>\r\n";
-//	UPDATE `homeautomation`.`trd_positions` SET `name` = 'name' WHERE `trd_positions`.`id` =726;
+		global $mysql_link;
+		//	ticker	name 	status 	buy_sell 	type 	entry_strategy 	
+		//	stop 	target 	trend 	source 	exit_strategy 	win_ratio 	pot_loss 	next_earning_date
+		echo "Update Position: ".$position['ticker']."<br/>\r\n";
+	//	UPDATE `homeautomation`.`trd_positions` SET `name` = 'name' WHERE `trd_positions`.`id` =726;
 
     	$mysql="UPDATE `trd_positions` ".
 			"SET ".
@@ -96,8 +87,8 @@ class Position {
 
 		$mysql="SELECT * FROM  `trd_positions` ".
 				"WHERE ticker='".$ticker."' and status IN ('ACT','PRE')";
-//echo $mysql;
-//		if ($position=FetchRow("trd_positions", $mysql)) {
+	//echo $mysql;
+	//		if ($position=FetchRow("trd_positions", $mysql)) {
 		if ($position=FetchRow($mysql)) {
 			$this->position=$position;
 			if ($my_array = $this->GetValue(($this->position['status']=='ACT' || $this->position['status']=='PRE' ? "OPEN" : "CLOSE"),$this->position['id'])) {
@@ -160,7 +151,6 @@ class Position {
 		return $newid; 
 	}	
 
-
     private function GetValue($oc,$posid) {
     	$ord= new Orders($oc);
     	$ord->posid=$posid;
@@ -183,4 +173,3 @@ class Position {
     }
 }
 ?>
-

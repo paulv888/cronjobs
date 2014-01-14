@@ -1,7 +1,4 @@
 <?php
-define( 'DEBUG', FALSE );
-
-
 function openLockFile($lockFileName) {
 	global $lock;
 	

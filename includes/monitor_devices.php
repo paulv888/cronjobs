@@ -1,11 +1,4 @@
 <?php
-require 'connect-db.php';
-include_once 'defines.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
-include_once 'process.php';
-
 function monitorDevices() {
 	$mysql = 'SELECT `ha_mf_devices`.`id` AS `deviceID` , `ha_mf_devices`.`monitortypeID` AS `monitortypeID` , `ha_mf_monitor_link`.`linkmonitor` AS `linkmonitor` , '.
 			'`ha_mf_monitor_link`.`pingport` AS `pingport` FROM ha_mf_devices '.
@@ -43,8 +36,8 @@ function monitorDevice($deviceid, $pingport, $montype) {
 		$statverb = "Offline";
 	}
 	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceid</br>";
-	UpdateMyLink($deviceid, $curlink, SIGNAL_MONITOR_DEVICES, COMMAND_LINK_STATUS);
-	if ($montype == MONITOR_STATUS || $montype == MONITOR_LINK_STATUS) UpdateStatus ($deviceid,$curstat) ;
+	UpdateLink($deviceid, $curlink, SIGNAL_MONITOR_DEVICES, COMMAND_LINK_STATUS);
+	UpdateStatus ($deviceid, NULL, SIGNAL_MONITOR_DEVICES, $curstat) ;
 }
 
 function pingip($host, $port, $timeout)

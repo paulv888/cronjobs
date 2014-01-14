@@ -1,15 +1,4 @@
 <?php
-require 'connect-db.php';
-include_once 'defines.php';
-require_once 'logins.php' ;
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
-include_once 'includes/simple_html_dom.php';
-include_once 'myclasses/RestClient.class.php';
-include_once 'includes/create_alerts.php';
-
 function natSessions() {
 	$result=ImportSessions()." Nat Sessions Read <br/>\r\n";
 	$result.=MoveHistory()." Sessions moved to History <br/>\r\n";

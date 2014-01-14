@@ -17,14 +17,12 @@ define("LINK_DOWN", 0);
 define("LINK_UP", 1);
 
 // Event log values
-define("EVENT_OUT", 1);
-define("EVENT_IN", 2);
 define("SOURCE_ARD_BRDIGE", 9);
 
 // Current Status Values
-define("STATUS_ON", 17 );
-define("STATUS_OFF", 20 );
-define("STATUS_UNKNOWN", 0 );
+define("STATUS_ON", 1 );
+define("STATUS_OFF", 0 );
+define("STATUS_UNKNOWN", 2 );
 
 // Current Status Values
 define("COMMAND_SEND", 1 );
@@ -86,6 +84,7 @@ define ("SYSTEM_STATUS_DAY_LIGHT", 3);
 define ("SYSTEM_STATUS_PAUL_TRIP", 4);
 
 // These are Internal Commands
+// Move these to status!!!!
 define("ERROR_CALIBRATE", 127);
 define("COMMAND_RF_TIMEOUT", 128);
 define("ERROR_RF_SEND_FAILED", 129);

@@ -1,10 +1,5 @@
 <?php
-require 'connect-db.php';
-include_once 'defines.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
+require_once 'includes.php';
 
 /*
  Process can execute following commands

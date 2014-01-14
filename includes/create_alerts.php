@@ -1,15 +1,6 @@
 <?php
-require 'connect-db.php';
-include_once 'defines.php';
-include_once 'includes/shared_db.php';
-include_once 'includes/shared_file.php';
-include_once 'includes/shared_ha.php';
-include_once 'includes/shared_gen.php';
-include_once 'includes/mysendmail.php';
-include_once 'process.php';
-
-//define("DEBUG_ALERT", TRUE);
-define("DEBUG_ALERT", FALSE);
+define("DEBUG_ALERT", TRUE);
+//define("DEBUG_ALERT", FALSE);
 
 function AlertsActions(){
 

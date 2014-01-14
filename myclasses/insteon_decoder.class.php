@@ -133,7 +133,7 @@ private static $insteonCmd = array (
 //'SA13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'257'),
 'SA13' => array ('Cmd1Name'=>'Manual Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'211'),
 'SA13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'201'),
-'SC13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'257'),
+'SC13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'155'),
 'SD14' => array ('Cmd1Name'=>'Light OFF Fast','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'202'),
 'SA14' => array ('Cmd1Name'=>'ALL-Link Alias 2 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'157'),
 'SC14' => array ('Cmd1Name'=>'ALL-Link Alias 2 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'157'),

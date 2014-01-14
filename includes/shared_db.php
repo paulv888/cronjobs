@@ -1,6 +1,4 @@
 <?php
-define( 'DEBUG', FALSE );
-
 function mysql_insert_assoc ($my_table, $my_array) {
      //
    // Insert values into a MySQL database
@@ -91,9 +89,23 @@ function RunQuery($mysql) {
    
 function mySqlError($mysql) {
 		global $mysql_link;
-
-		echo "Error on: ".$mysql."<br/>\r\n";
-		echo mysql_errno($mysql_link) . ": " . mysql_error($mysql_link) . "<br/>\r\n";
+		global $dbConfig;
+		
+		if (mysql_errno($mysql_link)==2006) {
+			$retry = 5;
+			while ($retry-- > 0) {
+				echo "Trying to reconnect...\n";
+				sleep (10);
+				mysql_close($mysql_link);
+				$mysql_link = mysql_connect($dbConfig['server'], $dbConfig['username'], $dbConfig['password']);
+				if (mysql_select_db($dbConfig['database'],$mysql_link)) return 1;
+			}
+			echo 'Lost connection, exiting...\n';
+			exit;
+		} else {
+			echo "Error on: ".$mysql."<br/>\r\n";
+			echo mysql_errno($mysql_link) . ": " . mysql_error($mysql_link) . "<br/>\r\n";
+		}
 }
 
 ?>
