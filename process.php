@@ -52,6 +52,9 @@ if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CL
 function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid = NULL, $setvalue = NULL) {
 	/* Get the Keys Schema or Device */
 	
+	//$this->inst_coder = new InsteonCoder();
+
+	
 	switch ($callsource)
 	{
 	case SIGNAL_SOURCE_REMOTE_BUTTON:    // Key pressed on remote
@@ -158,7 +161,7 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 				break;
 			}
 			if ($condvalue <> $testvalue) {
-				if (MYDEBUG) echo "Condition fail: confd". $condvalue. " ,test: ". $testvalue. "<>".$confvalue <> $testvalue."</p>";
+				if (MYDEBUG) echo "Condition fail: confd". $condvalue. " ,test: ". $testvalue. "<>".$confvalue !== $testvalue."</p>";
 				return 1;
 			}
 			break;
@@ -169,6 +172,9 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 		}
 	}
 
+	if (MYDEBUG) echo "Condition Pass: confd". $condvalue. " ,test: ". $testvalue. "==".$confvalue == $testvalue."</p>";
+
+	
 	$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
 	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeid.")) ORDER BY ha_remote_scheme_steps.sort";

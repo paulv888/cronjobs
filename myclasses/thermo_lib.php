@@ -635,7 +635,8 @@ $this->debug = false;
 	public function Toggle($status = NULL)
 	{
 
-		if ($status == NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
+
+		if ($status === NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
 		
 //		echo "stat:".$status."</br>";
 		

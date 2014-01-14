@@ -74,6 +74,37 @@ private static $plmcmdlen = array (
 	'0273' => array (5, 6),
 );	
 
+private static $inout_a = Array (
+		'0250' => 2,
+		'0251' => 2,
+		'0252' => 2,
+		'0253' => 3,
+		'0254' => 2,
+		'0255' => 3,
+		'0256' => 3,
+		'0257' => 3,
+		'0258' => 3,
+		'0260' => 2,
+		'0261' => 1,
+		'0262' => 1,
+		'0263' => 1,
+		'0264' => 3,
+		'0265' => 3,
+		'0266' => 3,
+		'0267' => 3,
+		'0268' => 3,
+		'0269' => 3,
+		'026A' => 3,
+		'026B' => 3,
+		'026C' => 3,
+		'026D' => 3,
+		'026E' => 3,
+		'026F' => 3,
+		'0270' => 2,
+		'0271' => 2,
+		'0272' => 3,
+		'0273' => 3
+);
 
 /*#Mapping from message type bit field to acronyms used in
 #  the INSTEON Command Tables documentation
@@ -694,6 +725,7 @@ private static $plmcmd2string;
 		} #if($FSM==)
 	} #while(!$abort)
 	$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
+	$plm_decode_result['inout'] = self::$inout_a[$plm_decode_result['plmcmdID'];
 //	return $plm_message;
 	return $plm_decode_result;
 }

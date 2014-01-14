@@ -80,7 +80,7 @@ define ("SCHEME_CONDITION_TIME", 3);
 // System Status
 define ("SYSTEM_STATUS_ARE_HOME", 1);
 define ("SYSTEM_STATUS_ALARM_ARMED", 2);
-define ("SYSTEM_STATUS_DAY_LIGHT", 3);
+define ("SYSTEM_STATUS_IS_DARK", 3);
 define ("SYSTEM_STATUS_PAUL_TRIP", 4);
 
 // These are Internal Commands

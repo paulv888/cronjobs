@@ -119,7 +119,7 @@ private static $inout_a = Array (
 					if ($incompl['code'] == $x10['code'] && $incompl['plmcmdID'] == $plm_decode_result['plmcmdID']) {
 						$compl = $incompl;
 						$compl['commandID'] = $x10['commandID'];
-						$compl['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
+						$compl['inout'] = $plm_decode_result['inout'];
 						$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 						$compl ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 						$this->messages->enqueue($compl);
@@ -138,7 +138,7 @@ private static $inout_a = Array (
 				//echo "3pushing newincompl".$this->incompl_messages->count()."\n";
 			}
 		} else {
-			$compl['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
+			$compl['inout'] = $plm_decode_result['inout'];
 			$compl['code'] = "I";
 			if (array_key_exists("from",$plm_decode_result)) {
 				$compl['unit'] = strtoupper($plm_decode_result['from']);

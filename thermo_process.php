@@ -39,7 +39,7 @@ $now = date( 'Y-m-d H:i:s' );
 			//logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['tstat_uuid']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
 			$stat = new Stat( $thermostatRec );
 			$stat->getStat();
-
+			
 			$feedback[] = $stat->Toggle($status);
 			$feedback[]=to_celcius($stat->ttemp);
 
