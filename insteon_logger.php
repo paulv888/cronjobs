@@ -1,3 +1,4 @@
+#!/usr/bin/php5
 <?php
 require_once 'includes.php';
 
@@ -107,7 +108,7 @@ function cleanup(){
 	global $inst_hub;
 	echo "Cleaning up\n";
 	unset ($inst_hub);
-	exit;
+	exit (1);
 }
 
 function signal_handler($signo){
@@ -130,3 +131,4 @@ function signal_handler($signo){
 	}
 }
 ?>
+

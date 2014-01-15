@@ -1,6 +1,6 @@
 <?php
 // process configuration
-define("INSTEON_SLEEP_MICRO", 500000); // 500mS
+define("INSTEON_SLEEP_MICRO", 300000); // 500mS
 
 // Monitor Link Values
 define("MONITOR_LINK", 2);
@@ -71,6 +71,7 @@ define ("COMMAND_CLASS_SONYCAM",5);
 define ("COMMAND_CLASS_INTERNAL", 6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
+define ("COMMAND_CLASS_X10_INSTEON", 10);
 
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_STATUS", 1);

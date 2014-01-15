@@ -119,7 +119,7 @@ function UpdateStatus ($deviceid, $commandid, $callsource = 0, $status = NULL)
 		$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandid);
 		if ($rowcommands = mysql_fetch_array($rescommands)) {
 			$status = $rowcommands['status'];
-			if ($status === NULL) return;
+			if ($status == STATUS_UNKNOWN) return;
 		}
 	}
 	//echo "Status Status:".$status."</br>\n";

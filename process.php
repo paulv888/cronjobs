@@ -1,15 +1,14 @@
 <?php 
 require_once 'includes.php';
 
-//define( 'MYDEBUG', FALSE );
-define( 'MYDEBUG', TRUE );
+define( 'MYDEBUG', FALSE );
+//define( 'MYDEBUG', TRUE );
 
 // 
 // Called with remotekey or 
 //                with a dropdown selected remotekey and command = selected
 //                no schemes supported with dropdowns 
 //  
-
 if (isset($_POST["remotekey"])) {						// Called from remote with key number
 	$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
 	$remotekeyid=$_POST["remotekey"];
@@ -52,8 +51,8 @@ if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CL
 function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid = NULL, $setvalue = NULL) {
 	/* Get the Keys Schema or Device */
 	
-	//$this->inst_coder = new InsteonCoder();
-
+	global $inst_coder;
+	$inst_coder = new InsteonCoder();
 	
 	switch ($callsource)
 	{
@@ -196,6 +195,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 //
 //   Sends 1 single command to TCP, REST, EMAIL
 //	
+	global $inst_coder;
 
 	// Handles 1 single Device
 	if ($deviceid != NULL) {
@@ -251,13 +251,11 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
 		$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-		if ($rowcommands['commandclassid']==COMMAND_CLASS_INSTEON) {
-			if ($value>100) $value=100;
-			if ($value>0) $value=255/100*$value;
-			if ($value == NULL && $commandid == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
-			$value = dec2hex($value,2);
-			if (MYDEBUG) echo "value ".$value."</p>";
-		}
+		if ($value>100) $value=100;
+		if ($value>0) $value=255/100*$value;
+		if ($value == NULL && $commandid == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
+		$value = dec2hex($value,2);
+		if (MYDEBUG) echo "value ".$value."</p>";
 		$tcomm = str_replace("{value}",$value,$tcomm);
 		if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
 		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm;
@@ -267,6 +265,35 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
 		logEvent($log);
 		usleep(INSTEON_SLEEP_MICRO);
+		if ($feedback) {
+			$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
+			UpdateStatus($deviceid, $commandid, $callsource);
+		}
+		break;
+	case COMMAND_CLASS_X10_INSTEON:
+		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
+		$tcomm = str_replace("{code}",$inst_coder->x10_code_encode($rowdevices['code']),$tcomm);
+		$tcomm = str_replace("{unit}",$inst_coder->x10_unit_encode($rowdevices['unit']),$tcomm);
+		//handledimming
+		/*if ($rowcommands['commandclassid']==COMMAND_CLASS_X10_INSTEON) {
+			if ($value>100) $value=100;
+			if ($value>0) $value=255/100*$value;
+			if ($value == NULL && $commandid == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
+			$value = dec2hex($value,2);
+			if (MYDEBUG) echo "value ".$value."</p>";
+		}*/
+		//$tcomm = str_replace("{value}",$value,$tcomm);
+		if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
+		$commands=explode("|", $tcomm);
+		foreach ($commands as $command) {
+			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command;
+			if (MYDEBUG) echo $url."</p>";
+			$post = restClient::post($url);
+			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
+			usleep(INSTEON_SLEEP_MICRO);
+		}
+		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
+		logEvent($log);
 		if ($feedback) {
 			$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
 			UpdateStatus($deviceid, $commandid, $callsource);

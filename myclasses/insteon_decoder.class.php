@@ -452,10 +452,14 @@ private static $x10_commands = array (
 );
 
 private static $plmcmd2string;
+private static $x10_unit_codes_enc;
+private static $x10_house_codes_enc;
 
 	function __construct() {
 	   //#create a backwards lookup on hexdec code
 		self::$plmcmd2string = array_flip(self::$plmcmd);
+		self::$x10_unit_codes_enc =	array_flip(self::$x10_unit_codes);
+		self::$x10_house_codes_enc = array_flip(self::$x10_house_codes);
    }
 
    /**
@@ -469,9 +473,14 @@ private static $plmcmd2string;
 	 * @param string $string
 	 * @return string
 	 */
-	public static function Encode($string)
+	public static function x10_code_encode($string)
 	{
-		return true;
+		return self::$x10_house_codes_enc[strtolower($string)];
+	}
+	
+	public static function x10_unit_encode($string)
+	{
+		return self::$x10_unit_codes_enc[$string];
 	}
 	
 	/**
@@ -725,7 +734,7 @@ private static $plmcmd2string;
 		} #if($FSM==)
 	} #while(!$abort)
 	$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
-	$plm_decode_result['inout'] = self::$inout_a[$plm_decode_result['plmcmdID'];
+	$plm_decode_result['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
 //	return $plm_message;
 	return $plm_decode_result;
 }
