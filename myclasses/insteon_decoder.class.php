@@ -451,6 +451,25 @@ private static $x10_commands = array (
 	'8' => array ( 'hail_request', 264)
 );
 
+/*Letter Code 	Preset Dim (4) 	Preset Dim (12) 	Output Level (4) 	Output Level (12)
+M 	0 	16 	0.00% 	51.61%
+N 	1 	17 	3.23% 	54.84%
+O 	2 	18 	6.45% 	58.06%
+P 	3 	19 	9.68% 	61.29%
+C 	4 	20 	12.90% 	64.52%
+D 	5 	21 	16.13% 	67.74%
+A 	6 	22 	19.35% 	70.97%
+B 	7 	23 	22.58% 	74.19%
+E 	8 	24 	25.81% 	77.42%
+F 	9 	25 	29.03% 	80.65%
+G 	10 	26 	32.26% 	83.87%
+H 	11 	27 	35.48% 	87.10%
+K 	12 	28 	38.71% 	90.32%
+L 	13 	29 	41.94% 	93.55%
+I 	14 	30 	45.16% 	96.77%
+J 	15 	31 	48.39% 	100.00% 
+*/
+
 private static $plmcmd2string;
 private static $x10_unit_codes_enc;
 private static $x10_house_codes_enc;

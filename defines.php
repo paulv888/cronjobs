@@ -73,6 +73,10 @@ define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
 
+
+// Special X10_INSTEON dim handling
+define ("COMMAND_DIM_CLASS_X10_INSTEON", "|{code}480=I=3");
+
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_STATUS", 1);
 define ("SCHEME_CONDITION_SYSTEM_STATUS", 2);

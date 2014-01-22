@@ -232,8 +232,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$result = $func($deviceid, $value);
 		$feedback = verbStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_EMAIL:
 		if (MYDEBUG) echo "COMMAND_CLASS_EMAIL alertid ".$alertsid." alert_textID ".$alert_textID."</p>";
@@ -244,8 +243,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$message= $rowtext['message'];
 		$myresult = createMail($callsource,$alertid,$subject,$message);
 		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_INSTEON:
 		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
@@ -261,41 +259,53 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm;
 		if (MYDEBUG) echo $url."</p>";
 		$post = restClient::post($url);
-		$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		$feedback = ($post->getresponsecode()==200 ? TRUE : FALSE);
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		usleep(INSTEON_SLEEP_MICRO);
-		if ($feedback) {
+		if ($feedback !== FALSE) {
 			$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
+			if ($feedback == NULL) $feedback = true;
 			UpdateStatus($deviceid, $commandid, $callsource);
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
 		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
+		if ($value>100) $value=100;
+		if ($value == NULL && $commandid == COMMAND_ON) $value=100;		// Special case so satify the replace in on command
+		$dims = 0;
+		if ($value>0 && $value < 100) $dims=(integer)round(10-10/100*$value);
+		if (MYDEBUG) echo "value ".$value."</p>";
+		if (MYDEBUG) echo "dims ".$dims."</p>";
+		while($dims > 0) {
+			$tcomm .= COMMAND_DIM_CLASS_X10_INSTEON;
+			$dims--;
+		}
+//		$tcomm .={code}a80=I=3;
+//		$tcomm .={code}b80=I=3
+//		$tcomm .= "|{code}{unit}00=I=3";
+//		$tcomm .= "|{code}a80=I=3";
+//		$tcomm .= "|0b80=I=3";
+//		$tcomm .= "|{code}480=I=3";			// dim 480
+//		$tcomm .= "|a780=I=3";				// ext code
+		//$tcomm .= "|0b80=I=3";
 		$tcomm = str_replace("{code}",$inst_coder->x10_code_encode($rowdevices['code']),$tcomm);
 		$tcomm = str_replace("{unit}",$inst_coder->x10_unit_encode($rowdevices['unit']),$tcomm);
-		//handledimming
-		/*if ($rowcommands['commandclassid']==COMMAND_CLASS_X10_INSTEON) {
-			if ($value>100) $value=100;
-			if ($value>0) $value=255/100*$value;
-			if ($value == NULL && $commandid == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
-			$value = dec2hex($value,2);
-			if (MYDEBUG) echo "value ".$value."</p>";
-		}*/
-		//$tcomm = str_replace("{value}",$value,$tcomm);
 		if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
 		$commands=explode("|", $tcomm);
+		//
+		// handle dimming, cannot give value so dimming lots of times
+		//
 		foreach ($commands as $command) {
 			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command;
 			if (MYDEBUG) echo $url."</p>";
 			$post = restClient::post($url);
-			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
+			$feedback = ($post->getresponsecode()==200 ? TRUE : FALSE);
 			usleep(INSTEON_SLEEP_MICRO);
-		}
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		}     
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		if ($feedback) {
 			$feedback = verbStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
+			if ($feedback == NULL) $feedback = true;
 			UpdateStatus($deviceid, $commandid, $callsource);
 		}
 		break;
@@ -334,15 +344,14 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		//echo "feedback***" . $feedback."***</p>";
 		// handled in TCP bridge
 		//UpdateStatus($deviceid,($commandid == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_INTERNAL:
 		$func = $rowcommands['command'];
 		if (MYDEBUG) echo "COMMAND_CLASS_INTERNAL deviceid ".$deviceid." command ". $rowcommands['command']." value ". $value."</p>";
 		$feedback = $func($value);
-		$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-		logEvent($log);
+		if ($feedback === 0) $feedback = 1; // sleep return 0
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	default:
 		if ($rowdevicelinks['targettype']=="POST"){
@@ -353,8 +362,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			if (MYDEBUG) echo $url.$tcomm."</p>";
 			$post = restClient::post($url, $tcomm);
 			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
-			$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value);
-			logEvent($log);
+			logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		}
 		break;
 	}

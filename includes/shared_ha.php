@@ -37,8 +37,7 @@ function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0)
 					}
 					if ((abs($nowdt-$last) / 60 > $min) || $row['link_timeout'] == Null) {
 						echo "Down, Previous was up; Time expired"."</br>\n";
-						$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
-						logEvent($log);
+						logEvent($log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 						$mysql = "Update `ha_vw_monitor_combined` Set " .
 								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 								  " `link` = '" . $link . "'" .
@@ -52,8 +51,7 @@ function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0)
 					}
 				} else {   								// previous was down update to online and log event
 					echo "Up, Previous was down; Update to online and log event"."</br>\n";
-					$log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down"));
-					logEvent($log);
+					logEvent($log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 					$mysql = "Update `ha_vw_monitor_combined` Set " .
 							  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 							  " `link` = '" . $link . "'" .
@@ -119,7 +117,9 @@ function UpdateStatus ($deviceid, $commandid, $callsource = 0, $status = NULL)
 		$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandid);
 		if ($rowcommands = mysql_fetch_array($rescommands)) {
 			$status = $rowcommands['status'];
-			if ($status == STATUS_UNKNOWN) return;
+			if ($status != STATUS_ON && $status != STATUS_OFF && $status != STATUS_UNKNOWN) return;
+		} else {
+			return;
 		}
 	}
 	//echo "Status Status:".$status."</br>\n";
@@ -199,12 +199,15 @@ function logEvent($log) {
 	$ms = udate("u");
 	$time = date("Y-m-d H:i:s");
 
-	if (!array_key_exists("deviceID",$log )) $log['deviceID'] = Null;
-	if (!array_key_exists("commandID",$log )) $log['commandID'] = Null;
-	if (!array_key_exists("inout",$log )) $log['inout'] = Null;
-	if (!array_key_exists("sourceID",$log )) $log['sourceID'] = Null;
-	if (!array_key_exists("repeatcount",$log )) $log['repeatcount'] = 1;
-	if (!array_key_exists("data",$log )) $log['data'] = 1;
+	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
+	if (!array_key_exists("commandID", $log)) $log['commandID'] = Null;
+	if (!array_key_exists("inout", $log)) $log['inout'] = Null;
+	if (!array_key_exists("sourceID", $log)) $log['sourceID'] = Null;
+	if (!array_key_exists("repeatcount", $log)) $log['repeatcount'] = 1;
+	if (!array_key_exists("data", $log)) $log['data'] = 1;
+	if (!array_key_exists("result", $log)) $log['result'] = Null;
+	if ($log['result'] === FALSE) $log['result'] = "FALSE";
+	if ($log['result'] === TRUE) $log['result'] = "TRUE";
 	
 	$mysql = 'SELECT * FROM `ha_events` ' .
 			' WHERE `inout` = '.$log['inout']. ' AND `sourceID` ='.$log['sourceID'].' AND commandID = '.$log['commandID'].

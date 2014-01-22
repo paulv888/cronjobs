@@ -58,6 +58,10 @@ require_once 'includes.php';
 						$resdevices = mysql_query("SELECT * FROM ha_mf_devices Where id =".$rowremotekeys['deviceID']);
 						if  ($resdevices) {
 							$rowdevices = mysql_fetch_array($resdevices);
+							if  ($rowdevices['inuse'] == 0) {
+								echo '<td width='.$tdwidth.'% class="keyscellempty">'.'</td>';
+								continue;
+							}
 							if  ($rowremotekeys['type_image'] == 1) {
 								if ($rowdevices) {
 									$type = "type".$rowdevices['typeID'] ;

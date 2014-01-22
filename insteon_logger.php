@@ -34,7 +34,7 @@ if(version_compare(PHP_VERSION, "5.3.0", '>=')){
 //  PVTODO: Restart TCP connection on lost.
 //  PVTODO: Receive multiple packets, get length and parse sepearately
 //  PVTODO: Handle Broken packets
-//  PVTODO: Status request, not working
+//  PVDONE: Status request, not working
 //			Poll All-Link Database numbers and store
 //			Interpret CMD1 & CMD2 as All-Link Number and Status
 

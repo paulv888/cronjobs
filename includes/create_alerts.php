@@ -30,35 +30,15 @@ function AlertsActions(){
 				$myresult = createMail(SIGNAL_SOURCE_HA_ALERT,$rowalerts['ha_alerts_id'],$subject,$message);
 				$result= sendmail($rowalerts['command'], $subject, $message, 'VloHome');
 			}
-			if ($result) { 																// OK Message
+			if ($result !== FALSE) { 																// OK Message
 				$send++;
 				$copyrow = false;
-				if (($rowalerts['repeat']==1) OR ($rowalerts['repeat']==2)) {
-					$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, MAX( repeat_count ) AS max, action_date FROM  `ha_alerts` ".
-						"WHERE (deviceID = ".$rowalerts['al_deviceID'].") AND (alertid =".$rowalerts['alertid'].  ") " .
-						"AND (date_key = '".$rowalerts['date_key']."')";
-						if (DEBUG_ALERT) echo $mysql."</br>";
-					if ($resmax = mysql_query($mysql)) {
-						$rowmax = mysql_fetch_assoc($resmax);
-						if ($rowalerts['repeat']==1) $copyrow= true;
-						if (($rowalerts['repeat']==2) AND ((int)date("i", $rowmax['action_date']) >= 55)) $copyrow= true;
-					}
-				} 
-				if ($copyrow) {  																// Handle every run repeat & Every Hour if time since last alert > 55 min
-					$newmax = $rowmax['max'] + 1 ;
-					$mysql="UPDATE `ha_alerts` ".
-						" SET action_date = NOW(), processed = 1, repeat_count = ".$newmax. 
-						" WHERE `ha_alerts`.`id` = ". $rowmax['ha_alerts_id']  ;
-					if (DEBUG_ALERT) echo $mysql."</br>";
-					(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-				} else {																		// Once / Day
-					$mysql="UPDATE `ha_alerts` ".
-						" SET action_date = NOW(), processed = 1 ".
-						" WHERE `ha_alerts`.`id` = ". $rowalerts['ha_alerts_id'] ;
-						if (DEBUG_ALERT) echo $mysql."</br>";
-						(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-				}
-			} else exit;
+				$mysql="UPDATE `ha_alerts` ".
+					" SET action_date = NOW(), processed = 1 ".
+					" WHERE `ha_alerts`.`id` = ". $rowalerts['ha_alerts_id'] ;
+				if (DEBUG_ALERT) echo $mysql."</br>";
+				(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
+			}
 		}
 	}
 	
@@ -89,6 +69,42 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 		$date = getdate();
 		if (is_int(strpos($rowalerts['generate_days'],(string)$date["wday"])) === true) {
 			if (checktime($rowalerts['generate_start'],$rowalerts['generate_end'])) {	// good 
+				// Run hourly or every run then update repeat key.
+				// 1 = Every Run , 2 = Once/Hour
+				if (($rowalerts['repeat']==1) OR ($rowalerts['repeat']==2)) {     
+					$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, MAX( repeat_count ) AS max FROM  `ha_alerts` ".
+						" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertid =".$rowalerts['id'].  
+						" AND date_key = DATE(NOW()))" ;
+						if (DEBUG_ALERT) echo $mysql."</br>";
+					$updaterepeat=false;
+					if ($resmax = mysql_query($mysql)) {
+						$rowmax = mysql_fetch_assoc($resmax);
+						if ($rowmax['ha_alerts_id'] !== NULL) {
+							// get repeat 0 (last run one)
+							$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, action_date FROM  `ha_alerts` ".
+								" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertid =".$rowalerts['id'].  
+								" AND date_key = DATE(NOW()) AND repeat_count = 0)" ;
+								if (DEBUG_ALERT) echo $mysql."</br>";
+							if ($reslast = mysql_query($mysql)) {
+								$rowlast = mysql_fetch_assoc($reslast);
+								if ($rowalerts['repeat']==1) $updaterepeat= true;
+								if (($rowalerts['repeat']==2) AND ((int)(abs(strtotime(date("Y-m-d H:i:s")) - strtotime($rowlast['action_date'])) / 60) >= 60)) $updaterepeat= true;
+							}
+						}
+					} else {
+						mySqlError($mysql); 
+					}
+				} 
+				if ($updaterepeat) {  																// Handle every run repeat & Every Hour if time since last alert > 55 min
+					$newmax = $rowmax['max'] + 1 ;
+					$mysql="UPDATE `ha_alerts` ".
+						" SET repeat_count = ".$newmax. 
+						" WHERE `ha_alerts`.`id` = ". $rowlast['ha_alerts_id']  ;
+					if (DEBUG_ALERT) echo $mysql."</br>";
+					(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
+				} 
+
+				
 				$mysql=$rowalerts['sql'];
 				$mysql=str_replace("{alertsid}",$rowalerts['id'],$mysql);
 				$mysql=str_replace("{deviceid}",$rowalerts['deviceID'],$mysql);
@@ -102,7 +118,8 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 						$mysql=str_replace("{".$key."}",$value,$mysql);
 					}
 				}
-				if (DEBUG_ALERT) echo $mysql."</br>";
+				
+				if (DEBUG_ALERT) echo $mysql."</br>";				
 				if (mysql_query($mysql)) {
 					$inserts+=mysql_affected_rows();
 				} else {

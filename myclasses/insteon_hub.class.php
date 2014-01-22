@@ -116,11 +116,12 @@ private static $inout_a = Array (
 			} else {													// Complete messages and push				
 				unset ($newincompl);
 				foreach ($this->incompl_messages as $incompl) {			// Handle many addresses with 1 command
-					if ($incompl['code'] == $x10['code'] && $incompl['plmcmdID'] == $plm_decode_result['plmcmdID']) {
+					if ($incompl['code'] == $x10['code'] && ($incompl['plmcmdID'] == $plm_decode_result['plmcmdID'] || $x10['commandID'] == COMMAND_STATUSON || $x10['commandID'] == COMMAND_STATUSOFF)) {
 						$compl = $incompl;
 						$compl['commandID'] = $x10['commandID'];
 						$compl['inout'] = $plm_decode_result['inout'];
 						$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
+						$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 						$compl ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 						$this->messages->enqueue($compl);
 						//if (DEBUG_INSTEON) print_r($compl);
