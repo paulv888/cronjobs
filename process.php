@@ -9,20 +9,40 @@ define( 'MYDEBUG', FALSE );
 //                with a dropdown selected remotekey and command = selected
 //                no schemes supported with dropdowns 
 //  
-if (isset($_POST["remotekey"])) {						// Called from remote with key number
-	$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
-	$remotekeyid=$_POST["remotekey"];
-	$commandid=$_POST["command"];
-	$setvalue=$_POST["setvalue"];
-	if (substr($commandid, 0,1)=="S") {
-		$callsource = SIGNAL_SOURCE_REMOTE_SCHEME;
-		$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well. in this case overloading $commandid OBSOLETE???
-		if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
-	}	
-	echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue);
-	exit;
+if (isset($_POST["callsource"])) {						// Called from remote with key number
+
+	$callsource=$_POST["callsource"];
+	switch ($callsource)
+	{
+	case SIGNAL_SOURCE_REMOTE:    									// Key pressed on remote
+		if (isset($_POST["remotekey"])) {							// Called with key number
+			$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
+			$remotekeyid=$_POST["remotekey"];
+			$setvalue=$_POST["setvalue"];
+			$commandid=$_POST["command"];
+			$mouse=$_POST["mouse"];
+			if (substr($commandid, 0,1)=="S") {
+				$callsource = SIGNAL_SOURCE_REMOTE_SCHEME;
+				$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well.
+				if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
+			}	
+			echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue, $mouse);
+			exit;
+		}
+		if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal (Need to add call source)
+			$commandid=$_POST["command"];
+			if (substr($commandid, 0,1)=="S") {
+				$callsource = SIGNAL_SOURCE_REMOTE_SCHEME;
+				$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well.
+				if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
+			}	
+			echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue);
+			exit;
+		}
+		break;
+	}
 }
-if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal
+if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal (Need to add call source)
 	$callsource = SIGNAL_SOURCE_COMMAND;
 	$commandid=$_POST["command"];
 	echo process($callsource, NULL, $commandid);
@@ -48,7 +68,7 @@ if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CL
 		3) 
 */
 
-function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid = NULL, $setvalue = NULL) {
+function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid = NULL, $setvalue = NULL, $mouse=NULL) {
 	/* Get the Keys Schema or Device */
 	
 	global $inst_coder;
@@ -61,8 +81,14 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		$rowkeys = mysql_fetch_array($reskeys);
 		$schemeid=$rowkeys['scheme'];
 		
-		if ($schemeid <=0) {  												// not a scheme, execute here now
-			if ($commandid===NULL) { $commandid=$rowkeys['commandID'];}  		// for dropdowns getting command in dowhat, so take this.     
+		if ($schemeid <=0) {  													// not a scheme, execute here now
+			if ($commandid===NULL) {
+				if ($mouse=='down') { 
+					$commandid=$rowkeys['commandIDdown'];
+				} else {
+					$commandid=$rowkeys['commandID'];
+				}
+			}  		
 			if ($commandid==COMMAND_TOGGLE) {   // Special handling for toggle
 				if ($setvalue==100) {
 					$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowkeys['deviceID']);
@@ -211,7 +237,8 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	}
 	
 	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
-			"ha_mf_commands.id=ha_mf_commands_detail.commandid WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1");
+			" ha_mf_commands.id=ha_mf_commands_detail.commandid" .
+			" WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1");
 	if (!$rowcommands = mysql_fetch_array($rescommands))  {
 		mySqlError($mysql);
 		return false;			// error abort
@@ -226,7 +253,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	
 	switch ($commandclassid)
 	{
-	case COMMAND_CLASS_3MFILTRETE: 
+	case COMMAND_CLASS_3MFILTRETE:          // Should be internal as well, make setvalue and verbStatus dependent on Caller
 		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
 		$result = $func($deviceid, $value);
@@ -258,8 +285,8 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if (MYDEBUG) echo "Rest deviceid ".$deviceid." commandid ".$commandid."</p>";
 		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm;
 		if (MYDEBUG) echo $url."</p>";
-		$post = restClient::post($url);
-		$feedback = ($post->getresponsecode()==200 ? TRUE : FALSE);
+		$get = restClient::get($url);
+		$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
 		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		usleep(INSTEON_SLEEP_MICRO);
 		if ($feedback !== FALSE) {
@@ -298,8 +325,8 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		foreach ($commands as $command) {
 			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command;
 			if (MYDEBUG) echo $url."</p>";
-			$post = restClient::post($url);
-			$feedback = ($post->getresponsecode()==200 ? TRUE : FALSE);
+			$get = restClient::get($url);
+			$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
 			usleep(INSTEON_SLEEP_MICRO);
 		}     
 		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
@@ -354,15 +381,31 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	default:
-		if ($rowdevicelinks['targettype']=="POST"){
+		if (MYDEBUG) echo "COMMAND_CLASS_NO_SPECIFIC</p>";
+		switch ($rowdevicelinks['targettype'])
+		{
+		case "POSTTEXT":          // Only HTPC at the moment
+			if (MYDEBUG) echo "POSTTEXT</p>";
 			$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
 			$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
 			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			if (MYDEBUG) echo $url.$tcomm."</p>";
-			$post = restClient::post($url, $tcomm);
+			$post = restClient::post($url, $tcomm,"","","text/plain");
 			$feedback = ($post->getresponsecode()==200 ? $post->getresponse() : FALSE);
 			logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
+			break;
+		case "GET":          // Sony Cam at the moment
+			if (MYDEBUG) echo "GET</p>";
+			$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
+			$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
+			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
+			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
+			if (MYDEBUG) echo $url.$tcomm."</p>";
+			$get = restClient::get($url.$tcomm);
+			$feedback = ($get->getresponsecode()==200 ? $post->getresponse() : FALSE);
+			logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
+			break;
 		}
 		break;
 	}

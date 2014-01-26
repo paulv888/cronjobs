@@ -126,7 +126,7 @@ table {width:100%}
 	background-image:url('../images/type19.png');
 }
 
-.button, .jumpbutton {
+.button, .jump-button {
     border-radius: 0.5em 0.5em 0.5em 0.5em;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     cursor: pointer;
@@ -145,14 +145,14 @@ table {width:100%}
     color: #D7D7D7;
 	overflow: hidden;
 }
-.jumpbutton  {
+.jump-button  {
 	width:30%;
 }
-.button:hover , .jumpbutton:hover{
+.button:hover , .jump-button:hover{
     text-decoration: none;
     background-image: -moz-linear-gradient(center top , #444444, #000000);
 }
-.button:active , .jumpbutton:active{
+.button:active , .jump-button:active{
     position: relative;
     top: 1px;
     background-image: -moz-linear-gradient(center top , #000000, #444444);

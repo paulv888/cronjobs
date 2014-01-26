@@ -19,9 +19,8 @@ $.ajaxSetup({
     error:function(){
         // hide gif here, eg:
         $("div#spinner").hide();
-		alert ("Error");
     },
-	timeout: 30000 // sets timeout to 3 seconds
+	timeout: 30000 // sets timeout to 30 seconds
 });
 var spinnerVisible = false;
 function showProgress() {
@@ -73,10 +72,10 @@ $(document).ready(function(){
 	});
 
 	//this is the function that handles rest service
-	$(".button").live("click", function(){
+	$(document).on("click", ".rem-button", function(){
 		$(".message").html('');
 		lastKey= $(this).attr('remotekey');
-		$.post("process.php", { remotekey:$(this).attr('remotekey'), setvalue:s = $('#setval').find(":selected").val() },
+		$.post("process.php", { callsource:'3', remotekey:$(this).attr('remotekey'), setvalue:s = $('#setval').find(":selected").val() },
 		function(data){
 			processData(data);
 		});
@@ -95,10 +94,10 @@ $(document).ready(function(){
 	});
 
 	//this is the function that handle switch applications (go button)
-	$(".jump").click(function(){
+	$(".jump-button").click(function(){
 		$(".message").html('');
 		var s = $(this).parent().find("option:selected").val();
-		$.post("process.php", { remotekey:$(this).attr('value') , command:$(this).parent().find("option:selected").val() },
+		$.post("process.php", { callsource:'3', remotekey:$(this).attr('remotekey') , command:$(this).parent().find("option:selected").val() },
 				function(data){
 					processData(data);
 				}); 
@@ -133,21 +132,18 @@ function processData(data) {
 	$("#UpLast").click(function(){
 		$(".message").html('');
 		if (lastKey != null) { 
-			$.post("process.php", { remotekey:lastKey, setvalue:s = $('#setval').find(":selected").val() },
+			$.post("process.php", { callsource:'3', remotekey:lastKey, setvalue:s = $('#setval').find(":selected").val() },
 			function(data){
 				processData(data);
-			})
-			.error(function() {
-				alert ("error");
 			})
 		};
 		return false;
 	});
 
 	//this is the function that dropdown
-	$(".formdropdownlist").live("change", function(){
+	$(document).on("change", ".controlselect-button", function(){
 		$(".message").html('');
-		$.post("process.php", { remotekey:$(this).attr('value') , command:$(this).parent().find("option:selected").val() },
+		$.post("process.php", { callsource:'3', remotekey:$(this).attr('remotekey') , command:$(this).parent().find("option:selected").val() },
 				function(data){
 					processData(data);
 				}); 
