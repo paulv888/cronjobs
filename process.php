@@ -18,7 +18,7 @@ if (isset($_POST["callsource"])) {						// Called from remote with key number
 		if (isset($_POST["remotekey"])) {							// Called with key number
 			$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
 			$remotekeyid=$_POST["remotekey"];
-			$setvalue=$_POST["setvalue"];
+			$setvalue=(isset($_POST["setvalue"]) ? $_POST["setvalue"] : 100);
 			$commandid=$_POST["command"];
 			$mouse=$_POST["mouse"];
 			if (substr($commandid, 0,1)=="S") {
@@ -85,6 +85,9 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 			if ($commandid===NULL) {
 				if ($mouse=='down') { 
 					$commandid=$rowkeys['commandIDdown'];
+					if (is_null($commandid)) {
+						return true;
+					}
 				} else {
 					$commandid=$rowkeys['commandID'];
 				}
@@ -236,9 +239,10 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$commandclassid = COMMAND_CLASS_INTERNAL;
 	}
 	
-	$rescommands = mysql_query("SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
+	$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 			" ha_mf_commands.id=ha_mf_commands_detail.commandid" .
-			" WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1");
+			" WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1";
+	$rescommands = mysql_query($mysql);
 	if (!$rowcommands = mysql_fetch_array($rescommands))  {
 		mySqlError($mysql);
 		return false;			// error abort
@@ -403,7 +407,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			if (MYDEBUG) echo $url.$tcomm."</p>";
 			$get = restClient::get($url.$tcomm);
-			$feedback = ($get->getresponsecode()==200 ? $post->getresponse() : FALSE);
+			$feedback = ($get->getresponsecode()==200 ? $get->getresponse() : FALSE);
 			logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 			break;
 		}

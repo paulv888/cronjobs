@@ -30,9 +30,9 @@ function loadRemote($remoteID) {
 							}
 							if  ($rowremotekeys['type_image'] == 1) {
 								if ($rowdevices) {
-									$type = "type".$rowdevices['typeID'] ;
+									$type = 'rem-type'.$rowdevices['typeID'] ;
 								} else {
-									$type = "";
+									$type = '';
 								}
 							}
 							$status = '';

@@ -7,12 +7,12 @@ require_once 'includes.php';
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <meta http-equiv="Content-Language" content="en" />
 <title>HA Remote</title>
-<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+<meta name="viewport" content="width=device-width; initial-scale=0.9; maximum-scale=1.0; user-scalable=0;" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<link rel="stylesheet" href="css/iPHC.css" type="text/css" media="screen" /> 
-<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
-<script type="text/javascript" src="js/iphc.js"></script>
-<script type="text/javascript" src="js/jquery.touchSwipe.min.js"></script>
+<link rel="stylesheet" href="css/iPHC.css?v=1" type="text/css" media="screen" /> 
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js?v=1"></script>
+<script type="text/javascript" src="js/iphc.js?v=1"></script>
+<script type="text/javascript" src="js/jquery.touchSwipe.min.js?v=1"></script>
 </head>
 <body>
   <div id="head">

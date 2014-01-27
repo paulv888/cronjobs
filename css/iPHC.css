@@ -71,58 +71,58 @@ table {width:100%}
 }
 
 
-.type1 {
+.rem-type1 {
 	background-image:url('../images/type1.png');
 }
-.type2 {
+.rem-type2 {
 	background-image:url('../images/type2.png');
 }
-.type3 {
+.rem-type3 {
 	background-image:url('../images/type3.png');
 }
-.type4 {
+.rem-type4 {
 	background-image:url('../images/type4.png');
 }
-.type5 {
+.rem-type5 {
 	background-image:url('../images/type5.png');
 }
-.type6{
+.rem-type6{
 	background-image:url('../images/type6.png');
 }
-.type7 {
+.rem-type7 {
 	background-image:url('../images/type7.png');
 }
-.type8 {
+.rem-type8 {
 	background-image:url('../images/type8.png');
 }
-.type9 {
+.rem-type9 {
 	background-image:url('../images/type9.png');
 }
-.type10 {
+.rem-type10 {
 	background-image:url('../images/type10.png');
 }
-.type11 {
+.rem-type11 {
 	background-image:url('../images/type11.png');
 }
-.type12 {
+.rem-type12 {
 	background-image:url('../images/type12.png');
 }
-.type13 {
+.rem-type13 {
 	background-image:url('../images/type13.png');
 }
-.type14 {
+.rem-type14 {
 	background-image:url('../images/type14.png');
 }
-.type15 {
+.rem-type15 {
 	background-image:url('../images/type15.png');
 }
-.type16 {
+.rem-type16 {
 	background-image:url('../images/type16.png');
 }
-.type18 {
+.rem-type18 {
 	background-image:url('../images/type18.png');
 }
-.type19 {
+.rem-type19 {
 	background-image:url('../images/type19.png');
 }
 
@@ -159,34 +159,34 @@ table {width:100%}
     color: #777777;
 } 
 
-.type1.on {
+.rem-type1.on {
 	background-image:url('../images/bulb_on.png');
 }
-.type1.off {
+.rem-type1.off {
 	background-image:url('../images/bulb_off.png');
 }
-.type3.on {
+.rem-type3.on {
 	background-image:url('../images/switch_on.png');
 }
-.type3.off {
+.rem-type3.off {
 	background-image:url('../images/switch_off.png');
 }
-.type6.on {
+.rem-type6.on {
 	background-image:url('../images/yellowfan.png');
 }
-.type6.off {
+.rem-type6.off {
 	background-image:url('../images/bluefan.png');
 }
-.type18.on {
+.rem-type18.on {
 	background-image:url('../images/snow-flake_on.png');
 }
-.type18.off {
+.rem-type18.off {
 	background-image:url('../images/snow-flake_off.png');
 }
-.type19.on {
+.rem-type19.on {
 	background-image:url('../images/flame_on.png');
 }
-.type19.off {
+.rem-type19.off {
 	background-image:url('../images/flame_off.png');
 }
 .keystable {
