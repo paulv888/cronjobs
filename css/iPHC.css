@@ -428,4 +428,6 @@ div#spinner
 	height: 95%;
 	text-align:center; 
 }
-
+.controlselect-button {
+	font-size: 1.2em;
+}

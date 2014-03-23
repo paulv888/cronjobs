@@ -44,7 +44,7 @@ function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0)
 								  " Where(`deviceid` ='" . $deviceid . "')";
 						if (!mysql_query($mysql)) mySqlError($mysql);
 						if ($row['on_change']) {
-							echo RunScheme ($row['on_change'], $callsource)."\n";
+							echo process(SIGNAL_SOURCE_STATUS_LINK_UPDATE, "", $row['on_change'])."\n";
 						}
 					} else {
 						echo "Down, Previous was up; Time NOT expired"."</br>\n";
@@ -58,7 +58,7 @@ function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0)
 							  " Where(`deviceid` ='" . $deviceid . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
 					if ($row['on_change']) {
-						echo RunScheme ( $row['on_change'], $callsource)."\n";
+						echo process(SIGNAL_SOURCE_STATUS_LINK_UPDATE, "", $row['on_change'])."\n";
 					}
 				}
 			} else {
@@ -136,11 +136,11 @@ function UpdateStatus ($deviceid, $commandid, $callsource = 0, $status = NULL)
 			// run on change
 			if ($row['on_change']) {
 				//echo "RunScheme". $row['on_change']."\n";
-				echo RunScheme ($row['on_change'], $callsource);
+				echo process(SIGNAL_SOURCE_STATUS_LINK_UPDATE, "", $row['on_change'])."\n";
 			}
-		} else {
-			$mysql = "UPDATE ha_vw_monitor_combined SET status = " . $status . ", statusDate = '". $now . "' WHERE deviceID = ".$deviceid;
-			if (!mysql_query($mysql)) mySqlError($mysql);
+		} else {				// not sure why i wnated to update status != previous.. anyway breaks mon status timeout
+			// $mysql = "UPDATE ha_vw_monitor_combined SET status = " . $status . ", statusDate = '". $now . "' WHERE deviceID = ".$deviceid;
+			// if (!mysql_query($mysql)) mySqlError($mysql);
 		}
 	}
 	return $status;

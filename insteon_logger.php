@@ -61,7 +61,7 @@ while (true) {
 					UpdateLink ($deviceid, LINK_UP, $message['sourceID'], $message['commandID']);
 				}
 				
-				// Update Link 
+				// Update My Link 
 				$nowdt = strtotime(date("Y-m-d H:i:s"));
 				if ((int)(abs($nowdt-$last) / 60) >= 15) {
 					$last = strtotime(date("Y-m-d H:i:s"));

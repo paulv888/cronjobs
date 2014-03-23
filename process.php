@@ -111,8 +111,9 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		} 
 		break;
 	case SIGNAL_SOURCE_REMOTE_SCHEME:        // Received S12 
+	case SIGNAL_SOURCE_STATUS_LINK_UPDATE: 	  // 
 		$schemeid = $commandid;
-		if (MYDEBUG) echo "SIGNAL_SOURCE_REMOTE_SCHEME ".$schemeid."</p>";
+		if (MYDEBUG) echo "SIGNAL_SOURCE_REMOTE_SCHEME or SIGNAL_SOURCE_STATUS_LINK_UPDATE".$schemeid."</p>";
 		break;
 	case SIGNAL_SOURCE_HA_ALERT:       	 // process from alerts
 		$sqlstr = "SELECT ha_alerts.id, ha_alerts_dd.schemeid FROM ha_alerts LEFT JOIN ha_alerts_dd ON ha_alerts.alertid = ha_alerts_dd.id WHERE (ha_alerts.id =".$alertid.")";

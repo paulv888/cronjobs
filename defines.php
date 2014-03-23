@@ -61,6 +61,7 @@ define ("SIGNAL_SOURCE_TRADE_ALERT", 15);
 define ("SIGNAL_SOURCE_COMMAND", 16); 
 define ("SIGNAL_MONITOR_DEVICES", 17); 
 define ("SIGNAL_SOURCE_INSTEON", 18);
+define ("SIGNAL_SOURCE_STATUS_LINK_UPDATE", 19);
 
 // Command Types
 define ("COMMAND_CLASS_X10", 1);

@@ -373,6 +373,10 @@ function GetDeviceList() {
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
+			} else {
+				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
+					`last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
+				if (!mysql_query($mysql)) mySqlError($mysql);	
 			}
 		}	else {
 			$values = array("v1" => $mac, "v2" => $name, "v3" => $ip, "v4" => $connection);
