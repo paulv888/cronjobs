@@ -1,6 +1,6 @@
 <?php
-define("DEBUG_ALERT", TRUE);
-//define("DEBUG_ALERT", FALSE);
+//define("DEBUG_ALERT", TRUE);
+define("DEBUG_ALERT", FALSE);
 
 function AlertsActions(){
 
@@ -19,6 +19,7 @@ function AlertsActions(){
 	}
 
 	$send = 0;
+	$queries = 0;
 	while ($rowalerts = mysql_fetch_assoc($resalerts)) {
 
 		if (checktime($rowalerts['send_start'],$rowalerts['send_end'])) {	  					// good 
@@ -64,6 +65,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 	}
 
 	$inserts = 0;
+	$queries = 0;
 	while ($rowalerts = mysql_fetch_array($resalerts)) {
 		// check if we are ready to generate
 		$date = getdate();

@@ -268,24 +268,24 @@ function ImportSessions() {
 					'"'.$remote[1].'",'.
 					'"'.$firew['0'].'",'.
 					'"'.$firew[1].'",'.
-					'"'.$session['TCPstate'].'",'.
-					'"'.$session['last_used'].'",'.
-					'"'.$session['bkt'].'",'.
-					'"'.$session['flags'].'",'.
-					'"'.$session['cnt'].'",'.
-					'"'.$session['lnd'].'",'.
-					'"'.$session['fnd'].'",'.
-					'"'.$session['max_idle'].'",'.
-					'"'.$session['IN_is'].'",'.
-					'"'.$session['IN_sent'].'",'.
-					'"'.$session['IN_unacked'].'",'.
-					'"'.$session['IN_mss'].'",'.
-					'"'.$session['IN_windows_state'].'",'.
-					'"'.$session['OUT_is'].'",'.
-					'"'.$session['OUT_sent'].'",'.
-					'"'.$session['OUT_unacked'].'",'.
-					'"'.$session['OUT_mss'].'",'.
-					'"'.$session['OUT_windows_state'].'",'.
+					'"'.(isset($session['TCPstate']) ? $session['TCPstate'] : "").'",'.
+					'"'.(isset($session['last_used']) ? $session['last_used'] : "").'",'.
+					'"'.(isset($session['bkt']) ? $session['bkt'] : "").'",'.
+					'"'.(isset($session['flags']) ? $session['flags'] : "").'",'.
+					'"'.(isset($session['cnt']) ? $session['cnt'] : "").'",'.
+					'"'.(isset($session['lnd']) ? $session['lnd'] : "").'",'.
+					'"'.(isset($session['fnd']) ? $session['fnd'] : "").'",'.
+					'"'.(isset($session['max_idle']) ? $session['max_idle'] : "").'",'.
+					'"'.(isset($session['IN_is']) ? $session['IN_is'] : "").'",'.
+					'"'.(isset($session['IN_sent']) ? $session['IN_sent'] : "").'",'.
+					'"'.(isset($session['IN_unacked']) ? $session['IN_unacked'] : "").'",'.
+					'"'.(isset($session['IN_mss']) ? $session['IN_mss'] : "").'",'.
+					'"'.(isset($session['IN_windows_state']) ? $session['IN_windows_state'] : "").'",'.
+					'"'.(isset($session['OUT_is']) ? $session['OUT_is'] : "").'",'.
+					'"'.(isset($session['OUT_sent']) ? $session['OUT_sent'] : "").'",'.
+					'"'.(isset($session['OUT_unacked']) ? $session['OUT_unacked'] : "").'",'.
+					'"'.(isset($session['OUT_mss']) ? $session['OUT_mss'] : "").'",'.
+					'"'.(isset($session['OUT_windows_state']) ? $session['OUT_windows_state'] : "").'",'.
 					'"1");';
 	
 			if (!mysql_query($mysql)) mySqlError($mysql);	

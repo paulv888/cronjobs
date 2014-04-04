@@ -13,6 +13,7 @@ echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 function UpdateTemps() {
 	global $pdo;
 	global $thermostats;
+	global $dbConfig;
 	
 	$today = date( 'Y-m-d' );
 	$yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
@@ -40,7 +41,7 @@ function UpdateTemps() {
 		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
 	
-		$sql = "INSERT INTO ha_weather_current ( time_date, mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".mygmdate("Y-m-d H:i:s")."', '".mygmdate("Y-m-d H:i:s")."', '".MY_SOURCE."', ?, ?, ?, ?)";
+		$sql = "INSERT INTO ha_weather_current ( mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".gmdate("Y-m-d H:i:s")."', '".MY_SOURCE."', ?, ?, ?, ?)";
 		$queryCurrent = $pdo->prepare($sql);
 		
 		$sql = "DELETE FROM {$dbConfig['table_prefix']}hvac_run_times WHERE date = ? AND deviceID = ?";
@@ -170,21 +171,19 @@ function UpdateTemps() {
 				$target = ($stat->tmode == 1) ? $stat->t_heat : $stat->t_cool;
 	
 				logIt( "Target $target" );
-				logit( "UUID $stat->uuid IT " . $stat->temp . " OT $outdoorTemp IH $stat->humidity OH $outdoorHumidity TARGT $target" );
+				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
-				UpdateWeatherNow( $thermostatRec['deviceID'], to_celcius($stat->temp), to_celcius($target));
+				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , to_celcius($target));
 	
 	
-				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by time_date desc limit 1";
+				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by mdate desc limit 1";
 				if ($row = FetchRow($sql)) {
-					$last = new DateTime($row['time_date']);
-					$nowdt = new DateTime(mygmdate("Y-m-d H:i:s"));
+					$last = new DateTime($row['mdate']);
+					$nowdt = new DateTime(gmdate("Y-m-d H:i:s"));
 					if ($nowdt->diff($last, true)->h > 0) {
 						logit( "Insert row into Weather Current" );
 						$ctemp = to_celcius($stat->temp);
-						if ( $ctemp == $row['temperature_c'] ) $ttrend = 0;
-						if ( $ctemp > $row['temperature_c'] ) $ttrend = 1;
-						if ( $ctemp < $row['temperature_c'] ) $ttrend = 2;
+						$ttrend = setTrend($ctemp, $row['temperature_c']);
 						$queryCurrent->execute(array( $ctemp, to_celcius($target), $ttrend, $thermostatRec['deviceID']));
 					}
 				}

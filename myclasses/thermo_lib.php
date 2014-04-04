@@ -201,15 +201,14 @@ class Stat
 						$retval = true;
 					}
 				}
-			}
-			if( $value == -1 )
-			{
+			} elseif( $value == -1 )
+				{
 				//:if( $this->debug )
 				echo 'WARNING (' . date(DATE_RFC822) . '): ' . $key . " contained a transient\n";
 				// NULL the -1 transient
 				//$value = NULL;
 				$retval = true;
-			}
+				}
 		}
 		return $retval;
 	}

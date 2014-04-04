@@ -45,7 +45,7 @@ function pingip($host, $port, $timeout)
 	$tB = microtime(true); 
 	$fP = @fSockOpen($host, $port, $errno, $errstr, $timeout); 
 	if (is_resource($fP)) return true;
-	return false; 
+	return FALSE; 
 	//$tA = microtime(true); 
 	//return round((($tA - $tB) * 1000), 0)." ms"; 
 	//return true;
@@ -59,6 +59,6 @@ function pingtcp($host, $timeout)
 	echo "</br>TCP status: $status</br>";
 	echo "</br>TCP status: $fP</br>"; */
 	if ($status==0) return true;
-	return $false; 
+	return FALSE; 
 }
 ?>

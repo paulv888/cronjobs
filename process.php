@@ -18,15 +18,15 @@ if (isset($_POST["callsource"])) {						// Called from remote with key number
 		if (isset($_POST["remotekey"])) {							// Called with key number
 			$callsource = SIGNAL_SOURCE_REMOTE_BUTTON;
 			$remotekeyid=$_POST["remotekey"];
-			$setvalue=(isset($_POST["setvalue"]) ? $_POST["setvalue"] : 100);
-			$commandid=$_POST["command"];
-			$mouse=$_POST["mouse"];
+			$setvalue=(!empty($_POST["setvalue"]) ? $_POST["setvalue"] : 100);
+			$commandid=(!empty($_POST["command"]) ? $_POST["command"] : NULL);
+			$mouse = (!empty($_POST["mouse"]) ? $_POST["mouse"] : NULL);
 			if (substr($commandid, 0,1)=="S") {
 				$callsource = SIGNAL_SOURCE_REMOTE_SCHEME;
 				$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well.
 				if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
 			}	
-			echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue, $mouse);
+			echo process($callsource, $remotekeyid, $commandid, NULL, $setvalue, $mouse);
 			exit;
 		}
 		if (isset($_POST["command"])) {							// Called with direct command,PHP stuff CLASS internal (Need to add call source)
@@ -36,7 +36,7 @@ if (isset($_POST["callsource"])) {						// Called from remote with key number
 				$commandid = substr($commandid, 1);								// **** Remote can send S12, Schemeid as well.
 				if (MYDEBUG) echo "REMOTE SCHEME ".$commandid."</p>";
 			}	
-			echo process($callsource, $remotekeyid, $commandid, $alertid, $setvalue);
+			echo process($callsource, $remotekeyid, $commandid, NULL, $setvalue);
 			exit;
 		}
 		break;
@@ -73,6 +73,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 	
 	global $inst_coder;
 	$inst_coder = new InsteonCoder();
+	$feedback = "";
 	
 	switch ($callsource)
 	{
@@ -137,7 +138,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 	
 	if ($schemeid>0)  $feedback .= RunScheme ( $schemeid, $callsource);
 	
-	if ($rowkeys) 
+	if (!empty($rowkeys)) 
 		if ($rowkeys['show_result']) 
 			return $feedback;
 	
@@ -164,7 +165,13 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 		{
 		case SCHEME_CONDITION_DEVICE_STATUS: 
 			if (MYDEBUG) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
-			echo "Not Implemented</p>";
+			$devstatusrow = FetchRow("SELECT status FROM ha_vw_monitor_combined  WHERE deviceID = ".$rowcond['deviceID']);
+			$testvalue = $devstatusrow['status'];
+			$condvalue = $rowcond['status'];
+			if ($condvalue !== $testvalue) {
+				if (MYDEBUG) echo "Condition fail: confd:".$condvalue." ,test: ".$testvalue."</p>";
+				return 1;
+			}
 			break;
 		case SCHEME_CONDITION_SYSTEM_STATUS: 
 			if (MYDEBUG) echo "SCHEME_CONDITION_SYSTEM_STATUS</p>";
@@ -189,8 +196,8 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 				$testvalue = $rowconf['paul_trip'];
 				break;
 			}
-			if ($condvalue <> $testvalue) {
-				if (MYDEBUG) echo "Condition fail: confd". $condvalue. " ,test: ". $testvalue. "<>".$confvalue !== $testvalue."</p>";
+			if ($condvalue !== $testvalue) {
+				if (MYDEBUG) echo "Condition fail: confd".$condvalue." ,test: ".$testvalue."</p>";
 				return 1;
 			}
 			break;
@@ -199,10 +206,8 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 			echo "Not Implemented</p>";
 			break;
 		}
+		if (MYDEBUG) echo "Condition Pass: confd".$condvalue." ,test: ". $testvalue."</p>";
 	}
-
-	if (MYDEBUG) echo "Condition Pass: confd". $condvalue. " ,test: ". $testvalue. "==".$confvalue == $testvalue."</p>";
-
 	
 	$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
@@ -353,20 +358,20 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if ($commandid ==  COMMAND_ON && $value>0 && $value<100) {
 			$x10[0]->Command = "On";
 			$x10[0]->CmdData = NULL;
-			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			$x10[0]->GMTTime = gmdate("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 			$x10[0]->Command = "Bright";
 			$x10[0]->CmdData = 100;
-			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			$x10[0]->GMTTime = gmdate("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 			$x10[0]->Command = "Dim";
 			$x10[0]->CmdData = 100-$value;
-			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			$x10[0]->GMTTime = gmdate("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 		} else {
 			$x10[0]->Command = $rowcommands['description'];
 			$x10[0]->CmdData = $value;
-			$x10[0]->GMTTime = mygmdate("Y-m-d H:i:s");
+			$x10[0]->GMTTime = gmdate("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 		}
 		CloseTCP("X10");

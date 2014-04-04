@@ -56,6 +56,7 @@ function mysql_insert_assoc ($my_table, $my_array) {
 		return;
 }
 
+
 function FetchRow($mysql) {
    $res_row = mysql_query($mysql) ;
 	if ($res_row) {

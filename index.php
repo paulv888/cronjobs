@@ -10,7 +10,7 @@ require_once 'includes.php';
 <meta name="viewport" content="width=device-width; initial-scale=0.9; maximum-scale=1.0; user-scalable=0;" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <link rel="stylesheet" href="css/iPHC.css?v=2" type="text/css" media="screen" /> 
-<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js?v=1"></script>
+<script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="js/iphc.js?v=1"></script>
 <script type="text/javascript" src="js/jquery.touchSwipe.min.js?v=1"></script>
 </head>

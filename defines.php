@@ -105,4 +105,7 @@ define("DEV_TYPE_COOL", 18);
 // Alerts
 define("ALERT_CHANGED_NETWORK_DEVICE", 21);
 define("ALERT_NEW_NETWORK_DEVICE", 22);
+
+define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
+define("SOURCE_WEATHER_GOV", 7);
 ?>

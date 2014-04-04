@@ -67,6 +67,7 @@ function GetPrices($input,$output) {
 			"WHERE (pricedirection = '0')";
 	$res_positions = mysql_query($mysql);
 	$myrows=mysql_numrows($res_positions);
+	$sub_symbols = "";
 	While ($position=mysql_fetch_array($res_positions)) {
 		$sub_symbols=$sub_symbols.$position['ticker'].',';
 	}
@@ -76,6 +77,7 @@ function GetPrices($input,$output) {
 	$marketopen=strpos($response["market"]["m_open_close"],"Markets close in");
 	
 	reset($response);
+	$positionsupdated = 0;
 	while (list($symbol, $quote) = each($response)) {
 	//	$date = date("Y-m-d");// current date
 	//	$date = date("Y-m-d H:i:s",strtotime(date("Y-m-d", strtotime($date)) . " ".$response['udt']));			// Bug around midnight 00:30 = Tomorrow 
@@ -97,23 +99,23 @@ function GetPrices($input,$output) {
 // Prices good for open and after
 // Extend for closed and pre
 			if ($marketopen) {
-				if (ISSET($quote["t51"])) {	// RT
+				if (isset($quote["t51"])) {	// RT
 					$date= date("Y-m-d H:i:s");
 				}
-				if (ISSET($quote["l84"])) {
+				if (isset($quote["l84"])) {
 					$last=$quote["l84"];
 				} else {
 					$last=$quote["l10"];
 				}
 			} else {
-				if (ISSET($quote["l86"]) AND ISSET($quote["c85"])) { //doesnt work , gettn l91 during market open, need to interpret close
+				if (isset($quote["l86"]) AND isset($quote["c85"])) { //doesnt work , gettn l91 during market open, need to interpret close
 					$afterHours=TRUE;
 					$date= date("Y-m-d H:i:s",$quote["t51"]);
 					$last=floatval($quote["l86"]);
-				}  elseif (ISSET($quote["l84"])) {
+				}  elseif (isset($quote["l84"])) {
 					$date= date("Y-m-d H:i:s");
 					$last=floatval($quote["l84"]);
-				}  elseif (ISSET($quote["l91"])) {
+				}  elseif (isset($quote["l91"])) {
 					$date= date("Y-m-d H:i:s");
 					$last=floatval($quote["l91"]);
 				}  else {
@@ -121,21 +123,21 @@ function GetPrices($input,$output) {
 					$last=floatval($quote["l10"]);
 				}
 			}
-			if (ISSET($quote["c63"])) {
+			if (isset($quote["c63"])) {
 				$change=floatval($quote["c63"]);
 			} else {
 				$change=0;
 			}
-			$volume=$quote["v53"];
+			if (isset ($quote["v53"])) $volume=$quote["v53"];
 			$percchange=floatval($quote["p43"]);
-			if (ISSET($quote["l84"])) {
+			if (isset($quote["l84"])) {
 				$previousclose=$quote["l84"]-$change;
 			} else {
 				$previousclose=$quote["l10"]-$change;
 			}
 			//					" `pricedirection` = '".$pricedirection."'," .
 
-			$pricedirection=SetPriceDirection($change,$position['buy_sell'],!ISSET($quote["t51"]));
+			$pricedirection=SetPriceDirection($change,$position['buy_sell'],!isset($quote["t51"]));
 			
 			$mysql="UPDATE ".$output." as o".
 					" LEFT JOIN ".$input." as i ON o.posid = i.id ".
@@ -214,7 +216,7 @@ function grab_yahoo_stock_index_streamerapi($symbol) {
   
   $URL_postfix = '&callback=parent.yfs_u1f&mktmcb=parent.yfs_mktmcb&gencallback=parent.yfs_gencb&mu=1';
 
-  $URL = $URL . $URL_field . $URL_other . $URL_postfix;
+  $URL = $URL . $URL_field . $URL_postfix;
 
   # When using CURLOPT_FILE, pass it the file handle that is open 
   # for write only (eg fopen('blahblah', 'w')). If you also open 

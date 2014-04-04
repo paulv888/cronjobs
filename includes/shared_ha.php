@@ -4,12 +4,7 @@ function ReloadScreenShot() {
 	$img = 'images/HIPScreenshot.jpg';
 	file_put_contents($img, file_get_contents($url));
 	$post = RestClient::post('http://htpc:8085/index.htm');
-	return  ReadCurlReturn($post);
-}
-
-function ReadCurlReturn($mpost) {
-	$myreturn =	$mpost->getResponse();
-	return $myreturn;
+	return;  // ReadCurlReturn($post);
 }
 
 function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0){
@@ -81,38 +76,40 @@ function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0)
 function UpdateThermType($deviceid, $typeid){
 
 	$mysql = "Update `ha_mf_devices` Set " .
-    			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
 				  " Where(`id` ='" . $deviceid . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	$mysql = "Update `ha_weather_now` Set " .
-    			  " `time_date` = '" . date("Y-m-d H:i:s") . "'," .
     			  " `typeID` = " . $typeid . "" .
 				  " Where(`deviceID` ='" . $deviceid . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return 1;
 }
 
-function UpdateWeatherNow($deviceid,$temp,$set_point){
+function setTrend($new, $old) {
+	if ( $new == $old ) return 0;
+	if ( $new > $old )  return 1;
+	if ( $new < $old )  return 2;
+}
+
+function UpdateWeatherNow($deviceid,$temp, $humidity, $set_point){
 	
-	$mysql = "SELECT temperature_c FROM ha_weather_now  WHERE deviceID = ".$deviceid; 
+	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceid; 
 	if ($row = FetchRow($mysql)) {
-		$ttrend = 0;
-		if ($temp>$row['temperature_c']) $ttrend=1;
-		if ($temp<$row['temperature_c']) $ttrend=2;
+		$ttrend = setTrend($temp, $row['temperature_c']);
+		$htrend = setTrend($humidity, $row['humidity_r']);
 	}
-			
-	$mysql = "UPDATE ha_weather_now SET time_date = '" . mygmdate("Y-m-d H:i:s"). "', mdate = '". mygmdate("Y-m-d H:i:s")."'," .
-				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend." WHERE deviceID = ".$deviceid;
+	
+	$mysql = "UPDATE ha_weather_now SET mdate = '". gmdate("Y-m-d H:i:s")."'," .
+				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceid;
 
 	if (!mysql_query($mysql)) mySqlError($mysql);
 }
 			
-function UpdateStatus ($deviceid, $commandid, $callsource = 0, $status = NULL) 
+function UpdateStatus ($deviceid, $commandid = NULL, $callsource = 0, $status = NULL) 
 {
 
-	//echo "Status DeviceID:".$deviceid."</br>\n";
-	//echo "Status DeviceID:".$commandid."</br>\n";	
+	// Interpret status value based on current command, i.e. On/Off/Error
 	if ($commandid != NULL) {
 		$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandid);
 		if ($rowcommands = mysql_fetch_array($rescommands)) {
@@ -145,10 +142,6 @@ function UpdateStatus ($deviceid, $commandid, $callsource = 0, $status = NULL)
 	}
 	return $status;
 }	
-
-function mygmdate($format) {
-	return date($format,strtotime(gmdate($format)." +".date('I')." hour"));
-}
 
 function udate($format, $utimestamp = null)
 {
@@ -195,9 +188,8 @@ function logEvent($log) {
 	//
 	// Check for repeat statussues
 	//
-	$gmttime = mygmdate("Y-m-d H:i:s");
+	$gmttime = gmdate("Y-m-d H:i:s");
 	$ms = udate("u");
-	$time = date("Y-m-d H:i:s");
 
 	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
 	if (!array_key_exists("commandID", $log)) $log['commandID'] = Null;
@@ -236,7 +228,6 @@ function logEvent($log) {
 			$log['typeID'] = $rowdevice['typeID'];
 		}
 		
-		$log['time_date'] = $gmttime;
 		$log['mdate'] = $gmttime;
 		$log['milliseconds'] = udate("u");
 		if (!array_key_exists("logLevel",$log )) $log['logLevel'] = 1;
