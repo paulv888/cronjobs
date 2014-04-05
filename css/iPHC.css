@@ -119,6 +119,9 @@ table {width:100%}
 .rem-type16 {
 	background-image:url('../images/type16.png');
 }
+.rem-type17 {
+	background-image:url('../images/type17.png');
+}
 .rem-type18 {
 	background-image:url('../images/type18.png');
 }
@@ -176,6 +179,9 @@ table {width:100%}
 }
 .rem-type6.off {
 	background-image:url('../images/bluefan.png');
+}
+.rem-type17 {
+	background-image:url('../images/thermo_off.png');
 }
 .rem-type18.on {
 	background-image:url('../images/snow-flake_on.png');

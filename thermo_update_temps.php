@@ -164,8 +164,10 @@ function UpdateTemps() {
 				// t_heat or t_cool may not exist if thermostat is running in battery mode
 				if ($stat->tmode == 1) { 
 					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_HEAT);
-				}	else {
+				}	elseif ($stat->tmode == 2) {
 					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_COOL);
+				} else {
+					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_OFF);
 				}
 					
 				$target = ($stat->tmode == 1) ? $stat->t_heat : $stat->t_cool;

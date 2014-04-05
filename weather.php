@@ -1,8 +1,8 @@
 <?php
 require_once 'includes.php';
 
-define( 'MYDEBUG', FALSE );
+define( 'WHDEBUG', FALSE );
 
-loadWeather("KEET");
+loadWeather("KBHM");
 
 ?>

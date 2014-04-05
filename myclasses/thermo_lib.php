@@ -246,90 +246,6 @@ class Stat
 		}
 	}
 
-	// Still need a list of explanation and values to interpret.
-	public function showMeOld()
-	{
-		// For now hard coded HTML <br> but later let CSS do that work
-		echo '<br><br>Thermostat data';
-		echo '<table id="stat_data">';
-		echo '<tr><th>Setting</th><th>Value</th><th>Explanation</th></tr>';
-
-//		echo '<br><br>From /tstat command';
-		echo '<tr><td>this->temp</td><td>' . $this->temp . '</td><td>�F</td></tr>';
-// The degree mark is not HTML5 compliant.
-// Instead of forcing a degree F, check the mode from config.php
-
-		$statTMode = array( 'Auto?', 'Heating', 'Cooling' );
-		echo '<tr class="alt"><td>this->tmode</td><td>' . $this->tmode				. '</td><td> [ ' . $statTMode[$this->tmode] . ' ] </td></tr>';
-
-		$statFanMode = array( 'Auto', 'On' );
-		echo '<tr><td>this->fmode</td><td>' . $this->fmode				. '</td><td> [ ' . $statFanMode[$this->fmode] . ' ] </td></tr>';
-
-		echo '<tr class="alt"><td>this->override</td><td>' . $this->override . '</td><td></td></tr>';
-
-		$statHold = array( 'Normal', 'Hold Active' );
-		echo '<tr><td>this->hold</td><td>' . $this->hold				 . '</td><td> [ ' . $statHold[$this->hold] . ' ] </td></tr>';
-
-		echo '<tr class="alt"><td>this->t_cool</td><td>' . $this->t_cool . '</td><td>�F</td></tr>';
-
-		$statTState = array( 'Off', 'Heating', 'Cooling' );
-		echo '<tr class="alt"><td>this->tstate</td><td>' . $this->tstate			 . '</td><td> [ ' . $statTState[$this->tstate] . ' ] </td></tr>';
-
-		$statFanState = array( 'Off', 'On' );
-		echo '<tr><td>this->fstate</td><td>' . $this->fstate			 . '</td><td> [ ' . $statFanState[$this->fstate] . ' ] </td></tr>';
-
-//		echo '<br>this->day				: ' . $this->day					. ' [ ' . jddayofweek($this->day,1) . ' ] </td><td></td></tr>';
-		$statDayOfWeek = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
-		echo '<tr class="alt"><td>this->day</td><td>' . $this->day					. '</td><td> [ ' . $statDayOfWeek[$this->day] . ' ] </td></tr>';
-
-		echo '<tr><td>this->time</td><td>' . $this->time . '</td><td></td></tr>';
-		echo '<tr class="alt"><td>this->t_type_post</td><td>' . $this->t_type_post . '</td><td></td></tr>';
-
-//		echo '<br><br>From /tstat/datalog command (converted to minutes)';
-		echo '<tr><td>this->runTimeCool</td><td>' . $this->runTimeCool . '</td><td></td></tr>';
-		echo '<tr class="alt"><td>this->runTimeHeat</td><td>' . $this->runTimeHeat . '</td><td></td></tr>';
-		echo '<tr><td>this->runTimeCoolYesterday</td><td>' . $this->runTimeCoolYesterday . '</td><td></td></tr>';
-		echo '<tr class="alt"><td>this->runTimeHeatYesterday</td><td>' . $this->runTimeHeatYesterday . '</td><td></td></tr>';
-
-//		echo '<br><br>From /tstat/errorstatus command';
-		echo '<tr><td>this->errStatus</td><td>' . $this->errStatus					. '</td><td>[ 0 is OK ]</td></tr>';
-
-//		echo '<br><br>From /tstat/model command';
-		echo '<tr class="alt"><td>this->model</td><td>' . $this->model . '</td><td></td></tr>';
-
-		echo '</table>';
-
-		echo '<br><br>System data';
-
-		echo '<table id="sys_data">';
-		echo '<tr><th>Setting</th><th>Value</th><th>Explanation</th></tr>';
-
-//		echo '<tr><td>this->uuid</td><td>'						. $this->uuid						. '</td><td> MAC address of thermostat</td></tr>';
-echo '<tr><td>this->uuid</td><td>'						. 'MASKED'						. '</td><td> MAC address of thermostat</td></tr>';
-		echo '<tr class="alt"><td>this->api_version</td><td>'		 . $this->api_version		 . '</td><td> 1 (?)</td></tr>';
-		echo '<tr><td>this->fw_version</td><td>'			. $this->fw_version			. '</td><td> e.g. 1.03.24</td></tr>';
-		echo '<tr class="alt"><td>this->wlan_fw_version</td><td>' . $this->wlan_fw_version . '</td><td> e.g. v10.99839</td></tr>';
-
-
-//		echo '<tr><td>this->ssid</td><td>'			 . $this->ssid			 . '</td><td>SSID</td></tr>';
-echo '<tr><td>this->ssid</td><td>'			 . 'MASKED'			 . '</td><td>SSID</td></tr>';
-//		echo '<tr class="alt"><td>this->bssid</td><td>'			. $this->bssid			. '</td><td>MAC address of wifi device</td></tr>';
-echo '<tr class="alt"><td>this->bssid</td><td>'			. MASKED			. '</td><td>MAC address of wifi device</td></tr>';
-		echo '<tr><td>this->channel</td><td>'		. $this->channel		. '</td><td>Current wifi channel e.g. 11</td></tr>';
-//		echo '<tr class="alt"><td>this->security</td><td>'	 . $this->security	 . '</td><td>WiFi security protocol: 1 (WEP Open), 3 (WPA), 4 (WPA2 Personal)</td></tr>';
-echo '<tr class="alt"><td>this->security</td><td>'	 . 'MASKED'	 . '</td><td>WiFi security protocol: 1 (WEP Open), 3 (WPA), 4 (WPA2 Personal)</td></tr>';
-//		echo '<tr><td>this->passphrase</td><td>' . $this->passphrase . '</td><td>password (not shown in api_version 113)</td></tr>';
-echo '<tr><td>this->passphrase</td><td>' . 'MASKED' . '</td><td>password (not shown in api_version 113)</td></tr>';
-		echo '<tr class="alt"><td>this->URLaddr</td><td>'		 . $this->URLaddr		 . '</td><td>IP address of thermostat (api_version 113 shows "1" ?)</td></tr>';
-		echo '<tr><td>this->URLmask</td><td>'		 . $this->URLmask		 . '</td><td>Netmask (not shown in api_version 113?)</td></tr>';
-		echo '<tr class="alt"><td>this->URLgw</td><td>'			 . $this->URLgw			 . '</td><td>Gateway (not shown in api_version 113?)</td></tr>';
-		echo '<tr><td>this->rssi</td><td>'			 . $this->rssi			 . '</td><td>Received Signal Strength (api_version 113)</td></tr>';
-		echo '</table>';
-
-
-		return;
-	}
-
 	public function getStat()
 	{
 		/* Query thermostat for data and check the query for transients.
@@ -569,6 +485,8 @@ $this->debug = false;
 			$value = array ('t_cool'=>$ttemp);	 
 		}
 		
+		if ($this->tmode == 0) return 32;
+		
 		$cmd = '/tstat';
 		$outputs = $this->setStatData( $cmd, $value );
 		if( $this->debug)
@@ -587,6 +505,8 @@ $this->debug = false;
 	// Interpret current status based on cool/heat mode and current target temp
 	public function getTargetOnOff()
 	{
+
+		if ($this->tmode == 0) return STATUS_OFF;
 
 		if ($this->tmode == 1) {											// Heating Mode
 		//            19      >=     21 - 2   (if target > 20) then on
@@ -619,10 +539,11 @@ $this->debug = false;
 	
 	public function TempAdd($addTemp)
 	{
-		if ($this->tmode == 1) {									// Heating Mode
+		if ($this->tmode == 0) return 32;
+		if ($this->tmode == 1) {											// Heating Mode
 			$ttemp = $this->t_heat + $addTemp;							 	// Toggle Off
 		} else {												
-			$ttemp=$this->t_cool + $addTemp;								// Toggle Off
+			$ttemp= $this->t_cool + $addTemp;								// Toggle Off
 		}
 
 		return $this->setTemp($ttemp);
@@ -638,7 +559,8 @@ $this->debug = false;
 		if ($status === NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
 		
 //		echo "stat:".$status."</br>";
-		
+		if ($this->tmode == 0) return 32;
+
 		if ($status == STATUS_ON) { 									// Target is set for Here
 			if ($this->tmode == 1) {									// Heating Mode
 				$ttemp = $this->away_heat;							 	// Toggle Off

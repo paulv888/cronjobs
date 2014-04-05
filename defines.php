@@ -99,8 +99,9 @@ define("COMMAND_LINK_STATUS", 151);
 
 // These are Device Types
 //define("", );
-define("DEV_TYPE_HEAT", 19);
+define("DEV_TYPE_OFF", 17);
 define("DEV_TYPE_COOL", 18);
+define("DEV_TYPE_HEAT", 19);
 
 // Alerts
 define("ALERT_CHANGED_NETWORK_DEVICE", 21);

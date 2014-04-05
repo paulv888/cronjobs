@@ -50,10 +50,11 @@ function mysql_insert_assoc ($my_table, $my_array) {
        $sql .= "(" . implode(", ", $values) . ")";
       
 //       $result = @mysql_query ($sql) OR die ("<br />\n<span style=\"color:red\">Query: $sql UNsuccessful :</span> " . mysql_error() . "\n<br />");
-		if (!mysql_query($sql)) mySqlError($sql);
-       
-//       return ($result) ? true : false;
-		return;
+		if (!mysql_query($sql)) {
+			mySqlError($sql);
+			return false;
+		}
+		return true;
 }
 
 

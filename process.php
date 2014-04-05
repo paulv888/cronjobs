@@ -346,7 +346,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 			UpdateStatus($deviceid, $commandid, $callsource);
 		}
 		break;
-	case COMMAND_CLASS_X10:
+	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
 		$xmlfile="X10Command.xml";
 		$x10 = simplexml_load_file($xmlfile);
 		OpenTCP($rowdevicelinks['targetaddress'], $rowdevicelinks['targetport'],"X10");
