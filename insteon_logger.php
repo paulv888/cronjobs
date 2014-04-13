@@ -82,8 +82,6 @@ while (true) {
 function logEventInsteon($log){
 
 
-//	echo "logEventInsteon\n";
-//	print_r($plm_decode_result);
 	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
 	$resdevice=mysql_query($mysql);
 	$rowdevice=mysql_fetch_array($resdevice);
@@ -91,12 +89,6 @@ function logEventInsteon($log){
 	$log['typeID'] = $rowdevice['typeID'];
 	unset($log['code']);
 	unset($log['unit']);
-	
-	$log['logLevel'] = 1;
-	if (!isset($log['commandID'])) {
-		$log['commandID'] = COMMAND_UNKNOWN;
-		$log['logLevel'] = 2;
-	}
 	
 	logEvent($log);
 	
@@ -131,4 +123,3 @@ function signal_handler($signo){
 	}
 }
 ?>
-

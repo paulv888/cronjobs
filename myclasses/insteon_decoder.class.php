@@ -151,43 +151,46 @@ private static $insteonCmd = array (
 'SDA0d00' => array ('Cmd1Name'=>'Get INSTEON Engine Version','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'i1','commandID'=>'179'),
 'SDA0d01' => array ('Cmd1Name'=>'Get INSTEON Engine Version','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'i2','commandID'=>'179'),
 'SDA0d02' => array ('Cmd1Name'=>'Get INSTEON Engine Version','Cmd2Flag'=>'Command','Cmd2Value'=>'0x02','Cmd2Name'=>'i2CS','commandID'=>'179'),
-'SD0f' => array ('Cmd1Name'=>'Ping','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'214'),
+'SD0f' => array ('Cmd1Name'=>'Ping','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'151'),
 'SD10' => array ('Cmd1Name'=>'ID Request','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'194'),
-'SD11' => array ('Cmd1Name'=>'Light ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level','commandID'=>'204'),
-//'SA11' => array ('Cmd1Name'=>'ALL-Link Recall','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'163'),
-'SA11' => array ('Cmd1Name'=>'Light ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level','commandID'=>'204'),
+'SD11' => array ('Cmd1Name'=>'Light ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level','commandID'=>'17'),
+'SA11' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'163'),   // Water sensor
+'SA1100' => array ('Cmd1Name'=>'Light ON','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Light ON','commandID'=>'17'),  // Manual Light On
+'SA1104' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'0x04','Cmd2Name'=>'Ping','commandID'=>'151'),  // Water sensor
+'SA1101' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'ON','commandID'=>'17'), // Water sensor
+'SA1102' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'0x02','Cmd2Name'=>'OFF','commandID'=>'20'),  // Water sensor
 'SC11' => array ('Cmd1Name'=>'ALL-Link Recall','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'163'),
-'SD12' => array ('Cmd1Name'=>'Light ON Fast','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level','commandID'=>'205'),
+'SD12' => array ('Cmd1Name'=>'Light ON Fast','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level','commandID'=>'17'),
 'SA12' => array ('Cmd1Name'=>'ALL-Link Alias 2 High','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'156'),
 'SC12' => array ('Cmd1Name'=>'ALL-Link Alias 2 High','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'156'),
-'SD13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'201'),
+'SD13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
 //'SA13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'257'),
-'SA13' => array ('Cmd1Name'=>'Manual Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'211'),
-'SA13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'201'),
+'SA13' => array ('Cmd1Name'=>'Manual Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
+'SA13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
 'SC13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'155'),
-'SD14' => array ('Cmd1Name'=>'Light OFF Fast','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'202'),
+'SD14' => array ('Cmd1Name'=>'Light OFF Fast','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
 'SA14' => array ('Cmd1Name'=>'ALL-Link Alias 2 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'157'),
 'SC14' => array ('Cmd1Name'=>'ALL-Link Alias 2 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'157'),
-'SD15' => array ('Cmd1Name'=>'Light Brighten One Step','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'196'),
+'SD15' => array ('Cmd1Name'=>'Light Brighten One Step','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'15'),
 'SA15' => array ('Cmd1Name'=>'ALL-Link Alias 3 High','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'158'),
 'SC15' => array ('Cmd1Name'=>'ALL-Link Alias 3 High','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'158'),
-'SD16' => array ('Cmd1Name'=>'Light Dim One Step','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'197'),
+'SD16' => array ('Cmd1Name'=>'Light Dim One Step','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'13'),
 'SA16' => array ('Cmd1Name'=>'ALL-Link Alias 3 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'159'),
 'SC16' => array ('Cmd1Name'=>'ALL-Link Alias 3 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'159'),
-'SD17' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'208'),
-'SD1700' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Down','commandID'=>'208'),
-'SD1701' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Up','commandID'=>'208'),
+'SD17' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'17'),
+'SD1700' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Down','commandID'=>'17'),
+'SD1701' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Up','commandID'=>'17'),
 //'SA17' => array ('Cmd1Name'=>'ALL-Link Alias 4 High','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'160'),
-'SA17' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'208'),
-'SA1700' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Down','commandID'=>'208'),
-'SA1701' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Up','commandID'=>'208'),
+'SA17' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'17'),
+'SA1700' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Down','commandID'=>'17'),
+'SA1701' => array ('Cmd1Name'=>'Light Start Manual Change','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Up','commandID'=>'17'),
 'SC17' => array ('Cmd1Name'=>'ALL-Link Alias 4 High','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'160'),
-'SD18' => array ('Cmd1Name'=>'Light Stop Manual Change','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'210'),
+'SD18' => array ('Cmd1Name'=>'Light Stop Manual Change','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'17'),
 'SA18' => array ('Cmd1Name'=>'ALL-Link Alias 4 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'161'),
 'SC18' => array ('Cmd1Name'=>'ALL-Link Alias 4 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'161'),
-'SD19' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'209'),
-'SD1900' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'On Level','commandID'=>'209'),
-'SD1901' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'LED Bit Flags','commandID'=>'209'),
+'SD19' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'5'),
+'SD1900' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'On Level','commandID'=>'5'),
+'SD1901' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'LED Bit Flags','commandID'=>'5'),
 'SD1f' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'180'),
 'SD1f00' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Request Flags','commandID'=>'180'),
 'SD1f01' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'All-Link Database Delta Number','commandID'=>'180'),
@@ -209,8 +212,8 @@ private static $insteonCmd = array (
 'SD21' => array ('Cmd1Name'=>'Light Instant Change','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'On Level','commandID'=>'198'),
 'SA21' => array ('Cmd1Name'=>'ALL-Link Alias 5','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'162'),
 'SC21' => array ('Cmd1Name'=>'ALL-Link Alias 5','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'162'),
-'SD22' => array ('Cmd1Name'=>'Light Manually Turned Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'199'),
-'SD23' => array ('Cmd1Name'=>'Light Manually Turned On','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'200'),
+'SD22' => array ('Cmd1Name'=>'Light Manually Turned Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
+'SD23' => array ('Cmd1Name'=>'Light Manually Turned On','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'17'),
 'SD24' => array ('Cmd1Name'=>'Reread Init Values(Deprecated)','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'226'),
 'SD25' => array ('Cmd1Name'=>'Remote SET Button Tap','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'225'),
 'SD2501' => array ('Cmd1Name'=>'Remote SET Button Tap','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'1 Tap','commandID'=>'225'),
@@ -240,21 +243,21 @@ private static $insteonCmd = array (
 'SD2c' => array ('Cmd1Name'=>'Peek One Byte Internal(Deprecated)','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'LSB of Address','commandID'=>'212'),
 'SDA2c' => array ('Cmd1Name'=>'Peek One Byte Internal(Deprecated)','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Peeked Byte','commandID'=>'212'),
 'SD2d' => array ('Cmd1Name'=>'Poke One Byte Internal(Deprecated)','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Data','commandID'=>'215'),
-'SD2e' => array ('Cmd1Name'=>'Light ON at Ramp Rate','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level and Rate','commandID'=>'206'),
+'SD2e' => array ('Cmd1Name'=>'Light ON at Ramp Rate','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Level and Rate','commandID'=>'17'),
 'ED2e' => array ('Cmd1Name'=>'Extended Set/Get','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'178'),
 'ED2e00' => array ('Cmd1Name'=>'Extended Set/Get','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Command in D2','commandID'=>'178'),
-'SD2f' => array ('Cmd1Name'=>'Light OFF at Ramp Rate','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Ramp Rate','commandID'=>'203'),
+'SD2f' => array ('Cmd1Name'=>'Light OFF at Ramp Rate','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Ramp Rate','commandID'=>'20'),
 'ED2f' => array ('Cmd1Name'=>'Read/Write ALL-Link Database','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'224'),
 'ED2f00' => array ('Cmd1Name'=>'Read/Write ALL-Link Database','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Command in D2','commandID'=>'224'),
 'SD30' => array ('Cmd1Name'=>'Beep','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Duration','commandID'=>'167'),
 'ED30' => array ('Cmd1Name'=>'Trigger ALL-Link Command','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'255'),
 'ED3000' => array ('Cmd1Name'=>'Trigger ALL-Link Command','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Trigger Command','commandID'=>'255'),
-'SD40' => array ('Cmd1Name'=>'Sprinkler Valve On','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Valve Number','commandID'=>'241'),
+'SD40' => array ('Cmd1Name'=>'Sprinkler Valve On','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Valve Number','commandID'=>'17'),
 'ED40' => array ('Cmd1Name'=>'Set Sprinkler Program','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'233'),
-'SD41' => array ('Cmd1Name'=>'Sprinkler Valve Off','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Valve Number','commandID'=>'240'),
+'SD41' => array ('Cmd1Name'=>'Sprinkler Valve Off','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Valve Number','commandID'=>'20'),
 'ED41' => array ('Cmd1Name'=>'Sprinkler Get Program Response','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'237'),
-'SD42' => array ('Cmd1Name'=>'Sprinkler Program ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'239'),
-'SD43' => array ('Cmd1Name'=>'Sprinkler Program OFF','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'238'),
+'SD42' => array ('Cmd1Name'=>'Sprinkler Program ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'17'),
+'SD43' => array ('Cmd1Name'=>'Sprinkler Program OFF','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Program Number','commandID'=>'20'),
 'SD44' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'236'),
 'SD4400' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Load Initialization Values','commandID'=>'236'),
 'SD4401' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Load EEPROM From RAM','commandID'=>'236'),
@@ -272,7 +275,7 @@ private static $insteonCmd = array (
 'SD440d' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0d','Cmd2Name'=>'Sensor OFF','commandID'=>'236'),
 'SD440e' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0e','Cmd2Name'=>'Diagnostics ON','commandID'=>'236'),
 'SD440f' => array ('Cmd1Name'=>'Sprinkler Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0f','Cmd2Name'=>'Diagnostics OFF','commandID'=>'236'),
-'SD45' => array ('Cmd1Name'=>'I/O Output ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Output Number','commandID'=>'188'),
+'SD45' => array ('Cmd1Name'=>'I/O Output ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Output Number','commandID'=>'17'),
 'SD46' => array ('Cmd1Name'=>'I/O Output OFF','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Output Number','commandID'=>'187'),
 'SD47' => array ('Cmd1Name'=>'I/O Alarm Data Request','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'183'),
 'SD48' => array ('Cmd1Name'=>'I/O Write Output Port','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Data','commandID'=>'193'),
@@ -302,11 +305,11 @@ private static $insteonCmd = array (
 'SD4f0d' => array ('Cmd1Name'=>'I/O Module Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0d','Cmd2Name'=>'Sensor Off','commandID'=>'186'),
 'SD4f0e' => array ('Cmd1Name'=>'I/O Module Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0e','Cmd2Name'=>'Diagnostics On','commandID'=>'186'),
 'SD4f0f' => array ('Cmd1Name'=>'I/O Module Control','Cmd2Flag'=>'Command','Cmd2Value'=>'0x0f','Cmd2Name'=>'Diagnostics Off','commandID'=>'186'),
-'SD50' => array ('Cmd1Name'=>'Pool Device ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Device Number','commandID'=>'219'),
+'SD50' => array ('Cmd1Name'=>'Pool Device ON','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Device Number','commandID'=>'17'),
 'ED50' => array ('Cmd1Name'=>'Pool Set Device Temperature','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'220'),
 'ED5000' => array ('Cmd1Name'=>'Pool Set Device Temperature','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Set Temperature','commandID'=>'220'),
 'ED5001' => array ('Cmd1Name'=>'Pool Set Device Temperature','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'Set Hysteresis','commandID'=>'220'),
-'SD51' => array ('Cmd1Name'=>'Pool Device OFF','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Device Number','commandID'=>'218'),
+'SD51' => array ('Cmd1Name'=>'Pool Device OFF','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Device Number','commandID'=>'20'),
 'SD52' => array ('Cmd1Name'=>'Pool Temperature Up','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Increment Count','commandID'=>'222'),
 'SD53' => array ('Cmd1Name'=>'Pool Temperature Down','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Decrement Count','commandID'=>'221'),
 'SD54' => array ('Cmd1Name'=>'Pool Control','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'217'),
@@ -338,10 +341,10 @@ private static $insteonCmd = array (
 'SD6002' => array ('Cmd1Name'=>'Window Covering','Cmd2Flag'=>'Command','Cmd2Value'=>'0x02','Cmd2Name'=>'Stop','commandID'=>'256'),
 'SD6003' => array ('Cmd1Name'=>'Window Covering','Cmd2Flag'=>'Command','Cmd2Value'=>'0x03','Cmd2Name'=>'Program','commandID'=>'256'),
 'SD61' => array ('Cmd1Name'=>'Window Covering Position','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Position','commandID'=>'257'),
-'SD68' => array ('Cmd1Name'=>'Thermostat Temp Up','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Increment Count','commandID'=>'252'),
-'ED68' => array ('Cmd1Name'=>'Thermostat Zone Temp Up','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Zone Number','commandID'=>'254'),
-'SD69' => array ('Cmd1Name'=>'Thermostat Temp Down','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Decrement Count','commandID'=>'251'),
-'ED69' => array ('Cmd1Name'=>'Thermostat Zone Temp Down','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Zone Number','commandID'=>'253'),
+'SD68' => array ('Cmd1Name'=>'Thermostat Temp Up','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Increment Count','commandID'=>'134'),
+'ED68' => array ('Cmd1Name'=>'Thermostat Zone Temp Up','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Zone Number','commandID'=>'134'),
+'SD69' => array ('Cmd1Name'=>'Thermostat Temp Down','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Decrement Count','commandID'=>'135'),
+'ED69' => array ('Cmd1Name'=>'Thermostat Zone Temp Down','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Zone Number','commandID'=>'135'),
 'SD6a' => array ('Cmd1Name'=>'Thermostat Get Zone Info','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Bit Field','commandID'=>'245'),
 'SDA6a' => array ('Cmd1Name'=>'Thermostat Get Zone Info','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Requested Data','commandID'=>'245'),
 'SD6b' => array ('Cmd1Name'=>'Thermostat Control','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'244'),
@@ -511,6 +514,25 @@ private static $x10_house_codes_enc;
 	 */
 	public function plm_decode(&$plm_string) {
 
+	
+	/* Return Value:
+		$plm_decode_result = Array();
+		$plm_decode_result['plm_string'] = $plm_string;
+		$plm_decode_result['extdata'] = ERROR_STX_MISSING 		"Missing (02)STX: Invalid message";
+		$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT 	"Message strlen too short for PLM command.  Not parsed";
+		$result['extdata'] .= $Data
+		$plm_decode_result['plmcmdID'] = $plmcmdID;
+		$plm_decode_result['from'] = substr($plm_string,4,6);
+		$plm_decode_result['to'] = substr($plm_string,10,6);
+		$plm_decode_result['insteon'] = $this->insteon_decode_r(substr($plm_string,16));
+		$plm_decode_result['x10'] = $this->plm_x10_decode_r(substr($plm_string,4,4));
+		$plm_decode_result['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
+		return $plm_decode_result;
+	*/
+	
+	
+	
+	
 	$plm_string = strtolower($plm_string);
 
 #0262 1e5d8e 0f 0d00
@@ -535,7 +557,7 @@ private static $x10_house_codes_enc;
 			#Must start with STX or it is garbage
 			if(substr($plm_string,0,2) != '02') {
 				$plm_message .= "Missing (02)STX: Invalid message\n";
-				$plm_decode_result['extdata'] = "Missing (02)STX: Invalid message";
+				$plm_decode_result['extdata'] = ERROR_STX_MISSING;
 				$abort++;
 			} else {
 				$FSM++;
@@ -552,12 +574,12 @@ private static $x10_house_codes_enc;
 				$plm_decode_result['plmcmdID'] = $plmcmdID;
 				if(strlen($plm_string) < self::$plmcmdlen[strtoupper($plmcmdID)][0] * 2) {
 					$plm_message .= "        Message strlen too short for PLM command.  Not parsed\n";
-					$plm_decode_result['extdata'] = "Message strlen too short for PLM command.  Not parsed";
+					$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
 					$abort++;
 				} elseif(strlen($plm_string) > self::$plmcmdlen[strtoupper($plmcmdID)][0] * 2 
 						and strlen($plm_string) < self::$plmcmdlen[strtoupper($plmcmdID)][1] * 2) {
 					$plm_message .= "        Message strlen too short for PLM command.  Not parsed\n";
-					$plm_decode_result['extdata'] = "Message strlen too short for PLM command.  Not parsed";
+					$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
 					$abort++;
 				} elseif(substr($plm_string,2,1) == '5') {
 					#commands from PLM are 50-58
@@ -1140,3 +1162,4 @@ MA  02110-1301, USA.
 1;*/
 	
 }
+?>

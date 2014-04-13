@@ -360,7 +360,7 @@ function GetDeviceList() {
 				" FROM  `ha_mf_device_ipaddress`" .  
 				" WHERE mac='".$mac."'";  
 		$resdevices = mysql_query($mysql);
-		if ($rowdevice = mysql_fetch_array($resdevices)) {
+		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
 			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
@@ -378,7 +378,7 @@ function GetDeviceList() {
 					`last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 			}
-		}	else {
+		}	else {				// New MAC
 			$values = array("v1" => $mac, "v2" => $name, "v3" => $ip, "v4" => $connection);
 			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$labels,$values)." Alerts generated <br/>\r\n";
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
@@ -398,7 +398,16 @@ function GetDeviceList() {
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 				$devicesimported++;
 		}
+		//
+		//		Release duplicate IP's
+		//
+		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
+				" ip = NULL " .  
+				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
+		if (!mysql_query($mysql)) mySqlError($mysql);
     }
+	
+	
     
     //echo "</pre>";
 	return $devicesimported;

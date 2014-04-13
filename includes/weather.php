@@ -25,7 +25,7 @@ function loadWeather($station) {
                 //My.Application.Log.WriteException(exc, TraceEventType.Error, "Error reading data from" & My.Settings.WeatherUrl & MyStation & ".xml", 301)
                  echo 'Caught exception: ',  $e->getMessage(), "\n";
 			} 
-				$retry = $retry - 1;
+			$retry = $retry - 1;
 		}
 	return ($success ? true : false);
 }

@@ -1,4 +1,7 @@
 <?php
+define( 'DEBUG_HA', FALSE );
+//define( 'DEBUG_HA', TRUE );
+
 function ReloadScreenShot() {
 	$url = 'http://htpc:8085/HipScreenShot.jpg';
 	$img = 'images/HIPScreenshot.jpg';
@@ -9,7 +12,7 @@ function ReloadScreenShot() {
 
 function UpdateLink($deviceid, $link = LINK_UP, $callsource = 0, $commandid = 0){
 
-    //  echo "*************".$deviceid."*************";
+    if (DEBUG_HA) echo "UpdateLink Deviceid ".$deviceid."</br>\n";
 
 	$mysql = "SELECT * FROM `ha_mf_monitor_link` WHERE deviceID = ".$deviceid; 
 	if ($row = FetchRow($mysql)) {
@@ -110,22 +113,34 @@ function UpdateStatus ($deviceid, $commandid = NULL, $callsource = 0, $status = 
 {
 
 	// Interpret status value based on current command, i.e. On/Off/Error
+	if (DEBUG_HA) echo "Status commandid:".$commandid."</br>\n";
+	if (DEBUG_HA) echo "Status deviceid:".$deviceid."</br>\n";
 	if ($commandid != NULL) {
 		$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandid);
 		if ($rowcommands = mysql_fetch_array($rescommands)) {
 			$status = $rowcommands['status'];
-			if ($status != STATUS_ON && $status != STATUS_OFF && $status != STATUS_UNKNOWN) return;
+	if (DEBUG_HA) echo "Status Status:".$status."</br>\n";
+			if ($status == STATUS_NOT_DEFINED)  return;
 		} else {
 			return;
 		}
 	}
-	//echo "Status Status:".$status."</br>\n";
+	
 	$now = date( 'Y-m-d H:i:s' );
 	// Only retrieve if Monitor Type = Status Monitor
-	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, on_change FROM `ha_mf_devices` d " . 
+	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, on_change, invertstatus FROM `ha_mf_devices` d " . 
 				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
 				" WHERE deviceID = ".$deviceid. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
 	if ($row = FetchRow($mysql)) {
+		if ($row['invertstatus'] == 0) {
+			if (DEBUG_HA) echo "Status Invert"."</br>\n";
+			if ($status == STATUS_ON) {
+				$status = STATUS_OFF;
+			} elseif ($status == STATUS_OFF) {
+				$status = STATUS_ON;
+			}
+		}
+		if (DEBUG_HA) echo "Status Status2:".$status."</br>\n";
 		if ($row['status'] != $status ) {
 			// update before scheme to reduce race condition with logger
 			$mysql = "UPDATE ha_vw_monitor_combined SET status = " . $status . ", statusDate = '". $now . "' WHERE deviceID = ".$deviceid;
@@ -155,35 +170,8 @@ function udate($format, $utimestamp = null)
 }
 
 function logEvent($log) {
-	//	$inout, $source, $deviceID, $commandID, $value = Null, $extdata = Null, $logLevel = Null) {
-	// Do some validation first
 
-	// get device id
-	// get repeat cnt
 	$repeatcount=1;
-
-	//	      '
-	//        '  Check last Statuses for duplicate
-	//        '
-	//        mess = CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID)
-	//        If mCmd.Operation = "send" Then
-	//            OffSet = My.Settings.IgnoreSameSendMessageTime
-	//        Else
-	//            OffSet = My.Settings.IgnoreSameMessageTime
-	//        End If
-	//        mt = mCmd.oDTmS.oTime
-	//        For m As Integer = mStack.Count To 1 Step -1
-	//            If DateDiff(DateInterval.Second, mStack(m), mt) > OffSet Then mStack.Remove(m)
-	//        Next
-	//        If mStack.Contains(mess) Then
-	//            WriteEvent("UPDATE `homeautomation`.`ha_events` SET `repeatcount` = `repeatcount` + '1' " & _
-	//            "WHERE `mdate` = '" & mStack(mess) & "' and `inout` = '" & mIDs.InOutID & "' and `sourceID` ='" & mIDs.SourceID & _
-	//                                         "' and `deviceID` = '" & mIDs.DeviceID & "' and `commandID` = '" & mIDs.CommandID & "';")
-	//
-	//            FilterMonitorMessage = pvLogLevelDebug
-	//        Else
-	//            mStack.Add(mCmd.oDTmS.oTime, CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID))
-	//        End If
 
 	//
 	// Check for repeat statussues
@@ -191,13 +179,15 @@ function logEvent($log) {
 	$gmttime = gmdate("Y-m-d H:i:s");
 	$ms = udate("u");
 
+	$log['ip']=(!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL);
 	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
-	if (!array_key_exists("commandID", $log)) $log['commandID'] = Null;
+	if (!array_key_exists("commandID", $log)) $log['commandID'] = COMMAND_UNKNOWN;
 	if (!array_key_exists("inout", $log)) $log['inout'] = Null;
 	if (!array_key_exists("sourceID", $log)) $log['sourceID'] = Null;
 	if (!array_key_exists("repeatcount", $log)) $log['repeatcount'] = 1;
-	if (!array_key_exists("data", $log)) $log['data'] = 1;
+	if (!array_key_exists("data", $log)) $log['data'] = Null;
 	if (!array_key_exists("result", $log)) $log['result'] = Null;
+	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if ($log['result'] === FALSE) $log['result'] = "FALSE";
 	if ($log['result'] === TRUE) $log['result'] = "TRUE";
 	
@@ -222,16 +212,22 @@ function logEvent($log) {
 		//
 		$log['typeID'] = NULL;
 		if ($log['deviceID'] != Null) {
-			$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ='.$log['deviceID'];
+			$mysql='SELECT `id`, `typeID`, `invertstatus` FROM `ha_mf_devices` WHERE `id` ='.$log['deviceID'];
 			$resdevice=mysql_query($mysql);
 			$rowdevice=mysql_fetch_array($resdevice);
 			$log['typeID'] = $rowdevice['typeID'];
+			if ($rowdevice['invertstatus'] == 0) $log['extdata'] = "Inverted ".$log['extdata']; 
 		}
 		
 		$log['mdate'] = $gmttime;
 		$log['milliseconds'] = udate("u");
-		if (!array_key_exists("logLevel",$log )) $log['logLevel'] = 1;
-		
+
+		$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
+		$rescommand=mysql_query($mysql);
+		$rowcommand=mysql_fetch_array($rescommand);
+		if (!is_null($rowcommand['loglevel'])) $log['logLevel'] = $rowcommand['loglevel'];
+		if (!array_key_exists("logLevel",$log )) $log['logLevel'] = LOGLEVEL_NORMAL;
+			
 		mysql_insert_assoc ("ha_events", $log);
 	}
 }

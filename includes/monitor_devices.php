@@ -21,10 +21,13 @@ function monitorDevice($deviceid, $pingport, $montype) {
 		exit;
 	}
 	$rowip = mysql_fetch_assoc($resip);
-	if ($pingport>0) {
-		$status = pingip ($rowip['ip'],$pingport,1);
-	} else {
-		$status = pingtcp ($rowip['ip'],100);
+	$status = false;
+	if ($rowip['ip'] != NULL) {
+		if ($pingport>0) {
+			$status = pingip ($rowip['ip'],$pingport,1);
+		} else {
+			$status = pingtcp ($rowip['ip'],100);
+		}
 	}
 	if ($status) {
 		$curstat = STATUS_ON;
@@ -35,6 +38,7 @@ function monitorDevice($deviceid, $pingport, $montype) {
 		$curlink = LINK_DOWN;
 		$statverb = "Offline";
 	}
+
 	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceid</br>";
 	UpdateLink($deviceid, $curlink, SIGNAL_MONITOR_DEVICES, COMMAND_LINK_STATUS);
 	UpdateStatus ($deviceid, NULL, SIGNAL_MONITOR_DEVICES, $curstat) ;

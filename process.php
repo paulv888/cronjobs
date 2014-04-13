@@ -74,6 +74,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 	global $inst_coder;
 	$inst_coder = new InsteonCoder();
 	$feedback = "";
+	$schemeid = 0;
 	
 	switch ($callsource)
 	{
@@ -93,17 +94,6 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 					$commandid=$rowkeys['commandID'];
 				}
 			}  		
-			if ($commandid==COMMAND_TOGGLE) {   // Special handling for toggle
-				if ($setvalue==100) {
-					$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowkeys['deviceID']);
-					$rowmonitor = mysql_fetch_array($resmonitor);
-					if ($rowmonitor) {
-						$commandid = ($rowmonitor['status'] == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
-					}
-				} else {
-						$commandid = COMMAND_ON;						
-				}
-			}
 			if ($result=SendCommand($callsource, $rowkeys['deviceID'], $commandid,  $setvalue)) {
 				$feedback .= $result;
 			} else {
@@ -135,7 +125,7 @@ function process($callsource, $remotekeyid = NULL, $commandid = NULL, $alertid =
 		break;
 	}
 	
-	
+	if ($mouse == 'down') return;
 	if ($schemeid>0)  $feedback .= RunScheme ( $schemeid, $callsource);
 	
 	if (!empty($rowkeys)) 
@@ -170,34 +160,6 @@ function RunScheme($schemeid, $callsource = SIGNAL_SOURCE_REMOTE_SCHEME, $alerti
 			$condvalue = $rowcond['status'];
 			if ($condvalue !== $testvalue) {
 				if (MYDEBUG) echo "Condition fail: confd:".$condvalue." ,test: ".$testvalue."</p>";
-				return 1;
-			}
-			break;
-		case SCHEME_CONDITION_SYSTEM_STATUS: 
-			if (MYDEBUG) echo "SCHEME_CONDITION_SYSTEM_STATUS</p>";
-			$rowconf = FetchRow("SELECT * FROM `ha_configuration` WHERE id = 1");
-			$condvalue = $rowcond['status'];
-			switch ($rowcond['system'])
-			{
-			case SYSTEM_STATUS_ARE_HOME: 
-				if (MYDEBUG) echo "SYSTEM_STATUS_ARE_HOME</p>";
-				$testvalue = $rowconf['are_home'];
-				break;
-			case SYSTEM_STATUS_ALARM_ARMED: 
-				if (MYDEBUG) echo "SYSTEM_STATUS_ALARM_ARMED</p>";
-				$testvalue = $rowconf['alarm_armed'];
-				break;
-			case SYSTEM_STATUS_IS_DARK: 
-				if (MYDEBUG) echo "SYSTEM_STATUS_IS_DARK</p>";
-				$testvalue = $rowconf['is_dark'];
-				break;
-			case SYSTEM_STATUS_PAUL_TRIP: 
-				if (MYDEBUG) echo "SYSTEM_STATUS_PAUL_TRIP</p>";
-				$testvalue = $rowconf['paul_trip'];
-				break;
-			}
-			if ($condvalue !== $testvalue) {
-				if (MYDEBUG) echo "Condition fail: confd".$condvalue." ,test: ".$testvalue."</p>";
 				return 1;
 			}
 			break;
@@ -241,10 +203,26 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		$commandclassid = $rowdevices['commandclassid'];
 		if (MYDEBUG) echo "device ".$deviceid."</p>";
 		if (MYDEBUG) echo "targettype ".$rowdevicelinks['targettype']."</p>";
+
+		if ($commandid==COMMAND_TOGGLE) {   // Special handling for toggle
+			if ($value==100) {
+				$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceid);
+				$rowmonitor = mysql_fetch_array($resmonitor);
+				if ($rowmonitor) {
+					if (MYDEBUG) echo "Toggling Old Status ".$rowmonitor['status']."</p>";
+					$commandid = ($rowmonitor['status'] == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
+				}
+			} else {
+					$commandid = COMMAND_ON;						
+			}
+		}
+
+
 	} else {
 		$commandclassid = COMMAND_CLASS_INTERNAL;
 	}
 	
+
 	$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 			" ha_mf_commands.id=ha_mf_commands_detail.commandid" .
 			" WHERE ha_mf_commands.id =".$commandid. " AND commandclassid = ".$commandclassid." AND inuse = 1";
@@ -260,6 +238,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 	if (MYDEBUG) echo "commandclassid ".$commandclassid."</p>";
 	if (MYDEBUG) echo "value ".$value."</p>";
 	if (MYDEBUG) echo " command ". $rowcommands['command']."</p>";
+	if (MYDEBUG) echo " command value ". $rowcommands['value']."</p>";
 	
 	switch ($commandclassid)
 	{
@@ -267,6 +246,14 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
 		$result = $func($deviceid, $value);
+		$feedback = verbStatus($deviceid, $result[0]);
+		$feedback .= setValue($deviceid, $result[1]);
+		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
+		break;
+	case COMMAND_CLASS_VIRTUAL:
+		if (MYDEBUG) echo "COMMAND_CLASS_VIRTUAL</p>";
+		$result[] = UpdateStatus($deviceid, $commandid, $callsource);
+		$result[] = 100;
 		$feedback = verbStatus($deviceid, $result[0]);
 		$feedback .= setValue($deviceid, $result[1]);
 		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
@@ -283,6 +270,7 @@ function SendCommand($callsource, $deviceid = NULL, $commandid = NULL,  $value =
 		logEvent(Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceid, 'commandID' => $commandid, 'data' => $value, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_INSTEON:
+		if (MYDEBUG) echo "COMMAND_CLASS_INSTEON"."</p>";
 		$tcomm = str_replace("{commandid}",$commandid,$rowcommands['command']);
 		$tcomm = str_replace("{deviceid}",$deviceid,$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
@@ -446,7 +434,6 @@ function verbStatus ($deviceid, $status) {
 	else 
 		return;
 }
-
 
 function setValue ($deviceid, $value) {
 // breaks if multiple keys for same device only 1 will be udated

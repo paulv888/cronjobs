@@ -506,7 +506,7 @@ $this->debug = false;
 	public function getTargetOnOff()
 	{
 
-		if ($this->tmode == 0) return STATUS_OFF;
+		if ($this->tmode == 0) return 32;
 
 		if ($this->tmode == 1) {											// Heating Mode
 		//            19      >=     21 - 2   (if target > 20) then on

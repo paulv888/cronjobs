@@ -9,7 +9,7 @@ function loadRemote($remoteID) {
 		$myxmax = $rowremotekeys['maxx'];
 		$myymax = $rowremotekeys['maxy'];
 		$tdwidth = floor(100/$myxmax);
-		echo '<table class="table">';
+		echo '<table class="table table-condensed table">';
 		for ($myycell = 1; $myycell <= $myymax; $myycell++) {
 			echo '<tr class="keysrow">';
 			for ($myxcell = 1; $myxcell <= $myxmax; $myxcell++) {
@@ -73,7 +73,7 @@ function loadRemote($remoteID) {
 	   	    		}
 	   	    		if ($rowremotekeys['inputtype']=="button") { 
 	   	    				$fieldtype = "button";
-	   	    				$fieldclass = "btn button rem-button";
+	   	    				$fieldclass = "button rem-button";
 	   	    		} 
 	   	    		if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
 		   	    		echo '<'.$fieldtype.' class="'.$fieldclass;

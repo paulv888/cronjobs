@@ -128,6 +128,9 @@ table {width:100%}
 .rem-type19 {
 	background-image:url('../images/type19.png');
 }
+.rem-type26 {
+	background-image:url('../images/type26.png');
+}
 
 .button, .jump-button {
     border-radius: 0.5em 0.5em 0.5em 0.5em;
@@ -161,6 +164,16 @@ table {width:100%}
     background-image: -moz-linear-gradient(center top , #000000, #444444);
     color: #777777;
 } 
+.unknown {
+	background: #FFFF00;
+	-webkit-box-shadow: 2px 3px 4px #E4D8BA;
+	box-shadow: 2px 3px 4px #E4D8BA;
+}
+.on {
+	background-color: #FFFF90;
+}
+.off {
+}
 
 .rem-type1.on {
 	background-image:url('../images/bulb_on.png');
@@ -194,6 +207,12 @@ table {width:100%}
 }
 .rem-type19.off {
 	background-image:url('../images/flame_off.png');
+}
+.rem-type26.on {
+	background-image:url('../images/alarm_on.png');
+}
+.rem-type26.off {
+	background-image:url('../images/alarm_off.png');
 }
 .keystable {
 }
@@ -242,17 +261,6 @@ table {width:100%}
 	padding:10px 0px; 
 	/*font-size:16px;*/ 
 	font-weight:bold
-}
-.unknown {
-	background: #FFFF00;
-	-webkit-box-shadow: 2px 3px 4px #E4D8BA;
-	box-shadow: 2px 3px 4px #E4D8BA;
-}
-
-.on {
-	background-color: #FFFF90;
-}
-.off {
 }
 
 .schaddbut td {

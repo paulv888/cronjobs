@@ -73,6 +73,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 			if (checktime($rowalerts['generate_start'],$rowalerts['generate_end'])) {	// good 
 				// Run hourly or every run then update repeat key.
 				// 1 = Every Run , 2 = Once/Hour
+				$updaterepeat=false;
 				if (($rowalerts['repeat']==1) OR ($rowalerts['repeat']==2)) {     
 					$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, MAX( repeat_count ) AS max FROM  `ha_alerts` ".
 						" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertid =".$rowalerts['id'].  
@@ -90,14 +91,14 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 							if ($reslast = mysql_query($mysql)) {
 								$rowlast = mysql_fetch_assoc($reslast);
 								if ($rowalerts['repeat']==1) $updaterepeat= true;
-								if (($rowalerts['repeat']==2) AND ((int)(abs(strtotime(date("Y-m-d H:i:s")) - strtotime($rowlast['action_date'])) / 60) >= 60)) $updaterepeat= true;
+								if (($rowalerts['repeat']==2) AND ((int)(abs(strtotime(date("Y-m-d H:i:s")) - strtotime($rowlast['action_date'])) / 60) > 55)) $updaterepeat= true;
 							}
 						}
 					} else {
 						mySqlError($mysql); 
 					}
 				} 
-				if ($updaterepeat) {  																// Handle every run repeat & Every Hour if time since last alert > 55 min
+				if ($updaterepeat) {  						// Handle every run repeat & Every Hour if time since last alert > 55 min
 					$newmax = $rowmax['max'] + 1 ;
 					$mysql="UPDATE `ha_alerts` ".
 						" SET repeat_count = ".$newmax. 
@@ -110,6 +111,11 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 				$mysql=$rowalerts['sql'];
 				$mysql=str_replace("{alertsid}",$rowalerts['id'],$mysql);
 				$mysql=str_replace("{deviceid}",$rowalerts['deviceID'],$mysql);
+				$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
+				$mysql=str_replace("{DEVICE_ALARM_ZONE1}",DEVICE_ALARM_ZONE1,$mysql);
+				$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
+				$mysql=str_replace("{DEVICE_DARK_OUTSIDE}",DEVICE_DARK_OUTSIDE,$mysql);
+				$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
 				if (is_array($labels)) {
 					foreach ($labels as $key => $label) {
 						$mysql=str_replace("{".$key."}",$label,$mysql);

@@ -74,6 +74,7 @@ private static $inout_a = Array (
 
 	public function getMessage(){
 
+		$result = "";
 		while ($this->messages->count()<1) {
 		/*		try {
 		 $result=$transport->readAll(100);
@@ -84,12 +85,29 @@ private static $inout_a = Array (
 		echo $e->getMessage();
 		} */
 	
-			$result = $this->transport->readAll();
+			$result.= $this->transport->readAll();
 			if ($result) {
 				$plm_decode_result = $this->inst_coder->plm_decode(bin2hex($result));
-				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
-				if (DEBUG_INSTEON) print_r($plm_decode_result);
-				$this->addMessage($plm_decode_result);		
+				// check for to short for PLM message, if so save result for rest
+				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = Null;
+				switch ($plm_decode_result['extdata'])
+				{
+					case ERROR_MESSAGE_TO_SHORT:  		// leave result and wait for more
+						echo "ERROR_MESSAGE_TO_SHORT"." Waiting for more"."\n";
+						break;
+					case ERROR_STX_MISSING:				// not handled yet. 
+						echo "ERROR_STX_MISSING"." Not storing"."\n";
+						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
+						if (DEBUG_INSTEON) print_r($plm_decode_result);
+						$result = "";														// Clear result padding
+						break;
+					default:
+						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
+						if (DEBUG_INSTEON) print_r($plm_decode_result);
+						$this->addMessage($plm_decode_result);
+						$result = "";														// Clear result padding
+						break;
+				}
 			} else {
 				// havent heard anything for 15min, check if still alive.
 				$nowdt = strtotime(date("Y-m-d H:i:s"));
@@ -97,6 +115,7 @@ private static $inout_a = Array (
 					$this->last = strtotime(date("Y-m-d H:i:s"));
 					$this->transport->write(hex2bin("0273"));
 				}
+				$result = "";														// Clear result padding
 			}
 		}
 		return $this->messages->dequeue();
@@ -152,10 +171,10 @@ private static $inout_a = Array (
 				$insteon = $plm_decode_result['insteon'];
 				if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
 				if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
-				$rescommands = mysql_query("SELECT * FROM ha_mf_commands_detail WHERE ha_mf_commands_detail.id =".$insteon['commandID']);
-				$rowcommands = mysql_fetch_array($rescommands);
-				if (!$rowcommands)  mySqlError($mysql);
-				$compl['commandID'] = $rowcommands['commandid'];
+//				$rescommands = mysql_query("SELECT * FROM ha_mf_commands_detail WHERE ha_mf_commands_detail.id =".$insteon['commandID']);
+//				$rowcommands = mysql_fetch_array($rescommands);
+//				if (!$rowcommands)  mySqlError($mysql);
+				$compl['commandID'] = $insteon['commandID'];
 			}
 			$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 			$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];

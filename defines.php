@@ -19,14 +19,20 @@ define("LINK_UP", 1);
 // Event log values
 define("SOURCE_ARD_BRDIGE", 9);
 
-// Current Status Values
+// Event Log Levels
+define("LOGLEVEL_NORMAL", 1);
+define("LOGLEVEL_DEBUG", 2);
+
+// Log whether command was send or received
+define("COMMAND_SEND", 1 );
+define("COMMAND_RECV", 2 );
+
+// Status Values, Retrieved from command
 define("STATUS_ON", 1 );
 define("STATUS_OFF", 0 );
 define("STATUS_UNKNOWN", 2 );
-
-// Current Status Values
-define("COMMAND_SEND", 1 );
-define("COMMAND_RECV", 2 );
+define("STATUS_ERROR", -1 );
+define("STATUS_NOT_DEFINED", 10);		// Used for defining status on commands 
 
 // Commands from Device
 define("COMMAND_RESULT_OK", 1);
@@ -72,15 +78,15 @@ define ("COMMAND_CLASS_SONYCAM",5);
 define ("COMMAND_CLASS_INTERNAL", 6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
+define ("COMMAND_CLASS_VIRTUAL", 9);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
-
+define ("COMMAND_CLASS_FOSCAM", 11);
 
 // Special X10_INSTEON dim handling
 define ("COMMAND_DIM_CLASS_X10_INSTEON", "|{code}480=I=3");
 
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_STATUS", 1);
-define ("SCHEME_CONDITION_SYSTEM_STATUS", 2);
 define ("SCHEME_CONDITION_TIME", 3);
 
 // System Status
@@ -109,4 +115,15 @@ define("ALERT_NEW_NETWORK_DEVICE", 22);
 
 define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
 define("SOURCE_WEATHER_GOV", 7);
+
+// Insteon Decoder Errors
+define("ERROR_STX_MISSING", -1);
+define("ERROR_MESSAGE_TO_SHORT", -2);
+
+// Query replacement devices
+define("DEVICE_SOMEONE_HOME", 157);
+define("DEVICE_ALARM_ZONE1", 158);
+define("DEVICE_ALARM_ZONE2", 159);
+define("DEVICE_DARK_OUTSIDE", 160);
+define("DEVICE_PAUL_HOME", 161);
 ?>
