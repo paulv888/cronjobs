@@ -14,7 +14,7 @@ function loadWeather($station) {
             	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
             	if ($feedback) {
             		$xml = new SimpleXMLElement($get->getresponse());
-            		UpdateWeatherNow($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity  , 0);
+            		UpdateWeatherNow($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity);
             		UpdateWeatherCurrent($xml, $values, $mydeviceID[$station] );
             		UpdateLink ($mydeviceID[$station]);
                 	$success = true; 

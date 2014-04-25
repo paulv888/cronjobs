@@ -1,120 +1,154 @@
-window.addEvent('domready', function(){
+if(!window.scriptHasRun) { 
+	window.scriptHasRun = true; 
+	var COMMAND_TOGGLE = 19;
+	var SIGNAL_SOURCE_COMMAND = 16;
+	var SIGNAL_SOURCE_SCHEME = 20;
+	var SIGNAL_SOURCE_REMOTE = 3;
+	var lastKey = null;
+	window.addEvent('domready', function(){
 
-	$$('.rem-button').addEvent('mousedown', function(event){
-		event.stop();
-
-		var myHTMLRequest = new Request({
-
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
-			method: 'post',
-			data: { 'callsource':'3', 'remotekey':this.get("remotekey"), 'mouse':'down'},
+		//launchFullScreen(document.documentElement) // the whole page	
+		//toggleFullScreen(); does not allow auto :)
 		
-			onRequest: function(){
-				$$('#message').set('html', 'executing...');
-			},
+		//checkInstalled();
 
-			onComplete: function(response){
-				$$('#message').set('html',response);
-			},
-		}).send();
-	});	
-});
+		$$('.rem-button-down').removeEvents('mousedown');
+		$$('.rem-button-down').addEvent('mousedown', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_REMOTE, remotekey: this.get("remotekey"), mouse: 'down'};
+			callAjax (params) ;
+		});	
 
-window.addEvent('domready', function(){
+		$$('.rem-button-down').removeEvents('mouseup');
+		$$('.rem-button-down').addEvent('mouseup', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_REMOTE, remotekey: this.get("remotekey"), mouse: 'up'};
+			callAjax (params) ;
+		});	
 
-	$$('.rem-button').addEvent('mouseup', function(event){
-		event.stop();
+		$$('.rem-button').removeEvents('click');
+		$$('.rem-button').addEvent('click', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_REMOTE, remotekey: this.get("remotekey")};
+			callAjax (params) ;
+		});	
 
-		var myHTMLRequest = new Request({
+		//Dropdowns, either be command or scheme, if scheme Scommand 
+		$$('.controlselect-button').removeEvents('change');
+		$$('.controlselect-button').addEvent('change', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_REMOTE, remotekey: this.get("remotekey"), 'command':this.get('value')};
+			callAjax (params) ;
+		});	
 
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
-			method: 'post',
-			data: { 'callsource':'3', 'remotekey':this.get("remotekey"), 'mouse':'up'},
+		//Test button (
+		$$('.test-button').removeEvents('click');
+		$$('.test-button').addEvent('click', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_SCHEME, 'scheme':this.get('value')};
+			callAjax (params) ;
+		});	
+
+		//this is the function that dropdown's button
+		$$('.jump-button').removeEvents('click');
+		$$('.jump-button').addEvent('click', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_REMOTE, remotekey: this.get("remotekey"), 'command':this.getPrevious('.controlselect-button').value};
+			callAjax (params) ;
+		});	
 		
-			onRequest: function(){
-				$$('#message').set('html', 'executing...');
-			},
+		//this is the function that handle switch applications (go button)
+		$$('#myTab a').removeEvents('click');
+		$$('#myTab a').addEvent('click', function(event){
+			$$('.message').removeClass('alert');
+			$$('.message').set('html', '');
+		})
+	});
 
-			onComplete: function(response){
-				$$('#message').set('html',response);
-			},
-		}).send();
-	});	
-});
-
-
-window.addEvent('domready', function(){
-
-	//this is the function that dropdown
-	$$('.controlselect').addEvent('change', function(event){
-		// event = new Event(event).stop(); 
-		event.stop();
-
-		var myHTMLRequest = new Request({
-
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
-			method: 'post',
-			data: { 'callsource':'3', 'remotekey':this.get('remotekey'), 'command':this.get('value')},
-
-			onRequest: function(){
-				$$('#message').set('html', 'executing...');
-			},
-
-			onComplete: function(response){
-				$$('#message').set('html',response);
-			},
-		}).send();
-	});	
-});
-
-
-window.addEvent('domready', function(){
-
-	//this is the function that dropdown
-	$$('.controlselect-button').addEvent('change', function(event){
-		// event = new Event(event).stop(); 
-		event.stop();
-
-		var myHTMLRequest = new Request({
-
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
-			method: 'post',
-			data: { 'callsource':'3', 'remotekey':this.get('remotekey'), 'command':this.get('value')},
-
-			onRequest: function(){
-				$$('#message').set('html', 'executing...');
-			},
-
-			onComplete: function(response){
-				$$('#message').set('html',response);
-			},
-		}).send();
-	});	
-});
-
-window.addEvent('domready', function(){
-
-	//this is the function that dropdown
-	$$('.jump-button').addEvent('click', function(event){
-		// event = new Event(event).stop(); 
-		event.stop();
-
-		var myHTMLRequest = new Request({
-
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
-			method: 'post',
-			data: { 'callsource':'3', 'remotekey':this.get('remotekey'), 'command':this.getPrevious('.controlselect-button').value},
+	function launchFullScreen(element) {
+		if(element.requestFullscreen) {
+			element.requestFullscreen();
+		} else if(element.mozRequestFullScreen) {
+			element.mozRequestFullScreen();
+		} else if(element.webkitRequestFullscreen) {
+			element.webkitRequestFullscreen();
+		} else if(element.msRequestFullscreen) {
+			element.msRequestFullscreen();
+		}
+	}
 		
+	function callAjax (params) {
+
+		var myHTMLRequest = new Request({
+			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			method: 'post',
+			//async: false,
+			data: params,
 			onRequest: function(){
-				$$('#message').set('html', 'executing...');
+				$$('.message').removeClass('alert');
+				document.getElementById('spinner').style.display = 'block';
 			},
 
-			onComplete: function(response){
-				$$('#message').set('html',response);
+			onComplete: function(data){
+				processData(data);
+				document.getElementById('spinner').style.display = 'none';
 			},
 		}).send();
-	});	
-});
+	};
+		
+	function callAjaxSync (params) {
 
+		var myHTMLRequest = new Request({
+			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			method: 'post',
+			async: false,
+			data: params,
+			onRequest: function(){
+				$$('.message').removeClass('alert');
+				document.getElementById('spinner').style.display = 'block';
+			},
 
-
+			onComplete: function(data){
+				processData(data);
+				document.getElementById('spinner').style.display = 'none';
+			},
+		}).send();
+	};
+		
+	function processData(data) {
+		$$('.message').set('html', '');
+		var temp = new Array();
+		temp = data.split(';');
+		if (temp[0]) {
+			if (temp[0] != 'OK') 
+			{
+				$$('.message').addClass('alert');
+				$$('.message').set('html',data);
+				return;
+			}
+			Array.each(temp, function(arr) {
+				var temp1 = new Array();
+				temp1 = arr.split(' ');
+				temp1.push(null);
+				if (temp1[0].indexOf('OK') > -1) return;
+				if (temp1[2] != null) 
+				{
+					//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
+					$$('[remotekey=' + temp1[0] + ']').each(function(index){
+							$(index).set('html',temp1[2]);
+						});
+				} else {
+					$$('[remotekey=' + temp1[0] + ']').each(function(index){
+							$(index).removeClass("off");
+							$(index).removeClass("on");
+							$(index).removeClass("error");
+							$(index).removeClass("undefined");
+							$(index).removeClass("unknown");
+							$(index).addClass(temp1[1]);
+						});
+				}
+				return (arr.length !== 0); // will stop running after "three"
+			});
+		};
+	}
+}

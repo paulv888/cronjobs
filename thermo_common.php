@@ -33,7 +33,7 @@ try
 {
   $thermostats = array();
   $sql = "SELECT * FROM `ha_mf_devices` inner join ha_mf_devices_thermostat as t ON ". 
-  		  "t.deviceID=`ha_mf_devices`.`id` inner join ha_mf_device_links AS l ON devicelink=l.id " .
+  		  "t.deviceID=`ha_mf_devices`.`id` inner join ha_mf_device_links AS l ON devicelinkID=l.id " .
   		  "WHERE typeID=".DEV_TYPE_HEAT." OR typeID=" . DEV_TYPE_COOL ." OR typeID= " . DEV_TYPE_OFF;
   foreach( $pdo->query($sql) as $row )
   {

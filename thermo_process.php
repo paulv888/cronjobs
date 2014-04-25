@@ -22,19 +22,19 @@
 	* Date is simply the last time the status was updated
 	*/
 
-function HvacToggle($deviceid, $status = NULL) {
+function HvacToggle($deviceID, $status = NULL) {
 
 global $lock;
 global $thermostats;
 
 $now = date( 'Y-m-d H:i:s' );
 
-	$thermostatRec = $thermostats[$deviceid];
+	$thermostatRec = $thermostats[$deviceID];
 	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
 	{
 		try
 		{
-			$thermostatRec = $thermostats[$deviceid];
+			$thermostatRec = $thermostats[$deviceID];
 			// Query thermostat info
 			//logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['tstat_uuid']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
 			$stat = new Stat( $thermostatRec );
@@ -62,33 +62,33 @@ $now = date( 'Y-m-d H:i:s' );
 	fclose( $lock );
 
 }
-function HvacOff($deviceid) {
+function HvacOff($deviceID) {
 
 	// Using Toggle so flip status ON=OFF
-	return HvacToggle($deviceid, STATUS_ON);
+	return HvacToggle($deviceID, STATUS_ON);
 
 }
 
-function HvacOn($deviceid) {
+function HvacOn($deviceID) {
 
 	// Using Toggle so flip status ON=OFF
-	return HvacToggle($deviceid, STATUS_OFF);
+	return HvacToggle($deviceID, STATUS_OFF);
 
 }
 
-function HvacTempAdd($deviceid, $addtemp) {
+function HvacTempAdd($deviceID, $addtemp) {
 
 global $lock;
 global $thermostats;
 
 $now = date( 'Y-m-d H:i:s' );
 
-	$thermostatRec = $thermostats[$deviceid];
+	$thermostatRec = $thermostats[$deviceID];
 	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
 	{
 		try
 		{
-			$thermostatRec = $thermostats[$deviceid];
+			$thermostatRec = $thermostats[$deviceID];
 			// Query thermostat info
 			//logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['tstat_uuid']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
 			$stat = new Stat( $thermostatRec );
@@ -117,16 +117,16 @@ $now = date( 'Y-m-d H:i:s' );
 
 }
 
-function HvacUp($deviceid) {
+function HvacUp($deviceID) {
 
 	// Using Toggle so flip status ON=OFF
-	return HvacTempAdd($deviceid, 1);
+	return HvacTempAdd($deviceID, 1);
 
 }
-function HvacDown($deviceid) {
+function HvacDown($deviceID) {
 
 	// Using Toggle so flip status ON=OFF
-	return HvacTempAdd($deviceid, -1);
+	return HvacTempAdd($deviceID, -1);
 
 }
 ?>

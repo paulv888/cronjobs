@@ -366,8 +366,8 @@ function GetDeviceList() {
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
 				$resdev = mysql_query($mysql);
-				if ($rowdev = mysql_fetch_array($resdev)) $deviceid = $rowdev['id']; else $deviceid = 0;
-				$labels = array("l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceid);
+				if ($rowdev = mysql_fetch_array($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
+				$labels = array("l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceID);
 				$values = array("v1" => $rowdevice['name'],"v2" => $name, "v3" => $rowdevice['ip'],"v4" => $ip);
 				echo Alerts(ALERT_CHANGED_NETWORK_DEVICE,$labels,$values)." Alerts generated <br/>\r\n";
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 

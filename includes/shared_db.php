@@ -105,7 +105,7 @@ function mySqlError($mysql) {
 				sleep (10);
 				mysql_close($mysql_link);
 				$mysql_link = mysql_connect($dbConfig['server'], $dbConfig['username'], $dbConfig['password']);
-				if (mysql_select_db($dbConfig['database'],$mysql_link)) return 1;
+				if (mysql_select_db($dbConfig['database'],$mysql_link)) return true;
 			}
 			echo 'Lost connection, exiting...\n';
 			exit;

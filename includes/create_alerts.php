@@ -4,13 +4,13 @@ define("DEBUG_ALERT", FALSE);
 
 function AlertsActions(){
 
-	$mysql='SELECT `ha_alerts`.`id` as `ha_alerts_id`, `ha_alerts`.`deviceID` as al_deviceID, `ha_alerts`.`alertid`, `ha_alerts`.`date_key`, `ha_alerts`.`action_date`, `ha_alerts_dd`.* , `ha_alert_text`.`description`, '.
+	$mysql='SELECT `ha_alerts`.`id` as `ha_alerts_id`, `ha_alerts`.`deviceID` as al_deviceID, `ha_alerts`.`alertID`, `ha_alerts`.`date_key`, `ha_alerts`.`action_date`, `ha_alerts_dd`.* , `ha_alert_text`.`description`, '.
 			' `ha_alert_text`.`message`, `ha_mf_commands`.`id`, `ha_mf_commands_detail`.`command` '.
 			'FROM `ha_alerts_dd` '.
-			'LEFT JOIN `ha_alerts` ON `ha_alerts_dd`.`id`=`ha_alerts`.`alertid` '.
+			'LEFT JOIN `ha_alerts` ON `ha_alerts_dd`.`id`=`ha_alerts`.`alertID` '.
 			'LEFT JOIN `ha_alert_text` ON `ha_alerts_dd`.`alert_textID`=`ha_alert_text`.`id` '.
 			'LEFT JOIN `ha_mf_commands` ON `ha_alerts_dd`.`commandID`=`ha_mf_commands`.`id` '.
-			'LEFT JOIN `ha_mf_commands_detail` ON `ha_mf_commands`.`id`=`ha_mf_commands_detail`.`commandid` '.
+			'LEFT JOIN `ha_mf_commands_detail` ON `ha_mf_commands`.`id`=`ha_mf_commands_detail`.`commandID` '.
 	'WHERE `ha_alerts`.`processed` <> "1"';
 
 	if (!$resalerts = mysql_query($mysql)) {
@@ -23,9 +23,10 @@ function AlertsActions(){
 	while ($rowalerts = mysql_fetch_assoc($resalerts)) {
 
 		if (checktime($rowalerts['send_start'],$rowalerts['send_end'])) {	  					// good 
-			if ($rowalerts['schemeid']>0) { 													// Scheme setup so run scheme
-				$result= process(SIGNAL_SOURCE_HA_ALERT,"","",$rowalerts['ha_alerts_id']);
-			} else {
+			$result = TRUE;
+			if ($rowalerts['schemeID']>0) { 													// Scheme setup so run scheme
+				$result= process(SIGNAL_SOURCE_HA_ALERT, array ( 'alertID' => $rowalerts['ha_alerts_id']));
+			} elseif ($rowalerts['alert_textID']>0) {
 				$subject= $rowalerts['description'];
 				$message= $rowalerts['message'];
 				$myresult = createMail(SIGNAL_SOURCE_HA_ALERT,$rowalerts['ha_alerts_id'],$subject,$message);
@@ -47,17 +48,17 @@ function AlertsActions(){
 
 }
 
-function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
+function Alerts($alertID = NULL, $labels = NULL, $values = NULL  ){
 
-	if ($alertid == NULL) {
+	if ($alertID == NULL) {
 		$mysql="SELECT * ". 
 				" FROM  `ha_alerts_dd` WHERE active='1'" ;
 	} else {
-		preg_match ( "/^[1-9][0-9]*/", $alertid, $matches);
-		$alertid = $matches[0];
+		preg_match ( "/^[1-9][0-9]*/", $alertID, $matches);
+		$alertID = $matches[0];
 
 		$mysql="SELECT * ". 
-				" FROM  `ha_alerts_dd` WHERE active='2' AND id = ".$alertid ;
+				" FROM  `ha_alerts_dd` WHERE active='2' AND id = ".$alertID ;
 	}
 	if (!$resalerts = mysql_query($mysql)) {
 		mySqlError($mysql); 
@@ -76,7 +77,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 				$updaterepeat=false;
 				if (($rowalerts['repeat']==1) OR ($rowalerts['repeat']==2)) {     
 					$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, MAX( repeat_count ) AS max FROM  `ha_alerts` ".
-						" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertid =".$rowalerts['id'].  
+						" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertID =".$rowalerts['id'].  
 						" AND date_key = DATE(NOW()))" ;
 						if (DEBUG_ALERT) echo $mysql."</br>";
 					$updaterepeat=false;
@@ -85,7 +86,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 						if ($rowmax['ha_alerts_id'] !== NULL) {
 							// get repeat 0 (last run one)
 							$mysql="SELECT `ha_alerts`.`id` as `ha_alerts_id`, action_date FROM  `ha_alerts` ".
-								" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertid =".$rowalerts['id'].  
+								" WHERE (deviceID = ".$rowalerts['deviceID']." AND alertID =".$rowalerts['id'].  
 								" AND date_key = DATE(NOW()) AND repeat_count = 0)" ;
 								if (DEBUG_ALERT) echo $mysql."</br>";
 							if ($reslast = mysql_query($mysql)) {
@@ -109,8 +110,8 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 
 				
 				$mysql=$rowalerts['sql'];
-				$mysql=str_replace("{alertsid}",$rowalerts['id'],$mysql);
-				$mysql=str_replace("{deviceid}",$rowalerts['deviceID'],$mysql);
+				$mysql=str_replace("{alertID}",$rowalerts['id'],$mysql);
+				$mysql=str_replace("{deviceID}",$rowalerts['deviceID'],$mysql);
 				$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
 				$mysql=str_replace("{DEVICE_ALARM_ZONE1}",DEVICE_ALARM_ZONE1,$mysql);
 				$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
@@ -136,7 +137,7 @@ function Alerts($alertid = NULL, $labels = NULL, $values = NULL  ){
 			}
 		}
 	}
-	if ($alertid != NULL) AlertsActions();
+	if ($alertID != NULL) AlertsActions();
 	return $inserts;
 }
 

@@ -79,7 +79,7 @@ function captureStream(&$idata) {
 			$mysql .= ")";
 			if (!mysql_query($mysql)) mySqlError($mysql);
 	} else {
-		echo "Unrecognized DeviceID";
+		echo "Unrecognized deviceID";
 	}
 }
 
@@ -94,7 +94,7 @@ function doEventStatus(&$idata) {
 	//	      '
 	//        '  Check last Statuses for duplicate
 	//        '
-	//        mess = CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID)
+	//        mess = CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.deviceID) & CStr(mIDs.CommandID)
 	//        If mCmd.Operation = "send" Then
 	//            OffSet = My.Settings.IgnoreSameSendMessageTime
 	//        Else
@@ -107,11 +107,11 @@ function doEventStatus(&$idata) {
 	//        If mStack.Contains(mess) Then
 	//            WriteEvent("UPDATE `homeautomation`.`ha_events` SET `repeatcount` = `repeatcount` + '1' " & _
 	//            "WHERE `mdate` = '" & mStack(mess) & "' and `inout` = '" & mIDs.InOutID & "' and `sourceID` ='" & mIDs.SourceID & _
-	//                                         "' and `deviceID` = '" & mIDs.DeviceID & "' and `commandID` = '" & mIDs.CommandID & "';")
+	//                                         "' and `deviceID` = '" & mIDs.deviceID & "' and `commandID` = '" & mIDs.CommandID & "';")
 	//
 	//            FilterMonitorMessage = pvLogLevelDebug
 	//        Else
-	//            mStack.Add(mCmd.oDTmS.oTime, CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.DeviceID) & CStr(mIDs.CommandID))
+	//            mStack.Add(mCmd.oDTmS.oTime, CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.deviceID) & CStr(mIDs.CommandID))
 	//        End If
 
 	//
@@ -188,7 +188,7 @@ function doEventStatus(&$idata) {
 	if ($rowdevice['monitortypeID'] == MONITOR_LINK || $rowdevice['monitortypeID'] == MONITOR_LINK_STATUS) {
 		$mysql = "Update `ha_vw_monitor_combined` Set " .
     			  " `mdate` = '" . $time . "'" .
-    			  " Where(`deviceid` ='" . $idata->DID . "')";
+    			  " Where(`deviceID` ='" . $idata->DID . "')";
 		if (!mysql_query($mysql)) mySqlError($mysql);
 	}
 	//
@@ -219,7 +219,7 @@ function doEventStatus(&$idata) {
 		}
 		$mysql= "Update `ha_vw_monitor_combined` Set " .
 				" `statusDate` = '" . $time . "', `status` ='" . $mStatus . "'".
-				" Where(`deviceid` ='" .$idata->DID. "')";
+				" Where(`deviceID` ='" .$idata->DID. "')";
 		if (!mysql_query($mysql)) mySqlError($mysql);
 	}
 

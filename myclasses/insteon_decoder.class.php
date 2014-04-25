@@ -165,8 +165,10 @@ private static $insteonCmd = array (
 'SC12' => array ('Cmd1Name'=>'ALL-Link Alias 2 High','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'156'),
 'SD13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
 //'SA13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'257'),
-'SA13' => array ('Cmd1Name'=>'Manual Off','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
-'SA13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
+'SA13' => array ('Cmd1Name'=>'Light OFF','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
+'SA1300' => array ('Cmd1Name'=>'Manual Off','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'','commandID'=>'20'),
+'SA1301' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'OFF','commandID'=>'20'), // Door sensor
+'SA1304' => array ('Cmd1Name'=>'Sensor','Cmd2Flag'=>'Command','Cmd2Value'=>'0x04','Cmd2Name'=>'Ping','commandID'=>'151'),  // Door sensoor
 'SC13' => array ('Cmd1Name'=>'ALL-Link Alias 1 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'155'),
 'SD14' => array ('Cmd1Name'=>'Light OFF Fast','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'20'),
 'SA14' => array ('Cmd1Name'=>'ALL-Link Alias 2 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'157'),

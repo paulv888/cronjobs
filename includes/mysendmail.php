@@ -1,6 +1,6 @@
 <?php
 function createMail($callsource, $id, &$subject, &$message){
-// $type == TRADE_ALERT, HA_ALERT
+// $type == TRADE_ALERT, HA_ALERT, SCHEME_STEPS
 
 	switch ($callsource) {
 		case SIGNAL_SOURCE_TRADE_ALERT:
@@ -323,7 +323,7 @@ function createMail($callsource, $id, &$subject, &$message){
 				'`ha_alerts`.`deviceID` AS `ha_alerts___deviceID`, '.
 				'`ha_mf_devices`.`code` AS `ha_mf_devices___code`, `ha_mf_devices`.`unit` AS `ha_mf_devices___unit`, '.
 				'`ha_mf_locations`.`description` AS `ha_mf_locations___description`, '.
-				'`ha_mf_devices`.`description` AS `ha_mf_devices___description`, `ha_alerts`.`alertid` AS `ha_alerts___alertid`, '.
+				'`ha_mf_devices`.`description` AS `ha_mf_devices___description`, `ha_alerts`.`alertID` AS `ha_alerts___alertID`, '.
 				'`ha_alerts_dd`.`description` AS `ha_alerts_dd___description`, `ha_alerts`.`date_key` AS `ha_alerts___date_key`, '.
 				'`ha_alerts`.`processed` AS `ha_alerts___processed`, '.
 				'`ha_alerts`.`alert_date` AS `ha_alerts___alert_date`, '.
@@ -334,7 +334,7 @@ function createMail($callsource, $id, &$subject, &$message){
 				'`ha_alerts`.`l4` AS `ha_alerts___l4`, `ha_alerts`.`v4` AS `ha_alerts___v4`, '.
 				'`ha_alerts`.`l5` AS `ha_alerts___l5`, `ha_alerts`.`v5` AS `ha_alerts___v5` '.
 				' FROM `ha_alerts`'.
-				' LEFT JOIN `ha_alerts_dd` AS `ha_alerts_dd` ON `ha_alerts_dd`.`id` = `ha_alerts`.`alertid` '.
+				' LEFT JOIN `ha_alerts_dd` AS `ha_alerts_dd` ON `ha_alerts_dd`.`id` = `ha_alerts`.`alertID` '.
 				' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`id` = `ha_alerts`.`deviceID`'.
 				' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID`'.
 				' WHERE `ha_alerts`.`id` = "'.$id.'"';	
@@ -436,9 +436,9 @@ function createMail($callsource, $id, &$subject, &$message){
 			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
 			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
 			$message=preg_replace($pattern, $data, $message);
-			return TRUE;
+			return true;
 		} else {
-			return FALSE;
+			return false;
 		}
 	}
 	return true;
@@ -450,7 +450,7 @@ function sendmail($to, $subject, $message, $fromname) {
 	$mailer = new PHPMailer();
 	$mailer->IsSMTP();
 	$mailer->Host = 'ssl://smtp.gmail.com:465';
-	$mailer->SMTPAuth = TRUE;
+	$mailer->SMTPAuth = true;
 	
 	$mailer->Username = GMAIL_USER;
 	$mailer->Password = GMAIL_PASSWORD;
@@ -466,10 +466,10 @@ function sendmail($to, $subject, $message, $fromname) {
 	
 	if(!$mailer->Send()) {
 	    error_log("Mailer :  error ".$mailer->ErrorInfo)." : $to";
-	    return FALSE;
+	    return false;
 	}
 	else {
-		return TRUE;
+		return true;
 	}
 }
 ?>

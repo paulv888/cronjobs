@@ -506,7 +506,7 @@ $this->debug = false;
 	public function getTargetOnOff()
 	{
 
-		if ($this->tmode == 0) return 32;
+		if ($this->tmode == 0) return STATUS_OFF;
 
 		if ($this->tmode == 1) {											// Heating Mode
 		//            19      >=     21 - 2   (if target > 20) then on
@@ -559,7 +559,7 @@ $this->debug = false;
 		if ($status === NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
 		
 //		echo "stat:".$status."</br>";
-		if ($this->tmode == 0) return 32;
+		if ($this->tmode == 0) return STATUS_OFF;
 
 		if ($status == STATUS_ON) { 									// Target is set for Here
 			if ($this->tmode == 1) {									// Heating Mode

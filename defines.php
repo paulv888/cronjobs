@@ -20,8 +20,11 @@ define("LINK_UP", 1);
 define("SOURCE_ARD_BRDIGE", 9);
 
 // Event Log Levels
-define("LOGLEVEL_NORMAL", 1);
-define("LOGLEVEL_DEBUG", 2);
+define("LOGLEVEL_DEBUG", 10);
+define("LOGLEVEL_AWAKE", 20);
+define("LOGLEVEL_COMMANDS", 30);
+define("LOGLEVEL_MACROS", 40);
+define("LOGLEVEL_ALARMS", 50);
 
 // Log whether command was send or received
 define("COMMAND_SEND", 1 );
@@ -68,6 +71,8 @@ define ("SIGNAL_SOURCE_COMMAND", 16);
 define ("SIGNAL_MONITOR_DEVICES", 17); 
 define ("SIGNAL_SOURCE_INSTEON", 18);
 define ("SIGNAL_SOURCE_STATUS_LINK_UPDATE", 19);
+define ("SIGNAL_SOURCE_SCHEME", 20);
+
 
 // Command Types
 define ("COMMAND_CLASS_X10", 1);

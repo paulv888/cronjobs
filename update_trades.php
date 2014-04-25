@@ -443,18 +443,6 @@ function UpdateRowvalues() {
 			'LEFT JOIN trd_positions ON trd_positions.id=trd_pos_strategy.posid WHERE trd_positions.id IS NULL';
 	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
 
-	// update urls positions
-	$mysql='UPDATE trd_pos_links AS p left JOIN trd_positions AS a ON a.id=p.posid SET site1=concat("_|-|http://finance.yahoo.com/q?s=",a.ticker)';
-	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-	$mysql='UPDATE trd_pos_links AS p left JOIN trd_positions AS a ON a.id=p.posid SET site2=concat("_|-|http://www.freestockcharts.com/?Symbol=",a.ticker)';
-	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-	$mysql='UPDATE trd_pos_links AS p left JOIN trd_positions AS a ON a.id=p.posid SET site3=concat("_|-|index.php?option=com_content&view=article&id=118&Itemid=112&tmpl=component&ticker=",a.ticker)';
-	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-	
-	// update urls idx
-	$mysql='UPDATE trd_idx_links AS p left JOIN trd_indexes AS a ON a.id=p.posid SET site3=concat("_|-|index.php?option=com_content&view=article&id=119&Itemid=112&tmpl=component&ticker=",a.ticker)';
-	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
-
 	// copy status 
 	$mysql='UPDATE trd_pos_performance AS p left JOIN trd_positions AS a ON a.id=p.posid SET status_copy=status';
 	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
