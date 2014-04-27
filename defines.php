@@ -26,9 +26,11 @@ define("LOGLEVEL_COMMANDS", 30);
 define("LOGLEVEL_MACROS", 40);
 define("LOGLEVEL_ALARMS", 50);
 
-// Log whether command was send or received
-define("COMMAND_SEND", 1 );
-define("COMMAND_RECV", 2 );
+// Log whether command was (or can) send or received
+define("COMMAND_IO_NOT", 0 );    // Not in use
+define("COMMAND_IO_RECV", 1 );		// Received or Incoming
+define("COMMAND_IO_SEND", 2 );		// Send or Outgoing
+define("COMMAND_IO_BOTH", 3 );		// Can be send or received
 
 // Status Values, Retrieved from command
 define("STATUS_ON", 1 );
@@ -37,7 +39,7 @@ define("STATUS_UNKNOWN", 2 );
 define("STATUS_ERROR", -1 );
 define("STATUS_NOT_DEFINED", 10);		// Used for defining status on commands 
 
-// Commands from Device
+// Commands from Device   ??? obsolete ???
 define("COMMAND_RESULT_OK", 1);
 define("COMMAND_RESULT_ERROR", 2);
 define("COMMAND_STATUSON", 8);
@@ -74,18 +76,18 @@ define ("SIGNAL_SOURCE_STATUS_LINK_UPDATE", 19);
 define ("SIGNAL_SOURCE_SCHEME", 20);
 
 
-// Command Types
-define ("COMMAND_CLASS_X10", 1);
+// Command Classes
+define ("COMMAND_CLASS_GENERIC", 1);
 define ("COMMAND_CLASS_3MFILTRETE", 2);
 define ("COMMAND_CLASS_EMAIL", 3);
 define ("COMMAND_CLASS_MEDIA", 4);
 define ("COMMAND_CLASS_SONYCAM",5);
-define ("COMMAND_CLASS_INTERNAL", 6);
+define ("COMMAND_CLASS_PHP",6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
-define ("COMMAND_CLASS_VIRTUAL", 9);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
 define ("COMMAND_CLASS_FOSCAM", 11);
+define ("COMMAND_CLASS_X10", 13);
 
 // Special X10_INSTEON dim handling
 define ("COMMAND_DIM_CLASS_X10_INSTEON", "|{code}480=I=3");

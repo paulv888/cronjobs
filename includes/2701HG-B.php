@@ -145,7 +145,7 @@ function findRemoteName($ip) {
 	if (!$res) mySqlError();
 
 	if ($row=FetchRow($mysql)) {
-		$last = new DateTime($row['date_time']);
+		$last = new DateTime($row['updatedate']);
 		$nowdt = new DateTime();
 		/*echo "<pre>";
 		print_r ($last);

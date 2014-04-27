@@ -43,7 +43,7 @@ $now = date( 'Y-m-d H:i:s' );
 			$feedback[] = $stat->Toggle($status);
 			$feedback[]=to_celcius($stat->ttemp);
 
-			UpdateStatus($thermostatRec['deviceID'],NULL,SIGNAL_SOURCE_THERMO_UPDATE_TEMPS,$feedback[0]);
+			UpdateStatus(SIGNAL_SOURCE_THERMO_UPDATE_TEMPS, $thermostatRec['deviceID'],NULL,$feedback[0]);
 			UpdateWeatherNow( $thermostatRec['deviceID'], to_celcius($stat->temp),0 , $feedback[1]);
 
 			return $feedback;
@@ -97,7 +97,7 @@ $now = date( 'Y-m-d H:i:s' );
 			$feedback[]=$stat->getTargetOnOff();
 			$feedback[]=to_celcius($stat->TempAdd($addtemp));
 
-			UpdateStatus($thermostatRec['deviceID'],NULL,SIGNAL_SOURCE_THERMO_UPDATE_TEMPS,$feedback[0]);
+			UpdateStatus(SIGNAL_SOURCE_THERMO_UPDATE_TEMPS, $thermostatRec['deviceID'],NULL,$feedback[0]);
 			UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , $feedback[1]);
 			
 			return $feedback;

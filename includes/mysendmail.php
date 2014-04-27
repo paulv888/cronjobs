@@ -24,7 +24,7 @@ function createMail($callsource, $id, &$subject, &$message){
 				`trd_pos_close___sorderid`
 				`trd_pos_errors___error`
 				`trd_pos_open___bcomm`
-				`trd_pos_performance___current_lastupdate`
+				`trd_pos_performance___updatedate`
 				`trd_pos_performance___today_difference_perc`
 				`trd_pos_performance___unr_profit`
 				`trd_pos_strategy___posid`
@@ -124,7 +124,7 @@ function createMail($callsource, $id, &$subject, &$message){
 				`trd_pos_performance___bqty`
 				`trd_pos_performance___btotal_raw`
 				`trd_pos_performance___btotal`
-				`trd_pos_performance___current_lastupdate_raw`
+				`trd_pos_performance___updatedate_raw`
 				`trd_pos_performance___first_bdate_raw`
 				`trd_pos_performance___first_bdate`
 				`trd_pos_performance___id_raw`
@@ -252,8 +252,8 @@ function createMail($callsource, $id, &$subject, &$message){
 			'`trd_pos_performance___today_unreal_perc`, `trd_pos_performance`.`today_unreal_perc` AS `trd_pos_performance___today_unreal_perc_raw`,  '. 
 			'`trd_pos_performance`.`first_bdate` AS `trd_pos_performance___first_bdate`, `trd_pos_performance`.`first_bdate` AS  '. 
 			'`trd_pos_performance___first_bdate_raw`, `trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection`,  '. 
-			'`trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection_raw`, `trd_pos_performance`.`current_lastupdate` '. 
-			' AS `trd_pos_performance___current_lastupdate`, `trd_pos_performance`.`current_lastupdate` AS `trd_pos_performance___current_lastupdate_raw`, '. 
+			'`trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection_raw`, `trd_pos_performance`.`updatedate` '. 
+			' AS `trd_pos_performance___updatedate`, `trd_pos_performance`.`updatedate` AS `trd_pos_performance___updatedate_raw`, '. 
 			' `trd_pos_performance`.`real_profit` AS `trd_pos_performance___real_profit`, `trd_pos_performance`.`real_profit` AS  '. 
 			'`trd_pos_performance___real_profit_raw`, `trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc`,  '. 
 			'`trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc_raw`, `trd_pos_performance`.`unr_profit` AS '. 
@@ -355,8 +355,8 @@ function createMail($callsource, $id, &$subject, &$message){
 					 `ha_remote_scheme_steps___alert_textID`
 					 `ha_remote_scheme_steps___commandID_raw`
 					 `ha_remote_scheme_steps___commandID`
-					 `ha_remote_scheme_steps___date_time_raw` 
-					 `ha_remote_scheme_steps___date_time`
+					 `ha_remote_scheme_steps___updatedate_raw` 
+					 `ha_remote_scheme_steps___updatedate`
 					 `ha_remote_scheme_steps___deviceID_raw`
 					 `ha_remote_scheme_steps___id_raw` 
 					 `ha_remote_scheme_steps___id`
@@ -368,8 +368,8 @@ function createMail($callsource, $id, &$subject, &$message){
 					 `ha_remote_scheme_steps___value` 
 					 
 				ha_remote_schemes:
-					 `ha_remote_schemes___date_time_raw` 
-					 `ha_remote_schemes___date_time`
+					 `ha_remote_schemes___updatedate_raw` 
+					 `ha_remote_schemes___updatedate`
 					 `ha_remote_schemes___group_raw` 
 					 `ha_remote_schemes___group`
 					 `ha_remote_schemes___id_raw`
@@ -384,8 +384,8 @@ function createMail($callsource, $id, &$subject, &$message){
 				*/
 			$mysql='SELECT SQL_CALC_FOUND_ROWS DISTINCT `ha_remote_schemes`.`id` AS `ha_remote_schemes___id`, '.
 			'`ha_remote_schemes`.`id` AS `ha_remote_schemes___id_raw`, '.
-			'`ha_remote_schemes`.`date_time` AS `ha_remote_schemes___date_time`, '.
-			'`ha_remote_schemes`.`date_time` AS `ha_remote_schemes___date_time_raw`, '.
+			'`ha_remote_schemes`.`updatedate` AS `ha_remote_schemes___updatedate`, '.
+			'`ha_remote_schemes`.`updatedate` AS `ha_remote_schemes___updatedate_raw`, '.
 			'`ha_remote_schemes`.`name` AS `ha_remote_schemes___name`, '.
 			'`ha_remote_schemes`.`name` AS `ha_remote_schemes___name_raw`, '.
 			'`ha_remote_schemes`.`group` AS `ha_remote_schemes___group`, '.
@@ -394,8 +394,8 @@ function createMail($callsource, $id, &$subject, &$message){
 			'`ha_remote_schemes`.`sort` AS `ha_remote_schemes___sort`, `ha_remote_schemes`.`sort` AS `ha_remote_schemes___sort_raw`, '.
 			'`ha_remote_scheme_steps`.`id` AS `ha_remote_scheme_steps___id`, '.
 			'`ha_remote_scheme_steps`.`id` AS `ha_remote_scheme_steps___id_raw`, '.
-			'`ha_remote_scheme_steps`.`date_time` AS `ha_remote_scheme_steps___date_time`, '.
-			'`ha_remote_scheme_steps`.`date_time` AS `ha_remote_scheme_steps___date_time_raw`,'.
+			'`ha_remote_scheme_steps`.`updatedate` AS `ha_remote_scheme_steps___updatedate`, '.
+			'`ha_remote_scheme_steps`.`updatedate` AS `ha_remote_scheme_steps___updatedate_raw`,'.
 			'`ha_remote_scheme_steps`.`schemesID` AS `ha_remote_scheme_steps___schemesID_raw`, '.
 			'`ha_remote_schemes_0`.`name` AS `ha_remote_scheme_steps___schemesID`, '.
 			'`ha_remote_scheme_steps`.`sort` AS `ha_remote_scheme_steps___sort`, '.

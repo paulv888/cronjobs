@@ -47,7 +47,7 @@ function MapTransToPosition($transaction) {
 	$result['position']['ticker']=$transaction['symbol'];
 	$result['position']['name']=$transaction['description'];
 	$result['order']['orderid']=$transaction['id'];
-	$result['order']['date']=$transaction['date_time'];
+	$result['order']['date']=$transaction['updatedate'];
 	$result['position']['buy_sell']=$transaction['buy_sell'];
 	$result['order']['qty']=$transaction['quantity']*$transaction['multiplier'];
 	$result['order']['price']=$transaction['price'];
@@ -149,7 +149,7 @@ function ImportOrders() {
 					`symbol` ,
 					`description` ,
 					`id` ,
-					`date_time` ,
+					`mdate` ,
 					`buy_sell` ,
 					`quantity` ,
 					`multiplier` ,
@@ -215,7 +215,7 @@ function MoveTransactionsPositions() {
 	$mysql="SELECT * ". 
 			" FROM  `trd_transactions`" .  
 			" WHERE NOT processed" .  
-			" ORDER BY date_time";
+			" ORDER BY updatedate";
 	if (!$resorders = mysql_query($mysql)) {
 		//echo "Nothing to do<br/>\r\n";
 		exit;
@@ -246,7 +246,7 @@ function MoveTransactionsPositions() {
 				if ($order=$ord->Find($position['id'],$transactions['id'])) { 	// Same order just update values instead of averageing
 					echo "Case 5; Found existing order, Update Order</br>";
 					$order['orderid']=$transactions['id'];						// TODO:: Partial allocated order should be offset (now can find total quantity of order)
-					$order['date']=$transactions['date_time'];
+					$order['date']=$transactions['updatedate'];
 					$order['qty']=$ext_qty;
 					$order['price']=$transactions['price'];
 					$order['comm']=$transactions['commission'];
@@ -255,7 +255,7 @@ function MoveTransactionsPositions() {
 					Echo "Case 5; No existing order found, create new order for same position</br>";
 					$order['posid']=$position['id'];
 					$order['orderid']=$transactions['id'];
-					$order['date']=$transactions['date_time'];
+					$order['date']=$transactions['updatedate'];
 					$order['qty']=$ext_qty;
 					$order['price']=$transactions['price'];
 					$order['comm']=$transactions['commission'];
@@ -275,7 +275,7 @@ function MoveTransactionsPositions() {
 						$ord= new Orders("CLOSE");
 						$order['posid']=$position['id'];
 						$order['orderid']=$transactions['id'];
-						$order['date']=$transactions['date_time'];
+						$order['date']=$transactions['updatedate'];
 						if (abs($position['qty'])<=abs($ext_qty)) {
 							$order['qty']=$position['qty'];
 						} else {
@@ -313,7 +313,7 @@ function MoveTransactionsPositions() {
 						$ord= new Orders("CLOSE");
 						$order['posid']=$newid;
 						$order['orderid']=$transactions['id'];
-						$order['date']=$transactions['date_time'];
+						$order['date']=$transactions['updatedate'];
 						if ($position['qty']>0) { 		// Long
 							$order['qty']=-$ext_qty;
 						} else {
@@ -354,7 +354,7 @@ function ApplyOrder(&$pos,$position,$transactions,$ext_qty) {
 			$sord= new Orders("CLOSE");
 			$sorder['posid']=$position['id'];
 			$sorder['orderid']=$transactions['id'];
-			$sorder['date']=$transactions['date_time'];
+			$sorder['date']=$transactions['updatedate'];
 			if (abs($position['qty'])<=abs($ext_qty)) {
 				$sorder['qty']=$position['qty'];
 			} else {
@@ -390,7 +390,7 @@ function ApplyOrder(&$pos,$position,$transactions,$ext_qty) {
 			$sord= new Orders("CLOSE");
 			$sorder['posid']=$newid;
 			$sorder['orderid']=$transactions['id'];
-			$sorder['date']=$transactions['date_time'];
+			$sorder['date']=$transactions['updatedate'];
 			if ($position['qty']>0) { 		// Long
 				$sorder['qty']=-$ext_qty;
 			} else {
@@ -823,8 +823,8 @@ function labelReplace($id,$subject) {
 	'`trd_pos_performance___today_unreal_perc`, `trd_pos_performance`.`today_unreal_perc` AS `trd_pos_performance___today_unreal_perc_raw`,  '. 
 	'`trd_pos_performance`.`first_bdate` AS `trd_pos_performance___first_bdate`, `trd_pos_performance`.`first_bdate` AS  '. 
 	'`trd_pos_performance___first_bdate_raw`, `trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection`,  '. 
-	'`trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection_raw`, `trd_pos_performance`.`current_lastupdate` '. 
-	' AS `trd_pos_performance___current_lastupdate`, `trd_pos_performance`.`current_lastupdate` AS `trd_pos_performance___current_lastupdate_raw`, '. 
+	'`trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection_raw`, `trd_pos_performance`.`updatedate` '. 
+	' AS `trd_pos_performance___updatedate`, `trd_pos_performance`.`updatedate` AS `trd_pos_performance___updatedate_raw`, '. 
 	' `trd_pos_performance`.`real_profit` AS `trd_pos_performance___real_profit`, `trd_pos_performance`.`real_profit` AS  '. 
 	'`trd_pos_performance___real_profit_raw`, `trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc`,  '. 
 	'`trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc_raw`, `trd_pos_performance`.`unr_profit` AS '. 

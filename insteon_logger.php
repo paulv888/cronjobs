@@ -56,8 +56,8 @@ while (true) {
 				$errors = 0;
 				$message = $inst_hub->getMessage(); 
 				$deviceID = logEventInsteon($message);
-				if ($message['inout'] == COMMAND_RECV) {
-					echo "Update Status: ".UpdateStatus($deviceID, $message['commandID'], SIGNAL_SOURCE_INSTEON)."</br>\n";
+				if ($message['inout'] == COMMAND_IO_RECV) {
+					echo "Update Status: ".UpdateStatus(SIGNAL_SOURCE_INSTEON,$deviceID, $message['commandID'])."</br>\n";
 					UpdateLink ($deviceID, LINK_UP, $message['sourceID'], $message['commandID']);
 				}
 				

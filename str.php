@@ -37,9 +37,6 @@ $data = file_get_contents("php://input");
 //}
 
 function captureStream(&$idata) {
-	$gmttime = mygmdate("Y-m-d H:i:s");
-	//$time = datum(true,"Y-m-d H:i:s");
-	$ms = udate("u");
 	$time = date("Y-m-d H:i:s");
 
 	$mysql = 'SELECT * FROM `ha_record_data_streams` '.
@@ -117,14 +114,10 @@ function doEventStatus(&$idata) {
 	//
 	// Check for repeat statussues
 	//
-	$gmttime = mygmdate("Y-m-d H:i:s");
-	//$time = datum(true,"Y-m-d H:i:s");
-	$ms = udate("u");
-	$time = date("Y-m-d H:i:s");
 
 	$mysql = 'SELECT * FROM `ha_events` ' .
 			' WHERE `inout` = 1 AND `sourceID` = 9 AND `deviceID` = '.$idata->DID.' AND commandID = '.$idata->CID.
-			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.$gmttime.'"';
+			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.date("Y-m-d H:i:s");.'"';
 
 	$resevents=mysql_query($mysql);
 	if ($rowevents=mysql_fetch_array($resevents)) {
@@ -164,11 +157,11 @@ function doEventStatus(&$idata) {
 						`data` , 
 						`extdata` ,
 						`repeatcount` ,
-						`logLevel`
+						`loglevel`
 					)
 					VALUES ( '.
-						'"'.$gmttime.'",'.
-						'"'.$gmttime.'",'. 
+						'"'.date("Y-m-d H:i:s");.'",'.
+						'"'.date("Y-m-d H:i:s");.'",'. 
 					 	''.$ms.',' .		 				/* millisec 		*/
 						''.EVENT_IN.','. 					/*  in 				*/
 						''.SOURCE_ARD_BRDIGE.','.			/* source arduino 	*/

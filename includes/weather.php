@@ -34,7 +34,7 @@ function UpdateWeatherCurrent ($xml, &$values, $deviceID) {
 
 	
 	$values['deviceID'] =  $deviceID;
-	$values['mdate'] = gmdate("Y-m-d H:i:s");
+	$values['mdate'] = date("Y-m-d H:i:s");
 	$values['temperature_c'] = (string)$xml->temp_c;
 	$values['humidity_r'] = (string)$xml->relative_humidity;
 	$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=".  $deviceID ." order by mdate desc limit 1";

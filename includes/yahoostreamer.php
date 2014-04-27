@@ -146,8 +146,7 @@ function GetPrices($input,$output) {
 					" `last` = '".$last."'," .
 					" `pricedirection` = '".$pricedirection."'," .
 					" `today_difference` = '".$change."'," .
-					" `today_difference_perc` = '".$percchange."'," .
-					" `current_lastupdate` = '".$date."'" .
+					" `today_difference_perc` = '".$percchange ."'".
 					" WHERE ticker='".$symbol."'";
 			if (!mysql_query($mysql)) {
 				MySqlError($mysql);

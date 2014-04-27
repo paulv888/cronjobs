@@ -1,6 +1,8 @@
 <?php
-define( 'DEBUG_HA', FALSE );
+
 //define( 'DEBUG_HA', TRUE );
+if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
+
 
 function ReloadScreenShot() {
 	$url = 'http://htpc:8085/HipScreenShot.jpg';
@@ -35,7 +37,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callsource = 0, $commandID = 0)
 					}
 					if ((abs($nowdt-$last) / 60 > $min) || $row['link_timeout'] == Null) {
 						echo "Down, Previous was up; Time expired"."</br>\n";
-						logEvent($log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
+						logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 						$mysql = "Update `ha_vw_monitor_combined` Set " .
 								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 								  " `link` = '" . $link . "'" .
@@ -49,7 +51,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callsource = 0, $commandID = 0)
 					}
 				} else {   								// previous was down update to online and log event
 					echo "Up, Previous was down; Update to online and log event"."</br>\n";
-					logEvent($log = Array ('inout' => COMMAND_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
+					logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'sourceID' => $callsource, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 					$mysql = "Update `ha_vw_monitor_combined` Set " .
 							  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 							  " `link` = '" . $link . "'" .
@@ -103,13 +105,13 @@ function UpdateWeatherNow($deviceID,$temp, $humidity, $set_point = "NULL"){
 		$htrend = setTrend($humidity, $row['humidity_r']);
 	}
 	
-	$mysql = "UPDATE ha_weather_now SET mdate = '". gmdate("Y-m-d H:i:s")."'," .
+	$mysql = "UPDATE ha_weather_now SET mdate = '". date("Y-m-d H:i:s")."'," .
 				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceID;
 
 	if (!mysql_query($mysql)) mySqlError($mysql);
 }
 			
-function UpdateStatus ($deviceID, $commandID = NULL, $callsource = 0, $status = NULL) 
+function UpdateStatus ($callsource, $deviceID, $commandID = NULL, $status = NULL) 
 {
 
 	// Interpret status value based on current command, i.e. On/Off/Error
@@ -158,17 +160,6 @@ function UpdateStatus ($deviceID, $commandID = NULL, $callsource = 0, $status = 
 	return $status;
 }	
 
-function udate($format, $utimestamp = null)
-{
-    if (is_null($utimestamp))
-        $utimestamp = microtime(true);
-
-    $timestamp = floor($utimestamp);
-    $milliseconds = round(($utimestamp - $timestamp) * 1000000);
-
-    return date(preg_replace('`(?<!\\\\)u`', $milliseconds, $format), $timestamp);
-}
-
 function logEvent($log) {
 
 	$repeatcount=1;
@@ -176,9 +167,6 @@ function logEvent($log) {
 	//
 	// Check for repeat statussues
 	//
-	$gmttime = gmdate("Y-m-d H:i:s");
-	$ms = udate("u");
-		print_r($log);
 			
 	$log['ip']=(!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL);
 	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
@@ -195,7 +183,7 @@ function logEvent($log) {
 	
 	$mysql = 'SELECT * FROM `ha_events` ' .
 			' WHERE `inout` = '.$log['inout']. ' AND `sourceID` ='.$log['sourceID'].' AND commandID = '.$log['commandID'].
-			' AND  DATE_ADD(`mdate`,INTERVAL 10 SECOND) > "'.$gmttime.'"';
+			' AND  DATE_ADD(`mdate`,INTERVAL 10 SECOND) > "'.date("Y-m-d H:i:s").'"';
 
 	if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
 	if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';
@@ -226,8 +214,7 @@ function logEvent($log) {
 			if ($rowdevice['invertstatus'] === 0) $log['extdata'] = "Inverted ".$log['extdata']; 
 		}
 		
-		$log['mdate'] = $gmttime;
-		$log['milliseconds'] = udate("u");
+		$log['mdate'] = date("Y-m-d H:i:s");
 
 		if (is_null($log['loglevel']))	{
 			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
@@ -235,12 +222,13 @@ function logEvent($log) {
 				mySqlError($mysql);
 			} else {
 				$rowcommand=mysql_fetch_array($rescommand);
-				$log['logLevel'] = $rowcommand['loglevel'];
+				$log['loglevel'] = $rowcommand['loglevel'];
 			}
 		}
-		if (is_null($log['loglevel'])) $log['logLevel'] = LOGLEVEL_COMMANDS;
-			
-		print_r($log);
+		if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMANDS;
+		
+		if (DEBUG_HA) echo "***log";
+		if (DEBUG_HA) print_r($log);
 			
 		mysql_insert_assoc ("ha_events", $log);
 	}

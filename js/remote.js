@@ -41,11 +41,19 @@ if(!window.scriptHasRun) {
 			callAjax (params) ;
 		});	
 
-		//Test button (
-		$$('.test-button').removeEvents('click');
-		$$('.test-button').addEvent('click', function(event){
+		//Run scheme button (
+		$$('.scheme-button').removeEvents('click');
+		$$('.scheme-button').addEvent('click', function(event){
 			event.stop();
 			var params = {callsource: SIGNAL_SOURCE_SCHEME, 'scheme':this.get('value')};
+			callAjax (params) ;
+		});	
+
+		//Run command button (
+		$$('.command-button').removeEvents('click');
+		$$('.command-button').addEvent('click', function(event){
+			event.stop();
+			var params = {callsource: SIGNAL_SOURCE_COMMAND, 'command':this.get('value')};
 			callAjax (params) ;
 		});	
 
@@ -82,7 +90,6 @@ if(!window.scriptHasRun) {
 		var myHTMLRequest = new Request({
 			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
 			method: 'post',
-			//async: false,
 			data: params,
 			onRequest: function(){
 				$$('.message').removeClass('alert');
@@ -103,7 +110,7 @@ if(!window.scriptHasRun) {
 			method: 'post',
 			async: false,
 			data: params,
-			onRequest: function(){
+			onSucces: function(){
 				$$('.message').removeClass('alert');
 				document.getElementById('spinner').style.display = 'block';
 			},
@@ -118,6 +125,13 @@ if(!window.scriptHasRun) {
 	function processData(data) {
 		$$('.message').set('html', '');
 		var temp = new Array();
+		var pos = data.indexOf("OK;");
+
+		if (pos > -1) {
+			$$('.message').addClass('alert');
+			$$('.message').set('html',data.substring(1,pos));
+			data = data.substring(pos);
+		}
 		temp = data.split(';');
 		if (temp[0]) {
 			if (temp[0] != 'OK') 

@@ -74,6 +74,7 @@ private static $inout_a = Array (
 
 	public function getMessage(){
 
+		$short_message = 0;
 		$result = "";
 		while ($this->messages->count()<1) {
 		/*		try {
@@ -94,6 +95,10 @@ private static $inout_a = Array (
 				{
 					case ERROR_MESSAGE_TO_SHORT:  		// leave result and wait for more
 						echo "ERROR_MESSAGE_TO_SHORT"." Waiting for more"."\n";
+						if ($short_message++ > 2) {
+							$result = "";
+							$short_message = 0;
+						}
 						break;
 					case ERROR_STX_MISSING:				// not handled yet. 
 						echo "ERROR_STX_MISSING"." Not storing"."\n";

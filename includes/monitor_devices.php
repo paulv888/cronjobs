@@ -41,7 +41,7 @@ function monitorDevice($deviceID, $pingport, $montype) {
 
 	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID</br>";
 	UpdateLink($deviceID, $curlink, SIGNAL_MONITOR_DEVICES, COMMAND_LINK_STATUS);
-	UpdateStatus ($deviceID, NULL, SIGNAL_MONITOR_DEVICES, $curstat) ;
+	UpdateStatus (SIGNAL_MONITOR_DEVICES, $deviceID, NULL,$curstat) ;
 }
 
 function pingip($host, $port, $timeout)
