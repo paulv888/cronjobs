@@ -116,8 +116,7 @@ private static $inout_a = Array (
 			} else {
 				// havent heard anything for 15min, check if still alive.
 				$nowdt = strtotime(date("Y-m-d H:i:s"));
-				if ((int)(abs($nowdt-$this->last) / 60)>=15) {
-					$this->last = strtotime(date("Y-m-d H:i:s"));
+				if (timeExpired($this->last, 15)) {
 					$this->transport->write(hex2bin("0273"));
 				}
 				$result = "";														// Clear result padding
@@ -144,7 +143,6 @@ private static $inout_a = Array (
 						$compl = $incompl;
 						$compl['commandID'] = $x10['commandID'];
 						$compl['inout'] = $plm_decode_result['inout'];
-						$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 						$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 						$compl ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 						$this->messages->enqueue($compl);
@@ -181,7 +179,6 @@ private static $inout_a = Array (
 //				if (!$rowcommands)  mySqlError($mysql);
 				$compl['commandID'] = $insteon['commandID'];
 			}
-			$compl['sourceID'] = SIGNAL_SOURCE_INSTEON;
 			$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 			$compl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
 			$this->messages->enqueue($compl);

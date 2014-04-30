@@ -1,4 +1,7 @@
 <?php
+//define( 'DEBUG_DB', TRUE );
+if (!defined('DEBUG_DB')) define( 'DEBUG_DB', FALSE );
+
 function mysql_insert_assoc ($my_table, $my_array) {
      //
    // Insert values into a MySQL database
@@ -59,12 +62,44 @@ function mysql_insert_assoc ($my_table, $my_array) {
 
 
 function FetchRow($mysql) {
-   $res_row = mysql_query($mysql) ;
-	if ($res_row) {
-		return mysql_fetch_array($res_row);
-	} else {
+	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
+	if (!$res_row = mysql_query($mysql)) {
+		mySqlError($mysql); 
 		return false;
 	}
+	if (!$numrows = mysql_num_rows($res_row)) {
+//		echo "0 Rows returned".CRLF; 
+		return false;
+	}
+	if (!$rows = mysql_fetch_assoc($res_row)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
+	return $rows;
+}
+
+function FetchRows($mysql) {
+	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
+	$result = Array ();
+	if (!$res_row = mysql_query($mysql)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	if (!$numrows = mysql_num_rows($res_row)) {
+//		echo "0 Rows returned".CRLF; 
+		return false;
+	}
+	if (!$rows = mysql_fetch_assoc($res_row)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	$result[] = $rows;
+	while ($rows = mysql_fetch_assoc($res_row)) {
+			$result[] = $rows;
+	}
+	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
+	return $result;
 }
    
 function CopyRow($my_table,$where,$posid) {

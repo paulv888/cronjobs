@@ -15,6 +15,16 @@ function IsNullOrEmptyString($question){
     return (!isset($question) || trim($question)==='');
 }
 
+function timeExpired(&$lasttime, $minutes) {
+	$nowdt = time();
+	if ((int)(abs($nowdt-$lasttime) / 60) >= $minutes) {
+		$lasttime = time();
+		return true;
+	} 
+	return false;
+}
+
+
 function dec2hex($num,$count=0)
 {
         $ret = "";

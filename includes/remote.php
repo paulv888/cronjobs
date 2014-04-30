@@ -115,7 +115,7 @@ function loadRemoteBootstrap($remoteID) {
    	    				echo ' style="width:'.$tdwidth.'%"';   
    	    			}
 	   	    		echo ">";
-					$clicks = (is_null($rowremotekeys['commandIDdown']) ? "rem-button" : "rem-button-down");
+					$clicks = (is_null($rowremotekeys['commandIDdown']) ? "click-up rem-button" : "click-down rem-button");
 	   	    		if ($rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
 	   	    				$fieldtype = "div";
 	   	    				$fieldclass = $rowremotekeys['inputtype'];
@@ -170,6 +170,30 @@ function loadRemoteBootstrap($remoteID) {
 		   	    		echo '</'.$fieldtype.'>';
 			   	    	echo "</td>\n\r";
 	   	    		} else {
+				   	    if ($rowremotekeys['inputtype']=="btndropdown") {
+							echo '<div style="position: relative">';
+							echo '<button class="btn btn-info dropdown-toggle rem-button';
+			   	    		if (strlen($class)>1) echo ' '.$class;
+							echo '"';
+							echo ' remotekey="'.$rowremotekeys['id'].'"';
+							echo ' type="button" data-toggle="dropdown">';
+//							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
+//							echo '<i class="btn-icon icon-arrow-down-3 rem-icon-left"></i>';
+							echo $rowremotekeys['name'].' '.'</span><span class="caret"></span></button>';
+							echo '<ul class="dropdown-menu btndropdown" role="menu" dimvalue="100"';
+		   	    			if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
+							echo '>';
+				      		//$first= true;
+			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
+			   	    		foreach ($options as $optionstring) {
+			   	    			$option = explode(",",$optionstring);
+								echo '<li><a href="#" value="'.$option[0].'">'.$option[1].'</a></li>';
+//<li class="divider"></li>
+
+							}
+							echo '</ul></div>';
+			   	    		echo '</td>';
+						}
 				   	    if ($rowremotekeys['inputtype']=="dropdown") {
 		   	    			echo '<form class="formdropdown" method="get" remotekey="'.$rowremotekeys['id'].'">';
 				      		echo '<select';
@@ -179,7 +203,7 @@ function loadRemoteBootstrap($remoteID) {
 		   	    			echo '>';
 				      		$first= true;
 			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
-			   	    		foreach ($options as &$optionstring) {
+			   	    		foreach ($options as $optionstring) {
 			   	    			$option = explode(",",$optionstring);
 			   	    			if ($first) { 
 				   	    			echo '<option selected="selected" value="'.$option[0].'">'.$option[1].'</option>';
@@ -200,7 +224,7 @@ function loadRemoteBootstrap($remoteID) {
 							echo ' remotekey="'.$rowremotekeys['id'].'"';
 		   	    			echo '>';
 			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
-			   	    		foreach ($options as &$optionstring) {
+			   	    		foreach ($options as $optionstring) {
 			   	    			$option = explode(",",$optionstring);
 			   	    			echo '<option value="'.$option[0].'">'.$option[1].'</option>';
 			   	    		}
@@ -228,7 +252,7 @@ function loadRemoteBootstrap($remoteID) {
 	    echo "</tr>";
 		}
 	echo "</table>";
-	echo "<div class='message'></div></div>";
+	echo "</div>";
     }
 }
 

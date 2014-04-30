@@ -40,41 +40,30 @@ define("STATUS_ERROR", -1 );
 define("STATUS_NOT_DEFINED", 10);		// Used for defining status on commands 
 
 // Commands from Device   ??? obsolete ???
-define("COMMAND_RESULT_OK", 1);
-define("COMMAND_RESULT_ERROR", 2);
+//define("COMMAND_RESULT_OK", 1);
+//define("COMMAND_RESULT_ERROR", 2);
 define("COMMAND_STATUSON", 8);
 define("COMMAND_STATUSOFF", 6);
 define("COMMAND_TOGGLE", 19);
 define("COMMAND_ON", 17);
 define("COMMAND_OFF", 20);
-define("COMMAND_STREAM_DATA", 91);
+//define("COMMAND_STREAM_DATA", 91);
 define("COMMAND_TOGGLE_HVAC", 132);
 define("COMMAND_UNKNOWN", 267);
 define("COMMAND_ADDRESS", 21);
+define("COMMAND_RUN_SCHEME", 154);
 
 
-// Signal Sources
-define ("SIGNAL_SOURCE_X10_RF", 1);
-define ("SIGNAL_SOURCE_X10_PLC", 2);
-define ("SIGNAL_SOURCE_REMOTE", 3);
-define ("SIGNAL_SOURCE_OUTSIDE_CAM", 4);
-define ("SIGNAL_SOURCE_CAM_BRIDGE", 5);
-define ("SIGNAL_SOURCE_PC_UPDATE_TEMPS", 6);
-define ("SIGNAL_SOURCE_PC_WEATHER_GOV", 7);
-define ("SIGNAL_SOURCE_TCP_BRIDGE", 8);
-define ("SIGNAL_SOURCE_ARDBRIDGE", 9);
-define ("SIGNAL_SOURCE_THERMO_UPDATE_TEMPS", 10);
-define ("SIGNAL_SOURCE_HA_WINXP", 11); 
-define ("SIGNAL_SOURCE_REMOTE_BUTTON", 12); 
-define ("SIGNAL_SOURCE_REMOTE_SCHEME", 13); 
-define ("SIGNAL_SOURCE_HA_ALERT", 14); 
-define ("SIGNAL_SOURCE_TRADE_ALERT", 15); 
-define ("SIGNAL_SOURCE_COMMAND", 16); 
-define ("SIGNAL_MONITOR_DEVICES", 17); 
-define ("SIGNAL_SOURCE_INSTEON", 18);
-define ("SIGNAL_SOURCE_STATUS_LINK_UPDATE", 19);
-define ("SIGNAL_SOURCE_SCHEME", 20);
+// Triggers
+define("TRIGGER_AFTER_ON", 1);
+define("TRIGGER_AFTER_OFF", 2);
+define("TRIGGER_AFTER_CHANGE", 3);
 
+// Call executeCommand with either off these
+define ("MESS_TYPE_REMOTE_KEY", 'MESS_TYPE_REMOTE_KEY');
+define ("MESS_TYPE_SCHEME", 'MESS_TYPE_SCHEME');
+define ("MESS_TYPE_COMMAND",  'MESS_TYPE_COMMAND');
+define ("MESS_TYPE_GET_GROUP",  'MESS_TYPE_GET_GROUP');
 
 // Command Classes
 define ("COMMAND_CLASS_GENERIC", 1);
@@ -82,7 +71,7 @@ define ("COMMAND_CLASS_3MFILTRETE", 2);
 define ("COMMAND_CLASS_EMAIL", 3);
 define ("COMMAND_CLASS_MEDIA", 4);
 define ("COMMAND_CLASS_SONYCAM",5);
-define ("COMMAND_CLASS_PHP",6);
+//define ("COMMAND_CLASS_PHP",6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
@@ -133,4 +122,16 @@ define("DEVICE_ALARM_ZONE1", 158);
 define("DEVICE_ALARM_ZONE2", 159);
 define("DEVICE_DARK_OUTSIDE", 160);
 define("DEVICE_PAUL_HOME", 161);
+define("DEVICE_REMOTE", 164);
+
+// Call executeCommand with either off these
+define ("MAIL_TYPE_TRADE", 1);
+define ("MAIL_TYPE_SCHEME", 2);
+
+define("TIME_DAWN", 90);
+define("TIME_DUSK", 91);
+
+define("REPEAT_ONCE_DAY", 0);
+
+define("CRLF", "</br>\n");
 ?>

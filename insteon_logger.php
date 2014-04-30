@@ -6,8 +6,8 @@ define("MY_DEVICE_ID", 137);
 define("INSTEON_HUB_IP", "192.168.2.125");
 define("INSTEON_HUB_PORT", 9761);
 
-//define( 'DEBUG_INSTEON', FALSE );
-define( 'DEBUG_INSTEON', TRUE );
+define( 'DEBUG_INSTEON', FALSE );
+//define( 'DEBUG_INSTEON', TRUE );
 
 
 class console{
@@ -55,16 +55,21 @@ while (true) {
 			while (true) {
 				$errors = 0;
 				$message = $inst_hub->getMessage(); 
-				$deviceID = logEventInsteon($message);
+				if ($deviceID = setDeviceID($message)) { 		// No device founds so use my_id as callerID
+					$message['callerID'] = $deviceID;
+				} else {
+					$message['callerID'] = MY_DEVICE_ID;
+				}
+				print_r($message);
+				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
+				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
-					echo "Update Status: ".UpdateStatus(SIGNAL_SOURCE_INSTEON,$deviceID, $message['commandID'])."</br>\n";
-					UpdateLink ($deviceID, LINK_UP, $message['sourceID'], $message['commandID']);
+					echo 'Update Status: '.UpdateStatus($message['callerID'], $deviceID, $message['commandID'])."</br>\n";
+					echo 'Update Link: '.UpdateLink ($deviceID, LINK_UP, $message['callerID'], $message['commandID'])."</br>\n";
 				}
 				
 				// Update My Link 
-				$nowdt = strtotime(date("Y-m-d H:i:s"));
-				if ((int)(abs($nowdt-$last) / 60) >= 15) {
-					$last = strtotime(date("Y-m-d H:i:s"));
+				if (timeExpired($last, 15)) {
 					echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 				}
 			}
@@ -79,20 +84,21 @@ while (true) {
 	
 }	
 
-function logEventInsteon($log){
+function setDeviceID(&$log){
 
 
+	$deviceID = null;
 	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
-	$resdevice=mysql_query($mysql);
-	$rowdevice=mysql_fetch_array($resdevice);
-	$log['deviceID'] = $rowdevice['id'];
-	$log['typeID'] = $rowdevice['typeID'];
+	if ($rowdevice = FetchRow($mysql)) {
+		$log['deviceID'] = $rowdevice['id'];
+		$log['callerID'] = $rowdevice['id'];
+		$log['typeID'] = $rowdevice['typeID'];
+		$deviceID = $rowdevice['id'];
+	}
 	unset($log['code']);
 	unset($log['unit']);
 	
-	logEvent($log);
-	
-	return $rowdevice['id'];
+	return $deviceID ;
 	
 }
 

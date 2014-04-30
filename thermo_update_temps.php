@@ -22,7 +22,6 @@ function UpdateTemps() {
 		* This script updates the indoor and outdoor temperatures and today's and yesterday total run time for each thermostat
 		*/
 	
-	define ("MY_SOURCE",SIGNAL_SOURCE_THERMO_UPDATE_TEMPS);
 	
 	try
 	{
@@ -41,7 +40,7 @@ function UpdateTemps() {
 		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
 	
-		$sql = "INSERT INTO ha_weather_current ( mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".date("Y-m-d H:i:s")."', '".MY_SOURCE."', ?, ?, ?, ?)";
+		$sql = "INSERT INTO ha_weather_current ( mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".date("Y-m-d H:i:s")."', '".MY_DEVICE_ID."', ?, ?, ?, ?)";
 		$queryCurrent = $pdo->prepare($sql);
 		
 		$sql = "DELETE FROM {$dbConfig['table_prefix']}hvac_run_times WHERE date = ? AND deviceID = ?";
@@ -145,7 +144,7 @@ function UpdateTemps() {
 						$newStartDateFan = null;
 					}
 	
-					UpdateStatus(SIGNAL_SOURCE_THERMO_UPDATE_TEMPS, $thermostatRec['deviceID'],NULL, $stat->getTargetOnOff());
+					UpdateStatus(MY_DEVICE_ID, $thermostatRec['deviceID'],NULL, $stat->getTargetOnOff());
 					
 					// update the status table
 					logIt( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for UUID $stat->uuid" );
@@ -180,9 +179,8 @@ function UpdateTemps() {
 	
 				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by mdate desc limit 1";
 				if ($row = FetchRow($sql)) {
-					$last = new DateTime($row['mdate']);
-					$nowdt = new DateTime(date("Y-m-d H:i:s"));
-					if ($nowdt->diff($last, true)->h > 0) {
+					$last = strtotime($row['mdate']);
+					if (timeExpired($last, 60)) {
 						logit( "Insert row into Weather Current" );
 						$ctemp = to_celcius($stat->temp);
 						$ttrend = setTrend($ctemp, $row['temperature_c']);

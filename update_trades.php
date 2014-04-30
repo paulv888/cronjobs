@@ -16,8 +16,8 @@ define("MY_DEVICE_ID", 103);
 //echo GetCurrentPrice(). " Open Positions Prices Updated <br/>\r\n";
 //echo GetPricesWebServiceEx(). " Last Close Prices Updated <br/>\r\n";
 
-echo ImportOrders()." Orders Imported <br/>\r\n";
-echo MoveTransactionsPositions()." Positions Opened or Closed  <br/>\r\n";
+//echo ImportOrders()." Orders Imported <br/>\r\n";
+//echo MoveTransactionsPositions()." Positions Opened or Closed  <br/>\r\n";
 echo GetPrices("trd_indexes", "trd_idx_performance"). " Indexes Updated <br/>\r\n";
 echo GetPrices("trd_positions","trd_pos_performance"). " Open Positions Prices Updated <br/>\r\n";
 echo UpdateRowvalues()." Calculation Queries Executed <br/>\r\n";

@@ -1,9 +1,9 @@
 <?php
-function createMail($callsource, $id, &$subject, &$message){
+function createMail($mailtype, $params, &$subject, &$message){
 // $type == TRADE_ALERT, HA_ALERT, SCHEME_STEPS
 
-	switch ($callsource) {
-		case SIGNAL_SOURCE_TRADE_ALERT:
+	switch ($mailtype) {
+		case MAIL_TYPE_TRADE:				// Not in use
 			/*trd_positions:
 				`trd_positions___account_raw`
 				`trd_positions___buy_sell_raw`
@@ -286,61 +286,10 @@ function createMail($callsource, $id, &$subject, &$message){
 			'LEFT JOIN `trd_pos_alerts` AS `trd_pos_alerts` ON `trd_pos_alerts`.`posid` = `trd_positions`.`id`  '. 
 			'LEFT JOIN `trd_positions` AS `trd_positions_1` ON `trd_positions_1`.`id` = `trd_pos_alerts`.`posid`  '. 
 			'LEFT JOIN `trd_alerts_dd` AS `trd_alerts_dd` ON `trd_alerts_dd`.`id` = `trd_pos_alerts`.`alert`  '. 
-			'WHERE `trd_pos_alerts`.`id` = "'.$id.'"' ;
+			'WHERE `trd_pos_alerts`.`id` = "'.$params['tradealert ar something'].'"' ;
 		//	'LEFT JOIN `trd_alert_actions` AS `trd_alert_actions` ON `trd_alerts_dd`.`actionid` = `trd_alert_actions`.`id`  '. 
 			break;
-		case SIGNAL_SOURCE_HA_ALERT:
-			/* ha_alerts:
-				`ha_alerts___id`
-				`ha_alerts___deviceID`
-				`ha_alerts___date_key`
-				`ha_alerts___processed`
-				`ha_alerts___alert_date`
-				`ha_alerts___action_date`
-				`ha_alerts___l1`
-				`ha_alerts___v1`
-				`ha_alerts___l2`
-				`ha_alerts___v2`
-				`ha_alerts___l3`
-				`ha_alerts___v3`
-				`ha_alerts___l4`
-				`ha_alerts___v4`
-				`ha_alerts___l5`
-				`ha_alerts___v6`
-			
-			ha_alerts_dd:
-				`ha_alerts_dd___description`
-			
-			ha_mf_devices:
-				`ha_mf_devices___code`
-				`ha_mf_devices___unit`
-				`ha_alerts___description`
-				
-			ha_mf_locations:
-				`ha_mf_locations___description`
-			*/			
-			$mysql='SELECT SQL_CALC_FOUND_ROWS DISTINCT `ha_alerts`.`id` AS `ha_alerts___id`,  '.
-				'`ha_alerts`.`deviceID` AS `ha_alerts___deviceID`, '.
-				'`ha_mf_devices`.`code` AS `ha_mf_devices___code`, `ha_mf_devices`.`unit` AS `ha_mf_devices___unit`, '.
-				'`ha_mf_locations`.`description` AS `ha_mf_locations___description`, '.
-				'`ha_mf_devices`.`description` AS `ha_mf_devices___description`, `ha_alerts`.`alertID` AS `ha_alerts___alertID`, '.
-				'`ha_alerts_dd`.`description` AS `ha_alerts_dd___description`, `ha_alerts`.`date_key` AS `ha_alerts___date_key`, '.
-				'`ha_alerts`.`processed` AS `ha_alerts___processed`, '.
-				'`ha_alerts`.`alert_date` AS `ha_alerts___alert_date`, '.
-				'`ha_alerts`.`action_date` AS `ha_alerts___action_date`, '.
-				'`ha_alerts`.`l1` AS `ha_alerts___l1`, `ha_alerts`.`v1` AS `ha_alerts___v1`, '.
-				'`ha_alerts`.`l2` AS `ha_alerts___l2`, `ha_alerts`.`v2` AS `ha_alerts___v2`, '.
-				'`ha_alerts`.`l3` AS `ha_alerts___l3`, `ha_alerts`.`v3` AS `ha_alerts___v3`, '.
-				'`ha_alerts`.`l4` AS `ha_alerts___l4`, `ha_alerts`.`v4` AS `ha_alerts___v4`, '.
-				'`ha_alerts`.`l5` AS `ha_alerts___l5`, `ha_alerts`.`v5` AS `ha_alerts___v5` '.
-				' FROM `ha_alerts`'.
-				' LEFT JOIN `ha_alerts_dd` AS `ha_alerts_dd` ON `ha_alerts_dd`.`id` = `ha_alerts`.`alertID` '.
-				' LEFT JOIN `ha_mf_devices` AS `ha_mf_devices` ON `ha_mf_devices`.`id` = `ha_alerts`.`deviceID`'.
-				' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID`'.
-				' WHERE `ha_alerts`.`id` = "'.$id.'"';	
-
-			break;
-		case SIGNAL_SOURCE_REMOTE_SCHEME:
+		case MAIL_TYPE_SCHEME:
 			/*  ha_mf_devices:
 					 `ha_mf_devices___code`
 					 `ha_mf_devices___description`
@@ -382,7 +331,7 @@ function createMail($callsource, $id, &$subject, &$message){
 					 `ha_remote_schemes___sort_raw` 
 					 `ha_remote_schemes___sort`
 				*/
-			$mysql='SELECT SQL_CALC_FOUND_ROWS DISTINCT `ha_remote_schemes`.`id` AS `ha_remote_schemes___id`, '.
+/*			$mysql='SELECT SQL_CALC_FOUND_ROWS DISTINCT `ha_remote_schemes`.`id` AS `ha_remote_schemes___id`, '.
 			'`ha_remote_schemes`.`id` AS `ha_remote_schemes___id_raw`, '.
 			'`ha_remote_schemes`.`updatedate` AS `ha_remote_schemes___updatedate`, '.
 			'`ha_remote_schemes`.`updatedate` AS `ha_remote_schemes___updatedate_raw`, '.
@@ -418,16 +367,93 @@ function createMail($callsource, $id, &$subject, &$message){
 			' LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes_0` ON `ha_remote_schemes_0`.`id` = `ha_remote_scheme_steps`.`schemesID` '.
 			' LEFT JOIN `ha_mf_locations` AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID` '.
 			' WHERE `ha_remote_scheme_steps`.`id` = "'.$id.'"';
- 			break;
+ */			
+			if ($params['deviceID'] != null) {
+
+			$mysql = ' SELECT DISTINCT `ha_mf_devices`.`updatedate` AS `ha_mf_devices___updatedate`, `ha_mf_devices`.`updatedate` AS `ha_mf_devices___updatedate_raw`, 
+		`ha_mf_devices`.`id` AS `ha_mf_devices___id`, `ha_mf_devices`.`id` AS `ha_mf_devices___id_raw`, `ha_mf_devices`.`description` AS `ha_mf_devices___description`, 
+		`ha_mf_devices`.`description` AS `ha_mf_devices___description_raw`, `ha_mf_devices`.`shortdesc` AS `ha_mf_devices___shortdesc`, `ha_mf_devices`.`shortdesc` AS 
+		`ha_mf_devices___shortdesc_raw`, `ha_mf_devices`.`monitortypeID` AS `ha_mf_devices___monitortypeID_raw`, `ha_mi_monitor_type`.`description` AS `ha_mf_devices___monitortypeID`, 
+		`ha_mf_devices`.`code` AS `ha_mf_devices___code`, `ha_mf_devices`.`code` AS `ha_mf_devices___code_raw`, `ha_mf_devices`.`unit` AS `ha_mf_devices___unit`, 
+		`ha_mf_devices`.`unit` AS `ha_mf_devices___unit_raw`, 
+		`ha_mf_devices`.`typeID` AS `ha_mf_devices___typeID_raw`, 
+		`ha_mf_device_types`.`display_icon` AS `ha_mf_device_types___display_icon`,
+		`ha_mf_device_types`.`description` AS  `ha_mf_device_types___description`,
+		`ha_mf_devices`.`locationID` AS `ha_mf_devices___locationID_raw`, 
+		`ha_mf_locations`.`display_icon` AS `ha_mf_locations___display_icon`, 
+		`ha_mf_locations`.`description` AS `ha_mf_locations___description`, 
+		`ha_mf_devices`.`inuse` AS `ha_mf_devices___inuse`, 
+		`ha_mf_devices`.`inuse` AS `ha_mf_devices___inuse_raw`, `ha_mf_devices`.`ipaddressID` AS `ha_mf_devices___ipaddressID_raw`, 
+		`ha_mf_device_ipaddress`.`name` AS `ha_mf_devices___ipaddressID`, `ha_mf_devices`.`devicelinkID` AS `ha_mf_devices___devicelinkID_raw`, 
+		`ha_mf_device_links`.`name` AS `ha_mf_devices___devicelinkID`, `ha_mf_devices`.`commandclassID` AS `ha_mf_devices___commandclassID_raw`, 
+		`ha_mf_commands_class_dd`.`description` AS `ha_mf_devices___commandclassID`, `ha_mf_devices`.`sort` AS `ha_mf_devices___sort`, 
+		`ha_mf_devices`.`sort` AS `ha_mf_devices___sort_raw`, `ha_mf_monitor_status`.`updatedate` AS `ha_mf_monitor_status___updatedate`, 
+		`ha_mf_monitor_status`.`updatedate` AS `ha_mf_monitor_status___updatedate_raw`, `ha_mf_monitor_status`.`deviceID` AS `ha_mf_monitor_status___deviceID`, 
+		`ha_mf_monitor_status`.`deviceID` AS `ha_mf_monitor_status___deviceID_raw`, `ha_mf_monitor_status`.`toggleignore` AS `ha_mf_monitor_status___toggleignore`, 
+		`ha_mf_monitor_status`.`toggleignore` AS `ha_mf_monitor_status___toggleignore_raw`, `ha_mf_monitor_status`.`id` AS `ha_mf_monitor_status___id`, 
+		`ha_mf_monitor_status`.`id` AS `ha_mf_monitor_status___id_raw`, `ha_mf_monitor_status`.`status` AS `ha_mf_monitor_status___status`, `ha_mf_monitor_status`.`status` AS 
+		`ha_mf_monitor_status___status_raw`, `ha_mf_monitor_status`.`statusDate` AS `ha_mf_monitor_status___statusDate`, `ha_mf_monitor_status`.`statusDate` AS 
+		`ha_mf_monitor_status___statusDate_raw`, `ha_mf_monitor_status`.`invertstatus` AS `ha_mf_monitor_status___invertstatus`, `ha_mf_monitor_status`.`invertstatus` AS 
+		`ha_mf_monitor_status___invertstatus_raw`, `ha_mf_monitor_link`.`linkmonitor` AS `ha_mf_monitor_link___linkmonitor`, `ha_mf_monitor_link`.`linkmonitor` AS 
+		`ha_mf_monitor_link___linkmonitor_raw`, `ha_mf_monitor_link`.`id` AS `ha_mf_monitor_link___id`, `ha_mf_monitor_link`.`id` AS `ha_mf_monitor_link___id_raw`, 
+		`ha_mf_monitor_link`.`updatedate` AS `ha_mf_monitor_link___updatedate`, `ha_mf_monitor_link`.`updatedate` AS `ha_mf_monitor_link___updatedate_raw`, 
+		`ha_mf_monitor_link`.`listenfor1` AS `ha_mf_monitor_link___listenfor1_raw`, `ha_vw_commands_1`.`Description` AS `ha_mf_monitor_link___listenfor1`, `ha_mf_monitor_link`.`listenfor2` AS 
+		`ha_mf_monitor_link___listenfor2_raw`, `ha_vw_commands`.`Description` AS `ha_mf_monitor_link___listenfor2`, `ha_mf_monitor_link`.`listenfor3` AS `ha_mf_monitor_link___listenfor3_raw`,
+		`ha_vw_commands_0`.`Description` AS `ha_mf_monitor_link___listenfor3`, `ha_mf_monitor_link`.`frequency1` AS `ha_mf_monitor_link___frequency1`, `ha_mf_monitor_link`.`frequency1` AS
+		`ha_mf_monitor_link___frequency1_raw`, `ha_mf_monitor_link`.`frequency2` AS `ha_mf_monitor_link___frequency2`, `ha_mf_monitor_link`.`frequency2` AS
+		`ha_mf_monitor_link___frequency2_raw`, `ha_mf_monitor_link`.`pingport` AS `ha_mf_monitor_link___pingport`, `ha_mf_monitor_link`.`pingport` AS `ha_mf_monitor_link___pingport_raw`, 
+		`ha_mf_monitor_link`.`link_timeout` AS `ha_mf_monitor_link___link_timeout`, `ha_mf_monitor_link`.`link_timeout` AS `ha_mf_monitor_link___link_timeout_raw`, `ha_mf_monitor_link`.`link`
+		AS `ha_mf_monitor_link___link`, `ha_mf_monitor_link`.`link` AS `ha_mf_monitor_link___link_raw`, `ha_mf_monitor_link`.`mdate` AS `ha_mf_monitor_link___mdate`, `ha_mf_monitor_link`.`mdate`
+		AS `ha_mf_monitor_link___mdate_raw`, `ha_mf_monitor_link`.`deviceID` AS `ha_mf_monitor_link___deviceID`, `ha_mf_monitor_link`.`deviceID` AS `ha_mf_monitor_link___deviceID_raw`, 
+		`ha_mf_devices_thermostat`.`id` AS `ha_mf_devices_thermostat___id`, `ha_mf_devices_thermostat`.`id` AS `ha_mf_devices_thermostat___id_raw`, `ha_mf_devices_thermostat`.`site1` AS 
+		`ha_mf_devices_thermostat___site1`, `ha_mf_devices_thermostat`.`site1` AS `ha_mf_devices_thermostat___site1_raw`, `ha_mf_devices_thermostat`.`empty1` AS 
+		`ha_mf_devices_thermostat___empty1`, `ha_mf_devices_thermostat`.`empty1` AS `ha_mf_devices_thermostat___empty1_raw`, `ha_mf_devices_thermostat`.`deviceID` AS 
+		`ha_mf_devices_thermostat___deviceID`, `ha_mf_devices_thermostat`.`deviceID` AS `ha_mf_devices_thermostat___deviceID_raw`, `ha_mf_devices_thermostat`.`tstat_uuid` 
+		AS `ha_mf_devices_thermostat___tstat_uuid`, `ha_mf_devices_thermostat`.`tstat_uuid` AS `ha_mf_devices_thermostat___tstat_uuid_raw`, `ha_mf_devices_thermostat`.`model` 
+		AS `ha_mf_devices_thermostat___model`, `ha_mf_devices_thermostat`.`model` AS `ha_mf_devices_thermostat___model_raw`, `ha_mf_devices_thermostat`.`fw_version` AS 
+		`ha_mf_devices_thermostat___fw_version`, `ha_mf_devices_thermostat`.`fw_version` AS `ha_mf_devices_thermostat___fw_version_raw`, `ha_mf_devices_thermostat`.`wlan_fw_version` AS 
+		`ha_mf_devices_thermostat___wlan_fw_version`, `ha_mf_devices_thermostat`.`wlan_fw_version` AS `ha_mf_devices_thermostat___wlan_fw_version_raw`, `ha_mf_devices_thermostat`.`name` AS 
+		`ha_mf_devices_thermostat___name`, `ha_mf_devices_thermostat`.`name` AS `ha_mf_devices_thermostat___name_raw`, `ha_mf_devices_thermostat`.`description` AS
+		`ha_mf_devices_thermostat___description`, `ha_mf_devices_thermostat`.`description` AS `ha_mf_devices_thermostat___description_raw`, `ha_mf_devices_thermostat`.`away_heat_temp_c` AS
+		`ha_mf_devices_thermostat___away_heat_temp_c`, `ha_mf_devices_thermostat`.`away_heat_temp_c` AS `ha_mf_devices_thermostat___away_heat_temp_c_raw`, 
+		`ha_mf_devices_thermostat`.`here_temp_heat_c` AS `ha_mf_devices_thermostat___here_temp_heat_c`, `ha_mf_devices_thermostat`.`here_temp_heat_c` AS 
+		`ha_mf_devices_thermostat___here_temp_heat_c_raw`, `ha_mf_devices_thermostat`.`away_cool_temp_c` AS `ha_mf_devices_thermostat___away_cool_temp_c`, 
+		`ha_mf_devices_thermostat`.`away_cool_temp_c` AS `ha_mf_devices_thermostat___away_cool_temp_c_raw`, `ha_mf_devices_thermostat`.`here_temp_cool_c` AS 
+		`ha_mf_devices_thermostat___here_temp_cool_c`, `ha_mf_devices_thermostat`.`here_temp_cool_c` AS `ha_mf_devices_thermostat___here_temp_cool_c_raw`, `ha_mf_monitor_triggers`.`id` 
+		AS `ha_mf_monitor_triggers___id`, `ha_mf_monitor_triggers`.`id` AS `ha_mf_monitor_triggers___id_raw`, `ha_mf_monitor_triggers`.`deviceID` AS `ha_mf_monitor_triggers___deviceID`,
+		`ha_mf_monitor_triggers`.`deviceID` AS `ha_mf_monitor_triggers___deviceID_raw`, `ha_mf_monitor_triggers`.`statuslink` AS `ha_mf_monitor_triggers___statuslink`,
+		`ha_mf_monitor_triggers`.`statuslink` AS `ha_mf_monitor_triggers___statuslink_raw`, `ha_mf_monitor_triggers`.`triggertype` AS `ha_mf_monitor_triggers___triggertype`,
+		`ha_mf_monitor_triggers`.`triggertype` AS `ha_mf_monitor_triggers___triggertype_raw`, `ha_mf_monitor_triggers`.`schemeID` AS `ha_mf_monitor_triggers___schemeID_raw`, 
+		`ha_remote_schemes`.`name` AS `ha_mf_monitor_triggers___schemeID`, `ha_mf_devices`.`id` AS slug , `ha_mf_devices`.`id` AS `__pk_val` FROM `ha_mf_devices` LEFT JOIN `ha_mf_locations` 
+		AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID` LEFT JOIN `ha_mi_monitor_type` AS `ha_mi_monitor_type` ON `ha_mi_monitor_type`.
+		`id` = `ha_mf_devices`.`monitortypeID` LEFT JOIN `ha_mf_monitor_link` AS `ha_mf_monitor_link` ON `ha_mf_monitor_link`.`deviceID` = `ha_mf_devices`.`id` LEFT JOIN `ha_vw_commands`
+		AS `ha_vw_commands` ON `ha_vw_commands`.`id` = `ha_mf_monitor_link`.`listenfor2` LEFT JOIN `ha_vw_commands` AS `ha_vw_commands_0` ON `ha_vw_commands_0`.`id` = 
+		`ha_mf_monitor_link`.`listenfor3` LEFT JOIN `ha_mf_monitor_status` AS `ha_mf_monitor_status` ON `ha_mf_monitor_status`.`deviceID` = `ha_mf_devices`.`id` 
+		LEFT JOIN `ha_mf_devices_thermostat` AS `ha_mf_devices_thermostat` ON `ha_mf_devices_thermostat`.`deviceID` = `ha_mf_devices`.`id` LEFT JOIN `ha_vw_commands` AS `ha_vw_commands_1` 
+		ON `ha_vw_commands_1`.`id` = `ha_mf_monitor_link`.`listenfor1` LEFT JOIN `ha_mf_device_types` AS `ha_mf_device_types` ON `ha_mf_device_types`.`id` = `ha_mf_devices`.`typeID` 
+		LEFT JOIN `ha_mf_commands_class_dd` AS `ha_mf_commands_class_dd` ON `ha_mf_commands_class_dd`.`id` = `ha_mf_devices`.`commandclassID` LEFT JOIN `ha_mf_device_ipaddress` AS 
+		`ha_mf_device_ipaddress` ON `ha_mf_device_ipaddress`.`id` = `ha_mf_devices`.`ipaddressID` LEFT JOIN `ha_mf_device_links` AS `ha_mf_device_links` ON `ha_mf_device_links`.`id` = 
+		`ha_mf_devices`.`devicelinkID` LEFT JOIN `ha_mf_monitor_triggers` AS `ha_mf_monitor_triggers` ON `ha_mf_monitor_triggers`.`deviceID` = `ha_mf_devices`.`id`
+		LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes` ON `ha_remote_schemes`.`id` = `ha_mf_monitor_triggers`.`schemeID` WHERE ha_mf_devices.id = '.$params['deviceID'];
+			}
+			break;
+			
 	}
  
 	if (isset($mysql)) {
-		if (!$resdata = mysql_query($mysql)) {	
-			mySqlError($mysql);
-			return false;
-		}
 
-		if ($data = mysql_fetch_assoc($resdata)) {
+		if ($data = FetchRow($mysql)) {
+		//echo "<pre>"; print_r ($data); echo "</pre>";
+			foreach ($data as $key => $value) {
+				$pattern[$key]="/\{".$key."\}/";
+			}
+			$subject=preg_replace($pattern, $data, $subject);
+			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
+			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
+			$message=preg_replace($pattern, $data, $message);
+		}
+/*		if ($data = FetchRow($mysqldev)) {
+echo 'here2';
 	//	echo "<pre>"; print_r ($data); echo "</pre>";
 			foreach ($data as $key => $value) {
 				$pattern[$key]="/\{".$key."\}/";
@@ -436,11 +462,10 @@ function createMail($callsource, $id, &$subject, &$message){
 			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
 			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
 			$message=preg_replace($pattern, $data, $message);
-			return true;
-		} else {
-			return false;
-		}
+		} */
 	}
+
+
 	return true;
 }
 

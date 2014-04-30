@@ -10,6 +10,7 @@
 class InsteonCoder
 {
 	private static $plmcmd = array (
+	'insteon_something' 	=> '0221',
 	'insteon_received' 	=> '0250',
 	'insteon_ext_received' 	=> '0251',
 	'x10_received' 		=> '0252',
@@ -43,6 +44,7 @@ class InsteonCoder
 );
 
 private static $plmcmdlen = array (
+	'0221' => array (11, 11),
 	'0250' => array (11, 11),
 	'0251' => array (25, 25),
 	'0252' => array (4, 4),
@@ -75,6 +77,7 @@ private static $plmcmdlen = array (
 );	
 
 private static $inout_a = Array (
+		'0221' => COMMAND_IO_NOT,
 		'0250' => COMMAND_IO_RECV,
 		'0251' => COMMAND_IO_RECV,
 		'0252' => COMMAND_IO_RECV,
