@@ -144,7 +144,7 @@ function UpdateTemps() {
 						$newStartDateFan = null;
 					}
 	
-					UpdateStatus(MY_DEVICE_ID, $thermostatRec['deviceID'],NULL, $stat->getTargetOnOff());
+					UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff() ));
 					
 					// update the status table
 					logIt( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for UUID $stat->uuid" );

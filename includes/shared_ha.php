@@ -76,8 +76,13 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 	return false;
 }
 		
-function UpdateStatus ($callerID, $deviceID, $commandID = NULL, $status = NULL) 
+function UpdateStatus ($callerID, $params)
 {
+//$deviceID, $commandID = NULL, $status = NULL) 
+ 	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
+	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
+	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
+	$status = (array_key_exists('status', $params) ? $params['status'] : Null);
 
 	// Interpret status value based on current command, i.e. On/Off/Error
 	if (DEBUG_HA) echo "Status commandID:".$commandID.CRLF;
