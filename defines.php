@@ -79,7 +79,7 @@ define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
 
 // Special X10_INSTEON dim handling
-define ("COMMAND_DIM_CLASS_X10_INSTEON", "|{code}480=I=3");
+define ("COMMAND_DIM_CLASS_X10_INSTEON", "|0263{code}480");
 
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_STATUS", 1);

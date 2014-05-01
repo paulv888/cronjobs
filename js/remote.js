@@ -3,6 +3,8 @@ if(!window.scriptHasRun) {
 	var COMMAND_TOGGLE = 19;
 	var COMMAND_GET_GROUP = 282;
 	var MY_DEVICE_ID = 164;
+	//var myurl = '/cronjobs/process.php';
+	var myurl = '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php';
 
 	var lastKey = null;
 	window.addEvent('domready', function(){
@@ -156,7 +158,7 @@ if(!window.scriptHasRun) {
 	function callAjax (params) {
 
 		var myHTMLRequest = new Request({
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			url: 	myurl,
 			method: 'post',
 			data: params,
 			onRequest: function(){
@@ -174,7 +176,7 @@ if(!window.scriptHasRun) {
 	function callAjaxSync (params) {
 
 		var myHTMLRequest = new Request({
-			url: 	'/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			url: 	myurl,
 			method: 'post',
 			async: false,
 			data: params,

@@ -128,11 +128,6 @@ function GetSessions() {
 		parse_str($value,$value);
 		$value['last_used'] = $secs_boot - $value['last_used'];
 	}
-	//print_r($sessions);
-	
-	//$json_nat = json_encode($output);
-	//echo $json_nat;
-    //echo "</pre>";
        
 	return $sessions;
 }

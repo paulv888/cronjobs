@@ -4,7 +4,7 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , verbstatus to status and return JSON
 
-//define( 'MYDEBUG', TRUE );
+// define( 'MYDEBUG', TRUE );
 if (!defined('MYDEBUG')) define( 'MYDEBUG', FALSE );
 
 
@@ -20,9 +20,9 @@ if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to 
 			$remotekeyID= $_POST["remotekey"];
 			$commandID=(!empty($_POST["command"]) ? $_POST["command"] : NULL);
 			if (MYDEBUG) echo "MESS_TYPE_REMOTE_KEY ".$remotekeyID.CRLF;
-			$setvalue= (!empty($_POST["setvalue"]) ? $_POST["setvalue"] : 100);
+			$commandvalue= (!empty($_POST["commandvalue"]) ? $_POST["commandvalue"] : 100);
 			$mouse = (!empty($_POST["mouse"]) ? $_POST["mouse"] : NULL);
-			echo executeCommand($callerID, $messtypeID, array( 'remotekeyID' => $remotekeyID, 'commandID' => $commandID, 'setvalue' => $setvalue, 'mouse' => $mouse));
+			echo executeCommand($callerID, $messtypeID, array( 'remotekeyID' => $remotekeyID, 'commandID' => $commandID, 'commandvalue' => $commandvalue, 'mouse' => $mouse));
 		}
 		break;
 	case MESS_TYPE_SCHEME:												
@@ -65,7 +65,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 	$schemeID = (array_key_exists('schemeID', $params) ? $params['schemeID'] : Null);
 	$remotekeyID = (array_key_exists('remotekeyID', $params) ? $params['remotekeyID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
-	$setvalue = (array_key_exists('setvalue', $params) ? $params['setvalue'] : Null);
+	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
 	$mouse = (array_key_exists('mouse', $params) ? $params['mouse'] : Null);
 
 
@@ -82,21 +82,19 @@ function executeCommand($callerID, $messtypeID, $params) {
 	echo "callerID: ".$callerID.CRLF;
 	$te = ob_get_clean(); // End buffering and clean up
 
-	logEvent(Array ('inout' => COMMAND_IO_RECV, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $tc, 'data' => $setvalue,
+	logEvent(Array ('inout' => COMMAND_IO_RECV, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $tc, 'data' => $commandvalue,
 		'message' => $te, 'loglevel' => LOGLEVEL_DEBUG));
 
 		
 	global $inst_coder;
 	$inst_coder = new InsteonCoder();
-	$feedback = "";
-	//$schemeID = 0;
+	$feedback['messtypeID'] = $messtypeID;
 	
 	switch ($messtypeID)
 	{
 	case MESS_TYPE_REMOTE_KEY:    // Key pressed on remote
-		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-		$rowkeys = mysql_fetch_array($reskeys);
-		$schemeID=$rowkeys['schemeID'];
+		$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
+		$schemeID = $rowkeys['schemeID'];
 		
 		if ($schemeID <=0) {  													// not a scheme, Execute
 			if ($commandID===NULL) {
@@ -109,11 +107,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 					$commandID=$rowkeys['commandID'];
 				}
 			}
-			if ($result=SendCommand($callerID, Array ( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'setvalue' => $setvalue), $params)) {
-				$feedback .= $result;
-			} else {
-				$feedback = false;
-			}
+			$feedback['SendCommand'][]=SendCommand($callerID, Array ( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $params);
 		} 
 		break;
 	case MESS_TYPE_SCHEME:
@@ -121,31 +115,28 @@ function executeCommand($callerID, $messtypeID, $params) {
 		break;
 	case MESS_TYPE_COMMAND:        
 		if (MYDEBUG) echo "MESS_TYPE_COMMAND commandID: ".$commandID." deviceID: ".$deviceID.CRLF;
-		if ($result=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => $commandID), $params)) {
-			$feedback .= $result;
-		} else {
-			$feedback = false;
-		}
+		$feedback['SendCommand'][]=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => $commandID), $params);
 		break;
 	}
 	
 	if ($mouse == 'down') return;
 	if ($schemeID>0)  {
-		$result = RunScheme ($callerID, $schemeID, $params);
-		if (!is_bool($result)) $feedback .= $result;				// do not convert true's to 1's
+		$feedback['RunScheme'][] = RunScheme ($callerID, $schemeID, $params);
 	}			
 	
-	if (!empty($rowkeys)) 
-		if ($rowkeys['show_result']) 
-			return $feedback;
-	
-	if (MYDEBUG) echo "Feedback: >".$feedback."<";
+	$feedback['show_result'] = false;
+	if (!empty($rowkeys)) if ($rowkeys['show_result']) $feedback['show_result'] = true;
+			
+
+			
+	if (MYDEBUG) echo "Feedback: >";
+	if (MYDEBUG) print_r($feedback);
 	if (MYDEBUG) echo "executeCommand Exit".CRLF;
+	echo "<pre>";
+	print_r($feedback);
+	echo "</pre>";
 
-	var_dump($result);
-	var_dump($feedback);
-
-	return ($feedback  ? "OK;".$feedback : "An error occurred");
+	return json_encode($feedback);
 			
 }
 
@@ -187,22 +178,16 @@ function RunScheme($callerID, $schemeID, $params) {      // its a scheme, proces
 		if (MYDEBUG) echo "Condition Pass: confd".$condvalue." ,test: ". $testvalue.CRLF;
 	}
 	
-	$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
+	$sqlstr = "SELECT ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
 	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeID.")) ORDER BY ha_remote_scheme_steps.sort";
 	$resschemesteps	= mysql_query($sqlstr);
-	$feedback = '';
 	while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
-		if ($result=SendCommand($callerID, Array ( 'deviceID' => $rowshemesteps['deviceID'], 'commandID' => $rowshemesteps['commandID'], 
-						'setvalue' => $rowshemesteps['value'], 'alert_textID' => $rowshemesteps['alert_textID']), $params)) {
-			if (!is_bool($result)) $feedback .= $result;				// do not convert true's to 1's
-		} else {
-			$feedback = false;
-		}
+		if ($feedback['RunScheme'][]=SendCommand($callerID, Array ( 'deviceID' => $rowshemesteps['deviceID'], 'commandID' => $rowshemesteps['commandID'], 
+						'commandvalue' => $rowshemesteps['value'], 'alert_textID' => $rowshemesteps['alert_textID']), $params)) {
+		} 
 	}
-	var_dump($result);
-	var_dump($feedback);
-	if (strlen($feedback) == 0) return true;
+
 	if (MYDEBUG) echo "Exit RunScheme</pre>".CRLF;
 	return $feedback;
 }
@@ -215,7 +200,7 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : Null);		// not sending non key to createmail
 	if (IsNullOrEmptyString($deviceID)) $deviceID = Null;
 	$commandID = (array_key_exists('commandID', $thiscommand) ? $thiscommand['commandID'] : Null);
-	$value = (array_key_exists('setvalue', $thiscommand) ? $thiscommand['setvalue'] : 100);
+	$commandvalue = (array_key_exists('commandvalue', $thiscommand) ? $thiscommand['commandvalue'] : 100);
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 
 	if (MYDEBUG) echo "Enter SendCommand ";
@@ -229,6 +214,8 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 	global $inst_coder;
 
 	// Handles 1 single Device
+	$feedback['error'] = 0;
+	$feedback['type'] = 'SendCommand';
 	$targettype = Null;
 	if ($deviceID != NULL) {
 		$resdevices = mysql_query("SELECT * FROM ha_mf_devices where id =".$deviceID.' AND inuse= 1');
@@ -243,7 +230,7 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		if (MYDEBUG) echo "targettype ".$targettype.CRLF;
 
 		if ($commandID==COMMAND_TOGGLE) {   // Special handling for toggle
-			if ($value==100) {
+			if ($commandvalue==100) {
 				$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceID);
 				$rowmonitor = mysql_fetch_array($resmonitor);
 				if ($rowmonitor) {
@@ -273,22 +260,19 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 
 	if (MYDEBUG) echo "commandID ".$commandID.CRLF;
 	if (MYDEBUG) echo "commandclassID ".$commandclassID.CRLF;
-	if (MYDEBUG) echo "value ".$value.CRLF;
+	if (MYDEBUG) echo "commandvalue ".$commandvalue.CRLF;
 	if (MYDEBUG) echo " command ". $rowcommands['command'].CRLF;
-	if (MYDEBUG) echo " command value ". $rowcommands['value'].CRLF;
+	//if (MYDEBUG) echo " command commandvalue ". $rowcommands['commandvalue'].CRLF;
 	
 	switch ($commandclassID)
 	{
 	case COMMAND_CLASS_3MFILTRETE:          // Should be internal as well, make setvalue and verbStatus dependent on Caller
 		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
-		$result = $func($callerID, $deviceID, $value);
-		$feedback[] = verbStatus($deviceID, $result[0]);
-		$feedback[] = setValue($deviceID, $result[1]);
-		echo "***";
-		print_r($feedback);
-
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
+		$result = $func($callerID, $deviceID, $commandvalue);
+		$feedback['error'] = 0; 		// no error checking here?
+		$feedback['verbstatus'] = verbStatus($deviceID, $result);
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_EMAIL:
 		if (MYDEBUG) echo "COMMAND_CLASS_EMAIL".CRLF;
@@ -296,74 +280,81 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		$subject= $rowtext['description'];
 		$message= $rowtext['message'];
 		$myresult = createMail(MAIL_TYPE_SCHEME, Array('deviceID' => $callerparams['deviceID']),$subject,$message);
-		$feedback= sendmail($rowcommands['command'], $subject, $message, 'VloHome');
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
+		$feedback['error'] = (sendmail($rowcommands['command'], $subject, $message, 'VloHome') == true ? false : true);
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_INSTEON:
 		if (MYDEBUG) echo "COMMAND_CLASS_INSTEON".CRLF;
 		$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
 		$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-		if ($value>100) $value=100;
-		if ($value>0) $value=255/100*$value;
-		
-		if ($value == NULL && $commandID == COMMAND_ON) $value=255;		// Special case so satify the replace in on command
-		$value = dec2hex($value,2);
-		if (MYDEBUG) echo "value ".$value.CRLF;
-		$tcomm = str_replace("{commandvalue}",$value,$tcomm);
+		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $deviceID);
+		if (!$rowextra['dimmable']) {
+			$commandvalue = 100;
+		}
+		if ($commandvalue>100) $commandvalue=100;
+		if ($commandvalue==100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if ($commandvalue>0) $commandvalue=255/100*$commandvalue;
+		if ($commandvalue == NULL && $commandID == COMMAND_ON) $commandvalue=255;		// Special case so satify the replace in on command
+		$commandvalue = dec2hex($commandvalue,2);
+		if (MYDEBUG) echo "commandvalue ".$commandvalue.CRLF;
+		$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
 		if (MYDEBUG) echo "Rest deviceID ".$deviceID." commandID ".$commandID.CRLF;
 		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm.'=I=3';
 		if (MYDEBUG) echo $url.CRLF;
 		$get = restClient::get($url);
-		$feedback = ($get->getresponsecode()==200 ? TRUE : $get->getresponse());
+		$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponse());
 		echo  $get->getresponse().CRLF;
 		echo  $get->getresponsecode().CRLF;
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		usleep(INSTEON_SLEEP_MICRO);
-		if ($feedback !== FALSE) {
-			$feedback = verbStatus($deviceID,($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
-			if ($feedback == NULL) $feedback = true;
+		if (!$feedback['error']) {
+			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
+			$result[] = $commandvalue;
+			$feedback['verbstatus'] = verbStatus($deviceID, $result);
 			UpdateStatus($callerID, $deviceID, $commandID);
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
 		$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
-		if ($value>100) $value=100;
-		if ($value == NULL && $commandID == COMMAND_ON) $value=100;		// Special case so satify the replace in on command
-		$dims = 0;
-		if ($value>0 && $value < 100) $dims=(integer)round(10-10/100*$value);
-		if (MYDEBUG) echo "value ".$value.CRLF;
-		if (MYDEBUG) echo "dims ".$dims.CRLF;
-		while($dims > 0) {
-			$tcomm .= COMMAND_DIM_CLASS_X10_INSTEON;
-			$dims--;
+		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $deviceID);
+		if ($rowextra['dimmable']) {
+			$dims = 0;
+			if ($commandvalue>0 && $commandvalue < 100) $dims=(integer)round(10-10/100*$commandvalue);
+			if (MYDEBUG) echo "commandvalue ".$commandvalue.CRLF;
+			if (MYDEBUG) echo "dims ".$dims.CRLF;
+			while($dims > 0) {
+				$tcomm .= COMMAND_DIM_CLASS_X10_INSTEON;
+				$dims--;
+			}
+		} else {
+			$commandvalue = 100;
 		}
-//		$tcomm .={code}a80=I=3;
-//		$tcomm .={code}b80=I=3
-//		$tcomm .= "|{code}{unit}00=I=3";
-//		$tcomm .= "|{code}a80=I=3";
-//		$tcomm .= "|0b80=I=3";
-//		$tcomm .= "|{code}480=I=3";			// dim 480
-//		$tcomm .= "|a780=I=3";				// ext code
-//		$tcomm .= "|0b80=I=3";
+		if ($commandvalue>100) $commandvalue=100;
+		if ($commandvalue==100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if ($commandvalue == NULL && $commandID == COMMAND_ON) $commandvalue=100;		// Special case so satify the replace in on command
+//		$tcomm .={code}a80=I=3;	$tcomm .={code}b80=I=3 $tcomm .= "|{code}{unit}00=I=3"; $tcomm .= "|{code}a80=I=3";	$tcomm .= "|0b80=I=3";
+//		$tcomm .= "|{code}480=I=3";			// dim 480  $tcomm .= "|a780=I=3";	$tcomm .= "|0b80=I=3";
 		$tcomm = str_replace("{code}",$inst_coder->x10_code_encode($rowdevices['code']),$tcomm);
 		$tcomm = str_replace("{unit}",$inst_coder->x10_unit_encode($rowdevices['unit']),$tcomm);
 		if (MYDEBUG) echo "Rest deviceID ".$deviceID." commandID ".$commandID.CRLF;
 		$commands=explode("|", $tcomm);
 		//
-		// handle dimming, cannot give value so dimming lots of times
+		// handle dimming, cannot give commandvalue so dimming lots of times
 		//
 		foreach ($commands as $command) {
 			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command.'=I=3';
 			if (MYDEBUG) echo $url.CRLF;
 			$get = restClient::get($url);
-			$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
+			$feedback['error'] = $feedback['error'] || ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+			if ($feedback['error'] == 0) $feedback['message'] = $get->getresponse();
 			usleep(INSTEON_SLEEP_MICRO);
 		}     
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
-		if ($feedback) {
-			$feedback = verbStatus($deviceID,($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
-			if ($feedback == NULL) $feedback = true;
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
+		if (!$feedback['error']) {
+			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
+			$result[] = $commandvalue;
+			$feedback['verbstatus'] = verbStatus($deviceID,$result);
 			UpdateStatus($callerID, $deviceID, $commandID);
 		}
 		break;
@@ -376,7 +367,7 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		$x10[0]->Sender = "plc";
 		$x10[0]->HouseCode = $rowdevices['code'];
 		$x10[0]->Unit = $rowdevices['unit'];
-		if ($commandID ==  COMMAND_ON && $value>0 && $value<100) {
+		if ($commandID ==  COMMAND_ON && $commandvalue>0 && $commandvalue<100) {
 			$x10[0]->Command = "On";
 			$x10[0]->CmdData = NULL;
 			$x10[0]->Date = date("Y-m-d H:i:s");
@@ -386,19 +377,21 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 			$x10[0]->Date = date("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 			$x10[0]->Command = "Dim";
-			$x10[0]->CmdData = 100-$value;
+			$x10[0]->CmdData = 100-$commandvalue;
 			$x10[0]->Date = date("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 		} else {
 			$x10[0]->Command = $rowcommands['description'];
-			$x10[0]->CmdData = $value;
+			$x10[0]->CmdData = $commandvalue;
 			$x10[0]->Date = date("Y-m-d H:i:s");
 			WriteTCP($x10[0]->asXML());
 		}
 		CloseTCP("X10");
-		$feedback = verbStatus($deviceID,($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON));
-		if ($feedback == NULL) $feedback = true;
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
+		$result[] = (commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
+		$result[] = $commandvalue;
+		$feedback['error'] = 0;
+		$feedback['verstatus'] = verbStatus($deviceID,$result);
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 	default:								// We have a device
 		if (MYDEBUG) echo "COMMAND_CLASS_GENERIC</p>";
@@ -414,7 +407,8 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 				if (MYDEBUG) echo $url.$tcomm.CRLF;
 				$post = restClient::post($url, $tcomm,"","","text/plain");
-				$feedback = ($post->getResponseCode()==200 ? $post->getResponse() : FALSE);
+				$feedback['error'] = $feedback['error'] || ($post->getresponsecode()==200 ? 0 : $post->getresponsecode());
+				if ($feedback['error'] == 0) $feedback['message'] = $post->getresponse();
 				$message = $url.$tcomm;
 				break;
 			case "GET":          // Sony Cam at the moment
@@ -425,13 +419,14 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 				if (MYDEBUG) echo $url.$tcomm.CRLF;
 				$get = restClient::get($url.$tcomm);
-				$feedback = ($get->getResponseCode()==200 ? $get->getResponse() : FALSE);
+				$feedback['error'] = $feedback['error'] || ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+				if ($feedback['error'] == 0) $feedback['message'] = $get->getresponse();
 				$message = $url.$tcomm;
 				break;
 			case null:
 			case "NONE":          // Virtual Devices
 				if (MYDEBUG) echo "DOING NOTHING</p>";
-				$feedback = true;
+				$feedback['error'] =  0;
 				$message = "NOP";
 				break;
 			}
@@ -444,12 +439,11 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 			switch ($commandID)
 			{
 			case COMMAND_RUN_SCHEME:
-				$feedback = RunScheme($callerID, $value, $callerparams);
+				$feedback['RunScheme'][] = RunScheme($callerID, $commandvalue, $callerparams);
 				break;
 			default:
 				$func = $rowcommands['command'];
-				$feedback = $func($value);
-				if ($feedback === 0) $feedback = true; // sleep return 0
+				$feedback['error'] = $func($commandvalue);
 				break;;
 			}
 		}
@@ -457,13 +451,10 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		$result[] = 100;
 		if ($deviceID != NULL) {
 			if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-				$feedback['buttons'] = verbStatus($deviceID, $result[0]);
-				$feedback['buttons'] = setValue($deviceID, $result[1]);
-				echo "***";
-				print_r($feedback);
+				$feedback['verstatus'] = verbStatus($deviceID, $result);
 			} 
 		}
-		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $value, 'result' => $feedback));
+		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 		
 	}
@@ -473,9 +464,10 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 						Array ("remotekey",
 								'status',
 								'link'.
-								'value') */
+								'commandvalue') */
 	
 	if (MYDEBUG) echo "Exit Send".CRLF;
+	
 	return $feedback;
 } 
 
@@ -489,42 +481,26 @@ function verbStatus ($deviceID, $status) {
 		while ($rowkeys = mysql_fetch_array($reskeys)) {
 			if ($rowkeys['inputtype']== "button") {
 				$feedback[]["remotekeyID"] = $rowkeys['id'];
-				$last_id=key(end($feedback));
-				if ($status == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
+				$last_id=count($feedback)-1;
+				if ($status[0] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
 					$feedback[$last_id]["status"]="off";
-				} elseif ($status == STATUS_UNKNOWN) {
+				} elseif ($status[0] == STATUS_UNKNOWN) {
 					$feedback[$last_id]["status"]="unknown";
-				} elseif ($status == STATUS_ON) {
-					$feedback[$last_id]["status"]=" on";
+				} elseif ($status[0] == STATUS_ON) {
+					$feedback[$last_id]["status"]="on";
 				} else { 										// else assume a value
-					$feedback[$last_id]["status"]=" on";
+					$feedback[$last_id]["status"]="on";
 				}				
-			}
-		}
-		echo "verbstatus";
-		print_r($feedback);
-		
-	return $feedback;
-}
-
-function setValue ($deviceID, $value) {
-// breaks if multiple keys for same device only 1 will be udated
-//	$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceID);
-//	$rowmonitor = mysql_fetch_array($resmonitor);
-//	if ($rowmonitor) {
-		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$deviceID);
-		while ($rowkeys = mysql_fetch_array($reskeys)) {
-			if ($rowkeys['inputtype']== "field") {
+			} elseif ($rowkeys['inputtype']== "field") {
 				$feedback[]["remotekeyID"]=$rowkeys['id'];
-				$last_id=key(end($feedback));
-				$feedback[$last_id]["value"]=$value;
+				$last_id=count($feedback)-1;
+				$feedback[$last_id]["commandvalue"]=$status[1];
 			}
 		}
-
-		print_r($feedback);
 		
 	return $feedback;
 }
+
 
 function NOP() {return;}
 ?>
