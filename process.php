@@ -2,7 +2,7 @@
 require_once 'includes.php';
 
 // TODO:: callerparms needed?
-// TODO:: clean up feedback , verbstatus to status and return JSON
+// TODO:: clean up feedback , status and return JSON
 
 // define( 'MYDEBUG', TRUE );
 if (!defined('MYDEBUG')) define( 'MYDEBUG', FALSE );
@@ -266,12 +266,11 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 	
 	switch ($commandclassID)
 	{
-	case COMMAND_CLASS_3MFILTRETE:          // Should be internal as well, make setvalue and verbStatus dependent on Caller
+	case COMMAND_CLASS_3MFILTRETE:          
 		if (MYDEBUG) echo "COMMAND_CLASS_3MFILTRETE</p>";
 		$func = $rowcommands['command'];
 		$result = $func($callerID, $deviceID, $commandvalue);
 		$feedback['error'] = 0; 		// no error checking here?
-		$feedback['verbstatus'] = verbStatus($deviceID, $result);
 		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 	case COMMAND_CLASS_EMAIL:
@@ -311,8 +310,7 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		if (!$feedback['error']) {
 			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $commandvalue;
-			$feedback['verbstatus'] = verbStatus($deviceID, $result);
-			UpdateStatus($callerID, $deviceID, $commandID);
+			UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
@@ -354,8 +352,7 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		if (!$feedback['error']) {
 			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $commandvalue;
-			$feedback['verbstatus'] = verbStatus($deviceID,$result);
-			UpdateStatus($callerID, $deviceID, $commandID);
+			UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
 		}
 		break;
 	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
@@ -390,7 +387,6 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 		$result[] = (commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 		$result[] = $commandvalue;
 		$feedback['error'] = 0;
-		$feedback['verstatus'] = verbStatus($deviceID,$result);
 		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
 		break;
 	default:								// We have a device
@@ -447,11 +443,10 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 				break;;
 			}
 		}
-		$result[] = UpdateStatus($callerID, $deviceID, $commandID);
+		$result[] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
 		$result[] = 100;
 		if ($deviceID != NULL) {
 			if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-				$feedback['verstatus'] = verbStatus($deviceID, $result);
 			} 
 		}
 		logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'result' => $feedback));
@@ -470,37 +465,6 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 	
 	return $feedback;
 } 
-
-function verbStatus ($deviceID, $status) {
-// breaks if multiple keys for same device only 1 will be udated
-// 
-// needs to go to Update Status
-// Need to read status meaning based on commandID 
-//
-		$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$deviceID);
-		while ($rowkeys = mysql_fetch_array($reskeys)) {
-			if ($rowkeys['inputtype']== "button") {
-				$feedback[]["remotekeyID"] = $rowkeys['id'];
-				$last_id=count($feedback)-1;
-				if ($status[0] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
-					$feedback[$last_id]["status"]="off";
-				} elseif ($status[0] == STATUS_UNKNOWN) {
-					$feedback[$last_id]["status"]="unknown";
-				} elseif ($status[0] == STATUS_ON) {
-					$feedback[$last_id]["status"]="on";
-				} else { 										// else assume a value
-					$feedback[$last_id]["status"]="on";
-				}				
-			} elseif ($rowkeys['inputtype']== "field") {
-				$feedback[]["remotekeyID"]=$rowkeys['id'];
-				$last_id=count($feedback)-1;
-				$feedback[$last_id]["commandvalue"]=$status[1];
-			}
-		}
-		
-	return $feedback;
-}
-
 
 function NOP() {return;}
 ?>
