@@ -7,7 +7,7 @@ function monitorDevices() {
 	
 	if (!$reslinks = mysql_query($mysql)) {
 		mySqlError($mysql); 
-		exit;
+		return false;
 	}
 	while ($rowlinks = mysql_fetch_assoc($reslinks)) {	
 		monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['monitortypeID']);
@@ -18,7 +18,7 @@ function monitorDevice($deviceID, $pingport, $montype) {
 	$mysql = 'SELECT `ip`, `name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 	if (!$resip = mysql_query($mysql)) {
 		mySqlError($mysql); 
-		exit;
+		return false;
 	}
 	$rowip = mysql_fetch_assoc($resip);
 	$status = false;

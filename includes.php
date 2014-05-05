@@ -15,6 +15,7 @@ include_once 'includes/shared_ha.php';
 include_once 'includes/shared_gen.php';
 include_once 'includes/mysendmail.php';
 include_once 'includes/timers.php';
+include_once 'includes/create_alerts.php';
 include_once 'includes/weather.php';
 include_once 'includes/2701HG-B.php';
 include_once 'includes/simple_html_dom.php';

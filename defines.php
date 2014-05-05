@@ -47,6 +47,7 @@ define("COMMAND_STATUSOFF", 6);
 define("COMMAND_TOGGLE", 19);
 define("COMMAND_ON", 17);
 define("COMMAND_OFF", 20);
+define("COMMAND_DIM", 13);
 //define("COMMAND_STREAM_DATA", 91);
 define("COMMAND_TOGGLE_HVAC", 132);
 define("COMMAND_UNKNOWN", 267);
@@ -64,6 +65,7 @@ define ("MESS_TYPE_REMOTE_KEY", 'MESS_TYPE_REMOTE_KEY');
 define ("MESS_TYPE_SCHEME", 'MESS_TYPE_SCHEME');
 define ("MESS_TYPE_COMMAND",  'MESS_TYPE_COMMAND');
 define ("MESS_TYPE_GET_GROUP",  'MESS_TYPE_GET_GROUP');
+define ("MESS_TYPE_MULTI_KEY",  'MESS_TYPE_MULTI_KEY');
 
 // Command Classes
 define ("COMMAND_CLASS_GENERIC", 1);
@@ -79,7 +81,8 @@ define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
 
 // Special X10_INSTEON dim handling
-define ("COMMAND_DIM_CLASS_X10_INSTEON", "|0263{code}480");
+define ("COMMAND_DIM_CLASS_X10_INSTEON_OFF", "0263{code}380|");
+define ("COMMAND_DIM_CLASS_X10_INSTEON_DIMM", "|0263{code}480");
 
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_STATUS", 1);
@@ -108,6 +111,7 @@ define("DEV_TYPE_HEAT", 19);
 // Alerts
 define("ALERT_CHANGED_NETWORK_DEVICE", 21);
 define("ALERT_NEW_NETWORK_DEVICE", 22);
+define("ALERT_UNKNOWN_IP_FOUND", 35);
 
 define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
 define("SOURCE_WEATHER_GOV", 7);

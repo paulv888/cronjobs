@@ -41,10 +41,11 @@ $now = date( 'Y-m-d H:i:s' );
 			$stat->getStat();
 			
 			$result['status'] = $stat->Toggle($status);
-			$result['commandvalue']=  to_celcius($stat->ttemp);
-
-			$feedback = UpdateStatus($callerID, $thermostatRec['deviceID'],NULL,$result);
-			UpdateWeatherNow( $thermostatRec['deviceID'], to_celcius($stat->temp),0 , $result[1]);
+			$result['commandvalue'] =  to_celcius($stat->ttemp);
+			$result['deviceID'] = $thermostatRec['deviceID'];
+			
+			$feedback = UpdateStatus($callerID, $result);
+			UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , $result['commandvalue']);
 
 			return $feedback;
 		}
@@ -94,11 +95,12 @@ $now = date( 'Y-m-d H:i:s' );
 			$stat = new Stat( $thermostatRec );
 			$stat->getStat();
 			
-			$feedback[]=$stat->getTargetOnOff();
-			$feedback[]=to_celcius($stat->TempAdd($addtemp));
-
-			UpdateStatus($callerID, $thermostatRec['deviceID'],NULL,$feedback[0]);
-			UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , $feedback[1]);
+			$result['status'] = $stat->getTargetOnOff();
+			$result['commandvalue'] = to_celcius($stat->TempAdd($addtemp));
+			$result['deviceID'] = $thermostatRec['deviceID'];
+			
+			$feedback = UpdateStatus($callerID, $result);
+			UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , $result['commandvalue']);
 			
 			return $feedback;
 		}

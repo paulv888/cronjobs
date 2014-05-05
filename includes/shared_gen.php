@@ -66,4 +66,30 @@ function dec2hex($num,$count=0)
  
         return strrev($ret);
 }
+//clean all empty values from array
+function cleanArray($array)
+{
+    if (is_array($array))
+    {
+        foreach ($array as $key => $sub_array)
+        {
+            $result = cleanArray($sub_array);
+            if ($result === false)
+            {
+                unset($array[$key]);
+            }
+            else
+            {
+                $array[$key] = $result;
+            }
+        }
+    }
+
+    if (empty($array))
+    {
+        return false;
+    }
+
+    return $array;
+}
 ?>

@@ -180,16 +180,20 @@ function loadRemoteBootstrap($remoteID) {
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
 //							echo '<i class="btn-icon icon-arrow-down-3 rem-icon-left"></i>';
 							echo $rowremotekeys['name'].' '.'</span><span class="caret"></span></button>';
-							echo '<ul class="dropdown-menu btndropdown" role="menu" dimvalue="100"';
+
+			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
+		   	    			$option = explode(",",$options[0]);
+							echo '<ul class="dropdown-menu btndropdown" role="menu" myvalue="'.$option[0].'"'; 			// properly set default to first
 		   	    			if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 							echo '>';
 				      		//$first= true;
-			   	    		$options = explode(";",$rowremotekeys['inputoptions']);
 			   	    		foreach ($options as $optionstring) {
 			   	    			$option = explode(",",$optionstring);
-								echo '<li><a href="#" value="'.$option[0].'">'.$option[1].'</a></li>';
-//<li class="divider"></li>
-
+								if ($option[0] == '-') {
+									echo '<li class="divider"></li>';
+								} else {
+									echo '<li><a href="#" value="'.$option[0].'">'.$option[1].'</a></li>';
+								}
 							}
 							echo '</ul></div>';
 			   	    		echo '</td>';

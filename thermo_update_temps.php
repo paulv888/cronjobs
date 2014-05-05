@@ -143,8 +143,6 @@ function UpdateTemps() {
 						$cycleInsert->execute( array( $thermostatRec['deviceID'], 3, $priorStartDateFan, $now ) );
 						$newStartDateFan = null;
 					}
-	
-					UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff() ));
 					
 					// update the status table
 					logIt( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for UUID $stat->uuid" );
@@ -175,6 +173,8 @@ function UpdateTemps() {
 				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
 				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , to_celcius($target));
+				UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'commandvalue' => to_celcius($stat->temp) ));
+
 	
 	
 				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by mdate desc limit 1";

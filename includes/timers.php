@@ -51,9 +51,8 @@ function RunTimers(){
 				if ($doit) {																	// Still good doit
 					$runcount++;
 					if (!DEBUG_TIMERS) ob_start();
-					$result = executeCommand(MY_DEVICE_ID, MESS_TYPE_SCHEME, array( 'schemeID' => $timer['schemeID'])); 
-					if (!DEBUG_TIMERS) $message = ob_get_clean();
-					if (DEBUG_TIMERS) $message = null;
+					$message = executeCommand(MY_DEVICE_ID, MESS_TYPE_SCHEME, array( 'schemeID' => $timer['schemeID'])); 
+					if (!DEBUG_TIMERS) $result = ob_get_clean();
 					logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
 								'result' => $result, 'message' => $message, 'loglevel' => LOGLEVEL_DEBUG ));
 					

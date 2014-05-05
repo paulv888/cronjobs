@@ -3,6 +3,10 @@ if(!window.scriptHasRun) {
 	var COMMAND_TOGGLE = 19;
 	var COMMAND_GET_GROUP = 282;
 	var MY_DEVICE_ID = 164;
+	var  GROUP_SELECT_MODE = 100;
+	var GROUP_NO_SELECTED = 0;
+	var DIM_NO_SELECTED = 19;
+
 	//var myurl = '/cronjobs/process.php';
 	var myurl = '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php';
 
@@ -31,8 +35,13 @@ if(!window.scriptHasRun) {
 		$$('.click-up').removeEvents('click');
 		$$('.click-up').addEvent('click', function(event){
 			event.stop();
-			if ($$('#dim').get('dimvalue') != "0" ) {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey")};
+			if ($$('#group').get('myvalue') !=  GROUP_SELECT_MODE) {
+				var commandvalue = 100;
+				if (document.id('dim')) { 
+					commandvalue = parseInt($$('#dim').get('myvalue'));
+					if (commandvalue ==  DIM_NO_SELECTED) commandvalue = 100;
+				}
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), commandvalue: commandvalue};
 				resetSelection();
 				this.addClass('group-select');
 				callAjax (params) ;
@@ -47,8 +56,21 @@ if(!window.scriptHasRun) {
 			//var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_GROUP', remotekey: this.get("remotekey"), group:this.get('value')};
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
 			mbut.firstChild.textContent = ' '+this.text;
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, value:this.get('value').substring(1)};
-			callAjax (params) ; 		// get group members here and set select
+//			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, value:this.get('value').substring(1)};
+			var selected = this.getAttribute('value');
+			this.parentNode.parentNode.setAttribute('myvalue', selected);
+			if (selected == GROUP_SELECT_MODE)  {			// Select Mode 
+				mbut.removeClass('btn-info');
+				mbut.addClass('btn-success');
+			} else if (selected == GROUP_NO_SELECTED){
+				mbut.addClass('btn-info');
+				mbut.removeClass('btn-success');
+				resetSelection();
+			} else {
+				mbut.addClass('btn-info');
+				mbut.removeClass('btn-success');
+			}
+//			callAjax (params) ; 		// get group members here and set select
 		});
 
 		$$('#dim li a').removeEvents('click');
@@ -58,33 +80,28 @@ if(!window.scriptHasRun) {
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
 			mbut.firstChild.textContent = ' '+this.text;
 			var selected = this.getAttribute('value');
-			this.parentNode.parentNode.setAttribute('dimvalue', selected);
+			this.parentNode.parentNode.setAttribute('myvalue', selected);
 			//$$('#dim').set('value', selected);
 
 			// now find all selected button and send dim value (Either selected over click or over group)
-			var sel = '';
+			var selection = [];
 			var elArray = $$('.group-select');
 			var arrayLength = elArray.length;
-			if (arrayLength > 0 && selected != "0") {				// some selections
+			if (arrayLength > 0 && selected != "19") {				// some selections
 				for (var i = 0; i < arrayLength; i++) {
-					sel = sel + ' '+ elArray[i].get('remotekey');
+					selection.push(elArray[i].get('remotekey'));
 				}
-				alert ('Now all selected lights ('+sel+') in custom group will be set to same dim-value, optimize order (i.e. use X10 group dim)');
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, commandvalue: parseInt(selected)};
+				callAjax (params) ;
+				//alert ('Now all selected lights ('+sel+') in custom group will be set to same dim-value, optimize order (i.e. use X10 group dim)');
 				// resetSelection(elArray); actually not here, but when toggling back to ???
 			}
-
-			if (selected == "100") {				// On/Off (infor
+			if (selected == "19") {					// On/Off toggle
 				mbut.addClass('btn-info');
-				mbut.removeClass('btn-warning');
-				mbut.removeClass('btn-success');
-			} else if (selected == "0")  {			// Select Mode 
-				mbut.removeClass('btn-info');
-				mbut.addClass('btn-success');
 				mbut.removeClass('btn-warning');
 			} else {								// dim value
 				if (arrayLength = 0) alert ('Please select light you want to dim or on/off together');
 				mbut.removeClass('btn-info');
-				mbut.removeClass('btn-success');
 				mbut.addClass('btn-warning');
 			}
 
@@ -135,10 +152,13 @@ if(!window.scriptHasRun) {
 
 		});	
 		
-		//this is the function that handle switch applications (go button)
+
+		// switching tabs
 		$$('#myTab a').removeEvents('click');
 		$$('#myTab a').addEvent('click', function(event){
 			$$('#system-message').set('html', '');
+			$$('#dim li a[value='+DIM_NO_SELECTED+']').fireEvent('click');
+			$$('#group li a[value='+GROUP_NO_SELECTED+']').fireEvent('click');
 			resetSelection();
 		})
 	});
@@ -154,66 +174,75 @@ if(!window.scriptHasRun) {
 			element.msRequestFullscreen();
 		}
 	}
-		
+	
 	function callAjax (params) {
-
-		var myHTMLRequest = new Request({
-			url: 	myurl,
-			method: 'post',
-			data: params,
-			onRequest: function(){
-				$$('#system-message').set('html', '');
-				document.getElementById('spinner').style.display = 'block';
-			},
-
-			onComplete: function(data){
-				processData(data);
-				document.getElementById('spinner').style.display = 'none';
-			},
-		}).send();
+	
+       var shoutsRequest = new Request.JSON({
+				url: 	myurl,
+				method: 'post',
+				data: params,
+				onRequest: function(){
+					$$('#system-message').set('html', '');
+					document.getElementById('spinner').style.display = 'block';
+				},
+				onSuccess: function(data)
+				{
+					processData(data);
+					document.getElementById('spinner').style.display = 'none';
+				},
+				onError: function(text, error)
+				{
+					$$('#system-message').set('html', text+'</br>'+error);
+					document.getElementById('spinner').style.display = 'none';
+				},
+			}
+        ).send();
 	};
+	
 		
 	function callAjaxSync (params) {
-
-		var myHTMLRequest = new Request({
-			url: 	myurl,
-			method: 'post',
-			async: false,
-			data: params,
-			onSucces: function(){
-				$$('#system-message').set('html', '');
-				document.getElementById('spinner').style.display = 'block';
-			},
-
-			onComplete: function(data){
-				processData(data);
-				document.getElementById('spinner').style.display = 'none';
-			},
-		}).send();
-	};
 	
-	function showAlert(message) {
-		$$('#system-message').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+       var shoutsRequest = new Request.JSON({
+				url: 	myurl,
+				method: 'post',
+				data: params,
+				async: false,
+				onRequest: function(){
+					$$('#system-message').set('html', '');
+					document.getElementById('spinner').style.display = 'block';
+				},
+				onSuccess: function(data)
+				{
+					processData(data);
+					document.getElementById('spinner').style.display = 'none';
+				},
+				onError: function(text, error)
+				{
+					$$('#system-message').set('html', text);
+					document.getElementById('spinner').style.display = 'none';
+				},
+			}
+        ).send();
+	};
+
+	function showMessage(message) {
+		if (message.length > 0) {
+			$$('#system-message').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+		}
 	}
 	
-	function processData(data) {
+/*	function processData1(data) {
 
 		var temp = new Array();
 		var pos = data.indexOf("OK;");
 
 		console.log(data);
+
 		if (pos > 0) {	// not first position
 			showAlert(data.substring(0,pos));
 			data = data.substring(pos);
 		}
-		temp = data.split(';');
-		if (temp[0]) {
-			if (temp[0] != 'OK') 
-			{
-				showAlert(data);
-				return;
-			}
-			Array.each(temp, function(arr) {
+		data.each(temp, function(arr) {
 				var temp1 = new Array();
 				temp1 = arr.split(' ');
 				temp1.push(null);
@@ -237,7 +266,29 @@ if(!window.scriptHasRun) {
 				return (arr.length !== 0); // will stop running after "three"
 			});
 		};
-	}
+	}*/
+	
+	function processData(data) {
+				
+		Object.each(data, function(item, key){
+			// check for message
+			if (key == 'message') {
+				showMessage(item);
+			}
+			$$('[remotekey=' + item.remotekey + ']').each(function(index){
+				if (typeof item.status !== 'undefined') {
+					$(index).removeClass("off");
+					$(index).removeClass("on");
+					$(index).removeClass("error");
+					$(index).removeClass("undefined");
+					$(index).removeClass("unknown");
+					$(index).addClass(item.status);
+				} else if (typeof item.commandvalue !== 'undefined') {
+					$(index).set('html',item.commandvalue);
+				} 
+			});
+		});
+	};
 	
 	function resetSelection() {
 		$$('.group-select').each(function(el) {

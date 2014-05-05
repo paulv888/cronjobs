@@ -125,7 +125,7 @@ function RunQuery($mysql) {
 	$res = mysql_query($mysql);
 	if (!$res) {
 		mySqlError($mysql); 
-		exit;
+		return false;
 	}
 	return true;
 }

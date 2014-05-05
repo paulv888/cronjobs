@@ -100,7 +100,7 @@ function UpdateStatus ($callerID, $params)
 	
 	$now = date( 'Y-m-d H:i:s' );
 	// Only retrieve if Monitor Type = Status Monitor
-	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus FROM `ha_mf_devices` d " . 
+	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus, commandvalue FROM `ha_mf_devices` d " . 
 				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
 				" WHERE deviceID = ".$deviceID. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
 	if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
@@ -114,21 +114,29 @@ function UpdateStatus ($callerID, $params)
 			}
 		}
 		if (DEBUG_HA) echo "Status Status2:".$status.CRLF;
-		if ($row['status'] != $status ) {
+		$feedback['deviceID'] = $deviceID;
+		$feedback['status'] = $status;
+		$feedback['commandvalue'] = $commandvalue;
+//		if ($row['status'] != $status || $row['value'] != $commandvalue) {			// need to retrieve commandvalue
+		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
-			$mysql = "UPDATE ha_mf_monitor_status SET status = " . $status . ", statusDate = '". $now . "' WHERE deviceID = ".$deviceID;
+			$mysql = "UPDATE ha_mf_monitor_status SET status = " . $status . ", commandvalue = ". ($commandvalue == Null ? 'NULL' : $commandvalue) .", statusDate = '". $now . "' WHERE deviceID = ".$deviceID;
 			if (!mysql_query($mysql)) mySqlError($mysql);
 			// run on change
-			HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
+			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
+			if (!empty($result)) $feedback['Triggers'] = $result;
 		}
 		if ($status == STATUS_ON ) {
-			HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON);
+			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON);
+			if (!empty($result)) $feedback['Triggers'] = $result;
 		} else {
-			HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF);
+			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF);
+			if (!empty($result)) $feedback['Triggers'] = $result;
 		}
 		
+		return $feedback;
 	}
-	return $status;
+	return;
 }	
 
 function logEvent($log) {
@@ -206,14 +214,15 @@ function logEvent($log) {
 function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
 			'WHERE (`deviceID` = '. $deviceID. ' AND statuslink = '.$monitortype.' AND `triggertype` = '.$triggertype.')';
-	if (DEBUG_HA) echo 'Sql: '.$mysql.'</br>\n';
+	$feedback =  Null; 
 	if ($triggerrows = FetchRows($mysql)) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			echo executeCommand($callerID, MESS_TYPE_SCHEME, array ( 'deviceID' => $deviceID, 'schemeID' => $trigger['schemeID']))."\n";
+			$feedback['Trigger:'.$trigger['id']] = RunScheme ($callerID, array ( 'deviceID' => $deviceID, 'schemeID' => $trigger['schemeID']));
 		}
 	}
+	return $feedback;
 }
 
 function UpdateWeatherNow($deviceID,$temp, $humidity, $set_point = "NULL"){

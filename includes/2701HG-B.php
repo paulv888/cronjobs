@@ -1,4 +1,5 @@
 <?php
+
 function natSessions() {
 	$result=ImportSessions()." Nat Sessions Read <br/>\r\n";
 	$result.=MoveHistory()." Sessions moved to History <br/>\r\n";
@@ -167,6 +168,8 @@ function findRemoteName($ip) {
 }
 
 function findLocalName($ip) {
+	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
+
 	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
 
 	$res = mysql_query($mysql);
@@ -175,7 +178,24 @@ function findLocalName($ip) {
 
 	if ($row=FetchRow($mysql)) {
 		return  $row['name'];
-	} 
+	} else {
+		$params = array('$deviceID' => MY_DEVICE_ID, "l1" => 'IP Address', "v1" => $ip);
+		echo Alerts(ALERT_UNKNOWN_IP_FOUND,$params)." Alerts generated <br/>\r\n";
+		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
+			`ip` ,
+			`mac` ,
+			`name` ,
+			`connection` ,
+			`trusted`
+			)
+		VALUES (' . 
+			'"'.$ip.'",'.
+			'"",'.
+			'"**Unknown",'.
+			'"",'.
+			'"0");';
+		if (!mysql_query($mysql)) mySqlError($mysql);	
+	}
 	return "***Unknown";
 }
 
@@ -291,6 +311,7 @@ function ImportSessions() {
 }
 
 function GetDeviceList() {
+	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
     	
 	$fields = array(
 						'PAGE' => "A02_POST",
@@ -362,9 +383,8 @@ function GetDeviceList() {
 					" WHERE ipaddressID =".$rowdevice['id'];  
 				$resdev = mysql_query($mysql);
 				if ($rowdev = mysql_fetch_array($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
-				$labels = array("l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceID);
-				$values = array("v1" => $rowdevice['name'],"v2" => $name, "v3" => $rowdevice['ip'],"v4" => $ip);
-				echo Alerts(ALERT_CHANGED_NETWORK_DEVICE,$labels,$values)." Alerts generated <br/>\r\n";
+				$params = array('$deviceID' => MY_DEVICE_ID, "l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceID, "v1" => $rowdevice['name'],"v2" => $name, "v3" => $rowdevice['ip'],"v4" => $ip);
+				echo Alerts(ALERT_CHANGED_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
@@ -374,8 +394,8 @@ function GetDeviceList() {
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 			}
 		}	else {				// New MAC
-			$values = array("v1" => $mac, "v2" => $name, "v3" => $ip, "v4" => $connection);
-			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$labels,$values)." Alerts generated <br/>\r\n";
+			$params = array('$deviceID' => MY_DEVICE_ID, "v1" => $mac, "v2" => $name, "v3" => $ip, "v4" => $connection);
+			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,
 						`mac` ,
