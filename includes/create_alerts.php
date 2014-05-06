@@ -2,11 +2,13 @@
 //define("DEBUG_ALERT", TRUE);
 define("DEBUG_ALERT", FALSE);
 
-function Alerts($alertID = NULL, $params  ){
+function Alerts($alertID , $params = NULL ){
 
 	preg_match ( "/^[1-9][0-9]*/", $alertID, $matches);
 	$alertID = $matches[0];
 
+	if (!is_array($params)) $params[] ='';
+	
 	$labels = array ( 'l1', 'l2', 'l3', 'l4', 'l5' ) ;
 	$values = array ( 'v1', 'v2', 'v3', 'v4', 'v5' ) ;
 	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');

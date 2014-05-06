@@ -29,7 +29,7 @@ function mysql_insert_assoc ($my_table, $my_array) {
        $values_number = count($values);
        for ($i = 0; $i < $values_number; $i++) {
          	$value = $values[$i];
-			if (is_array($value)) $value = implode (" | ", $value);
+			if (is_array($value)) $value = json_encode($value);
          	if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
           
          	if (is_null($value)) {

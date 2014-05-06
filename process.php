@@ -80,6 +80,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
 	$selection = (array_key_exists('selection', $params) ? $params['selection'] : Null);
 	$mouse = (array_key_exists('mouse', $params) ? $params['mouse'] : Null);
+	header('Content-type: application/json'); 
 
 
 	if (MYDEBUG) echo '<pre>Entry executeCommand - Params: ';
@@ -93,8 +94,6 @@ function executeCommand($callerID, $messtypeID, $params) {
 	echo "callerID: ".$callerID.CRLF;
 	$te = ob_get_clean(); // End buffering and clean up
 
-	logEvent(Array ('inout' => COMMAND_IO_RECV, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $tc, 'data' => $commandvalue,
-		'message' => $te, 'loglevel' => LOGLEVEL_DEBUG));
 
 		
 	global $inst_coder;
@@ -169,7 +168,6 @@ function executeCommand($callerID, $messtypeID, $params) {
 		} else { 
 			$result['message'] = '';
 		}
-		header('Content-type: application/json'); 
 	}
 	return 	json_encode($result);
 			
@@ -186,6 +184,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 	if (MYDEBUG) echo "<pre>Enter Runscheme $schemeID".CRLF;
 	if (MYDEBUG) print_r($params);
 	if (MYDEBUG) echo "callerID: ".$callerID.CRLF;
+	
 	
 	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
 	
@@ -221,8 +220,9 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 	$resschemesteps	= mysql_query($sqlstr);
 	while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
 			$feedback['RunSchemeName'] = $rowshemesteps['name'];
-			if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, Array ( 'deviceID' => $rowshemesteps['deviceID'], 'commandID' => $rowshemesteps['commandID'], 
-						'commandvalue' => $rowshemesteps['value'], 'alert_textID' => $rowshemesteps['alert_textID']), $params)) {
+			if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, Array ( 'deviceID' => $rowshemesteps['deviceID'], 
+						'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 
+						'alert_textID' => $rowshemesteps['alert_textID']), $params)) {
 		} 
 	}
 
@@ -491,9 +491,8 @@ function SendCommand($callerID, $thiscommand, $callerparams ) {
 			} 
 		}
 		break;
-	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback));
-		
 	}
+	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback));
 	
 	/* Array $feedback ('errorcode' => 0 or code,
 						'errormessage', buttons

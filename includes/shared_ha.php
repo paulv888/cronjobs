@@ -56,6 +56,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 							  " `link` = '" . $link . "'" .
 							  " WHERE(`deviceID` ='" . $deviceID . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
+					HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
 					HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
 				}
 			}
@@ -151,6 +152,7 @@ function logEvent($log) {
 	if (!array_key_exists("result", $log)) $log['result'] = Null;
 	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
+	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
 	if ($log['result'] === FALSE) $log['result'] = "FALSE";
 	if ($log['result'] === TRUE) $log['result'] = "TRUE";
 	
@@ -160,7 +162,7 @@ function logEvent($log) {
 	$repeatcount=1;
 	$mysql = 'SELECT * FROM `ha_events` ' .
 			' WHERE `inout` = '.$log['inout']. ' AND `callerID` ='.$log['callerID'].' AND commandID = '.$log['commandID'].
-			' AND  DATE_ADD(`mdate`,INTERVAL 10 SECOND) > "'.date("Y-m-d H:i:s").'"';
+			' AND  DATE_ADD(`mdate`,INTERVAL  65 SECOND) > "'.date("Y-m-d H:i:s").'"  AND  repeatcount < 10';
 
 	if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
 	if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';

@@ -20,6 +20,7 @@ define("LINK_UP", 1);
 define("SOURCE_ARD_BRDIGE", 9);
 
 // Event Log Levels
+define("LOGLEVEL_NONE", 0);
 define("LOGLEVEL_DEBUG", 10);
 define("LOGLEVEL_AWAKE", 20);
 define("LOGLEVEL_COMMANDS", 30);

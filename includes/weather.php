@@ -42,7 +42,7 @@ function UpdateWeatherCurrent ($xml, &$values, $deviceID) {
 		$values['ttrend'] = setTrend((string)$xml->temp_c, $row['temperature_c']);
 		$values['htrend'] = setTrend((string)$xml->relative_humidity, $row['humidity_r']);
 	}
-	$values['source'] = SOURCE_WEATHER_GOV;
+	$values['source'] = $deviceID;
 	mysql_insert_assoc ('ha_weather_current', $values);
 	
 }
