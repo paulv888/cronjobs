@@ -2,6 +2,7 @@ if(!window.scriptHasRun) {
 	window.scriptHasRun = true; 
 	var COMMAND_TOGGLE = 19;
 	var COMMAND_GET_GROUP = 282;
+	var COMMAND_GET_VALUE = 136;
 	var MY_DEVICE_ID = 164;
 	var  GROUP_SELECT_MODE = 100;
 	var GROUP_NO_SELECTED = 0;
@@ -53,10 +54,8 @@ if(!window.scriptHasRun) {
 		$$('#group li a').removeEvents('click');
 		$$('#group li a').addEvent('click', function(event){
 //			event.stop();
-			//var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_GROUP', remotekey: this.get("remotekey"), group:this.get('value')};
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
 			mbut.firstChild.textContent = ' '+this.text;
-//			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, value:this.get('value').substring(1)};
 			var selected = this.getAttribute('value');
 			this.parentNode.parentNode.setAttribute('myvalue', selected);
 			if (selected == GROUP_SELECT_MODE)  {			// Select Mode 
@@ -69,8 +68,10 @@ if(!window.scriptHasRun) {
 			} else {
 				mbut.addClass('btn-info');
 				mbut.removeClass('btn-success');
+				resetSelection();
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, commandvalue: this.getAttribute('value').substring(1)};
+				callAjax (params) ; 		// get group members here and set select
 			}
-//			callAjax (params) ; 		// get group members here and set select
 		});
 
 		$$('#dim li a').removeEvents('click');
@@ -81,7 +82,6 @@ if(!window.scriptHasRun) {
 			mbut.firstChild.textContent = ' '+this.text;
 			var selected = this.getAttribute('value');
 			this.parentNode.parentNode.setAttribute('myvalue', selected);
-			//$$('#dim').set('value', selected);
 
 			// now find all selected button and send dim value (Either selected over click or over group)
 			var selection = [];
@@ -161,6 +161,10 @@ if(!window.scriptHasRun) {
 			$$('#group li a[value='+GROUP_NO_SELECTED+']').fireEvent('click');
 			resetSelection();
 		})
+		
+		jQuery(document).ready(function() {
+			var interval = setInterval(refreshDiv, 10000);
+		});
 	});
 
 	function launchFullScreen(element) {
@@ -175,9 +179,26 @@ if(!window.scriptHasRun) {
 		}
 	}
 	
+	
+	var currentDiv;
+	
+	function refreshDiv () {
+
+		var selection = [];
+		var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, field');
+		var arrayLength = elArray.length;
+		if (arrayLength > 0) {				// some selections
+			for (var i = 0; i < arrayLength; i++) {
+				selection.push(elArray[i].get('remotekey'));
+			}
+			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, command: COMMAND_GET_VALUE};
+			callAjaxNoSpin (params) ;
+		}
+	};
+
 	function callAjax (params) {
 	
-       var shoutsRequest = new Request.JSON({
+       var keysRequest = new Request.JSON({
 				url: 	myurl,
 				method: 'post',
 				data: params,
@@ -198,11 +219,32 @@ if(!window.scriptHasRun) {
 			}
         ).send();
 	};
+
+	function callAjaxNoSpin (params) {
+	
+       var keysRequest = new Request.JSON({
+				url: 	myurl,
+				method: 'post',
+				data: params,
+				onRequest: function(){
+					$$('#system-message').set('html', '');
+				},
+				onSuccess: function(data)
+				{
+					processData(data);
+				},
+				onError: function(text, error)
+				{
+					$$('#system-message').set('html', text+'</br>'+error);
+				},
+			}
+        ).send();
+	};
 	
 		
 	function callAjaxSync (params) {
 	
-       var shoutsRequest = new Request.JSON({
+       var keysRequest = new Request.JSON({
 				url: 	myurl,
 				method: 'post',
 				data: params,
@@ -230,44 +272,7 @@ if(!window.scriptHasRun) {
 			$$('#system-message').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 		}
 	}
-	
-/*	function processData1(data) {
 
-		var temp = new Array();
-		var pos = data.indexOf("OK;");
-
-		console.log(data);
-
-		if (pos > 0) {	// not first position
-			showAlert(data.substring(0,pos));
-			data = data.substring(pos);
-		}
-		data.each(temp, function(arr) {
-				var temp1 = new Array();
-				temp1 = arr.split(' ');
-				temp1.push(null);
-				if (temp1[0].indexOf('OK') > -1) return;
-				if (temp1[2] != null) 
-				{
-					//$('[remotekey=' + temp1[0] + ']').val(temp1[2]);
-					$$('[remotekey=' + temp1[0] + ']').each(function(index){
-							$(index).set('html',temp1[2]);
-						});
-				} else {
-					$$('[remotekey=' + temp1[0] + ']').each(function(index){
-							$(index).removeClass("off");
-							$(index).removeClass("on");
-							$(index).removeClass("error");
-							$(index).removeClass("undefined");
-							$(index).removeClass("unknown");
-							$(index).addClass(temp1[1]);
-						});
-				}
-				return (arr.length !== 0); // will stop running after "three"
-			});
-		};
-	}*/
-	
 	function processData(data) {
 				
 		Object.each(data, function(item, key){
@@ -285,6 +290,8 @@ if(!window.scriptHasRun) {
 					$(index).addClass(item.status);
 				} else if (typeof item.commandvalue !== 'undefined') {
 					$(index).set('html',item.commandvalue);
+				} else if (typeof item.groupselect !== 'undefined') {
+					$(index).addClass('group-select');
 				} 
 			});
 		});

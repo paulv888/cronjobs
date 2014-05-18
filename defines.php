@@ -16,11 +16,8 @@ define("LINK_OK", 3);
 define("LINK_DOWN", 0);
 define("LINK_UP", 1);
 
-// Event log values
-define("SOURCE_ARD_BRDIGE", 9);
-
 // Event Log Levels
-define("LOGLEVEL_NONE", 0);
+define("LOGLEVEL_NONE", 1);
 define("LOGLEVEL_DEBUG", 10);
 define("LOGLEVEL_AWAKE", 20);
 define("LOGLEVEL_COMMANDS", 30);
@@ -54,6 +51,10 @@ define("COMMAND_TOGGLE_HVAC", 132);
 define("COMMAND_UNKNOWN", 267);
 define("COMMAND_ADDRESS", 21);
 define("COMMAND_RUN_SCHEME", 154);
+define("COMMAND_SET_RESULT", 285);
+define("COMMAND_GET_GROUP", 282);
+define("COMMAND_LOG_ALERT", 152);
+define("COMMAND_GET_VALUE", 136);
 
 
 // Triggers
@@ -65,8 +66,8 @@ define("TRIGGER_AFTER_CHANGE", 3);
 define ("MESS_TYPE_REMOTE_KEY", 'MESS_TYPE_REMOTE_KEY');
 define ("MESS_TYPE_SCHEME", 'MESS_TYPE_SCHEME');
 define ("MESS_TYPE_COMMAND",  'MESS_TYPE_COMMAND');
-define ("MESS_TYPE_GET_GROUP",  'MESS_TYPE_GET_GROUP');
 define ("MESS_TYPE_MULTI_KEY",  'MESS_TYPE_MULTI_KEY');
+define ("MESS_TYPE_REMOTE_DIV",  'MESS_TYPE_REMOTE_DIV');
 
 // Command Classes
 define ("COMMAND_CLASS_GENERIC", 1);
@@ -74,7 +75,6 @@ define ("COMMAND_CLASS_3MFILTRETE", 2);
 define ("COMMAND_CLASS_EMAIL", 3);
 define ("COMMAND_CLASS_MEDIA", 4);
 define ("COMMAND_CLASS_SONYCAM",5);
-//define ("COMMAND_CLASS_PHP",6);
 define ("COMMAND_CLASS_ARDUINO", 7);
 define ("COMMAND_CLASS_INSTEON", 8);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
@@ -86,8 +86,12 @@ define ("COMMAND_DIM_CLASS_X10_INSTEON_OFF", "0263{code}380|");
 define ("COMMAND_DIM_CLASS_X10_INSTEON_DIMM", "|0263{code}480");
 
 // Scheme Condition Types
-define ("SCHEME_CONDITION_DEVICE_STATUS", 1);
-define ("SCHEME_CONDITION_TIME", 3);
+define ("SCHEME_CONDITION_DEVICE_STATUS_VALUE", 10);
+define ("SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND", 15);
+define ("SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR", 17);
+define ("SCHEME_CONDITION_GROUP_STATUS_AND", 20);
+define ("SCHEME_CONDITION_GROUP_STATUS_OR", 25);
+define ("SCHEME_CONDITION_TIME", 30);
 
 // System Status
 define ("SYSTEM_STATUS_ARE_HOME", 1);
@@ -110,9 +114,15 @@ define("DEV_TYPE_COOL", 18);
 define("DEV_TYPE_HEAT", 19);
 
 // Alerts
-define("ALERT_CHANGED_NETWORK_DEVICE", 21);
-define("ALERT_NEW_NETWORK_DEVICE", 22);
+define("ALERT_NETWORK_DEVICE_CHANGE", 21);
+define("ALERT_NEW_NETWORK_DEVICE", 9);
+define("ALERT_LEFT_HOME", 24);
+define("ALERT_CAME_HOME", 28);
+define("ALERT_OLIVIA_LEFT_HOME", 31);
+define("ALERT_OLIVIA_CAME_HOME", 32);
 define("ALERT_UNKNOWN_IP_FOUND", 35);
+define("WATER_ALARM_TRIGGERED", 36);
+define("ALARM-2_TRIGGERED", 37);
 
 define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
 define("SOURCE_WEATHER_GOV", 7);
@@ -125,16 +135,19 @@ define("ERROR_MESSAGE_TO_SHORT", -2);
 define("DEVICE_SOMEONE_HOME", 157);
 define("DEVICE_ALARM_ZONE1", 158);
 define("DEVICE_ALARM_ZONE2", 159);
-define("DEVICE_DARK_OUTSIDE", 160);
+define("DEVICE_DARK_OUTSIDE", 68);
 define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
 
 // Call executeCommand with either off these
-define ("MAIL_TYPE_TRADE", 1);
-define ("MAIL_TYPE_SCHEME", 2);
+define ("REPLACE_TYPE_DEVICE", 1);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);
+
+
+define("THERMO_CONNECTION_TIMEOUT", 10);
+
 
 define("REPEAT_ONCE_DAY", 0);
 

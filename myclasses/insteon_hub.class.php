@@ -102,8 +102,8 @@ private static $inout_a = Array (
 						break;
 					case ERROR_STX_MISSING:				// not handled yet. 
 						echo "ERROR_STX_MISSING"." Not storing"."\n";
-						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
-						if (DEBUG_INSTEON) print_r($plm_decode_result);
+						echo date("Y-m-d H:i:s")."\n";
+						print_r($plm_decode_result);
 						$result = "";														// Clear result padding
 						break;
 					default:

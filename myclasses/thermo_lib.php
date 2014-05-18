@@ -5,6 +5,9 @@
 	*
 	*/
 
+//define( 'DEBUG_THERMO', TRUE );
+if (!defined('DEBUG_THERMO')) define( 'DEBUG_THERMO', FALSE );
+	
 class Thermostat_Exception extends Exception
 {
 }
@@ -12,10 +15,11 @@ class Thermostat_Exception extends Exception
 
 class Stat
 {
+
 	protected $ch,
 						$IP;	// Most likley an URL and port number rather than a strict set of TCP/IP octets.
 
-	private $debug = false;
+	private $debug = DEBUG_THERMO;
 
 
 	// Would prefer these to be private/protected and have get() type functions to return value.
@@ -70,7 +74,7 @@ class Stat
 		curl_setopt( $this->ch, CURLOPT_USERAGENT, 'A' );
 		curl_setopt( $this->ch, CURLOPT_RETURNTRANSFER, 1 );
 
-		$this->debug = 0;
+		$this->debug = DEBUG_THERMO;
 
 		// Stat variables initialization
 		$this->temp = 0;
@@ -131,7 +135,8 @@ class Stat
 		$commandURL = $this->URL . $cmd;
 
 		curl_setopt( $this->ch, CURLOPT_URL, $commandURL );
-		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");                                                                     
+		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");       
+		curl_setopt ($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
 		
 		$outputs = curl_exec( $this->ch );
 		if (curl_errno ( $this->ch )<>0) throw new Thermostat_Exception( 'setStatData: ' . curl_error($this->ch) );
@@ -167,7 +172,8 @@ class Stat
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($value));
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     
 		curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, TRUE);
-		
+		curl_setopt ($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
+				
 		if( $this->debug)
 		{
 			echo '<br>commandURL: ' . $commandURL . '<br>';

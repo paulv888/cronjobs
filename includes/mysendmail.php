@@ -1,295 +1,9 @@
 <?php
-function createMail($mailtype, $params, &$subject, &$message){
+function replaceText($type, $params, &$subject, &$message = NULL, $replace = Null){
 // $type == TRADE_ALERT, HA_ALERT, SCHEME_STEPS
 
-	switch ($mailtype) {
-		case MAIL_TYPE_TRADE:				// Not in use
-			/*trd_positions:
-				`trd_positions___account_raw`
-				`trd_positions___buy_sell_raw`
-				`trd_positions___buy_sell`
-				`trd_positions___id_raw`
-				`trd_positions___id`
-				`trd_positions___name_raw`
-				`trd_positions___name`
-				`trd_positions___status_raw`
-				`trd_positions___status`
-				`trd_positions___ticker`
-				`trd_positions___type`
-				`trd_positions___ticker_raw`
-				`trd_positions___type_raw`
-			
-			trd_pos_close:
-				`trd_pos_close___scomm_raw`
-				`trd_pos_close___sorderid`
-				`trd_pos_errors___error`
-				`trd_pos_open___bcomm`
-				`trd_pos_performance___updatedate`
-				`trd_pos_performance___today_difference_perc`
-				`trd_pos_performance___unr_profit`
-				`trd_pos_strategy___posid`
-				`trd_pos_strategy___pot_loss_raw`
-				`trd_pos_strategy___pot_winn_raw`
-				`trd_pos_strategy___target_raw`
-				`trd_pos_strategy___win_ratio_raw`
-			
-			trd_alerts_dd:	
-				`trd_alerts_dd___description`
-			
-			trd_pos_alerts:
-				`trd_pos_alerts___alert_date_raw`
-				`trd_pos_alerts___alert_date`
-				`trd_pos_alerts___alert_raw`
-				`trd_pos_alerts___id_raw`
-				`trd_pos_alerts___id`
-				`trd_pos_alerts___l1_raw`
-				`trd_pos_alerts___l1`
-				`trd_pos_alerts___l2_raw`
-				`trd_pos_alerts___l2`
-				`trd_pos_alerts___l3_raw`
-				`trd_pos_alerts___l3`
-				`trd_pos_alerts___l4_raw`
-				`trd_pos_alerts___l4`
-				`trd_pos_alerts___l5_raw`
-				`trd_pos_alerts___l5`
-				`trd_pos_alerts___posid_raw`
-				`trd_pos_alerts___posid`
-				`trd_pos_alerts___processed_raw`
-				`trd_pos_alerts___processed`
-				`trd_pos_alerts___v1_raw`
-				`trd_pos_alerts___v1`
-				`trd_pos_alerts___v2_raw`
-				`trd_pos_alerts___v2`
-				`trd_pos_alerts___v3_raw`
-				`trd_pos_alerts___v3`
-				`trd_pos_alerts___v4_raw`
-				`trd_pos_alerts___v4`
-				`trd_pos_alerts___v5_raw`
-				`trd_pos_alerts___v5`
-			
-			trd_pos_close:
-				`trd_pos_close___id_raw`
-				`trd_pos_close___id`
-				`trd_pos_close___posid_raw`
-				`trd_pos_close___posid`
-				`trd_pos_close___scomm`
-				`trd_pos_close___sdate_raw`
-				`trd_pos_close___sdate`
-				`trd_pos_close___sorderid_raw`
-				`trd_pos_close___sprice_raw`
-				`trd_pos_close___sprice`
-				`trd_pos_close___sqty_raw`
-				`trd_pos_close___sqty`
-				`trd_pos_close___stotal_raw`
-				`trd_pos_close___stotal`
-			
-			trd_pos_errors:
-				`trd_pos_errors___error_raw`
-				`trd_pos_errors___id_raw`
-				`trd_pos_errors___id`
-				`trd_pos_errors___posid_raw`
-				`trd_pos_errors___posid`
-			
-			trd_pos_notes:
-				`trd_pos_notes___id_raw`
-				`trd_pos_notes___id`
-				`trd_pos_notes___notes_raw`
-				`trd_pos_notes___notes`
-				`trd_pos_notes___posid_raw`
-				`trd_pos_notes___posid`
-			
-			trd_pos_open:
-				`trd_pos_open___bcomm_raw`
-				`trd_pos_open___bdate_raw`
-				`trd_pos_open___bdate`
-				`trd_pos_open___borderid_raw`
-				`trd_pos_open___borderid`
-				`trd_pos_open___bprice_raw`
-				`trd_pos_open___bprice`
-				`trd_pos_open___bqty_raw`
-				`trd_pos_open___bqty`
-				`trd_pos_open___btotal_raw`
-				`trd_pos_open___btotal`
-				`trd_pos_open___id_raw`
-				`trd_pos_open___id`
-				`trd_pos_open___posid_raw`
-				`trd_pos_open___posid`
-			
-			trd_pos_performance:	
-				`trd_pos_performance___bcomm_raw`
-				`trd_pos_performance___bcomm`
-				`trd_pos_performance___bprice_raw`
-				`trd_pos_performance___bprice`
-				`trd_pos_performance___bqty_raw`
-				`trd_pos_performance___bqty`
-				`trd_pos_performance___btotal_raw`
-				`trd_pos_performance___btotal`
-				`trd_pos_performance___updatedate_raw`
-				`trd_pos_performance___first_bdate_raw`
-				`trd_pos_performance___first_bdate`
-				`trd_pos_performance___id_raw`
-				`trd_pos_performance___id`
-				`trd_pos_performance___last_raw`
-				`trd_pos_performance___last`
-				`trd_pos_performance___posid_raw`
-				`trd_pos_performance___posid`
-				`trd_pos_performance___prev_close_raw`
-				`trd_pos_performance___prev_close`
-				`trd_pos_performance___pricedirection_raw`
-				`trd_pos_performance___pricedirection`
-				`trd_pos_performance___real_profit_perc_raw`
-				`trd_pos_performance___real_profit_perc`
-				`trd_pos_performance___real_profit_raw`
-				`trd_pos_performance___real_profit`
-				`trd_pos_performance___scomm_raw`
-				`trd_pos_performance___scomm`
-				`trd_pos_performance___sprice_raw`
-				`trd_pos_performance___sprice`
-				`trd_pos_performance___sqty_raw`
-				`trd_pos_performance___sqty`
-				`trd_pos_performance___stotal_raw`
-				`trd_pos_performance___stotal`
-				`trd_pos_performance___today_difference_perc_raw`
-				`trd_pos_performance___today_difference_raw`
-				`trd_pos_performance___today_difference`
-				`trd_pos_performance___today_unreal_perc_raw`
-				`trd_pos_performance___today_unreal_perc`
-				`trd_pos_performance___today_unreal_raw`
-				`trd_pos_performance___today_unreal`
-				`trd_pos_performance___unr_profit_perc_raw`
-				`trd_pos_performance___unr_profit_perc`
-				`trd_pos_performance___unr_profit_raw`
-				`trd_pos_performance___win_loss_raw`
-				`trd_pos_performance___win_loss`
-			
-				
-			trd_pos_strategy:
-				`trd_pos_strategy___entry_strategy_raw`
-				`trd_pos_strategy___entry_strategy`
-				`trd_pos_strategy___exit_strategy_raw`
-				`trd_pos_strategy___exit_strategy`
-				`trd_pos_strategy___id_raw`
-				`trd_pos_strategy___id`
-				`trd_pos_strategy___next_action_raw`
-				`trd_pos_strategy___next_action`
-				`trd_pos_strategy___next_earning_date_raw`
-				`trd_pos_strategy___next_earning_date`
-				`trd_pos_strategy___posid_raw`
-				`trd_pos_strategy___pot_loss`
-				`trd_pos_strategy___pot_winn`
-				`trd_pos_strategy___source_raw`
-				`trd_pos_strategy___source`
-				`trd_pos_strategy___stop_raw`
-				`trd_pos_strategy___stop`
-				`trd_pos_strategy___target`
-				`trd_pos_strategy___trend_raw`
-				`trd_pos_strategy___trend`
-				`trd_pos_strategy___win_ratio`
-*/
-			$mysql='SELECT SQL_CALC_FOUND_ROWS DISTINCT `trd_positions`.`ticker` AS `trd_positions___ticker`, `trd_positions`.`ticker` '. 
-			' AS `trd_positions___ticker_raw`, `trd_positions`.`empty3` AS `trd_positions___empty3`, `trd_positions`.`empty3` AS `trd_positions___empty3_raw`, '. 
-			' `trd_positions`.`name` AS `trd_positions___name`, `trd_positions`.`name` AS `trd_positions___name_raw`, `trd_positions`.`empty4`  '. 
-			' AS `trd_positions___empty4`, `trd_positions`.`empty4` AS `trd_positions___empty4_raw`, `trd_positions`.`account` AS  '. 
-			'`trd_positions___account_raw`, trd_accounts.name AS `trd_positions___account`, `trd_positions`.`status` AS `trd_positions___status`,  '. 
-			'`trd_positions`.`status` AS `trd_positions___status_raw`, `trd_positions`.`buy_sell` AS `trd_positions___buy_sell`,  '. 
-			'`trd_positions`.`buy_sell` AS `trd_positions___buy_sell_raw`, `trd_positions`.`type` AS `trd_positions___type`, `trd_positions`.`type`  '. 
-			'AS `trd_positions___type_raw`, `trd_positions`.`empty1` AS `trd_positions___empty1`, `trd_positions`.`empty1` AS `trd_positions___empty1_raw`, '. 
-			' `trd_positions`.`id` AS `trd_positions___id`, `trd_positions`.`id` AS `trd_positions___id_raw`, `trd_pos_strategy`.`source` AS  '. 
-			'`trd_pos_strategy___source_raw`, `trd_source_dd`.`description` AS `trd_pos_strategy___source`, `trd_pos_strategy`.`trend` AS  '. 
-			'`trd_pos_strategy___trend`, `trd_pos_strategy`.`trend` AS `trd_pos_strategy___trend_raw`, `trd_pos_strategy`.`entry_strategy` AS  '. 
-			'`trd_pos_strategy___entry_strategy_raw`, `trd_strategy`.`description` AS `trd_pos_strategy___entry_strategy`,  '. 
-			'`trd_pos_strategy`.`exit_strategy` AS `trd_pos_strategy___exit_strategy_raw`, `trd_exit_strategy`.`description` AS  '. 
-			'`trd_pos_strategy___exit_strategy`, `trd_pos_strategy`.`target` AS `trd_pos_strategy___target`, `trd_pos_strategy`.`target`  '. 
-			'AS `trd_pos_strategy___target_raw`, `trd_pos_strategy`.`stop` AS `trd_pos_strategy___stop`, `trd_pos_strategy`.`stop` AS  '. 
-			'`trd_pos_strategy___stop_raw`, `trd_pos_strategy`.`pot_winn` AS `trd_pos_strategy___pot_winn`, `trd_pos_strategy`.`pot_winn`  '. 
-			'AS `trd_pos_strategy___pot_winn_raw`, `trd_pos_strategy`.`pot_loss` AS `trd_pos_strategy___pot_loss`, `trd_pos_strategy`.`pot_loss` '. 
-			' AS `trd_pos_strategy___pot_loss_raw`, `trd_pos_strategy`.`win_ratio` AS `trd_pos_strategy___win_ratio`, `trd_pos_strategy`.`win_ratio` '. 
-			' AS `trd_pos_strategy___win_ratio_raw`, `trd_pos_strategy`.`next_earning_date` AS `trd_pos_strategy___next_earning_date`,  '. 
-			'`trd_pos_strategy`.`next_earning_date` AS `trd_pos_strategy___next_earning_date_raw`, `trd_pos_strategy`.`next_action` AS  '. 
-			'`trd_pos_strategy___next_action_raw`, CONCAT("",trd_next_action.description,"") AS `trd_pos_strategy___next_action`,  '. 
-			'`trd_pos_strategy`.`id` AS `trd_pos_strategy___id`, `trd_pos_strategy`.`id` AS `trd_pos_strategy___id_raw`, `trd_pos_strategy`.`posid` '. 
-			' AS `trd_pos_strategy___posid`, `trd_pos_strategy`.`posid` AS `trd_pos_strategy___posid_raw`, `trd_pos_alerts`.`id` AS  '. 
-			'`trd_pos_alerts___id`, `trd_pos_alerts`.`id` AS `trd_pos_alerts___id_raw`, `trd_pos_alerts`.`posid` AS `trd_pos_alerts___posid_raw`,  '. 
-			'`trd_positions_1`.`ticker` AS `trd_pos_alerts___posid`, `trd_pos_alerts`.`alert` AS `trd_pos_alerts___alert_raw`,  '. 
-			'`trd_alerts_dd`.`description` AS `trd_alerts_dd___description`, `trd_pos_alerts`.`processed` AS `trd_pos_alerts___processed`,  '. 
-			'`trd_pos_alerts`.`processed` AS `trd_pos_alerts___processed_raw`, `trd_pos_alerts`.`alert_date` AS `trd_pos_alerts___alert_date`, '. 
-			' `trd_pos_alerts`.`alert_date` AS `trd_pos_alerts___alert_date_raw`, `trd_pos_alerts`.`l1` AS `trd_pos_alerts___l1`,  '. 
-			'`trd_pos_alerts`.`l1` AS `trd_pos_alerts___l1_raw`, `trd_pos_alerts`.`v1` AS `trd_pos_alerts___v1`, `trd_pos_alerts`.`v1` AS  '. 
-			'`trd_pos_alerts___v1_raw`, `trd_pos_alerts`.`l2` AS `trd_pos_alerts___l2`, `trd_pos_alerts`.`l2` AS `trd_pos_alerts___l2_raw`,  '. 
-			'`trd_pos_alerts`.`v2` AS `trd_pos_alerts___v2`, `trd_pos_alerts`.`v2` AS `trd_pos_alerts___v2_raw`, `trd_pos_alerts`.`l3` AS  '. 
-			'`trd_pos_alerts___l3`, `trd_pos_alerts`.`l3` AS `trd_pos_alerts___l3_raw`, `trd_pos_alerts`.`v3` AS `trd_pos_alerts___v3`,  '. 
-			'`trd_pos_alerts`.`v3` AS `trd_pos_alerts___v3_raw`, `trd_pos_alerts`.`l4` AS `trd_pos_alerts___l4`, `trd_pos_alerts`.`l4` AS  '. 
-			'`trd_pos_alerts___l4_raw`, `trd_pos_alerts`.`v4` AS `trd_pos_alerts___v4`, `trd_pos_alerts`.`v4` AS `trd_pos_alerts___v4_raw`,  '. 
-			'`trd_pos_alerts`.`l5` AS `trd_pos_alerts___l5`, `trd_pos_alerts`.`l5` AS `trd_pos_alerts___l5_raw`, `trd_pos_alerts`.`v5` AS  '. 
-			'`trd_pos_alerts___v5`, `trd_pos_alerts`.`v5` AS `trd_pos_alerts___v5_raw`, `trd_pos_open`.`id` AS `trd_pos_open___id`,  '. 
-			'`trd_pos_open`.`id` AS `trd_pos_open___id_raw`, `trd_pos_open`.`posid` AS `trd_pos_open___posid`, `trd_pos_open`.`posid` AS  '. 
-			'`trd_pos_open___posid_raw`, `trd_pos_open`.`borderid` AS `trd_pos_open___borderid`, `trd_pos_open`.`borderid` AS  '. 
-			'`trd_pos_open___borderid_raw`, `trd_pos_open`.`bqty` AS `trd_pos_open___bqty`, `trd_pos_open`.`bqty` AS `trd_pos_open___bqty_raw`,  '. 
-			'`trd_pos_open`.`bprice` AS `trd_pos_open___bprice`, `trd_pos_open`.`bprice` AS `trd_pos_open___bprice_raw`, `trd_pos_open`.`bcomm`  '. 
-			'AS `trd_pos_open___bcomm`, `trd_pos_open`.`bcomm` AS `trd_pos_open___bcomm_raw`, `trd_pos_open`.`btotal` AS `trd_pos_open___btotal`,  '. 
-			'`trd_pos_open`.`btotal` AS `trd_pos_open___btotal_raw`, `trd_pos_open`.`bdate` AS `trd_pos_open___bdate`, `trd_pos_open`.`bdate` AS  '. 
-			'`trd_pos_open___bdate_raw`, `trd_pos_close`.`id` AS `trd_pos_close___id`, `trd_pos_close`.`id` AS `trd_pos_close___id_raw`,  '. 
-			'`trd_pos_close`.`posid` AS `trd_pos_close___posid`, `trd_pos_close`.`posid` AS `trd_pos_close___posid_raw`, `trd_pos_close`.`sorderid` '. 
-			' AS `trd_pos_close___sorderid`, `trd_pos_close`.`sorderid` AS `trd_pos_close___sorderid_raw`, `trd_pos_close`.`sqty` AS  '. 
-			'`trd_pos_close___sqty`, `trd_pos_close`.`sqty` AS `trd_pos_close___sqty_raw`, `trd_pos_close`.`sprice` AS `trd_pos_close___sprice`,  '. 
-			'`trd_pos_close`.`sprice` AS `trd_pos_close___sprice_raw`, `trd_pos_close`.`scomm` AS `trd_pos_close___scomm`, `trd_pos_close`.`scomm` '. 
-			' AS `trd_pos_close___scomm_raw`, `trd_pos_close`.`stotal` AS `trd_pos_close___stotal`, `trd_pos_close`.`stotal` AS  '. 
-			'`trd_pos_close___stotal_raw`, `trd_pos_close`.`sdate` AS `trd_pos_close___sdate`, `trd_pos_close`.`sdate` AS `trd_pos_close___sdate_raw`, '. 
-			' `trd_pos_notes`.`notes` AS `trd_pos_notes___notes`, `trd_pos_notes`.`notes` AS `trd_pos_notes___notes_raw`, `trd_pos_notes`.`id` AS  '. 
-			'`trd_pos_notes___id`, `trd_pos_notes`.`id` AS `trd_pos_notes___id_raw`, `trd_pos_notes`.`posid` AS `trd_pos_notes___posid`,  '. 
-			'`trd_pos_notes`.`posid` AS `trd_pos_notes___posid_raw`, `trd_pos_errors`.`error` AS `trd_pos_errors___error_raw`, `trd_errors_dd`.`description` '. 
-			' AS `trd_pos_errors___error`, `trd_pos_errors`.`id` AS `trd_pos_errors___id`, `trd_pos_errors`.`id` AS `trd_pos_errors___id_raw`,  '. 
-			'`trd_pos_errors`.`posid` AS `trd_pos_errors___posid_raw`, `trd_positions_0`.`ticker` AS `trd_pos_errors___posid`,  '. 
-			'`trd_pos_performance`.`id` AS `trd_pos_performance___id`, `trd_pos_performance`.`id` AS `trd_pos_performance___id_raw`,  '. 
-			'`trd_pos_performance`.`posid` AS `trd_pos_performance___posid`, `trd_pos_performance`.`posid` AS `trd_pos_performance___posid_raw`, '. 
-			' `trd_pos_performance`.`last` AS `trd_pos_performance___last`, `trd_pos_performance`.`last` AS `trd_pos_performance___last_raw`,  '. 
-			'`trd_pos_performance`.`prev_close` AS `trd_pos_performance___prev_close`, `trd_pos_performance`.`prev_close` AS  '. 
-			'`trd_pos_performance___prev_close_raw`, `trd_pos_performance`.`today_difference` AS `trd_pos_performance___today_difference`,  '. 
-			'`trd_pos_performance`.`today_difference` AS `trd_pos_performance___today_difference_raw`, `trd_pos_performance`.`today_difference_perc`  '. 
-			'AS `trd_pos_performance___today_difference_perc`, `trd_pos_performance`.`today_difference_perc` AS  '. 
-			'`trd_pos_performance___today_difference_perc_raw`, `trd_pos_performance`.`today_unreal` AS `trd_pos_performance___today_unreal`, '. 
-			' `trd_pos_performance`.`today_unreal` AS `trd_pos_performance___today_unreal_raw`, `trd_pos_performance`.`today_unreal_perc` AS  '. 
-			'`trd_pos_performance___today_unreal_perc`, `trd_pos_performance`.`today_unreal_perc` AS `trd_pos_performance___today_unreal_perc_raw`,  '. 
-			'`trd_pos_performance`.`first_bdate` AS `trd_pos_performance___first_bdate`, `trd_pos_performance`.`first_bdate` AS  '. 
-			'`trd_pos_performance___first_bdate_raw`, `trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection`,  '. 
-			'`trd_pos_performance`.`pricedirection` AS `trd_pos_performance___pricedirection_raw`, `trd_pos_performance`.`updatedate` '. 
-			' AS `trd_pos_performance___updatedate`, `trd_pos_performance`.`updatedate` AS `trd_pos_performance___updatedate_raw`, '. 
-			' `trd_pos_performance`.`real_profit` AS `trd_pos_performance___real_profit`, `trd_pos_performance`.`real_profit` AS  '. 
-			'`trd_pos_performance___real_profit_raw`, `trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc`,  '. 
-			'`trd_pos_performance`.`real_profit_perc` AS `trd_pos_performance___real_profit_perc_raw`, `trd_pos_performance`.`unr_profit` AS '. 
-			' `trd_pos_performance___unr_profit`, `trd_pos_performance`.`unr_profit` AS `trd_pos_performance___unr_profit_raw`,  '. 
-			'`trd_pos_performance`.`unr_profit_perc` AS `trd_pos_performance___unr_profit_perc`, `trd_pos_performance`.`unr_profit_perc` AS  '. 
-			'`trd_pos_performance___unr_profit_perc_raw`, `trd_pos_performance`.`win_loss` AS `trd_pos_performance___win_loss`,  '. 
-			'`trd_pos_performance`.`win_loss` AS `trd_pos_performance___win_loss_raw`, `trd_pos_performance`.`bqty` AS `trd_pos_performance___bqty`, '. 
-			' `trd_pos_performance`.`bqty` AS `trd_pos_performance___bqty_raw`, `trd_pos_performance`.`bprice` AS `trd_pos_performance___bprice`,  '. 
-			'`trd_pos_performance`.`bprice` AS `trd_pos_performance___bprice_raw`, `trd_pos_performance`.`bcomm` AS `trd_pos_performance___bcomm`,  '. 
-			'`trd_pos_performance`.`bcomm` AS `trd_pos_performance___bcomm_raw`, `trd_pos_performance`.`btotal` AS `trd_pos_performance___btotal`, '. 
-			' `trd_pos_performance`.`btotal` AS `trd_pos_performance___btotal_raw`, `trd_pos_performance`.`sqty` AS `trd_pos_performance___sqty`,  '. 
-			'`trd_pos_performance`.`sqty` AS `trd_pos_performance___sqty_raw`, `trd_pos_performance`.`sprice` AS `trd_pos_performance___sprice`,  '. 
-			'`trd_pos_performance`.`sprice` AS `trd_pos_performance___sprice_raw`, `trd_pos_performance`.`scomm` AS `trd_pos_performance___scomm`,  '. 
-			'`trd_pos_performance`.`scomm` AS `trd_pos_performance___scomm_raw`, `trd_pos_performance`.`stotal` AS `trd_pos_performance___stotal`,  '. 
-			'`trd_pos_performance`.`stotal` AS `trd_pos_performance___stotal_raw`, `trd_positions`.`id` AS slug , `trd_positions`.`id` AS `__pk_val`  '. 
-			'FROM `trd_positions` LEFT JOIN `trd_pos_notes` AS `trd_pos_notes` ON `trd_pos_notes`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_pos_errors` AS `trd_pos_errors` ON `trd_pos_errors`.`posid` = `trd_positions`.`id` '. 
-			'LEFT JOIN `trd_errors_dd` AS `trd_errors_dd` ON `trd_errors_dd`.`id` = `trd_pos_errors`.`error`  '. 
-			'LEFT JOIN `trd_pos_close` AS `trd_pos_close` ON `trd_pos_close`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_pos_performance` AS `trd_pos_performance` ON `trd_pos_performance`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_pos_open` AS `trd_pos_open` ON `trd_pos_open`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_accounts` AS `trd_accounts` ON `trd_accounts`.`account` = `trd_positions`.`account`  '. 
-			'LEFT JOIN `trd_pos_strategy` AS `trd_pos_strategy` ON `trd_pos_strategy`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_source_dd` AS `trd_source_dd` ON `trd_source_dd`.`id` = `trd_pos_strategy`.`source`  '. 
-			'LEFT JOIN `trd_strategy` AS `trd_strategy` ON `trd_strategy`.`id` = `trd_pos_strategy`.`entry_strategy`  '. 
-			'LEFT JOIN `trd_exit_strategy` AS `trd_exit_strategy` ON `trd_exit_strategy`.`id` = `trd_pos_strategy`.`exit_strategy`  '. 
-			'LEFT JOIN `trd_next_action` AS `trd_next_action` ON `trd_next_action`.`id` = `trd_pos_strategy`.`next_action`  '. 
-			'LEFT JOIN `trd_pos_links` AS `trd_pos_links` ON `trd_pos_links`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_positions` AS `trd_positions_0` ON `trd_positions_0`.`id` = `trd_pos_errors`.`posid`  '. 
-			'LEFT JOIN `trd_pos_alerts` AS `trd_pos_alerts` ON `trd_pos_alerts`.`posid` = `trd_positions`.`id`  '. 
-			'LEFT JOIN `trd_positions` AS `trd_positions_1` ON `trd_positions_1`.`id` = `trd_pos_alerts`.`posid`  '. 
-			'LEFT JOIN `trd_alerts_dd` AS `trd_alerts_dd` ON `trd_alerts_dd`.`id` = `trd_pos_alerts`.`alert`  '. 
-			'WHERE `trd_pos_alerts`.`id` = "'.$params['tradealert ar something'].'"' ;
-		//	'LEFT JOIN `trd_alert_actions` AS `trd_alert_actions` ON `trd_alerts_dd`.`actionid` = `trd_alert_actions`.`id`  '. 
-			break;
-		case MAIL_TYPE_SCHEME:
+	switch ($type) {
+		case REPLACE_TYPE_DEVICE:
 			/*  ha_mf_devices:
 					 `ha_mf_devices___code`
 					 `ha_mf_devices___description`
@@ -443,28 +157,27 @@ function createMail($mailtype, $params, &$subject, &$message){
 	if (isset($mysql)) {
 
 		if ($data = FetchRow($mysql)) {
-		//echo "<pre>"; print_r ($data); echo "</pre>";
 			foreach ($data as $key => $value) {
 				$pattern[$key]="/\{".$key."\}/";
 			}
+//echo "<pre>"; print_r ($data); echo "</pre>";
+//echo "<pre>"; print_r ($pattern); echo "</pre>";
 			$subject=preg_replace($pattern, $data, $subject);
 			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
-			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
-			$message=preg_replace($pattern, $data, $message);
+			if ($message != Null) $message=preg_replace($pattern, $data, $message); // twice to support tag in tag
+			if ($message != Null) $message=preg_replace($pattern, $data, $message);
 		}
-/*		if ($data = FetchRow($mysqldev)) {
-echo 'here2';
-	//	echo "<pre>"; print_r ($data); echo "</pre>";
-			foreach ($data as $key => $value) {
-				$pattern[$key]="/\{".$key."\}/";
-			}
-			$subject=preg_replace($pattern, $data, $subject);
-			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
-			$message=preg_replace($pattern, $data, $message); // twice to support tag in tag
-			$message=preg_replace($pattern, $data, $message);
-		} */
 	}
-
+	if ($replace != Null) {
+		unset ($pattern);
+		foreach ($replace as $key => $value) {
+			$pattern[$key]="/\{".$key."\}/";
+		}
+//echo "<pre>"; print_r ($replace); echo "</pre>";
+//echo "<pre>"; print_r ($pattern); echo "</pre>";
+		$subject=preg_replace($pattern, $replace, $subject);
+		if ($message != Null) $message=preg_replace($pattern, $replace, $message); // twice to support tag in tag
+	}
 
 	return true;
 }

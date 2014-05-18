@@ -179,7 +179,7 @@ function findLocalName($ip) {
 	if ($row=FetchRow($mysql)) {
 		return  $row['name'];
 	} else {
-		$params = array('$deviceID' => MY_DEVICE_ID, "l1" => 'IP Address', "v1" => $ip);
+		$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___l1" => 'IP Address', "ha_alerts___v1" => $ip);
 		echo Alerts(ALERT_UNKNOWN_IP_FOUND,$params)." Alerts generated <br/>\r\n";
 		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 			`ip` ,
@@ -383,8 +383,8 @@ function GetDeviceList() {
 					" WHERE ipaddressID =".$rowdevice['id'];  
 				$resdev = mysql_query($mysql);
 				if ($rowdev = mysql_fetch_array($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
-				$params = array('$deviceID' => MY_DEVICE_ID, "l1" => $mac, "l2" => $rowdevice['connection'], "l3" => $connection, "l4" => $deviceID, "v1" => $rowdevice['name'],"v2" => $name, "v3" => $rowdevice['ip'],"v4" => $ip);
-				echo Alerts(ALERT_CHANGED_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
+				$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___l1" => $mac, "ha_alerts___l2" => $rowdevice['connection'], "ha_alerts___l3" => $connection, "ha_alerts___l4" => $deviceID, "ha_alerts___v1" => $rowdevice['name'],"ha_alerts___v2" => $name, "ha_alerts___v3" => $rowdevice['ip'],"ha_alerts___v4" => $ip);
+				echo Alerts(ALERT_NETWORK_DEVICE_CHANGE,$params)." Alerts generated <br/>\r\n";
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
@@ -394,7 +394,7 @@ function GetDeviceList() {
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 			}
 		}	else {				// New MAC
-			$params = array('$deviceID' => MY_DEVICE_ID, "v1" => $mac, "v2" => $name, "v3" => $ip, "v4" => $connection);
+			$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___v1" => $mac, "ha_alerts___v2" => $name, "ha_alerts___v3" => $ip, "ha_alerts___v4" => $connection);
 			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,

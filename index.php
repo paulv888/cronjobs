@@ -5,7 +5,7 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <meta http-equiv="Content-Language" content="en" />
 <title>HA Remote</title>
-<meta name="viewport" content="width=device-width; maximum-scale=1.0; user-scalable=no;" />
+<meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="stylesheet" href="/templates/protostar-mod/css/template.css" type="text/css" media="screen" /> 
 <script type="text/javascript" src="/media/jui/js/jquery.min.js"></script>

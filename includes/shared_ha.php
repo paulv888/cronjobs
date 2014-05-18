@@ -66,10 +66,10 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
 						  " WHERE(`deviceID` ='" . $deviceID . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
-				HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+				//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
 			} else {
 				echo "Down and same as prev status, Do nothing.</br>\n";
-				HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+				//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
 			}
 		return true;
 		}
@@ -135,6 +135,27 @@ function UpdateStatus ($callerID, $params)
 			if (!empty($result)) $feedback['Triggers'] = $result;
 		}
 		
+		return $feedback;
+	}
+	return;
+}	
+
+function GetStatus ($callerID, $params)
+{
+//$deviceID, $commandID = NULL, $status = NULL) 
+ 	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
+
+	// Only retrieve if Monitor Type = Status Monitor
+	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus, commandvalue FROM `ha_mf_devices` d " . 
+				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
+				" WHERE deviceID = ".$deviceID. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
+	if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
+	if ($row = FetchRow($mysql)) {
+		if (DEBUG_HA) echo "Status Status2:".$status.CRLF;
+		$feedback['deviceID'] = $deviceID;
+		$feedback['status'] = $row['status'];
+		$feedback['commandvalue'] = $row['commandvalue'];
+
 		return $feedback;
 	}
 	return;
@@ -253,6 +274,16 @@ function UpdateThermType($deviceID, $typeID){
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return true;
 }
+
+function GetGroup($groupID){
+
+	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse, monitortypeID, status, statusDate, invertstatus, commandvalue FROM ha_mf_device_group g 
+					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
+					LEFT JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID 
+					WHERE groupID = '.$groupID; 
+	return FetchRows($mysql);
+}
+
 
 function setTrend($new, $old) {
 	if ( $new == $old ) return 0;

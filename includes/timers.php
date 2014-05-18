@@ -71,8 +71,8 @@ function RunTimers(){
 function checktime ($setupstart,$setupend, $offset) {
 	// TODO:: implement dawn/dusk
 	$start= $setupstart;
-	if ($setupstart == TIME_DAWN) $start = "6:30";
-	if ($setupstart == TIME_DUSK) $start = "17:30";
+	if ($setupstart == TIME_DAWN) $start = GetDawn();
+	if ($setupstart == TIME_DUSK) $start = GetDusk();
 	if ($setupstart == '-') $start = "00:00:00";
 	if ($setupstart == TIME_DAWN || $setupstart == TIME_DUSK || $setupstart == '-' ) {
 		$start = strtotime("today $start");
@@ -81,8 +81,8 @@ function checktime ($setupstart,$setupend, $offset) {
 	}
 
 	$end=$setupend;
-	if ($setupend == TIME_DAWN) $end = "6:45";
-	if ($setupend == TIME_DAWN) $end = "17:45";
+	if ($setupend == TIME_DAWN) $end = GetDawn();
+	if ($setupend == TIME_DAWN) $end = GetDusk();
 	if ($setupend == '-' or $setupend == '00') $end = "23:59:59";	
 	if ($setupend == TIME_DAWN || $setupend == TIME_DUSK || $setupend == '-' or $setupend == '00') {
 		$end = strtotime("today $end");
@@ -95,5 +95,15 @@ function checktime ($setupstart,$setupend, $offset) {
 	
 	return  time() >= $start AND time() < $end; ;
 	
+}
+
+function GetDawn() {
+	$devextraow = FetchRow("SELECT dawn FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
+	return $devextraow['dawn'];
+}
+
+function GetDusk() {
+	$devextraow = FetchRow("SELECT dusk FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
+	return $devextraow['dusk'];
 }
 ?>

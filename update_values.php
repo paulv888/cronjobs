@@ -14,23 +14,22 @@ function UpdateRowvalues() {
 	$mysql='UPDATE `ha_weather_now`  w JOIN `ha_vw_weather_min_max`  m ON w.deviceID = m.deviceID SET w.`min`=m.`min`, w.`max`= m.`max` WHERE 1';
 	(!mysql_query($mysql) ? mySqlError($mysql) : $queries+=1);
 
-	$daynight=68;
 	if ($rows = FetchRows('SELECT HOUR(`updatedate`) * 60 + MINUTE(`updatedate`) as minutes
 						FROM ha_events
-						WHERE `deviceID` ='.$daynight.' AND `commandID` = ' .COMMAND_OFF.
+						WHERE `deviceID` ='.DEVICE_DARK_OUTSIDE.' AND `commandID` = ' .COMMAND_OFF.
 						' ORDER BY id DESC LIMIT 10')) {
 		foreach ($rows as $row) $dawn[] = $row['minutes'];
 		$time = strtotime('00:00');
-		if (RunQuery('UPDATE `homeautomation`.`ha_mf_device_extra` SET `dawn` = "'.date("H:i:s", strtotime((int)calculate_median($dawn)." minutes", $time)).'" WHERE `ha_mf_device_extra`.`deviceID` = '.$daynight)) 	$queries++;
+		if (RunQuery('UPDATE `homeautomation`.`ha_mf_device_extra` SET `dawn` = "'.date("H:i:s", strtotime((int)calculate_median($dawn)." minutes", $time)).'" WHERE `ha_mf_device_extra`.`deviceID` = '.DEVICE_DARK_OUTSIDE)) 	$queries++;
 	}
 	if ($rows = FetchRows('SELECT HOUR(`updatedate`) * 60 + MINUTE(`updatedate`) as minutes
 						FROM ha_events
-						WHERE `deviceID` ='.$daynight.' AND `commandID` = ' .COMMAND_ON.
+						WHERE `deviceID` ='.DEVICE_DARK_OUTSIDE.' AND `commandID` = ' .COMMAND_ON.
 						' ORDER BY id DESC LIMIT 10')) {
 		
 		foreach ($rows as $row) $dusk[] = $row['minutes'];
 		$time = strtotime('00:00');
-		if (RunQuery('UPDATE `homeautomation`.`ha_mf_device_extra` SET `dusk` = "'.date("H:i:s", strtotime((int)calculate_median($dusk)." minutes", $time)).'" WHERE `ha_mf_device_extra`.`deviceID` = '.$daynight)) $queries++;
+		if (RunQuery('UPDATE `homeautomation`.`ha_mf_device_extra` SET `dusk` = "'.date("H:i:s", strtotime((int)calculate_median($dusk)." minutes", $time)).'" WHERE `ha_mf_device_extra`.`deviceID` = '.DEVICE_DARK_OUTSIDE)) $queries++;
 	}
 	
 	return $queries;
