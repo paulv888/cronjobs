@@ -118,10 +118,11 @@ function UpdateStatus ($callerID, $params)
 		$feedback['deviceID'] = $deviceID;
 		$feedback['status'] = $status;
 		$feedback['commandvalue'] = $commandvalue;
-//		if ($row['status'] != $status || $row['value'] != $commandvalue) {			// need to retrieve commandvalue
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
-			$mysql = "UPDATE ha_mf_monitor_status SET status = " . $status . ", commandvalue = ". ($commandvalue == Null ? 'NULL' : $commandvalue) .", statusDate = '". $now . "' WHERE deviceID = ".$deviceID;
+			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
+			if ($status == STATUS_OFF) $mysql .= ', timerMinute = NULL, timerRemaining = NULL, timerDate = NULL';
+			$mysql .= ' WHERE deviceID = '.$deviceID;
 			if (!mysql_query($mysql)) mySqlError($mysql);
 			// run on change
 			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
@@ -186,7 +187,7 @@ function logEvent($log) {
 			' AND  DATE_ADD(`mdate`,INTERVAL  65 SECOND) > "'.date("Y-m-d H:i:s").'"  AND  repeatcount < 10';
 
 	if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
-	if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';
+	//if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';
 
 	if (!$resevents=mysql_query($mysql)) {	
 		mySqlError($mysql);
@@ -284,10 +285,16 @@ function GetGroup($groupID){
 	return FetchRows($mysql);
 }
 
-
 function setTrend($new, $old) {
 	if ( $new == $old ) return 0;
 	if ( $new > $old )  return 1;
 	if ( $new < $old )  return 2;
+}
+
+function StartTimer($callerID, $deviceID, $time) {
+
+	$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON));
+	RunQuery ('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	return $feedback;
 }
 ?>

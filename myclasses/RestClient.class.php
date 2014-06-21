@@ -86,7 +86,8 @@ class RestClient {
      private function treatResponse($r) {
         if($r == null or strlen($r) < 1) {
 			$this->headers['code'] = "408";
-			$this->headers['message'] = "Request Timeout - No Response";
+			$this->headers['message'] = "Request Timeout";
+			$this->response = "Request Timeout";
             return;
         }
         $parts  = explode("\n\r",$r); // HTTP packets define that Headers end in a blank line (\n\r) where starts the body

@@ -1,6 +1,6 @@
 <?php
 
-define( 'DEBUG_TIMERS', TRUE );
+//define( 'DEBUG_TIMERS', TRUE );
 if (!defined('DEBUG_TIMERS')) define( 'DEBUG_TIMERS', FALSE );
 
 function RunTimers(){

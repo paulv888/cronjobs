@@ -1,3 +1,4 @@
+
 if(!window.scriptHasRun) { 
 	window.scriptHasRun = true; 
 	var COMMAND_TOGGLE = 19;
@@ -8,7 +9,6 @@ if(!window.scriptHasRun) {
 	var GROUP_NO_SELECTED = 0;
 	var DIM_NO_SELECTED = 19;
 
-	//var myurl = '/cronjobs/process.php';
 	var myurl = '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php';
 
 	var lastKey = null;
@@ -51,6 +51,23 @@ if(!window.scriptHasRun) {
 			}
 		});	
 
+		$$('.btndropdown li a').removeEvents('click');
+		$$('.btndropdown li a').addEvent('click', function(event){
+			//event.stop();
+			var mbut = this.parentNode.parentNode.parentNode.firstChild;
+			mbut.firstChild.textContent = this.text+' ';
+			var selected = this.getAttribute('value');
+			this.parentNode.parentNode.setAttribute('myvalue', selected);
+			if (selected.charAt(0) == 'S') {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', remotekey: this.parentNode.parentNode.get("remotekey"), scheme:selected.substring(1)};
+			} else if (selected.charAt(0) == 'C') {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.parentNode.parentNode.get("remotekey"), command:selected.substring(1)};
+			} else {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.parentNode.parentNode.get("remotekey"), commandvalue:selected};
+			}
+			callAjax (params) ;
+		});
+
 		$$('#group li a').removeEvents('click');
 		$$('#group li a').addEvent('click', function(event){
 //			event.stop();
@@ -74,10 +91,10 @@ if(!window.scriptHasRun) {
 			}
 		});
 
+		
 		$$('#dim li a').removeEvents('click');
 		$$('#dim li a').addEvent('click', function(event){
 //			event.stop();
-			//var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_GROUP', remotekey: this.get("remotekey"), group:this.get('value')};
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
 			mbut.firstChild.textContent = ' '+this.text;
 			var selected = this.getAttribute('value');
@@ -108,29 +125,36 @@ if(!window.scriptHasRun) {
 			
 			var d = this.getAttribute('value');
 			var t = this.get('value');
-//			callAjax (params) ;
 		});
 		
 		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
+		// Update same as latest button dropdown, allow S C or Value
 		$$('.controlselect-button').removeEvents('change');
 		$$('.controlselect-button').addEvent('change', function(event){
 			event.stop();
-			if (this.get('value').charAt(0) == 'S') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', remotekey: this.get("remotekey"), scheme:this.get('value').substring(1)};
+			var selected = this.get('value');
+			if (selected.charAt(0) == 'S') {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', remotekey: this.get("remotekey"), scheme:selected.substring(1)};
+			} else if (selected.charAt(0) == 'C') {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), command:selected.substring(1)};
 			} else {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), command:this.get('value')};
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), commandvalue:selected};
 			}
 			callAjax (params) ;
 		});	
 
 		//this is the function that dropdown's button either schemes or commands
+		// Update same as latest button dropdown, allow S C or Value
 		$$('.jump-button').removeEvents('click');
 		$$('.jump-button').addEvent('click', function(event){
 			event.stop();
-			if (this.getPrevious('.controlselect-button').value.charAt(0) == 'S') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', scheme:this.getPrevious('.controlselect-button').value.substring(1)};
+			var selected = this.getPrevious('.controlselect-button').value;
+			if (selected.charAt(0) == 'S') {
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', scheme:selected.substring(1)};
+			} else if (selected.charAt(0) == 'C'){
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), command:selected.substring(1)};
 			} else {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), command:this.getPrevious('.controlselect-button').value};
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), command:selected};
 			}
 			callAjax (params) ;
 
@@ -162,9 +186,9 @@ if(!window.scriptHasRun) {
 			resetSelection();
 		})
 		
-		jQuery(document).ready(function() {
-			var interval = setInterval(refreshDiv, 10000);
-		});
+		window.setInterval(function(){
+			refreshDiv();
+		}, 10000);
 	});
 
 	function launchFullScreen(element) {
@@ -184,15 +208,17 @@ if(!window.scriptHasRun) {
 	
 	function refreshDiv () {
 
-		var selection = [];
-		var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, field');
-		var arrayLength = elArray.length;
-		if (arrayLength > 0) {				// some selections
-			for (var i = 0; i < arrayLength; i++) {
-				selection.push(elArray[i].get('remotekey'));
+		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
+			var selection = [];
+			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, field');
+			var arrayLength = elArray.length;
+			if (arrayLength > 0) {				// some selections
+				for (var i = 0; i < arrayLength; i++) {
+					selection.push(elArray[i].get('remotekey'));
+				}
+				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, command: COMMAND_GET_VALUE};
+				callAjaxNoSpin (params) ;
 			}
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, command: COMMAND_GET_VALUE};
-			callAjaxNoSpin (params) ;
 		}
 	};
 

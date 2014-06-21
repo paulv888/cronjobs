@@ -1,6 +1,6 @@
 <?php
 function to_celcius($f) {
- return roundUpToAny((5/9)*($f-32),0.5);
+ return roundUpToAny(($f-32)*5/9,0.5);
 }
 
 function to_fahrenheit($c) {
@@ -16,14 +16,15 @@ function IsNullOrEmptyString($question){
 }
 
 function timeExpired(&$lasttime, $minutes) {
-	$nowdt = time();
-	if ((int)(abs($nowdt-$lasttime) / 60) >= $minutes) {
+	if (is_string($lasttime)) {
+		$lasttime = strtotime($lasttime);
+	}
+	if ((int)(abs(time()-$lasttime) / 60) >= $minutes) {
 		$lasttime = time();
 		return true;
-	} 
+	}
 	return false;
 }
-
 
 function dec2hex($num,$count=0)
 {

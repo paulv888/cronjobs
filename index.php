@@ -16,14 +16,17 @@
 <script type="text/javascript" src="/media/system/js/core.js"></script>
 <script type="text/javascript" src="/media/system/js/mootools-more.js"></script>
 <script type="text/javascript" src="/media/jui/js/bootstrap.min.js"></script>
-<script type="text/javascript" language="javaScript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js"></script>
+<script type="text/javascript" language="javaScript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js?v=1"></script>
 </head>
 <body style="padding:0px">
 <?php
    require_once '/home/public_html/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/includes.php'; 
    loadRemote(1);?>
    <div id='system-message'></div>
-   <div class="pull-right" style="padding:2px"><input type="button" class="btn button btn-info"  value="Refresh" 
+   <div class=" row-fluid">
+   <div class="pull-left" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div>
+   <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
+	</div>
 </body>
 </html>

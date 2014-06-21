@@ -180,7 +180,7 @@ function UpdateTemps() {
 				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by mdate desc limit 1";
 				if ($row = FetchRow($sql)) {
 					$last = strtotime($row['mdate']);
-					if (timeExpired($last, 60)) {
+					if (timeExpired($last, 60) ||  abs(to_celcius($stat->temp) - $row['temperature_c']) >= 1 || abs(to_celcius($target) - $row['set_point']) >= 1) {
 						logit( "Insert row into Weather Current" );
 						$ctemp = to_celcius($stat->temp);
 						$ttrend = setTrend($ctemp, $row['temperature_c']);

@@ -62,8 +62,9 @@ function loadRemoteDiv($divid) {
 			$resremotekeys = mysql_query("SELECT * FROM ha_remote_keys where remotediv =".$divid." AND xpos =".$myxcell." AND ypos =".$myycell." ORDER BY remotediv DESC");
 			$rowremotekeys = mysql_fetch_array($resremotekeys);
 			$typeicon = null;
-			$status = "";
 			if ($rowremotekeys) {
+				$status = '';
+				$link = '';
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (strlen($rowremotekeys['deviceID'])>0) {
@@ -86,12 +87,12 @@ function loadRemoteDiv($divid) {
 								$typeicon = null;
 							}
 						}
-						$status = '';
 						if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
 							$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowremotekeys['deviceID']);
 							if  ($resmonitor) {
 								$rowmonitor = mysql_fetch_array($resmonitor);
-								if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
+//								if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
+								if ($rowmonitor) {
 									$status = ($rowmonitor['status'] == STATUS_ON ? 'on' : 
 											  ($rowmonitor['status'] == STATUS_OFF ? 'off' : 
 											   ($rowmonitor['status'] == STATUS_UNKNOWN ? 'unknown' : 
@@ -101,7 +102,6 @@ function loadRemoteDiv($divid) {
 								}
 							}
 						}
-						$link = '';
 						if ($rowdevices['monitortypeID']==MONITOR_LINK || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
 							$resmonitor = mysql_query("SELECT ln FROM ha_vw_monitor_link_status WHERE deviceID =".$rowremotekeys['deviceID']);
 							if  ($resmonitor) {
@@ -134,22 +134,23 @@ function loadRemoteDiv($divid) {
 						$fieldtype = "button";
 						$fieldclass = "btn button ". $clicks;
 				} 
+				if ($typeicon != null) {				// what icon to show
+					$booticon = $typeicon;
+				} elseif ($rowremotekeys['booticon'] != null) {
+					$booticon = $rowremotekeys['booticon'];
+				} else {
+					$booticon = null;
+				}
 				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
-					if ($typeicon != null) {				// what icon to show
-						$booticon = $typeicon;
-					} elseif ($rowremotekeys['booticon'] != null) {
-						$booticon = $rowremotekeys['booticon'];
-					} else {
-						$booticon = null;
-					}
 					$text = null;
 					if ($booticon == null) {			// what text to show
 						if ($rowremotekeys['inputtype']=="field") {					// execute query from field
 							$tres = mysql_query($rowremotekeys['inputoptions']); 
 							$trow = mysql_fetch_array($tres);
 							$text = $trow[0];
-						} else {													// no icon show name
-//								if  ($booticon != null && $typeicon != null) $text = ' ';
+						} elseif ($rowremotekeys['inputtype']=="display") {													// no icon show name
+							$text = ' '.$rowremotekeys['inputoptions'];	
+						} else {
 							$text = ' '.$rowremotekeys['name'];
 						} 
 					} else {														// display type icon, if not then use name, else check if something in input options
@@ -183,17 +184,26 @@ function loadRemoteDiv($divid) {
 					if ($rowremotekeys['inputtype']=="btndropdown") {
 						echo '<div style="position: relative">';
 						echo '<button class="btn btn-info dropdown-toggle rem-button';
+						if (strlen($status)>1) echo ' '.$status;
+						if (strlen($link)>1) echo ' '.$link;
 						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
 						echo ' remotekey="'.$rowremotekeys['id'].'"';
 						echo ' type="button" data-toggle="dropdown">';
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
 //							echo '<i class="btn-icon icon-arrow-down-3 rem-icon-left"></i>';
-						echo $rowremotekeys['name'].' '.'</span><span class="caret"></span></button>';
+/*						if ($booticon != null) {								// if icon then do icon <i>
+							echo '<i class="btn-icon '.$booticon;
+							if ($text != null) echo ' '.'rem-icon-left';
+							echo '">';
+							echo '</i>';
+						} */
+						echo $rowremotekeys['name'].' '.'<span class="caret"></span></button>';
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
 						echo '<ul class="dropdown-menu btndropdown" role="menu" myvalue="'.$option[0].'"'; 			// properly set default to first
+						echo ' remotekey="'.$rowremotekeys['id'].'"';
 						if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 						echo '>';
 						//$first= true;
