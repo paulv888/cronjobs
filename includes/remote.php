@@ -27,12 +27,12 @@ function loadremote($remoteID) {
 		echo '</ul>';
 		echo '<div id="myTabContent" class="tab-content">';
 	}
-	loadRemoteBootstrap($remoteID);
+	loadRemotePaneContent($remoteID);
 	if ($numrows > 1) echo '</div></div>';
 	echo '<div id="spinner">Executing...</div>';
 }
 
-function loadRemoteBootstrap($remoteID) {
+function loadRemotePaneContent($remoteID) {
 
     $resdivs = mysql_query("SELECT * FROM ha_remote_divs WHERE showonremote = '-1' AND remoteID = ".$remoteID." ORDER BY sort");
 	$mycount=1;

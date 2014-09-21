@@ -180,7 +180,7 @@ if(!window.scriptHasRun) {
 		// switching tabs
 		$$('#myTab a').removeEvents('click');
 		$$('#myTab a').addEvent('click', function(event){
-			$$('#system-message').set('html', '');
+			$$('#system-message-container').set('html', '');
 			$$('#dim li a[value='+DIM_NO_SELECTED+']').fireEvent('click');
 			$$('#group li a[value='+GROUP_NO_SELECTED+']').fireEvent('click');
 			resetSelection();
@@ -229,7 +229,7 @@ if(!window.scriptHasRun) {
 				method: 'post',
 				data: params,
 				onRequest: function(){
-					$$('#system-message').set('html', '');
+					$$('#system-message-container').set('html', '');
 					document.getElementById('spinner').style.display = 'block';
 				},
 				onSuccess: function(data)
@@ -239,7 +239,7 @@ if(!window.scriptHasRun) {
 				},
 				onError: function(text, error)
 				{
-					$$('#system-message').set('html', text+'</br>'+error);
+					$$('#system-message-container').set('html', text+'</br>'+error);
 					document.getElementById('spinner').style.display = 'none';
 				},
 			}
@@ -253,7 +253,7 @@ if(!window.scriptHasRun) {
 				method: 'post',
 				data: params,
 				onRequest: function(){
-					$$('#system-message').set('html', '');
+					$$('#system-message-container').set('html', '');
 				},
 				onSuccess: function(data)
 				{
@@ -261,7 +261,7 @@ if(!window.scriptHasRun) {
 				},
 				onError: function(text, error)
 				{
-					$$('#system-message').set('html', text+'</br>'+error);
+					$$('#system-message-container').set('html', text+'</br>'+error);
 				},
 			}
         ).send();
@@ -276,7 +276,7 @@ if(!window.scriptHasRun) {
 				data: params,
 				async: false,
 				onRequest: function(){
-					$$('#system-message').set('html', '');
+					$$('#system-message-container').set('html', '');
 					document.getElementById('spinner').style.display = 'block';
 				},
 				onSuccess: function(data)
@@ -286,7 +286,7 @@ if(!window.scriptHasRun) {
 				},
 				onError: function(text, error)
 				{
-					$$('#system-message').set('html', text);
+					$$('#system-message-container').set('html', text);
 					document.getElementById('spinner').style.display = 'none';
 				},
 			}
@@ -295,7 +295,7 @@ if(!window.scriptHasRun) {
 
 	function showMessage(message) {
 		if (message.length > 0) {
-			$$('#system-message').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+			$$('#system-message-container').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 		}
 	}
 

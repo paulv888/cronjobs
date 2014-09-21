@@ -50,7 +50,8 @@ if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to 
 			$selection=$_POST["selection"];
 			$commandID=(!empty($_POST["command"]) ? $_POST["command"] : NULL);
 			$commandvalue= (!empty($_POST["commandvalue"]) ? $_POST["commandvalue"] : null);
-			if (MYDEBUG2) echo "MESS_TYPE_GET_GROUP ".$selection.CRLF;
+			if (MYDEBUG2) echo "MESS_TYPE_GET_GROUP ";
+			if (MYDEBUG2) print_r($selection);
 			echo executeCommand($callerID, $messtypeID, array( 'selection' => $selection, 'commandID' => $commandID, 'commandvalue' => $commandvalue ));
 		}
 		break;
@@ -271,6 +272,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	if (IsNullOrEmptyString($deviceID)) $deviceID = Null;
 	$commandID = (array_key_exists('commandID', $thiscommand) ? $thiscommand['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $thiscommand) ? $thiscommand['commandvalue'] : 100);
+	$timervalue = (array_key_exists('timervalue', $thiscommand) ? $thiscommand['timervalue'] : 0);
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 
 	if (MYDEBUG) {
@@ -347,7 +349,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 	} 		
 
-	if ($targettype == 'NONE') $commandclassID = COMMAND_CLASS_PHP; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
+	if ($targettype == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
 	if (MYDEBUG2) echo "commandID ".$commandID.CRLF;
 	if (MYDEBUG2) echo "commandclassID ".$commandclassID.CRLF;
 	if (MYDEBUG2) echo "commandvalue ".$commandvalue.CRLF;
@@ -532,6 +534,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 			$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
+			$tcomm = str_replace("{timervalue}",$timervalue,$tcomm);
 			$tmp1 = explode('?', $tcomm);
 			if (array_key_exists('1', $tmp1)) { 	// found '?', take page from command string
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$tmp1[0];

@@ -182,22 +182,22 @@ function logEvent($log) {
 	// Check for repeat logs
 	//
 	$repeatcount=1;
-	$mysql = 'SELECT * FROM `ha_events` ' .
-			' WHERE `inout` = '.$log['inout']. ' AND `callerID` ='.$log['callerID'].' AND commandID = '.$log['commandID'].
-			' AND  DATE_ADD(`mdate`,INTERVAL  65 SECOND) > "'.date("Y-m-d H:i:s").'"  AND  repeatcount < 10';
+	//$mysql = 'SELECT * FROM `ha_events` ' .
+	//		' WHERE `inout` = '.$log['inout']. ' AND `callerID` ='.$log['callerID'].' AND commandID = '.$log['commandID'].
+	//		' AND  DATE_ADD(`mdate`,INTERVAL  65 SECOND) > "'.date("Y-m-d H:i:s").'"  AND  repeatcount < 10';
 
-	if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
+	//if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
 	//if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';
 
-	if (!$resevents=mysql_query($mysql)) {	
-		mySqlError($mysql);
-		return false;
-	} 
-	if ($rowevents=mysql_fetch_array($resevents)) {
-		$repeatcount = $rowevents['repeatcount'] + 1;
-		$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
-		if (!mysql_query($mysql)) mySqlError($mysql);
-	} else {
+	//if (!$resevents=mysql_query($mysql)) {	
+	//	mySqlError($mysql);
+	//	return false;
+	//} 
+	//if ($rowevents=mysql_fetch_array($resevents)) {
+	//	$repeatcount = $rowevents['repeatcount'] + 1;
+	//	$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
+	//	if (!mysql_query($mysql)) mySqlError($mysql);
+	//} else {
 		//
 		//	Get device type and monitorid
 		//
@@ -232,7 +232,7 @@ function logEvent($log) {
 		if (DEBUG_HA) print_r($log);
 			
 		mysql_insert_assoc ("ha_events", $log);
-	}
+	//}
 }
 
 function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
@@ -291,9 +291,24 @@ function setTrend($new, $old) {
 	if ( $new < $old )  return 2;
 }
 
+
+function UpdateTimers($callerID) {
+	$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
+	if (DEBUG_HA) print_r($devstatusrow);
+	if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
+		$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
+		return $feedback;
+	} else {
+		if ($devstatusrow['timerMinute'] > 0) {
+			$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
+			RunQuery('UPDATE ha_mf_monitor_status SET timerRemaining = '.$minutes.' WHERE deviceID = '.$devstatusrow['deviceID']);
+		}
+	}
+}
+
 function StartTimer($callerID, $deviceID, $time) {
 
-	$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON));
+	$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
 	RunQuery ('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
 	return $feedback;
 }

@@ -194,15 +194,69 @@ function UpdateTemps() {
 				// Need to verify success of thermostat query before deleting/inserting data...
 				// Unless it throws an exception?
 	
-				// Remove zero or one rows for today and then insert one row for today.
-				$queryRunDelete->execute( array($today, $thermostatRec['deviceID']) );
-				logIt( "Run Time Today - Inserting RTH {$stat->runTimeHeat} RTC {$stat->runTimeCool} U $stat->uuid T $today" );
-				$queryRunInsert->execute( array($thermostatRec['deviceID'], $today, $stat->runTimeHeat, $stat->runTimeCool) );
 	
-				// Remove zero or one rows for yesterday and then insert one row for yesterday.
-				$queryRunDelete->execute( array($yesterday,$thermostatRec['deviceID']) );
-				logIt( "Run Time Yesterday - Inserting RTH {$stat->runTimeHeatYesterday} RTC {$stat->runTimeCoolYesterday} U $stat->uuid T $yesterday" );
-				$queryRunInsert->execute( array($thermostatRec['deviceID'], $yesterday, $stat->runTimeHeatYesterday, $stat->runTimeCoolYesterday) );
+				if ($thermostatRec['deviceID']<>114) {
+					// Remove zero or one rows for today and then insert one row for today.
+					$queryRunDelete->execute( array($today, $thermostatRec['deviceID']) );
+					logIt( "Run Time Today - Inserting RTH {$stat->runTimeHeat} RTC {$stat->runTimeCool} U $stat->uuid T $today" );
+					$queryRunInsert->execute( array($thermostatRec['deviceID'], $today, $stat->runTimeHeat, $stat->runTimeCool) );
+		
+					// Remove zero or one rows for yesterday and then insert one row for yesterday.
+					$queryRunDelete->execute( array($yesterday,$thermostatRec['deviceID']) );
+					logIt( "Run Time Yesterday - Inserting RTH {$stat->runTimeHeatYesterday} RTC {$stat->runTimeCoolYesterday} U $stat->uuid T $yesterday" );
+					$queryRunInsert->execute( array($thermostatRec['deviceID'], $yesterday, $stat->runTimeHeatYesterday, $stat->runTimeCoolYesterday) );
+				} else {	// 114 = broke so update from run-cylces
+						// update hvac runtime from run-cycles broken timer upstarts
+						// Clear/Heat/Cool (Yesterday/Today)
+						$sql = 'delete FROM `hvac_run_times` 
+								WHERE deviceID = 114 AND date = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
+						RunQuery($sql);
+						$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
+									SELECT "114", subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
+						RunQuery($sql);
+						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
+								(
+									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+									FROM `hvac_cycles`
+									WHERE deviceID = 114 AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
+									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+								) c ON h.deviceID = c.deviceID AND c.date = h.date
+								SET `heat_runtime` = c.runtime';
+						RunQuery($sql);
+						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
+								(
+									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+									FROM `hvac_cycles`
+									WHERE deviceID = 114 AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
+									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+								) c ON h.deviceID = c.deviceID AND c.date = h.date
+								SET `cool_runtime` = c.runtime';
+						RunQuery($sql);
+						$sql = 'delete FROM `hvac_run_times` 
+								WHERE deviceID = 114 AND date = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
+						RunQuery($sql);
+						$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
+									SELECT "114", DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
+						RunQuery($sql);
+						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
+								(
+									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+									FROM `hvac_cycles`
+									WHERE deviceID = 114 AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
+									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+								) c ON h.deviceID = c.deviceID AND c.date = h.date
+								SET `heat_runtime` = c.runtime';
+						RunQuery($sql);
+						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
+								(
+									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+									FROM `hvac_cycles`
+									WHERE deviceID = 114 AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
+									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+								) c ON h.deviceID = c.deviceID AND c.date = h.date
+								SET `cool_runtime` = c.runtime';
+						RunQuery($sql);
+				}
 				
 				echo UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
 	
