@@ -227,19 +227,63 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 			$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
 			if (MYDEBUG2) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-			} else {
+			} else {		// Update timer Remaining
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
 					RunQuery('UPDATE ha_mf_monitor_status SET timerRemaining = '.$minutes.' WHERE deviceID = '.$devstatusrow['deviceID']);
 				}
 			}
 			break;
+		case SCHEME_CONDITION_CURRENT_TIME: 
+			if (MYDEBUG2) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
+			$testvalue[] = time();
+			break;
 		}
-		if ($rowcond['status'] !== NULL) $testvalue[] = $rowcond['status'];
-		if ($testvalue[0] != $testvalue[1]) {
-			if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
-			$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test for: ".$testvalue[1];
-			return $feedback;
+		if ($rowcond['value'] !== NULL) {
+			switch (strtoupper($rowcond['value']))
+			{
+			case "ON":
+				$testvalue[] = true;
+				break;
+			case "OFF":
+				$testvalue[] = false;
+				break;
+			default:
+				$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
+				$temp[0] = strtoupper($temp[0]);
+				if ($temp[0] == "DAWN") $temp[0] = GetDawn();
+				if ($temp[0] == "DUSK") $temp[0] = GetDusk();
+				if (isset($temp[1])) {
+					$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
+				} else {
+					$testvalue[] = strtotime("today $temp[0]");
+				}
+				break;
+			}
+		}
+		switch ($rowcond['operator'])
+		{
+		case CONDITION_GREATER:
+			if ($testvalue[0] <= $testvalue[1]) {
+				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test > ".$testvalue[1].CRLF;
+				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test > ".$testvalue[1];
+				return $feedback;
+			}
+			break;
+		case CONDITION_LESS:
+			if ($testvalue[0] >= $testvalue[1]) {
+				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test < ".$testvalue[1].CRLF;
+				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test < ".$testvalue[1];
+				return $feedback;
+			}
+			break;
+		case CONDITION_EQUAL:
+			if ($testvalue[0] != $testvalue[1]) {
+				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test == ".$testvalue[1].CRLF;
+				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test == ".$testvalue[1];
+				return $feedback;
+			}
+			break;
 		}
 		if (MYDEBUG2) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
 	}
