@@ -40,7 +40,7 @@ if(!window.scriptHasRun) {
 				var commandvalue = 100;
 				if (document.id('dim')) { 
 					commandvalue = parseInt($$('#dim').get('myvalue'));
-					if (commandvalue ==  DIM_NO_SELECTED) commandvalue = 100;
+					if (commandvalue ==  DIM_NO_SELECTED) commandvalue = null;
 				}
 				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("remotekey"), commandvalue: commandvalue};
 				resetSelection();

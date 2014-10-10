@@ -22,7 +22,7 @@ if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to 
 			$remotekeyID= $_POST["remotekey"];
 			$commandID=(!empty($_POST["command"]) ? $_POST["command"] : NULL);
 			if (MYDEBUG2) echo "MESS_TYPE_REMOTE_KEY ".$remotekeyID.CRLF;
-			$commandvalue= (!empty($_POST["commandvalue"]) ? $_POST["commandvalue"] : 100);
+			$commandvalue= (!empty($_POST["commandvalue"]) ? $_POST["commandvalue"] : null);
 			$mouse = (!empty($_POST["mouse"]) ? $_POST["mouse"] : NULL);
 			echo executeCommand($callerID, $messtypeID, array( 'remotekeyID' => $remotekeyID, 'commandID' => $commandID, 'commandvalue' => $commandvalue, 'mouse' => $mouse));
 		}
@@ -205,6 +205,11 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 			$devstatusrow = FetchRow("SELECT status FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
 			$testvalue[] = $devstatusrow['status'];
 			break;
+		case SCHEME_CONDITION_DEVICE_VALUE_VALUE: 									// what a mess already :(
+			if (MYDEBUG2) echo "SCHEME_CONDITION_DEVICE_VALUE</p>";
+			$devstatusrow = FetchRow("SELECT commandvalue FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
+			$testvalue[] = $devstatusrow['commandvalue'];
+			break;
 		case SCHEME_CONDITION_GROUP_STATUS_AND:
 		case SCHEME_CONDITION_GROUP_STATUS_OR:
 			$groups = GetGroup($rowcond['groupID']);
@@ -251,12 +256,17 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 			default:
 				$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
 				$temp[0] = strtoupper($temp[0]);
-				if ($temp[0] == "DAWN") $temp[0] = GetDawn();
-				if ($temp[0] == "DUSK") $temp[0] = GetDusk();
-				if (isset($temp[1])) {
-					$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
-				} else {
-					$testvalue[] = strtotime("today $temp[0]");
+				if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
+					if ($temp[0] == "DAWN") $temp[0] = GetDawn();
+					if ($temp[0] == "DUSK") $temp[0] = GetDusk();
+					if (isset($temp[1])) {
+						$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
+					} else {
+						$testvalue[] = strtotime("today $temp[0]");
+					}
+				}
+				else {
+					$testvalue[] = $temp[0];
 				}
 				break;
 			}
@@ -317,6 +327,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	$commandID = (array_key_exists('commandID', $thiscommand) ? $thiscommand['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $thiscommand) ? $thiscommand['commandvalue'] : 100);
 	$timervalue = (array_key_exists('timervalue', $thiscommand) ? $thiscommand['timervalue'] : 0);
+	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 
 	if (MYDEBUG) {
@@ -425,7 +436,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$commandvalue = 100;
 		}
 		if ($commandvalue>100) $commandvalue=100;
-		if ($commandvalue==100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if ($commandvalue!=100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
 		if ($commandvalue>0) $commandvalue=255/100*$commandvalue;
 		if ($commandvalue == NULL && $commandID == COMMAND_ON) $commandvalue=255;		// Special case so satify the replace in on command
 		$commandvalue = dec2hex($commandvalue,2);
@@ -461,7 +472,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$commandvalue = 100;
 		}
 		if ($commandvalue>100) $commandvalue=100;
-		if ($commandvalue==100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if ($commandvalue!=100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
 		if ($commandvalue == NULL && $commandID == COMMAND_ON) $commandvalue=100;		// Special case so satify the replace in on command
 //		$tcomm .={code}a80=I=3;	$tcomm .={code}b80=I=3 $tcomm .= "|{code}{unit}00=I=3"; $tcomm .= "|{code}a80=I=3";	$tcomm .= "|0b80=I=3";
 //		$tcomm .= "|{code}480=I=3";			// dim 480  $tcomm .= "|a780=I=3";	$tcomm .= "|0b80=I=3";
@@ -616,7 +627,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 		break;		
 	}
-	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback));
+	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
 	
 	if (MYDEBUG) echo "Exit Send".CRLF;
 	

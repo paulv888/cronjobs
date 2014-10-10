@@ -105,6 +105,7 @@ function replaceText($type, $params, &$subject, &$message = NULL, $replace = Nul
 		`ha_mf_monitor_status`.`updatedate` AS `ha_mf_monitor_status___updatedate_raw`, `ha_mf_monitor_status`.`deviceID` AS `ha_mf_monitor_status___deviceID`, 
 		`ha_mf_monitor_status`.`deviceID` AS `ha_mf_monitor_status___deviceID_raw`, `ha_mf_monitor_status`.`toggleignore` AS `ha_mf_monitor_status___toggleignore`, 
 		`ha_mf_monitor_status`.`toggleignore` AS `ha_mf_monitor_status___toggleignore_raw`, `ha_mf_monitor_status`.`id` AS `ha_mf_monitor_status___id`, 
+		`ha_mf_monitor_status`.`commandvalue` AS `ha_mf_monitor_status___commandvalue`, `ha_mf_monitor_status`.`commandvalue` AS `ha_mf_monitor_status___commandvalue_raw`, 
 		`ha_mf_monitor_status`.`id` AS `ha_mf_monitor_status___id_raw`, `ha_mf_monitor_status`.`status` AS `ha_mf_monitor_status___status`, `ha_mf_monitor_status`.`status` AS 
 		`ha_mf_monitor_status___status_raw`, `ha_mf_monitor_status`.`statusDate` AS `ha_mf_monitor_status___statusDate`, `ha_mf_monitor_status`.`statusDate` AS 
 		`ha_mf_monitor_status___statusDate_raw`, `ha_mf_monitor_status`.`invertstatus` AS `ha_mf_monitor_status___invertstatus`, `ha_mf_monitor_status`.`invertstatus` AS 

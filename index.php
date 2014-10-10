@@ -16,7 +16,7 @@
 <script type="text/javascript" src="/media/system/js/core.js"></script>
 <script type="text/javascript" src="/media/system/js/mootools-more.js"></script>
 <script type="text/javascript" src="/media/jui/js/bootstrap.min.js"></script>
-<script type="text/javascript" language="javaScript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js?v=1"></script>
+<script type="text/javascript" language="javaScript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js?v=2"></script>
 </head>
 <body style="padding:0px">
 <?php

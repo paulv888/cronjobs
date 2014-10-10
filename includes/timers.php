@@ -54,7 +54,7 @@ function RunTimers(){
 					$message = executeCommand(MY_DEVICE_ID, MESS_TYPE_SCHEME, array( 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE)); 
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
 					if ($timer['priorityID'] != '99') logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
-								 'message' => $message, 'loglevel' => LOGLEVEL_NONE ));
+								 'message' => $message ));
 					
 					$mysql="UPDATE `ha_timers_dd` ".
 						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers_dd`.`id` = ".$timer['id'] ;
