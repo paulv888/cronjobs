@@ -290,26 +290,4 @@ function setTrend($new, $old) {
 	if ( $new > $old )  return 1;
 	if ( $new < $old )  return 2;
 }
-
-
-function UpdateTimers($callerID) {
-	$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
-	if (DEBUG_HA) print_r($devstatusrow);
-	if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-		$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
-		return $feedback;
-	} else {
-		if ($devstatusrow['timerMinute'] > 0) {
-			$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
-			RunQuery('UPDATE ha_mf_monitor_status SET timerRemaining = '.$minutes.' WHERE deviceID = '.$devstatusrow['deviceID']);
-		}
-	}
-}
-
-function StartTimer($callerID, $deviceID, $time) {
-
-	$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
-	RunQuery ('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
-	return $feedback;
-}
 ?>

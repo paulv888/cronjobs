@@ -254,19 +254,26 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 				$testvalue[] = false;
 				break;
 			default:
-				$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
-				$temp[0] = strtoupper($temp[0]);
-				if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
-					if ($temp[0] == "DAWN") $temp[0] = GetDawn();
-					if ($temp[0] == "DUSK") $temp[0] = GetDusk();
-					if (isset($temp[1])) {
-						$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
+				switch ($rowcond['type'])
+				{
+				case SCHEME_CONDITION_CURRENT_TIME: 
+					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
+					$temp[0] = strtoupper($temp[0]);
+					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
+						if ($temp[0] == "DAWN") $temp[0] = GetDawn();
+						if ($temp[0] == "DUSK") $temp[0] = GetDusk();
+						if (isset($temp[1])) {
+							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
+						} else {
+							$testvalue[] = strtotime("today $temp[0]");
+						}
 					} else {
 						$testvalue[] = strtotime("today $temp[0]");
 					}
-				}
-				else {
-					$testvalue[] = $temp[0];
+					break;
+				default:
+					$testvalue[] = $rowcond['value'];
+					break;
 				}
 				break;
 			}
@@ -487,7 +494,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command.'=I=3';
 			if (MYDEBUG2) echo $url.CRLF;
 			$get = restClient::get($url);
-			$feedback['error'] = $feedback['error'] || ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+			$feedback['error'] = $feedback['error'] | ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
 			$feedback['message'] = trim($get->getresponse());
 			usleep(INSTEON_SLEEP_MICRO);
 		}     
@@ -584,6 +591,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['message'] = trim($post->getresponse());
 			break;*/
 		case "POSTTEXT":          // Only HTPC & IrrigationCaddy at the moment
+		case "POSTURL":          // Web Arduino
 			if (MYDEBUG) echo "POSTTEXT</p>";
 			$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
@@ -598,8 +606,12 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			}
 			if (MYDEBUG) echo $url.$tcomm.CRLF;
-			$post = restClient::post($url, $tcomm,"","","text/plain");
-			$feedback['error'] = $feedback['error'] || ($post->getresponsecode()==200 ? 0 : $post->getresponsecode());
+			if ($targettype == "POSTTEXT") { 
+				$post = restClient::post($url, $tcomm,"","","text/plain");
+			} else { 
+				$post = restClient::post($url.$tcomm);
+			}
+			$feedback['error'] = $feedback['error'] | ($post->getresponsecode()==200 ? 0 : $post->getresponsecode());
 			$feedback['message'] = trim($post->getresponse());
 			break;
 		case "GET":          // Sony Cam at the moment
@@ -610,7 +622,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			if (MYDEBUG) echo $url.$tcomm.CRLF;
 			$get = restClient::get($url.$tcomm);
-			$feedback['error'] = $feedback['error'] || ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+			$feedback['error'] = $feedback['error'] | ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
 			$feedback['message'] = trim($get->getresponse());
 			break;
 		case null:

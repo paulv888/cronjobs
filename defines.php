@@ -46,7 +46,7 @@ define("COMMAND_TOGGLE", 19);
 define("COMMAND_ON", 17);
 define("COMMAND_OFF", 20);
 define("COMMAND_DIM", 13);
-//define("COMMAND_STREAM_DATA", 91);
+define("COMMAND_STREAM_DATA", 91);			// ***** Review does not match command
 define("COMMAND_TOGGLE_HVAC", 132);
 define("COMMAND_UNKNOWN", 267);
 define("COMMAND_ADDRESS", 21);

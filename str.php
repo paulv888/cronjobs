@@ -1,6 +1,8 @@
 <?php
 require_once 'includes.php';
 
+define("MY_DEVICE_ID", 98);
+
 /*
  Process can execute following commands
  1) Store data to HA_Database
@@ -23,14 +25,23 @@ $data = file_get_contents("php://input");
 		$extdata = "";
 		$i = 1;
 	
-		//echo $idata->asXML();
+		echo $idata->asXML();
 		
 		Switch ($idata->CID) {
 			Case COMMAND_STREAM_DATA:
 				captureStream($idata);
 				break;
 			default:
-				doEventStatus($idata);
+				$extdata = "";
+				if (isset($idata->SNS)) {
+					$i=0;
+					foreach ($idata->SNS->V AS $sensor) {
+						$extdata .= "S$i:".$sensor." ";
+						$i++;
+					}
+				}
+				logEvent(Array ('inout' => COMMAND_IO_RECV, 'callerID' => $idata->DID, 'deviceID' => $idata->DID, 'commandID' => $idata->CID, 'data' => $idata->RSL, 'extdata' => $extdata, 'message' => &$idata));
+
 				break;
 		}
 	}
@@ -82,108 +93,18 @@ function captureStream(&$idata) {
 
 
 function doEventStatus(&$idata) {
-	// Do some validation first
-
-	// get device id
-	// get repeat cnt
-	$repeatcount=1;
-
-	//	      '
-	//        '  Check last Statuses for duplicate
-	//        '
-	//        mess = CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.deviceID) & CStr(mIDs.CommandID)
-	//        If mCmd.Operation = "send" Then
-	//            OffSet = My.Settings.IgnoreSameSendMessageTime
-	//        Else
-	//            OffSet = My.Settings.IgnoreSameMessageTime
-	//        End If
-	//        mt = mCmd.oDTmS.oTime
-	//        For m As Integer = mStack.Count To 1 Step -1
-	//            If DateDiff(DateInterval.Second, mStack(m), mt) > OffSet Then mStack.Remove(m)
-	//        Next
-	//        If mStack.Contains(mess) Then
-	//            WriteEvent("UPDATE `homeautomation`.`ha_events` SET `repeatcount` = `repeatcount` + '1' " & _
-	//            "WHERE `mdate` = '" & mStack(mess) & "' and `inout` = '" & mIDs.InOutID & "' and `sourceID` ='" & mIDs.SourceID & _
-	//                                         "' and `deviceID` = '" & mIDs.deviceID & "' and `commandID` = '" & mIDs.CommandID & "';")
-	//
-	//            FilterMonitorMessage = pvLogLevelDebug
-	//        Else
-	//            mStack.Add(mCmd.oDTmS.oTime, CStr(mIDs.InOutID) & CStr(mIDs.SourceID) & CStr(mIDs.deviceID) & CStr(mIDs.CommandID))
-	//        End If
-
-	//
-	// Check for repeat statussues
-	//
-
-	$mysql = 'SELECT * FROM `ha_events` ' .
-			' WHERE `inout` = 1 AND `sourceID` = 9 AND `deviceID` = '.$idata->DID.' AND commandID = '.$idata->CID.
-			' AND  DATE_ADD(`mdate`,INTERVAL 5 SECOND) > "'.date("Y-m-d H:i:s");.'"';
-
-	$resevents=mysql_query($mysql);
-	if ($rowevents=mysql_fetch_array($resevents)) {
-		$repeatcount = $rowevents['repeatcount'] + 1;
-		$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
-		if (!mysql_query($mysql)) mySqlError($mysql);
-	} else {
-		//
-		//			Pack values in extended data
-		//
-		$extdata = "";
-		if (isset($idata->SNS)) {
-			$i=0;
-			foreach ($idata->SNS->V AS $sensor) {
-				$extdata .= "S$i:".$sensor." ";
-				$i++;
-			}
-		}
-
-		//
-		//	Get device type and monitorid
-		//
-		$mysql='SELECT `id`, `typeID`, `monitortypeID` FROM `ha_mf_devices` WHERE `id` ='.$idata->DID;
-		$resdevice=mysql_query($mysql);
-		$rowdevice=mysql_fetch_array($resdevice);
-		$devicetype=$rowdevice['typeID'];
-
-		$mysql= 'INSERT INTO `ha_events` (
-						`time_date` ,
-						`mdate` ,
-						`milliseconds` ,
-						`inout` ,
-						`sourceID` ,
-						`deviceIDtype` ,
-						`deviceID` ,
-						`commandID` ,
-						`data` , 
-						`extdata` ,
-						`repeatcount` ,
-						`loglevel`
-					)
-					VALUES ( '.
-						'"'.date("Y-m-d H:i:s");.'",'.
-						'"'.date("Y-m-d H:i:s");.'",'. 
-					 	''.$ms.',' .		 				/* millisec 		*/
-						''.EVENT_IN.','. 					/*  in 				*/
-						''.SOURCE_ARD_BRDIGE.','.			/* source arduino 	*/
-						''.$devicetype.','.
-						''.$idata->DID.','.
-						''.$idata->CID.','.
-						''.$idata->RSL.','.
-						'"'.$extdata.'",' .
-						''.$repeatcount.','.
-						 	'2)';
-		if (!mysql_query($mysql)) mySqlError($mysql);
-	}
 
 	//
 	//   Update Link
 	//
-	if ($rowdevice['monitortypeID'] == MONITOR_LINK || $rowdevice['monitortypeID'] == MONITOR_LINK_STATUS) {
+/*	if ($rowdevice['monitortypeID'] == MONITOR_LINK || $rowdevice['monitortypeID'] == MONITOR_LINK_STATUS) {
 		$mysql = "Update `ha_vw_monitor_combined` Set " .
     			  " `mdate` = '" . $time . "'" .
     			  " Where(`deviceID` ='" . $idata->DID . "')";
 		if (!mysql_query($mysql)) mySqlError($mysql);
-	}
+	}*/
+	
+	
 	//
 	// 	Update Status
 	//
@@ -195,7 +116,7 @@ function doEventStatus(&$idata) {
 	//define("COMMAND_RF_SEND_FAILED", 129);
 	//define("COMMAND_SENSOR_ERROR", 130);
 
-	if ($rowdevice['monitortypeID'] == MONITOR_STATUS || $rowdevice['monitortypeID'] == MONITOR_LINK_STATUS) {
+/*	if ($rowdevice['monitortypeID'] == MONITOR_STATUS || $rowdevice['monitortypeID'] == MONITOR_LINK_STATUS) {
 	// needs to read monitor commands.
 		Switch ($idata->CID) {
 			Case COMMAND_STATUSON:
@@ -215,6 +136,6 @@ function doEventStatus(&$idata) {
 				" Where(`deviceID` ='" .$idata->DID. "')";
 		if (!mysql_query($mysql)) mySqlError($mysql);
 	}
-
+*/
 }
 ?>

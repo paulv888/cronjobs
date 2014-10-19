@@ -188,7 +188,7 @@ if(!window.scriptHasRun) {
 		
 		window.setInterval(function(){
 			refreshDiv();
-		}, 10000);
+		}, 10000000);
 	});
 
 	function launchFullScreen(element) {
@@ -228,6 +228,7 @@ if(!window.scriptHasRun) {
 				url: 	myurl,
 				method: 'post',
 				data: params,
+				timeout: 5000,
 				onRequest: function(){
 					$$('#system-message-container').set('html', '');
 					document.getElementById('spinner').style.display = 'block';
@@ -238,6 +239,11 @@ if(!window.scriptHasRun) {
 					document.getElementById('spinner').style.display = 'none';
 				},
 				onError: function(text, error)
+				{
+					$$('#system-message-container').set('html', text+'</br>'+error);
+					document.getElementById('spinner').style.display = 'none';
+				},
+				onTimeout: function(text, error)
 				{
 					$$('#system-message-container').set('html', text+'</br>'+error);
 					document.getElementById('spinner').style.display = 'none';
