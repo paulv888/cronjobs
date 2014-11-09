@@ -96,7 +96,8 @@ function loadRemoteDiv($divid) {
 									$status = ($rowmonitor['status'] == STATUS_ON ? 'on' : 
 											  ($rowmonitor['status'] == STATUS_OFF ? 'off' : 
 											   ($rowmonitor['status'] == STATUS_UNKNOWN ? 'unknown' : 
-											   ($rowmonitor['status'] == STATUS_ERROR ? 'error' : 'undefined'))));
+											   ($rowmonitor['status'] == STATUS_ERROR ? 'error' : 
+											   'undefined'))));
 								} else {
 									$status = '';
 								}

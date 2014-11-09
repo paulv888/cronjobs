@@ -56,6 +56,7 @@ define("COMMAND_GET_GROUP", 282);
 define("COMMAND_LOG_ALERT", 152);
 define("COMMAND_GET_VALUE", 136);
 define("COMMAND_SET_TIMER", 287);
+define("COMMAND_PING", 151);
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);
@@ -103,19 +104,13 @@ define ("SYSTEM_STATUS_ALARM_ARMED", 2);
 define ("SYSTEM_STATUS_IS_DARK", 3);
 define ("SYSTEM_STATUS_PAUL_TRIP", 4);
 
-// These are Internal Commands
-// Move these to status!!!!
-define("ERROR_CALIBRATE", 127);
-define("COMMAND_RF_TIMEOUT", 128);
-define("ERROR_RF_SEND_FAILED", 129);
-define("ERROR_READ_SENSOR", 130);
-define("COMMAND_LINK_STATUS", 151);
-
 // These are Device Types
 //define("", );
 define("DEV_TYPE_OFF", 17);
 define("DEV_TYPE_COOL", 18);
 define("DEV_TYPE_HEAT", 19);
+define("DEV_TYPE_TEMP_HUM", 11);
+define("DEV_TYPE_ARDUINO", 16);
 
 // Alerts
 define("ALERT_NETWORK_DEVICE_CHANGE", 21);

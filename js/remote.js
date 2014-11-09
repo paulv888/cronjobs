@@ -188,7 +188,7 @@ if(!window.scriptHasRun) {
 		
 		window.setInterval(function(){
 			refreshDiv();
-		}, 10000000);
+		}, 5000);
 	});
 
 	function launchFullScreen(element) {
@@ -259,7 +259,7 @@ if(!window.scriptHasRun) {
 				method: 'post',
 				data: params,
 				onRequest: function(){
-					$$('#system-message-container').set('html', '');
+					//$$('#system-message-container').set('html', '');
 				},
 				onSuccess: function(data)
 				{

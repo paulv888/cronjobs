@@ -88,14 +88,17 @@ function UpdateStatus ($callerID, $params)
 	// Interpret status value based on current command, i.e. On/Off/Error
 	if (DEBUG_HA) echo "Status commandID:".$commandID.CRLF;
 	if (DEBUG_HA) echo "Status deviceID: ".$deviceID.CRLF;
-	if ($commandID != NULL) {
-		if (!$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID)) mySqlError($mysql);
-		if ($rowcommands = mysql_fetch_array($rescommands)) {
-			$status = $rowcommands['status'];
-	if (DEBUG_HA) echo "Status Status:".$status.CRLF;
-			if ($status == STATUS_NOT_DEFINED)  return;
-		} else {
-			return;
+	if (DEBUG_HA) echo "Status status: ".$status.CRLF;
+	if (!array_key_exists('status', $params)) {
+		if ($commandID != NULL) {
+			if (!$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID)) mySqlError($mysql);
+			if ($rowcommands = mysql_fetch_array($rescommands)) {
+				$status = $rowcommands['status'];
+		if (DEBUG_HA) echo "Status Status:".$status.CRLF;
+				if ($status == STATUS_NOT_DEFINED)  return;
+			} else {
+				return;
+			}
 		}
 	}
 	

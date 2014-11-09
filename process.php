@@ -435,7 +435,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		break;
 	case COMMAND_CLASS_INSTEON:
 		if (MYDEBUG) echo "COMMAND_CLASS_INSTEON".CRLF;
-		$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
+		$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
 		$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $deviceID);
@@ -463,7 +463,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
-		$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
+		$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
 		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $deviceID);
 		if ($rowextra['dimmable']) {
 			$dims = 0;
@@ -568,32 +568,16 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['error'] = $func($commandvalue);
 			break;
 		}
-
 		$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
-		if ($deviceID != NULL) {
-			if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-			} 
-		}
 		break;
 	default:								// Generid
 		if (MYDEBUG2) echo "COMMAND_CLASS_GENERIC</p>";
 		switch ($targettype)
 		{
-/*		case "POSTTEXT":          // Only HTPC at the moment
-			if (MYDEBUG) echo "POSTTEXT</p>";
-			$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
-			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
-			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
-			if (MYDEBUG) echo $url.$tcomm.CRLF;
-			$post = restClient::post($url, $tcomm,"","","text/plain");
-			$feedback['error'] = $feedback['error'] || ($post->getresponsecode()==200 ? 0 : $post->getresponsecode());
-			$feedback['message'] = trim($post->getresponse());
-			break;*/
-		case "POSTTEXT":          // Only HTPC & IrrigationCaddy at the moment
+		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
 			if (MYDEBUG) echo "POSTTEXT</p>";
-			$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
+			$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 			$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
@@ -616,7 +600,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			break;
 		case "GET":          // Sony Cam at the moment
 			if (MYDEBUG2) echo "GET</p>";
-			$tcomm = str_replace("{commandID}",$commandID,$rowcommands['command']);
+			$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
@@ -632,11 +616,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			break;
 		}
 		
-		$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
-		if ($deviceID != NULL) {
-			if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-			} 
-		}
+		$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update base on command assumptions
 		break;		
 	}
 	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
@@ -697,6 +677,8 @@ function RemoteKeys ($result) {
 							$feedback[$last_id]["status"]="unknown";
 						} elseif ($res['updatestatus']['status'] == STATUS_ON) {
 							$feedback[$last_id]["status"]="on";
+						} elseif ($res['updatestatus']['status'] == STATUS_ERROR) {
+							$feedback[$last_id]["status"]="error";
 						} else { 										// else assume a value
 							$feedback[$last_id]["status"]="undefined";
 						}
