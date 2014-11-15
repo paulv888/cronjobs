@@ -195,7 +195,7 @@ function UpdateTemps() {
 				// Unless it throws an exception?
 	
 	
-				if ($thermostatRec['deviceID']<>114) {
+				if ($thermostatRec['deviceID']<>999) {
 					// Remove zero or one rows for today and then insert one row for today.
 					$queryRunDelete->execute( array($today, $thermostatRec['deviceID']) );
 					logIt( "Run Time Today - Inserting RTH {$stat->runTimeHeat} RTC {$stat->runTimeCool} U $stat->uuid T $today" );

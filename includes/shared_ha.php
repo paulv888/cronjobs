@@ -26,7 +26,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 		     $row['linkmonitor'] == "POLL" || 
 		    ($row['linkmonitor'] == "MONSTAT" && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID))) { 				
 			if ($prevlink != $link) { 					// status changed
-				if ($prevlink == LINK_UP) { 			// Link was up, wait for time_out time before acknowledge as down
+				if ($prevlink == LINK_UP) { 				// Link was up, wait for time_out time before acknowledge as down
 					if ($row['link_timeout'] != Null) {
 						if (DEBUG_HA) echo "CHECK FOR TIMEOUT".CRLF;
  						$temp = explode(" ", $row['link_timeout']);
@@ -43,8 +43,10 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 								  " `link` = '" . $link . "'" .
 								  " WHERE(`deviceID` ='" . $deviceID . "')";
 						if (!mysql_query($mysql)) mySqlError($mysql);
-						HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
-						HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+						$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+						if (!empty($result)) print_r ($result);
+						$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+						if (!empty($result)) print_r ($result);
 					} else {
 						echo "Down, Previous was up; Time NOT expired".CRLF;
 					}
@@ -56,20 +58,23 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 							  " `link` = '" . $link . "'" .
 							  " WHERE(`deviceID` ='" . $deviceID . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
-					HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
-					HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+					$result =  HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+					if (!empty($result)) print_r ($result);
+					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+					if (!empty($result)) print_r ($result);
 				}
-			}
-			if ($link == LINK_UP) { 			// Link is up, UPDATE time
-				echo "Up and same as prev status only UPDATE time".CRLF;
-				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
-						  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
-						  " WHERE(`deviceID` ='" . $deviceID . "')";
-				if (!mysql_query($mysql)) mySqlError($mysql);
-				//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
 			} else {
-				echo "Down and same as prev status, Do nothing.</br>\n";
-				//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+				if ($link == LINK_UP) { 			// Link is up, UPDATE time
+					echo "Up and same as prev link only UPDATE time".CRLF;
+					$mysql = "UPDATE `ha_mf_monitor_link` SET " .
+							  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
+							  " WHERE(`deviceID` ='" . $deviceID . "')";
+					if (!mysql_query($mysql)) mySqlError($mysql);
+					//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+				} else {
+					echo "Down and same as prev link, Do nothing.</br>\n";
+					//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+				}
 			}
 		return true;
 		}
@@ -94,7 +99,7 @@ function UpdateStatus ($callerID, $params)
 			if (!$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID)) mySqlError($mysql);
 			if ($rowcommands = mysql_fetch_array($rescommands)) {
 				$status = $rowcommands['status'];
-		if (DEBUG_HA) echo "Status Status:".$status.CRLF;
+				if (DEBUG_HA) echo "Status Status:".$status.CRLF;
 				if ($status == STATUS_NOT_DEFINED)  return;
 			} else {
 				return;
@@ -246,7 +251,10 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			$feedback['Trigger:'.$trigger['id']] = RunScheme ($callerID, array ( 'deviceID' => $deviceID, 'schemeID' => $trigger['schemeID']));
+			$message = RunScheme ($callerID, array ( 'deviceID' => $deviceID, 'schemeID' => $trigger['schemeID']));
+			$feedback['Trigger:'.$trigger['id']] = $message;
+			logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 
+								 'data' => GetSchemaName($trigger['schemeID']), 'message' => $message ));
 		}
 	}
 	return $feedback;
@@ -281,9 +289,10 @@ function UpdateThermType($deviceID, $typeID){
 
 function GetGroup($groupID){
 
-	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse, monitortypeID, status, statusDate, invertstatus, commandvalue FROM ha_mf_device_group g 
+	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse, monitortypeID, status, statusDate, link, invertstatus, commandvalue FROM ha_mf_device_group g 
 					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
 					LEFT JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID 
+					LEFT JOIN `ha_mf_monitor_link` l ON d.id = l.deviceID 
 					WHERE groupID = '.$groupID; 
 	return FetchRows($mysql);
 }

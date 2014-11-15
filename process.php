@@ -199,8 +199,8 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		switch ($rowcond['type'])
 		{
 		case SCHEME_CONDITION_DEVICE_STATUS_VALUE: 									// what a mess already :(
-		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND: 
-		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR: 
+//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND: 
+//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR: 
 			if (MYDEBUG2) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
 			$devstatusrow = FetchRow("SELECT status FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
 			$testvalue[] = $devstatusrow['status'];
@@ -213,17 +213,27 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		case SCHEME_CONDITION_GROUP_STATUS_AND:
 		case SCHEME_CONDITION_GROUP_STATUS_OR:
 			$groups = GetGroup($rowcond['groupID']);
-			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
+			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
+// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
 				$test = 1;
 			} else {
 				$test = 0;
 			}
 			foreach ($groups as $device) {
-				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
+				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
+// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
 					$test = $test & $device['status'];
 				} else {
 					$test = $test | $device['status'];
 				}
+			}
+			$testvalue[] = $test;
+			break;
+		case SCHEME_CONDITION_GROUP_LINK_OR:
+			$groups = GetGroup($rowcond['groupID']);
+			$test = 0;
+			foreach ($groups as $device) {
+				$test = $test | $device['link'];
 			}
 			$testvalue[] = $test;
 			break;
@@ -244,14 +254,15 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 			$testvalue[] = time();
 			break;
 		}
+
 		if ($rowcond['value'] !== NULL) {
 			switch (strtoupper($rowcond['value']))
 			{
 			case "ON":
-				$testvalue[] = true;
+				$testvalue[] = STATUS_ON;
 				break;
 			case "OFF":
-				$testvalue[] = false;
+				$testvalue[] = STATUS_OFF;
 				break;
 			default:
 				switch ($rowcond['type'])
@@ -282,22 +293,22 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		{
 		case CONDITION_GREATER:
 			if ($testvalue[0] <= $testvalue[1]) {
-				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test > ".$testvalue[1].CRLF;
-				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test > ".$testvalue[1];
+				if (MYDEBUG2) echo 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;
 		case CONDITION_LESS:
 			if ($testvalue[0] >= $testvalue[1]) {
-				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test < ".$testvalue[1].CRLF;
-				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test < ".$testvalue[1];
+				if (MYDEBUG2) echo 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;
 		case CONDITION_EQUAL:
 			if ($testvalue[0] != $testvalue[1]) {
-				if (MYDEBUG2) echo "Condition Fail: condition value: ".$testvalue[0].", test == ".$testvalue[1].CRLF;
-				$feedback['message'] = "Condition Fail: condition value: ".$testvalue[0].", test == ".$testvalue[1];
+				if (MYDEBUG2) echo 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;

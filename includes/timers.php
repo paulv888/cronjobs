@@ -54,7 +54,7 @@ function RunTimers(){
 					$message = executeCommand(MY_DEVICE_ID, MESS_TYPE_SCHEME, array( 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE)); 
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
 					if ($timer['priorityID'] != '99') logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
-								 'message' => $message ));
+								 'data' => GetSchemaName($timer['schemeID']), 'message' => $message ));
 					
 					$mysql="UPDATE `ha_timers_dd` ".
 						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers_dd`.`id` = ".$timer['id'] ;
@@ -107,6 +107,11 @@ function GetDusk() {
 	return $devextraow['dusk'];
 }
 
+function GetSchemaName($schemaID) {
+	$schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".$schemaID);
+	return $schemarow['name'];
+}
+
 
 function UpdateTimers($callerID) {
 	$devstatusrows = FetchRows("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
@@ -115,8 +120,7 @@ function UpdateTimers($callerID) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_HA) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
-				return $feedback;
+				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand($callerID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
 			} else {
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
@@ -125,6 +129,7 @@ function UpdateTimers($callerID) {
 			}
 		}
 	}
+	return $feedback;
 }
 
 function StartTimer($callerID, $deviceID, $time) {
