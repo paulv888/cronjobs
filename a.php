@@ -37,7 +37,7 @@ if (!($sdata=="")) { 					//import_event
 	$message['message'] = $sdata;
 	$message['callerID'] = $message['deviceID'];
 	logEvent($message);
-print_r($message);
+//print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
 			$t = (array_key_exists('Value', $rcv_message) ? $rcv_message['Value'] : '');

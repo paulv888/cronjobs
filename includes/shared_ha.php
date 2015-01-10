@@ -131,6 +131,7 @@ function UpdateStatus ($callerID, $params)
 			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
 			if ($status == STATUS_OFF) $mysql .= ', timerMinute = NULL, timerRemaining = NULL, timerDate = NULL';
 			$mysql .= ' WHERE deviceID = '.$deviceID;
+			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
 			if (!mysql_query($mysql)) mySqlError($mysql);
 			// run on change
 			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);

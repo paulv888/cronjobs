@@ -241,13 +241,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 			if (MYDEBUG2) echo "SCHEME_CONDITION_TIMER_EXPIRED</p>";
 			$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
 			if (MYDEBUG2) print_r($devstatusrow);
-			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-			} else {		// Update timer Remaining
-				if ($devstatusrow['timerMinute'] > 0) {
-					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
-					RunQuery('UPDATE ha_mf_monitor_status SET timerRemaining = '.$minutes.' WHERE deviceID = '.$devstatusrow['deviceID']);
-				}
-			}
+			$testvalue[] = $devstatusrow['timerRemaining'];
 			break;
 		case SCHEME_CONDITION_CURRENT_TIME: 
 			if (MYDEBUG2) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
@@ -587,12 +581,12 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		{
 		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
-			if (MYDEBUG) echo "POSTTEXT</p>";
-			$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
-			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
-			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-			$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
-			$tcomm = str_replace("{timervalue}",$timervalue,$tcomm);
+			if (MYDEBUG) echo "POSTURL</p>";
+			$tcomm = str_replace("{mycommandID}",trim($commandID),$rowcommands['command']);
+			$tcomm = str_replace("{deviceID}",trim($deviceID),$tcomm);
+			$tcomm = str_replace("{unit}",trim($rowdevices['unit']),$tcomm);
+			$tcomm = str_replace("{commandvalue}",trim($commandvalue),$tcomm);
+			$tcomm = str_replace("{timervalue}",trim($timervalue),$tcomm);
 			$tmp1 = explode('?', $tcomm);
 			if (array_key_exists('1', $tmp1)) { 	// found '?', take page from command string
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$tmp1[0];
