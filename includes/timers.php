@@ -116,6 +116,7 @@ function GetSchemaName($schemaID) {
 function UpdateTimers($callerID) {
 	$devstatusrows = FetchRows("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
 	if (DEBUG_HA) print_r($devstatusrow);
+	$feedback = "";
 	if ($devstatusrows) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_HA) print_r($devstatusrow);
