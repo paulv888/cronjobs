@@ -97,16 +97,6 @@ function checktime ($setupstart,$setupend, $offset) {
 	
 }
 
-function GetDawn() {
-	$devextraow = FetchRow("SELECT dawn FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
-	return $devextraow['dawn'];
-}
-
-function GetDusk() {
-	$devextraow = FetchRow("SELECT dusk FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
-	return $devextraow['dusk'];
-}
-
 function GetSchemaName($schemaID) {
 	$schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".$schemaID);
 	return $schemarow['name'];

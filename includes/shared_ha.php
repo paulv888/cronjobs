@@ -173,8 +173,14 @@ function GetStatus ($callerID, $params)
 
 function logEvent($log) {
 
-	$log['ip']=(!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL);
-	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
+//	$log['ip']=(!empty($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : NULL);
+	if (isset($_SERVER['HTTP_CLIENT_IP']) && $_SERVER['HTTP_CLIENT_IP'] != '')
+        	$log['ip'] = $_SERVER['HTTP_CLIENT_IP'];
+    	elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR']) && $_SERVER['HTTP_X_FORWARDED_FOR'] != '')
+        	$log['ip'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
+	elseif (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != '')
+        	$log['ip'] = $_SERVER['REMOTE_ADDR'];
+ 	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
 	if (!array_key_exists("commandID", $log)) $log['commandID'] = COMMAND_UNKNOWN;
 	if (!array_key_exists("inout", $log)) $log['inout'] = COMMAND_IO_NOT;
 	if (!array_key_exists("callerID", $log)) $log['callerID'] = Null;

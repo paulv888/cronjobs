@@ -1,8 +1,8 @@
 <?php
 require_once 'includes.php';
 
-define("MY_DEVICE_ID", 128);
+define("MY_DEVICE_ID", 211);
 
-echo monitorDevices();
+echo monitorDevices("POLL2");
 echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 ?>

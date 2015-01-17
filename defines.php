@@ -100,6 +100,7 @@ define ("SCHEME_CONDITION_TIMER_EXPIRED", 30);
 define ("SCHEME_CONDITION_CURRENT_TIME", 40);
  
 // System Status
+// Remove? Not in use anymore
 define ("SYSTEM_STATUS_ARE_HOME", 1);
 define ("SYSTEM_STATUS_ALARM_ARMED", 2);
 define ("SYSTEM_STATUS_IS_DARK", 3);
@@ -135,7 +136,7 @@ define("ERROR_MESSAGE_TO_SHORT", -2);
 define("DEVICE_SOMEONE_HOME", 157);
 define("DEVICE_ALARM_ZONE1", 158);
 define("DEVICE_ALARM_ZONE2", 159);
-define("DEVICE_DARK_OUTSIDE", 68);
+define("DEVICE_DARK_OUTSIDE", 170);
 define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
 

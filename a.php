@@ -40,14 +40,16 @@ if (!($sdata=="")) { 					//import_event
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
-			$t = (array_key_exists('Value', $rcv_message) ? $rcv_message['Value'] : '');
+			if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
 			$h = '0';
 			if (array_key_exists('ExtData', $rcv_message)) {
-				$t = (array_key_exists('T', $rcv_message['ExtData']) ? $rcv_message['ExtData']['T'] : $t = '0');
+				if (array_key_exists('T', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['T'];
 				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = '0');
 			}
-		 	UpdateWeatherNow($message['deviceID'], $t, $h );
-         	UpdateWeatherCurrent($message['deviceID'], $t, $h );
+			if (isset($t)) {
+			 	UpdateWeatherNow($message['deviceID'], $t, $h );
+				UpdateWeatherCurrent($message['deviceID'], $t, $h );
+			}
 		}
 		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status']));
 		UpdateLink ($message['deviceID'], LINK_UP, $message['callerID'], $message['commandID']);
