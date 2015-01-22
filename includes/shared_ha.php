@@ -24,6 +24,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
 
 		if ( $row['linkmonitor'] == "INTERNAL" || 
 		     $row['linkmonitor'] == "POLL" || 
+		     $row['linkmonitor'] == "POLL2" || 
 		    ($row['linkmonitor'] == "MONSTAT" && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID))) { 				
 			if ($prevlink != $link) { 					// status changed
 				if ($prevlink == LINK_UP) { 				// Link was up, wait for time_out time before acknowledge as down
@@ -267,7 +268,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 	return $feedback;
 }
 
-function UpdateWeatherNow($deviceID,$temp, $humidity, $set_point = "NULL"){
+function UpdateWeatherNow($deviceID,$temp, $humidity = 0, $set_point = 0){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
 	if ($row = FetchRow($mysql)) {
@@ -279,6 +280,24 @@ function UpdateWeatherNow($deviceID,$temp, $humidity, $set_point = "NULL"){
 				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceID;
 
 	if (!mysql_query($mysql)) mySqlError($mysql);
+}
+
+function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = 0, $setpoint = 0) {
+
+	
+	$values['deviceID'] =  $deviceID;
+	$values['mdate'] = date("Y-m-d H:i:s");
+	$values['temperature_c'] = $temp_c;
+	$values['humidity_r'] = $humidity;
+	$values['set_point'] = $setpoint;
+	$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=".  $deviceID ." order by mdate desc limit 1";
+	if ($row = FetchRow($sql)) {
+		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
+		$values['htrend'] = setTrend($humidity, $row['humidity_r']);
+	}
+	$values['source'] = $deviceID;
+	mysql_insert_assoc ('ha_weather_current', $values);
+	
 }
 
 function UpdateThermType($deviceID, $typeID){

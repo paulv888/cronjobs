@@ -32,24 +32,6 @@ function loadWeather($station) {
 	return ($success ? true : false);
 }
 
-function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity) {
-
-	
-	$values['deviceID'] =  $deviceID;
-	$values['mdate'] = date("Y-m-d H:i:s");
-	$values['temperature_c'] = $temp_c;
-	$values['humidity_r'] = $humidity;
-	$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=".  $deviceID ." order by mdate desc limit 1";
-	if ($row = FetchRow($sql)) {
-		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
-		$values['htrend'] = setTrend($humidity, $row['humidity_r']);
-	}
-	$values['source'] = $deviceID;
-	mysql_insert_assoc ('ha_weather_current', $values);
-	
-}
-
-
 function getWBUG($station) {
 
 	$mydeviceID = Array ("HOOVR" => 196);

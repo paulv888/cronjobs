@@ -228,7 +228,7 @@ if(!window.scriptHasRun) {
 				url: 	myurl,
 				method: 'post',
 				data: params,
-				timeout: 5000,
+				timeout: 10000,
 				onRequest: function(){
 					$$('#system-message-container').set('html', '');
 					document.getElementById('spinner').style.display = 'block';
