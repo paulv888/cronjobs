@@ -132,8 +132,9 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 			}
 		} else {			// link is same as prev link
 			if ($link == LINK_UP) { 			// Link is up, UPDATE time
-				echo "Up and same as prev link only UPDATE time".CRLF;
+				echo "Up and same as prev link UPDATE".CRLF;
 				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
+					  " `link` = '" . $link . "'," .
 					  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
 					  " WHERE(`deviceID` ='" . $deviceID . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
