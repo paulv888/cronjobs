@@ -65,7 +65,7 @@ while (true) {
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus($message['callerID'], array ( 'deviceID' => $deviceID, 'commandID' => $message['commandID'])))."</br>\n";
-					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink ($deviceID, LINK_UP, $message['callerID'], $message['commandID'])."</br>\n";
+					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink ($deviceID, LINK_TIMEDOUT, $message['callerID'], $message['commandID'])."</br>\n";
 				}
 				
 				// Update My Link 

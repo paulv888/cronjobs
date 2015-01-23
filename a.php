@@ -52,7 +52,7 @@ if (!($sdata=="")) { 					//import_event
 			}
 		}
 		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status']));
-		UpdateLink ($message['deviceID'], LINK_UP, $message['callerID'], $message['commandID']);
+		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
 	}
 }
 

@@ -118,6 +118,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 		break;
 	case MESS_TYPE_SCHEME:
 		if (MYDEBUG2) echo "MESS_TYPE_SCHEME scheme: ".$schemeID.CRLF;
+		$feedback['SendCommand']=SendCommand($callerID, Array ( 'commandID' => $commandID,  'commandvalue' => $schemeID), $params);
 		break;
 	case MESS_TYPE_COMMAND:        
 		if (MYDEBUG2) echo "MESS_TYPE_COMMAND commandID: ".$commandID." deviceID: ".$deviceID.CRLF;
@@ -154,7 +155,6 @@ function executeCommand($callerID, $messtypeID, $params) {
 		$params['schemeID'] = $schemeID;
 		$feedback['RunScheme'] = RunScheme ($callerID, $params);
 	}			
-			
 	if (MYDEBUG) echo "Feedback: >";
 	if (MYDEBUG) print_r($feedback);
 	if (MYDEBUG) echo "executeCommand Exit".CRLF;
@@ -170,6 +170,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 			$result['message'] = '';
 		}
 	}
+	
 	return 	json_encode($result);
 			
 }
@@ -179,6 +180,8 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 // Check conditions
 	
 	$schemeID = $params['schemeID'];
+	$loglevel = (array_key_exists('loglevel', $params) ? $callerparams['loglevel'] : Null);
+
 	preg_match ( "/^[1-9][0-9]*/", $schemeID, $matches);
 	$schemeID = $matches[0];
 
@@ -325,6 +328,8 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		$feedback['message'] = 'No scheme steps found!';
 	}
 	if (MYDEBUG) echo "Exit RunScheme</pre>".CRLF;
+	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => $params['schemeID'], 'message' => $feedback, 'loglevel' => $loglevel));
+
 	return $feedback;
 
 }

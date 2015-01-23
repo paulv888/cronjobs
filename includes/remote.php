@@ -104,10 +104,10 @@ function loadRemoteDiv($divid) {
 							}
 						}
 						if ($rowdevices['monitortypeID']==MONITOR_LINK || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-							$resmonitor = mysql_query("SELECT ln FROM ha_vw_monitor_link_status WHERE deviceID =".$rowremotekeys['deviceID']);
+							$resmonitor = mysql_query("SELECT link FROM ha_mf_monitor_link WHERE deviceID =".$rowremotekeys['deviceID']);
 							if  ($resmonitor) {
 								$rowmonitor = mysql_fetch_array($resmonitor);
-									$link = ($rowmonitor['ln'] == LINK_OK ? '' : ($rowmonitor['ln'] == LINK_WARNING ? 'btn-warning' : 'btn-danger'));
+									$link = ($rowmonitor['link'] == LINK_UP ? '' : ($rowmonitor['link'] == LINK_WARNING ? 'btn-warning' : 'btn-danger'));
 							}
 						}
 					}

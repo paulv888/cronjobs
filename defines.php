@@ -7,14 +7,12 @@ define("MONITOR_LINK", 2);
 define("MONITOR_STATUS", 3);
 define("MONITOR_LINK_STATUS", 4);
 
-// Link Values
-define("LINK_ERROR", 1);
-define("LINK_WARNING", 2);
-define("LINK_OK", 3);
 
 // Link Values
 define("LINK_DOWN", 0);
 define("LINK_UP", 1);
+define("LINK_WARNING", 2);
+define("LINK_TIMEDOUT",3);
 
 // Event Log Levels
 define("LOGLEVEL_NONE", 1);

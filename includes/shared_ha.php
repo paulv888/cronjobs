@@ -12,75 +12,139 @@ function ReloadScreenShot() {
 	return;  // ReadCurlReturn($post);
 }
 
-function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = 0){
+function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 
-    if (DEBUG_HA) echo "Update Link deviceID ".$deviceID.CRLF;
+    if (DEBUG_HA) echo CRLF.CRLF."Update Link deviceID ".$deviceID." link:".$link.CRLF;
 
 	$mysql = "SELECT * FROM `ha_mf_monitor_link` WHERE deviceID = ".$deviceID; 
 	if ($row = FetchRow($mysql)) {
 		$prevlink = $row['link'];
-			// Listen for Statuses StatusOff StatusOn
+		// Listen for Statuses StatusOff StatusOn
 		if (DEBUG_HA) echo $row['linkmonitor'].' l1: '.$row['listenfor1'].' l2: '.$row['listenfor2'].' l3: '.$row['listenfor3'].' commandID: '.$commandID.CRLF;
+		
+		/*
+		*
+		*	3 Method INTERNAL/POLL(2)/MONSTAT
+		*				-> Internal only send if ran, so auto up
+		*				-> Monstat only recognize certain stat, if expected stat -> up. Else time expired?
+		*				-> POLL(2) runs every minute, Either up or down, if Down check warning/Timeout
+		*
+		*	3 stats UP/DOWN/WARNING/ 
+		*	If inUP   	-> UP
+		*	if inDOWN 	-> Warning exp -> Warning
+		*			 	-> Timeout exp   -> Down
+		*
+		*	LINK_TIMEDOUT ? go check if timed out
+		*
+		*   If link transition then run triggers
+		* 		WARNING, consider as up, cannot go from DOWN to WARNING 
+		* 		UP->WARNING->DOWN
+		* 		UP->DOWN
+		*		DOWN->UP
+		*
+		*/
 
-		if ( $row['linkmonitor'] == "INTERNAL" || 
-		     $row['linkmonitor'] == "POLL" || 
-		     $row['linkmonitor'] == "POLL2" || 
-		    ($row['linkmonitor'] == "MONSTAT" && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID))) { 				
-			if ($prevlink != $link) { 					// status changed
-				if ($prevlink == LINK_UP) { 				// Link was up, wait for time_out time before acknowledge as down
-					if ($row['link_timeout'] != Null) {
-						if (DEBUG_HA) echo "CHECK FOR TIMEOUT".CRLF;
- 						$temp = explode(" ", $row['link_timeout']);
-						$temp2 = explode(":", $temp[1]);
-						$min = $temp[0]*1440 + $temp2[0]*60 + $temp2[1];
-						$last = strtotime($row['mdate']);
-						$nowdt = strtotime(date("Y-m-d H:i:s"));
-					}
-					if ((abs($nowdt-$last) / 60 > $min) || $row['link_timeout'] == Null) {
-						echo "Down, Previous was up; Time expired".CRLF;
-						logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
-						$mysql = "UPDATE `ha_mf_monitor_link` SET " .
-								  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
-								  " `link` = '" . $link . "'" .
-								  " WHERE(`deviceID` ='" . $deviceID . "')";
-						if (!mysql_query($mysql)) mySqlError($mysql);
-						$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
-						if (!empty($result)) print_r ($result);
-						$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
-						if (!empty($result)) print_r ($result);
-					} else {
-						echo "Down, Previous was up; Time NOT expired".CRLF;
-					}
-				} else {   								// previous was down UPDATE to online and log event
-					echo "Up, Previous was down; UPDATE to online and log event".CRLF;
+
+		// Check current link UP for MONSTAT
+		switch ($link) {
+		case LINK_TIMEDOUT: 		// Treat LINK_DOWN form polling and check TIMEDOUT same
+		case LINK_DOWN: 
+			if ($row['linkmonitor'] == "MONSTAT" && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID)) 
+				$link = LINK_UP;
+			break;
+		//case LINK_WARNING:  SHOULD NOT COME IN
+		//case LINK_UP: up is up
+		}
+
+		// Determine if timed out (WARNING or DOWN time expired
+		if ($link == LINK_DOWN)	$link = LINK_TIMEDOUT;
+		if ($link == LINK_TIMEDOUT) {
+			if ($row['link_warning'] != Null) {
+				if (DEBUG_HA) echo "CHECK FOR WARNING".CRLF;
+				$temp = explode(" ", $row['link_warning']);
+				$temp2 = explode(":", $temp[1]);
+				$min = $temp[0]*1440 + $temp2[0]*60 + $temp2[1];
+				$last = strtotime($row['mdate']);
+				$nowdt = strtotime(date("Y-m-d H:i:s"));
+				if (abs($nowdt-$last) / 60 > $min) {
+					echo "Warning Time expired".CRLF;
+					$link = LINK_WARNING;
+				}
+			}
+			$last = strtotime($row['mdate']);
+			if ($row['link_timeout'] != Null) {
+				if (DEBUG_HA) echo "CHECK FOR DOWN".CRLF;
+				$temp = explode(" ", $row['link_timeout']);
+				$temp2 = explode(":", $temp[1]);
+				$min = $temp[0]*1440 + $temp2[0]*60 + $temp2[1];
+				$nowdt = strtotime(date("Y-m-d H:i:s"));
+			}
+			if ((abs($nowdt-$last) / 60 > $min) || $row['link_timeout'] == Null) {
+				echo "Timeout Time expired".CRLF;
+				$link = LINK_DOWN;
+			}
+			if ($link == LINK_TIMEDOUT)	{
+				echo "Checked for timeout, was not, so do nothing".CRLF;
+				return true;
+			} else {
+				echo "Timeout out, handle transition".CRLF;
+			}
+		}
+
+		// New link = warning then update and exit
+		if ($link == LINK_WARNING) {
+			echo "Went to LINK_WARNING, only update link not time".CRLF;
+			$mysql = "UPDATE `ha_mf_monitor_link` SET " .
+					  "`link` = '" . LINK_WARNING . "'" .
+					  " WHERE(`deviceID` ='" . $deviceID . "')";
+			if (!mysql_query($mysql)) mySqlError($mysql);
+			return true;			// Done exit
+		}
+
+		if ($prevlink == LINK_WARNING) $prevlink = LINK_UP;		// Treat warning as was up
+
+		// Handle transitions
+		if ($prevlink != $link) { 								// link changed
+			if ($prevlink == LINK_UP && $link == LINK_DOWN) { 	
+					echo "Down, Previous was up".CRLF;
 					logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 					$mysql = "UPDATE `ha_mf_monitor_link` SET " .
-							  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 							  " `link` = '" . $link . "'" .
 							  " WHERE(`deviceID` ='" . $deviceID . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
-					$result =  HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
 					if (!empty($result)) print_r ($result);
-					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
 					if (!empty($result)) print_r ($result);
-				}
-			} else {
-				if ($link == LINK_UP) { 			// Link is up, UPDATE time
-					echo "Up and same as prev link only UPDATE time".CRLF;
-					$mysql = "UPDATE `ha_mf_monitor_link` SET " .
-							  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
-							  " WHERE(`deviceID` ='" . $deviceID . "')";
-					if (!mysql_query($mysql)) mySqlError($mysql);
-					//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
-				} else {
-					echo "Down and same as prev link, Do nothing.</br>\n";
-					//HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
-				}
+				} 
+			if ($prevlink == LINK_DOWN && $link == LINK_UP) { 	
+				echo "Up, Previous was down; UPDATE to online and log event".CRLF;
+				logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
+				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
+						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
+						  " `link` = '" . $link . "'" .
+						  " WHERE(`deviceID` ='" . $deviceID . "')";
+				if (!mysql_query($mysql)) mySqlError($mysql);
+				$result =  HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+				if (!empty($result)) print_r ($result);
+				$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+				if (!empty($result)) print_r ($result);
 			}
-		return true;
+		} else {			// link is same as prev link
+			if ($link == LINK_UP) { 			// Link is up, UPDATE time
+				echo "Up and same as prev link only UPDATE time".CRLF;
+				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
+					  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
+					  " WHERE(`deviceID` ='" . $deviceID . "')";
+				if (!mysql_query($mysql)) mySqlError($mysql);
+			} else {
+				echo "Down and same as prev link, Do nothing.</br>\n";
+			}
 		}
-	} 
-	return false;
+		return true;
+	} else {
+		return false;
+	}
 }
 		
 function UpdateStatus ($callerID, $params)
@@ -160,13 +224,11 @@ function GetStatus ($callerID, $params)
 	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus, commandvalue FROM `ha_mf_devices` d " . 
 				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
 				" WHERE deviceID = ".$deviceID. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
-	if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
+	//if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
 	if ($row = FetchRow($mysql)) {
-		if (DEBUG_HA) echo "Status Status2:".$status.CRLF;
 		$feedback['deviceID'] = $deviceID;
 		$feedback['status'] = $row['status'];
 		$feedback['commandvalue'] = $row['commandvalue'];
-
 		return $feedback;
 	}
 	return;
