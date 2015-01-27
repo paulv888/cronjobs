@@ -322,7 +322,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			$message = RunScheme ($callerID, array ( 'deviceID' => $deviceID, 'schemeID' => $trigger['schemeID']));
+			$message = executeCommand($callerID, MESS_TYPE_SCHEME, array( 'schemeID' => $trigger['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
 			$feedback['Trigger:'.$trigger['id']] = $message;
 			logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 
 								 'data' => GetSchemaName($trigger['schemeID']), 'message' => $message ));
@@ -338,7 +338,9 @@ function UpdateWeatherNow($deviceID,$temp, $humidity = NULL, $set_point = NULL){
 		$ttrend = setTrend($temp, $row['temperature_c']);
 		$htrend = setTrend($humidity, $row['humidity_r']);
 	}
-	
+	if (is_null($humidity)) $humidity="NULL";
+	if (is_null($set_point)) $set_point="NULL";
+
 	$mysql = "UPDATE ha_weather_now SET mdate = '". date("Y-m-d H:i:s")."'," .
 				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceID;
 

@@ -17,9 +17,9 @@ define("LINK_TIMEDOUT",3);
 // Event Log Levels
 define("LOGLEVEL_NONE", 1);
 define("LOGLEVEL_DEBUG", 10);
-define("LOGLEVEL_AWAKE", 20);
-define("LOGLEVEL_COMMANDS", 30);
-define("LOGLEVEL_MACROS", 40);
+define("LOGLEVEL_MONITOR", 20);
+define("LOGLEVEL_COMMAND", 30);
+define("LOGLEVEL_MACRO", 40);
 define("LOGLEVEL_ALARMS", 50);
 
 // Log whether command was (or can) send or received
