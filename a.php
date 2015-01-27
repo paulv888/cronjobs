@@ -41,10 +41,10 @@ if (!($sdata=="")) { 					//import_event
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
 			if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
-			$h = '0';
+			$h = NULL;
 			if (array_key_exists('ExtData', $rcv_message)) {
 				if (array_key_exists('T', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['T'];
-				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = '0');
+				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
 			}
 			if (isset($t)) {
 			 	UpdateWeatherNow($message['deviceID'], $t, $h );

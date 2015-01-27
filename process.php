@@ -180,7 +180,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 // Check conditions
 	
 	$schemeID = $params['schemeID'];
-	$loglevel = (array_key_exists('loglevel', $params) ? $callerparams['loglevel'] : Null);
+	$loglevel = (array_key_exists('loglevel', $params) ? $params['loglevel'] : Null);
 
 	preg_match ( "/^[1-9][0-9]*/", $schemeID, $matches);
 	$schemeID = $matches[0];

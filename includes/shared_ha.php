@@ -331,7 +331,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 	return $feedback;
 }
 
-function UpdateWeatherNow($deviceID,$temp, $humidity = 0, $set_point = 0){
+function UpdateWeatherNow($deviceID,$temp, $humidity = NULL, $set_point = NULL){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
 	if ($row = FetchRow($mysql)) {
@@ -345,7 +345,7 @@ function UpdateWeatherNow($deviceID,$temp, $humidity = 0, $set_point = 0){
 	if (!mysql_query($mysql)) mySqlError($mysql);
 }
 
-function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = 0, $setpoint = 0) {
+function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = NULL, $setpoint = NULL) {
 
 	
 	$values['deviceID'] =  $deviceID;

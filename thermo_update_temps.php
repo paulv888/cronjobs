@@ -172,7 +172,7 @@ function UpdateTemps() {
 				logIt( "Target $target" );
 				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
-				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp),0 , to_celcius($target));
+				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp), NULL , to_celcius($target));
 				UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'commandvalue' => to_celcius($stat->temp) ));
 
 	
