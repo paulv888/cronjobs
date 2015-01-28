@@ -31,7 +31,7 @@ if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to 
 		if (isset($_POST["scheme"])) {							
 			$schemeID=$_POST["scheme"];
 			if (MYDEBUG2) echo "MESS_TYPE_SCHEME ".$schemeID.CRLF;
-			echo executeCommand($callerID, $messtypeID, array( 'schemeID' => $schemeID)); 
+			echo executeCommand($callerID, $messtypeID, array( 'commandID' => COMMAND_RUN_SCHEME, 'schemeID' => $schemeID)); 
 			// exit;
 		}
 		break;
@@ -328,7 +328,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		$feedback['message'] = 'No scheme steps found!';
 	}
 	if (MYDEBUG) echo "Exit RunScheme</pre>".CRLF;
-	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => $params['schemeID'], 'message' => $feedback, 'loglevel' => $loglevel));
+//	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => $params['schemeID'], 'message' => $feedback, 'loglevel' => $loglevel));
 
 	return $feedback;
 
