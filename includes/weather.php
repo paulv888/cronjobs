@@ -1,5 +1,6 @@
 <?php
-//define( 'DEBUG_WBUG', TRUE );
+//define( 'DEBUG_YAHOOWEATHER', TRUE );
+if (!defined('DEBUG_YAHOOWEATHER')) define( 'DEBUG_YAHOOWEATHER', FALSE );
 if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
 function loadWeather($station) {
@@ -32,6 +33,99 @@ function loadWeather($station) {
 	return ($success ? true : false);
 }
 
+function getYahooWeather($station) {
+
+	$mydeviceID = Array ("USAL0594" => 196);
+	//USAL0594
+	
+	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
+	"%22%20and%20u%3D%22c%22&format=json&diagnostics=true&callback=";
+	$get = restClient::get($url);
+	$response = file_get_contents($url);
+	if (DEBUG_YAHOOWEATHER) echo "<pre>";
+	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
+
+	$result = json_decode( $response );
+	//if (DEBUG_YAHOOWEATHER) print_r($result);
+	$result = $result->{'query'}->{'results'}->{'channel'};
+	if (DEBUG_YAHOOWEATHER) print_r($result);
+	UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
+	UpdateWeatherCurrent($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'} );
+	$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
+//	UpdateLink ($mydeviceID[$station]);
+
+	$array['deviceID'] = $mydeviceID[$station];
+	$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
+	$array['temp'] = $result->{'item'}->{'condition'}->{'temp'};
+	$array['humidity'] = $result->{'atmosphere'}->{'humidity'};
+	$array['pressure'] = $result->{'atmosphere'}->{'pressure'};
+	$array['rising'] = $result->{'atmosphere'}->{'rising'};
+	$array['visibility'] = $result->{'atmosphere'}->{'visibility'};
+	$array['chill'] = $result->{'wind'}->{'chill'};
+	$wd = $result->{'wind'}->{'direction'};
+	if($wd>=348.75&&$wd<=360) $wdt="N";
+	if($wd>=0&&$wd<11.25) $wdt="N";
+	if($wd>=11.25&&$wd<33.75) $wdt="NNE";
+	if($wd>=33.75&&$wd<56.25) $wdt="NE";
+	if($wd>=56.25&&$wd<78.75) $wdt="ENE";
+	if($wd>=78.75&&$wd<101.25) $wdt="E";
+	if($wd>=101.25&&$wd<123.75) $wdt="ESE";
+	if($wd>=123.75&&$wd<146.25) $wdt="SE";
+	if($wd>=146.25&&$wd<168.75) $wdt="SSE";
+	if($wd>=168.75&&$wd<191.25) $wdt="S";
+	if($wd>=191.25&&$wd<213.75) $wdt="SSW";
+	if($wd>=213.75&&$wd<236.25) $wdt="SW";
+	if($wd>=236.25&&$wd<258.75) $wdt="WSW";
+	if($wd>=258.75&&$wd<281.25) $wdt="W";
+	if($wd>=281.25&&$wd<303.75) $wdt="WNW";
+	if($wd>=303.75&&$wd<326.25) $wdt="NW";
+	if($wd>=326.25&&$wd<348.75) $wdt="NNW";
+	$array['direction'] = $wdt;
+	$array['speed'] = $result->{'wind'}->{'speed'};
+	$array['code'] = $result->{'item'}->{'condition'}->{'code'};
+	$array['text'] = $result->{'item'}->{'condition'}->{'text'};
+	$array['typeID'] = DEV_TYPE_TEMP_HUM;
+	// Get night or day
+	$tpb = time();
+	$tsr = strtotime($result->{'astronomy'}->{'sunrise'});
+	$tss = strtotime($result->{'astronomy'}->{'sunset'});
+	if ($tpb>$tsr && $tpb<$tss) { $daynight = 'd'; } else { $daynight = 'n'; }
+	$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
+	if ($daynight == "d") {
+		$array['class'] = "w-day";
+	} else {
+		$array['class'] = "w-night";
+	}
+
+	PDOupdate("ha_weather_extended", $array, "deviceID");
+	
+	unset($array);
+	$i = 0;
+	foreach ($result->{'item'}->{'forecast'} as $forecast) {
+		//print_r($forecast);
+		$array['id'] = $i;
+		$array['deviceID'] = $mydeviceID[$station];
+		$array['mdate'] = date("Y-m-d H:i:s",strtotime($forecast->{'date'}));
+		$array['day'] = $forecast->{'day'};
+		if ($i == 0) $array['day'] = "Tdy";
+		if ($i == 1) $array['day'] = "Tom";
+		$array['low'] = $forecast->{'low'};
+		$array['high'] = $forecast->{'high'};
+		$array['text'] = $forecast->{'text'};
+		$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$forecast->{'code'}."s.png";
+		PDOupdate("ha_weather_forecast", $array, "id");
+//		PDOinsert("ha_weather_forecast", $array);
+		$i++;
+	}
+
+	if (DEBUG_YAHOOWEATHER) echo "</pre>";
+	
+	return $feedback;
+	
+}
+	
+
+	
 function getWBUG($station) {
 
 	$mydeviceID = Array ("HOOVR" => 196);

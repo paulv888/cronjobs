@@ -151,4 +151,95 @@ function mySqlError($mysql) {
 		}
 }
 
+
+//public function PDOinsert($table, $cols, $values){
+function PDOupdate($table, $array, $where){
+
+//$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
+//$queryUpdate = $pdo->prepare( $sql );
+//$queryUpdate->execute( array( $now, $newStartDateHeat, $newStartDateCool, $newStartDateFan, $heatStatus, $coolStatus, $fanStatus, $thermostatRec['deviceID'] ) );
+
+	global $pdo;
+
+    $placeholder = array();
+
+	$values = array_values($array);
+	$cols = array_keys($array);
+	
+	$numItems = count($values);
+	//print_r($cols);
+	//print_r($values);
+	
+	$sql = 'UPDATE '. $table . ' SET ';
+	$i = 0;
+	while (list($key, $value) = each($array)) {
+//		echo "Key: $key; Value: $value<br />\n";
+		if (is_array($value)) $value = json_encode($value);
+		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
+		if (is_null($value)) {
+			$value="NULL";
+		} elseif (strlen($value)==0) {
+			$value="'"."'";
+		} elseif (!is_numeric($value)) {
+			$value = "'" . $value . "'";
+		}
+		$sql .= "`".$key."` = ?"; 
+		if(++$i < $numItems) {
+			$sql .= ", ";
+		}
+    }
+  
+	if (array_key_exists($where, $array)) {
+		$sql .= ' WHERE `'.$where."` = ?";
+		$values[] = $array[$where];
+	} else {
+		echo "Error: Cannot find where value";
+		return -1;
+	}
+
+	//echo "sql sofar: ". $sql.CRLF;
+
+
+	try
+	{
+		$stmt = $pdo->prepare($sql);
+		$result = $stmt->execute($values);
+	}
+	catch( Exception $e )
+	{
+		doError( 'DB Exception: ' . $e->getMessage() );
+	}
+	$result;
+}
+
+function PDOinsert($table, $array){
+	global $pdo;
+
+    $placeholder = array();
+	$values = array_values($array);
+	$cols = array_keys($array);
+	
+    for ($i = 0; $i < count($values); $i++)
+      $placeholder[] = '?';
+
+	//echo "count".count($values);
+	//print_r($cols);
+	//print_r($values);
+	
+    $sql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
+    $sql.= 'VALUES (' . implode(", ", $placeholder) . ')';
+
+	//echo "sql sofar: ". $sql.CRLF;
+	
+ 	try
+	{
+		$stmt = $pdo->prepare($sql);
+		$stmt->execute($values);
+	}
+	catch( Exception $e )
+	{
+		doError( 'DB Exception: ' . $e->getMessage() );
+	}
+
+}
 ?>
