@@ -132,6 +132,7 @@ function getYahooWeather($station) {
 		$i++;
 	}
 
+	UpdateLink ($mydeviceID[$station]);
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
 	
 	return $feedback;

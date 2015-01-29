@@ -305,7 +305,7 @@ function logEvent($log) {
 				$log['loglevel'] = $rowcommand['loglevel'];
 			}
 		}
-		if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMANDS;
+		if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
 		
 		if (DEBUG_HA) echo "***log";
 		if (DEBUG_HA) print_r($log);
