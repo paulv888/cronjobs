@@ -7,6 +7,14 @@ define("MONITOR_LINK", 2);
 define("MONITOR_STATUS", 3);
 define("MONITOR_LINK_STATUS", 4);
 
+define("SEVERITY_DANGER", 1);
+define("SEVERITY_WARNING", 2);
+define("SEVERITY_INFO", 3);
+
+define("SEVERITY_DANGER_CLASS", "alert-danger");
+define("SEVERITY_WARNING_CLASS", "alert");
+define("SEVERITY_INFO_CLASS", "alert-info");
+
 
 // Link Values
 define("LINK_DOWN", 0);
@@ -137,9 +145,6 @@ define("DEVICE_ALARM_ZONE2", 159);
 define("DEVICE_DARK_OUTSIDE", 170);
 define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
-
-// Call executeCommand with either off these
-define ("REPLACE_TYPE_DEVICE", 1);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);

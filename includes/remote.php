@@ -146,9 +146,9 @@ function loadRemoteDiv($divid) {
 					$text = null;
 					if ($booticon == null) {			// what text to show
 						if ($rowremotekeys['inputtype']=="field") {					// execute query from field
-							$tres = mysql_query($rowremotekeys['inputoptions']); 
-							$trow = mysql_fetch_array($tres);
-							$text = $trow[0];
+		                                        $tarr = explode("___",$rowremotekeys['inputoptions']);
+                		                        $row = FetchRow("SELECT ".$tarr[1]." FROM ".$tarr[0]." WHERE `deviceID` =".$rowremotekeys['deviceID']);
+							$text = $row[$tarr[1]];
 						} elseif ($rowremotekeys['inputtype']=="display") {													// no icon show name
 							$text = ' '.$rowremotekeys['inputoptions'];	
 						} else {

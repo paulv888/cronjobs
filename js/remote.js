@@ -245,7 +245,7 @@ if(!window.scriptHasRun) {
 				},
 				onTimeout: function(text, error)
 				{
-					$$('#system-message-container').set('html', text+'</br>'+error);
+					$$('#system-message-container').set('html', 'Connection Timed Out'+'</br>');
 					document.getElementById('spinner').style.display = 'none';
 				},
 			}

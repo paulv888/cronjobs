@@ -241,7 +241,15 @@ function ImportSessions() {
 		$remote = explode("=", $session['f']);
 		$remotename= findRemoteName($remote['0']); 
 		$firew = explode("=", $session['n']);
-		$mysql= 'INSERT INTO `net_sessions` (
+               	$class = "";
+        	$row = FetchRow("SELECT `severity` FROM `net_sessions_flags` WHERE `flag` ='".$session['flags']."'");
+	    	if ($row['severity'] == SEVERITY_DANGER) {
+                	$class = SEVERITY_DANGER_CLASS;
+	        }
+        	if ($row['severity'] == SEVERITY_WARNING) {
+                	$class = SEVERITY_WARNING_CLASS;
+	        }
+   		$mysql= 'INSERT INTO `net_sessions` (
 					`sessionid` ,
 					`protocol` ,
 					`local_address` ,
@@ -270,7 +278,8 @@ function ImportSessions() {
 					`OUT_unacked` ,
 					`OUT_mss` ,
 					`OUT_windows_state` ,
-					`active`
+					`active`,
+					`class`
 					)
 				VALUES (' . 
 					'"'.$session['sess'].'",'.
@@ -301,7 +310,8 @@ function ImportSessions() {
 					'"'.(isset($session['OUT_unacked']) ? $session['OUT_unacked'] : "").'",'.
 					'"'.(isset($session['OUT_mss']) ? $session['OUT_mss'] : "").'",'.
 					'"'.(isset($session['OUT_windows_state']) ? $session['OUT_windows_state'] : "").'",'.
-					'"1");';
+					'"'."1".'",'.
+					'"'.$class.'");';
 	
 			if (!mysql_query($mysql)) mySqlError($mysql);	
 			$sessionsimported++;

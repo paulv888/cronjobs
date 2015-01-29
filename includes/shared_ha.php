@@ -322,7 +322,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			$message = executeCommand($callerID, MESS_TYPE_SCHEME, array( 'schemeID' => $trigger['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
+			$message = executeCommand($callerID, MESS_TYPE_SCHEME, array('schemeID' => $trigger['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
 			$feedback['Trigger:'.$trigger['id']] = $message;
 			logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 
 								 'data' => GetSchemaName($trigger['schemeID']), 'message' => $message ));
@@ -360,7 +360,6 @@ function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = NULL, $setpoint =
 		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
 		$values['htrend'] = setTrend($humidity, $row['humidity_r']);
 	}
-	$values['source'] = $deviceID;
 	mysql_insert_assoc ('ha_weather_current', $values);
 	
 }

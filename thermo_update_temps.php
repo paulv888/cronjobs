@@ -40,7 +40,7 @@ function UpdateTemps() {
 		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
 	
-		$sql = "INSERT INTO ha_weather_current ( mdate, source, temperature_c, set_point, ttrend, deviceID ) VALUES ('".date("Y-m-d H:i:s")."', '".MY_DEVICE_ID."', ?, ?, ?, ?)";
+		$sql = "INSERT INTO ha_weather_current ( mdate, temperature_c, set_point, ttrend, deviceID ) VALUES ('".date("Y-m-d H:i:s")."', ?, ?, ?, ?)";
 		$queryCurrent = $pdo->prepare($sql);
 		
 		$sql = "DELETE FROM {$dbConfig['table_prefix']}hvac_run_times WHERE date = ? AND deviceID = ?";

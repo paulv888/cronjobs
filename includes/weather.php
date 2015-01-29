@@ -91,12 +91,19 @@ function getYahooWeather($station) {
 	$tss = strtotime($result->{'astronomy'}->{'sunset'});
 	if ($tpb>$tsr && $tpb<$tss) { $daynight = 'd'; } else { $daynight = 'n'; }
 	$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
+	$array['class'] = "";
 	if ($daynight == "d") {
 		$array['class'] = "w-day";
 	} else {
 		$array['class'] = "w-night";
 	}
-
+	$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` =".$result->{'item'}->{'condition'}->{'code'});
+	if ($row['severity'] == SEVERITY_DANGER) {
+		$array['class'] = SEVERITY_DANGER_CLASS;
+	}
+	if ($row['severity'] == SEVERITY_WARNING) {
+		$array['class'] = SEVERITY_WARNING_CLASS;
+	}
 	PDOupdate("ha_weather_extended", $array, "deviceID");
 	
 	unset($array);
@@ -107,12 +114,19 @@ function getYahooWeather($station) {
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime($forecast->{'date'}));
 		$array['day'] = $forecast->{'day'};
-		if ($i == 0) $array['day'] = "Tdy";
-		if ($i == 1) $array['day'] = "Tom";
+		//if ($i == 0) $array['day'] = $array['day'];
+		//if ($i == 1) $array['day'] = "Tomorrow";
 		$array['low'] = $forecast->{'low'};
 		$array['high'] = $forecast->{'high'};
 		$array['text'] = $forecast->{'text'};
 		$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$forecast->{'code'}."s.png";
+		$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = ".$forecast->{'code'});
+		if ($row['severity'] == SEVERITY_DANGER) {
+			$array['class'] = SEVERITY_DANGER_CLASS;
+		}
+		if ($row['severity'] == SEVERITY_WARNING) {
+			$array['class'] = SEVERITY_WARNING_CLASS;
+		}
 		PDOupdate("ha_weather_forecast", $array, "id");
 //		PDOinsert("ha_weather_forecast", $array);
 		$i++;

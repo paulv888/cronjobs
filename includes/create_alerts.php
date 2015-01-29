@@ -22,7 +22,7 @@ function Alerts($alert_textID , $params = NULL ){
 	$description= $rowtext['description'];
 	$alert_text= $rowtext['message'];
 	if ($params['deviceID'] != Null) {
-		replaceText(REPLACE_TYPE_DEVICE, Array('deviceID' => $params['deviceID']),$description, $alert_text, $params);
+		replaceText(Array('deviceID' => $params['deviceID']), $description, $alert_text, $params);
 	}
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 
