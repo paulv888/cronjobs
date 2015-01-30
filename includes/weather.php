@@ -47,8 +47,9 @@ function getYahooWeather($station) {
 
 	$result = json_decode( $response );
 	//if (DEBUG_YAHOOWEATHER) print_r($result);
-	$result = $result->{'query'}->{'results'}->{'channel'};
 	if (DEBUG_YAHOOWEATHER) print_r($result);
+	$result = $result->{'query'}->{'results'}->{'channel'};
+	print_r($result);
 	UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
 	UpdateWeatherCurrent($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'} );
 	$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
@@ -119,8 +120,10 @@ function getYahooWeather($station) {
 		$array['low'] = $forecast->{'low'};
 		$array['high'] = $forecast->{'high'};
 		$array['text'] = $forecast->{'text'};
+		$array['code'] = $forecast->{'code'};
 		$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$forecast->{'code'}."s.png";
 		$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = ".$forecast->{'code'});
+		$array['class'] = "";
 		if ($row['severity'] == SEVERITY_DANGER) {
 			$array['class'] = SEVERITY_DANGER_CLASS;
 		}

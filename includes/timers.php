@@ -15,7 +15,7 @@ function RunTimers(){
 
 
 	// Check Active Timers
-	$mysql='SELECT * FROM `ha_timers_dd` WHERE `active` = "1"';
+	$mysql='SELECT * FROM `ha_timers` WHERE `active` = "1"';
 
 	if (!$timers = FetchRows($mysql)) {
 		exit;
@@ -37,16 +37,24 @@ function RunTimers(){
 
 				$doit = false;
 				$last = strtotime($timer['last_run_date']);
-				if ($timer['repeat'] == REPEAT_ONCE_DAY) {										// Check interval expired
+				switch ($timer['repeat']) {
+				case REPEAT_ONCE_DAY: 					// Did it run today?
 					if (date('Y-m-d') != date('Y-m-d', $last)) {
 						$doit = true;
 						$last = time();
 					}
-				} else {
+					break;
+				case REPEAT_ONCE_HOUR: 					// If not run today then run, else check hour expired 
+					if ((date('Y-m-d') != date('Y-m-d', $last)) || (timeExpired($last, $timer['repeat']))) {
+						$doit = true;
+						$last = time();
+					}
+					break;
+				default:
 					if (timeExpired($last, $timer['repeat'])) {
 						$doit = true;
 					}
-				
+					break;
 				}
 				if ($doit) {																	// Still good doit
 					$runcount++;
@@ -60,8 +68,8 @@ function RunTimers(){
 					if ($timer['priorityID'] != '99') logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
 								 'data' => GetSchemaName($timer['schemeID']), 'message' => $message ));
 					
-					$mysql="UPDATE `ha_timers_dd` ".
-						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers_dd`.`id` = ".$timer['id'] ;
+					$mysql="UPDATE `ha_timers` ".
+						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					if (DEBUG_TIMERS) echo $mysql."</br>";
 					RunQuery($mysql);
 				}
@@ -80,6 +88,7 @@ function checktime ($setupstart,$setupend, $offset) {
 	if ($setupstart == '-') $start = "00:00:00";
 	if ($setupstart == TIME_DAWN || $setupstart == TIME_DUSK || $setupstart == '-' ) {
 		$start = strtotime("today $start");
+		$start = $start + $offset*60;
 	} else {
 		$start = strtotime("today $start hours $offset minutes");
 	}

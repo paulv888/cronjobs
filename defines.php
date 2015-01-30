@@ -7,6 +7,7 @@ define("MONITOR_LINK", 2);
 define("MONITOR_STATUS", 3);
 define("MONITOR_LINK_STATUS", 4);
 
+define("SEVERITY_NONE", 0);
 define("SEVERITY_DANGER", 1);
 define("SEVERITY_WARNING", 2);
 define("SEVERITY_INFO", 3);
@@ -158,6 +159,7 @@ define("THERMO_CONNECTION_TIMEOUT", 10);
 
 
 define("REPEAT_ONCE_DAY", 0);
+define("REPEAT_ONCE_HOUR", 60);
 
 define("CRLF", "</br>\n");
 ?>
