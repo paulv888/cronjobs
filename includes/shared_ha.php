@@ -202,13 +202,13 @@ function UpdateStatus ($callerID, $params)
 			// run on change
 			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
 			if (!empty($result)) $feedback['Triggers'] = $result;
-		}
-		if ($status == STATUS_ON ) {
-			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON);
-			if (!empty($result)) $feedback['Triggers'] = $result;
-		} else {
-			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF);
-			if (!empty($result)) $feedback['Triggers'] = $result;
+			if ($status == STATUS_ON ) {
+				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON);
+				if (!empty($result)) $feedback['Triggers'] = $result;
+			} else {
+				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF);
+				if (!empty($result)) $feedback['Triggers'] = $result;
+			}
 		}
 		
 		return $feedback;
