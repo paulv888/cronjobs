@@ -1,6 +1,6 @@
 
-if(!window.scriptHasRun) { 
-	window.scriptHasRun = true; 
+if(!window.scriptRemoteHasRun) { 
+	window.scriptRemoteHasRun = true; 
 	var COMMAND_TOGGLE = 19;
 	var COMMAND_GET_GROUP = 282;
 	var COMMAND_GET_VALUE = 136;
@@ -283,7 +283,7 @@ if(!window.scriptHasRun) {
 				async: false,
 				onRequest: function(){
 					$$('#system-message-container').set('html', '');
-					document.getElementById('spinner').style.display = 'block';
+					if (document.getElementById('spinner')) document.getElementById('spinner').style.display = 'block';
 				},
 				onSuccess: function(data)
 				{
@@ -293,7 +293,7 @@ if(!window.scriptHasRun) {
 				onError: function(text, error)
 				{
 					$$('#system-message-container').set('html', text);
-					document.getElementById('spinner').style.display = 'none';
+					if (document.getElementById('spinner')) document.getElementById('spinner').style.display = 'none';
 				},
 			}
         ).send();

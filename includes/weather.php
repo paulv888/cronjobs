@@ -3,6 +3,8 @@
 if (!defined('DEBUG_YAHOOWEATHER')) define( 'DEBUG_YAHOOWEATHER', FALSE );
 if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
+define('IMAGE_CACHE',"/images/yahoo/");
+
 function loadWeather($station) {
 
 	ini_set('max_execution_time',30);
@@ -96,7 +98,10 @@ function getYahooWeather($station) {
 		$tsr = strtotime($result->{'astronomy'}->{'sunrise'});
 		$tss = strtotime($result->{'astronomy'}->{'sunset'});
 		if ($tpb>$tsr && $tpb<$tss) { $daynight = 'd'; } else { $daynight = 'n'; }
-		$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
+		$image = $result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
+		cache_image(IMAGE_CACHE.$image, 'http://l.yimg.com/a/i/us/nws/weather/gr/'.$image);
+		$array['link1'] = IMAGE_CACHE.$image;
+
 		$array['class'] = "";
 		if ($daynight == "d") {
 			$array['class'] = "w-day";
@@ -126,7 +131,9 @@ function getYahooWeather($station) {
 			$array['high'] = $forecast->{'high'};
 			$array['text'] = $forecast->{'text'};
 			$array['code'] = $forecast->{'code'};
-			$array['link1'] = "http://l.yimg.com/a/i/us/nws/weather/gr/".$forecast->{'code'}."s.png";
+			$image = $forecast->{'code'}.'s.png';
+			cache_image(IMAGE_CACHE.$image, 'http://l.yimg.com/a/i/us/nws/weather/gr/'.$image);
+			$array['link1'] = IMAGE_CACHE.$image;
 			$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = ".$forecast->{'code'});
 			$array['class'] = "";
 			if ($row['severity'] == SEVERITY_DANGER) {
@@ -213,4 +220,37 @@ function getWBUG($station) {
 	return $feedback;
 	
 	}
+
+//function cache_image($file, $url, $hours = 168, $fn = '', $fn_args = '') {
+function cache_image($file, $url, $hours = 168) {
+	//vars
+
+	$file = $_SERVER['DOCUMENT_ROOT'].$file ;
+
+
+	$current_time = time(); $expire_time = $hours * 60 * 60; $file_time = filemtime($file);
+	//decisions, decisions
+	if(file_exists($file) && ($current_time - $expire_time < $file_time)) {
+		//echo 'returning from cached file';
+		return true;
+	}
+	else {
+		$content = get_url($url);
+//		if($fn) { $content = $fn($content,$fn_args); }
+//		$content.= '<!-- cached:  '.time().'-->';
+		file_put_contents($file, $content);
+		//echo 'retrieved fresh from '.$url.':: '.$content;
+		return true;
+	}
+}
+
+function get_url($url) {
+	$ch = curl_init();
+	curl_setopt($ch,CURLOPT_URL,$url);
+	curl_setopt($ch,CURLOPT_RETURNTRANSFER,1); 
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,5);
+	$content = curl_exec($ch);
+	curl_close($ch);
+	return $content;
+}
 ?>

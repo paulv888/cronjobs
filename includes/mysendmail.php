@@ -1,5 +1,5 @@
 <?php
-function replaceText($params, &$subject, &$message = NULL, $replace = Null){
+function replaceText($params, &$subject, &$message = NULL, $callerparams = Null){
 // $type == TRADE_ALERT, HA_ALERT, SCHEME_STEPS
 
 		/*  ha_mf_devices:
@@ -150,6 +150,8 @@ function replaceText($params, &$subject, &$message = NULL, $replace = Null){
 	LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes` ON `ha_remote_schemes`.`id` = `ha_mf_monitor_triggers`.`schemeID` WHERE ha_mf_devices.id = '.$params['deviceID'];
 	}
  
+//echo "<pre>"; print_r ($params); echo "</pre>";
+ 
 	if (isset($mysql)) {
 
 		if ($data = FetchRow($mysql)) {
@@ -164,17 +166,18 @@ function replaceText($params, &$subject, &$message = NULL, $replace = Null){
 			if ($message != Null) $message=preg_replace($pattern, $data, $message);
 		}
 	}
-	if ($replace != Null) {
+	if ($callerparams != Null) {
 		unset ($pattern);
-		foreach ($replace as $key => $value) {
+		foreach ($callerparams as $key => $value) {
 			$pattern[$key]="/\{".$key."\}/";
 		}
-//echo "<pre>"; print_r ($replace); echo "</pre>";
+//echo "<pre>"; print_r ($callerparams); echo "</pre>";
 //echo "<pre>"; print_r ($pattern); echo "</pre>";
-		$subject=preg_replace($pattern, $replace, $subject);
-		if ($message != Null) $message=preg_replace($pattern, $replace, $message); // twice to support tag in tag
+		$subject=preg_replace($pattern, $callerparams, $subject);
+		if ($message != Null) $message=preg_replace($pattern, $callerparams, $message); // twice to support tag in tag
 	}
 
+	
 	return true;
 }
 

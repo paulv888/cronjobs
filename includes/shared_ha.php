@@ -155,6 +155,7 @@ function UpdateStatus ($callerID, $params)
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
 	$status = (array_key_exists('status', $params) ? $params['status'] : Null);
+	$errormessage = (array_key_exists('errormessage', $params) ? $params['errormessage'] : Null);
 
 	// Interpret status value based on current command, i.e. On/Off/Error
 	if (DEBUG_HA) echo "Status commandID:".$commandID.CRLF;
@@ -205,9 +206,13 @@ function UpdateStatus ($callerID, $params)
 			if ($status == STATUS_ON ) {
 				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON);
 				if (!empty($result)) $feedback['Triggers'] = $result;
-			} else {
+			} elseif ($status == STATUS_OFF ) {
 				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF);
 				if (!empty($result)) $feedback['Triggers'] = $result;
+			} elseif ($status == STATUS_ERROR ){
+				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ERROR, $errormessage);
+				if (!empty($result)) $feedback['Triggers'] = $result;
+
 			}
 		}
 		
@@ -314,7 +319,7 @@ function logEvent($log) {
 	//}
 }
 
-function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
+function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $errormessage = Null) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
 			'WHERE (`deviceID` = '. $deviceID. ' AND statuslink = '.$monitortype.' AND `triggertype` = '.$triggertype.')';
 	$feedback =  Null; 
@@ -322,7 +327,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			$message = executeCommand($callerID, MESS_TYPE_SCHEME, array('schemeID' => $trigger['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
+			$message = executeCommand($callerID, MESS_TYPE_SCHEME, array('schemeID' => $trigger['schemeID'], 'errormessage' => $errormessage, 'loglevel' => LOGLEVEL_MACRO)); 
 			$feedback['Trigger:'.$trigger['id']] = $message;
 			logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 
 								 'data' => GetSchemaName($trigger['schemeID']), 'message' => $message ));

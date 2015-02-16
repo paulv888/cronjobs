@@ -10,17 +10,12 @@ function Alerts($alert_textID , $params = NULL ){
 	$values = array ( 'v1', 'v2', 'v3', 'v4', 'v5' ) ;
 	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
 	$params['priorityID']  = (array_key_exists('priorityID', $params) ? $params['priorityID'] : 'NULL');
-/*	foreach ($labels as $i) {
-		$params[$i] = (array_key_exists($i, $params) ? $params[$i] : 'NULL');
-	}
-	foreach ($values as $i) {
-		$params[$i] = (array_key_exists($i, $params) ? $params[$i] : 'NULL');
-	} */
-	
-//		" FROM  `ha_alert_text` WHERE active='1' AND id = ".$alert_textID ;
+
 	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 	$description= $rowtext['description'];
 	$alert_text= $rowtext['message'];
+	
+//echo "<pre>";print_r($params);echo "</pre>";
 	if ($params['deviceID'] != Null) {
 		replaceText(Array('deviceID' => $params['deviceID']), $description, $alert_text, $params);
 	}

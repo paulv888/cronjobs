@@ -69,6 +69,7 @@ define("COMMAND_PING", 151);
 define("TRIGGER_AFTER_ON", 1);
 define("TRIGGER_AFTER_OFF", 2);
 define("TRIGGER_AFTER_CHANGE", 3);
+define("TRIGGER_AFTER_ERROR", 4);
 
 // Call executeCommand with either off these
 define ("MESS_TYPE_REMOTE_KEY", 'MESS_TYPE_REMOTE_KEY');

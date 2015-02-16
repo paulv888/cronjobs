@@ -445,8 +445,9 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 		$subject= $rowtext['description'];
 		$message= $rowtext['message'];
-		//echo $message.CRLF.CRLF;
-		replaceText(Array('deviceID' => $callerparams['deviceID']), $subject, $message);
+		//echo $commandvalue.CRLF.CRLF;
+		$callerparams['stepmessage'] = $commandvalue;
+		replaceText(Array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);
 		//echo $message.CRLF.CRLF;
 		$feedback['error'] = (sendmail($rowcommands['command'], $subject, $message, 'VloHome') == true ? false : true);
 		break;
@@ -563,6 +564,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['runscheme'] = RunScheme($callerID, $callerparams);
 			break;
 		case COMMAND_LOG_ALERT:
+			$callerparams['stepmessage'] = $commandvalue;
 			$feedback['message'] = Alerts($alert_textID, $callerparams).' created';
 			break;
 		case COMMAND_GET_GROUP:

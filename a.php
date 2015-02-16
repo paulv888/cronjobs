@@ -14,11 +14,14 @@ require_once 'includes.php';
 
  */
  
+
 $sdata = file_get_contents("php://input");
-/*$file = 'tmp1.txt';
+/*
+$file = 'tmp1.txt';
 $current = file_get_contents($file);
 $current .= $sdata."\n";
-file_put_contents($file, $current);*/
+file_put_contents($file, $current);
+*/
 
 if (!($sdata=="")) { 					//import_event
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
@@ -51,7 +54,7 @@ if (!($sdata=="")) { 					//import_event
 				UpdateWeatherCurrent($message['deviceID'], $t, $h );
 			}
 		}
-		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status']));
+		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'errormessage' => implode(" - ", $extdata)));
 		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
 	}
 }
