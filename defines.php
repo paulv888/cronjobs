@@ -119,6 +119,8 @@ define ("SYSTEM_STATUS_PAUL_TRIP", 4);
 define("DEV_TYPE_OFF", 17);
 define("DEV_TYPE_COOL", 18);
 define("DEV_TYPE_HEAT", 19);
+define("DEV_TYPE_ARD_COOL", 32);
+define("DEV_TYPE_ARD_HEAT", 31);
 define("DEV_TYPE_TEMP_HUM", 11);
 define("DEV_TYPE_ARDUINO", 16);
 

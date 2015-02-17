@@ -68,7 +68,7 @@ function loadRemoteDiv($divid) {
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (strlen($rowremotekeys['deviceID'])>0) {
-					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.typeID, inuse, monitortypeID, booticon FROM ha_mf_devices ' .
+					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, monitortypeID, booticon FROM ha_mf_devices ' .
 							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$rowremotekeys['deviceID'].
 							' AND inuse = 1' ;
 					$resdevices = mysql_query($mysql);

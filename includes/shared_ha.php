@@ -339,9 +339,11 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $error
 function UpdateWeatherNow($deviceID,$temp, $humidity = NULL, $set_point = NULL){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
+	$ttrend = NULL;
+	$htrend = NULL;
 	if ($row = FetchRow($mysql)) {
 		$ttrend = setTrend($temp, $row['temperature_c']);
-		$htrend = setTrend($humidity, $row['humidity_r']);
+		$htrend = (!is_null($humidity) ? setTrend($humidity, $row['humidity_r']) :  "NULL");
 	}
 	if (is_null($humidity)) $humidity="NULL";
 	if (is_null($set_point)) $set_point="NULL";
@@ -363,7 +365,7 @@ function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = NULL, $setpoint =
 	$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=".  $deviceID ." order by mdate desc limit 1";
 	if ($row = FetchRow($sql)) {
 		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
-		$values['htrend'] = setTrend($humidity, $row['humidity_r']);
+		if (!is_null($humidity)) $values['htrend'] = setTrend($humidity, $row['humidity_r']);
 	}
 	mysql_insert_assoc ('ha_weather_current', $values);
 	
@@ -396,5 +398,6 @@ function setTrend($new, $old) {
 	if ( $new == $old ) return 0;
 	if ( $new > $old )  return 1;
 	if ( $new < $old )  return 2;
+	return 0;
 }
 ?>
