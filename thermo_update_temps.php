@@ -7,12 +7,8 @@ define("MY_DEVICE_ID", 136);
 echo UpdateTemps();
 echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
-
-
-
 function UpdateTemps() {
 	global $pdo;
-	global $thermostats;
 	global $dbConfig;
 	
 	$today = date( 'Y-m-d' );
@@ -21,32 +17,17 @@ function UpdateTemps() {
 		/**
 		* This script updates the indoor and outdoor temperatures and today's and yesterday total run time for each thermostat
 		*/
-	
+	$thermostats = getThermoStats();
 	
 	try
 	{
-		$sql = "SELECT * FROM {$dbConfig['table_prefix']}hvac_status WHERE deviceID=?"; // Really should name columns instead of using *
-		$queryStatus = $pdo->prepare( $sql );
-	
-		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_status( deviceID, date, start_date_heat, start_date_cool, start_date_fan, heat_status, cool_status, fan_status ) VALUES( ?, ?, ?, ?, ?, ?, ?, ? )";
-		$queryInsert = $pdo->prepare( $sql );
-	
 		$sql = "UPDATE ha_mf_devices_thermostat SET tstat_uuid = ?, model = ?, fw_version = ?, wlan_fw_version = ? WHERE deviceID = ?";
 		$queryUpdateSysInfo = $pdo->prepare( $sql );
 	
-		$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
-		$queryUpdate = $pdo->prepare( $sql );
-	
-		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
-		$cycleInsert = $pdo->prepare( $sql );
-	
-		$sql = "INSERT INTO ha_weather_current ( mdate, temperature_c, set_point, ttrend, deviceID ) VALUES ('".date("Y-m-d H:i:s")."', ?, ?, ?, ?)";
-		$queryCurrent = $pdo->prepare($sql);
-		
-		$sql = "DELETE FROM {$dbConfig['table_prefix']}hvac_run_times WHERE date = ? AND deviceID = ?";
+		$sql = "DELETE FROM hvac_run_times WHERE date = ? AND deviceID = ?";
 		$queryRunDelete = $pdo->prepare($sql);
 	
-		$sql = "INSERT INTO {$dbConfig['table_prefix']}hvac_run_times( deviceID, date, heat_runtime, cool_runtime ) VALUES ( ?, ?, ?, ? )";
+		$sql = "INSERT INTO hvac_run_times( deviceID, date, heat_runtime, cool_runtime ) VALUES ( ?, ?, ?, ? )";
 		$queryRunInsert = $pdo->prepare($sql);
 	}
 	catch( Exception $e )
@@ -86,69 +67,9 @@ function UpdateTemps() {
 				logIt( 'Cool: ' . ($coolStatus ? 'ON' : 'OFF'));
 				logIt( 'Fan: ' . ($fanStatus ? 'ON' : 'OFF'));
 	
-				// Get prior state info from DB
-				$priorStartDateHeat = null;
-				$priorStartDateCool = null;
-				$priorStartDateFan = null;
-				$priorHeatStatus = false;
-				$priorCoolStatus = false;
-				$priorFanStatus = false;
 	
-				$queryStatus->execute(array($thermostatRec['deviceID']));
-				if( $queryStatus->rowCount() < 1 )
-				{ // not found - this is the first time for this thermostat
-				  // Perhaps key in on this logic to drive the deep query for the stat??
-					$startDateHeat = ($heatStatus) ? $now : null;
-					$startDateCool = ($coolStatus) ? $now : null;
-					$startDateFan = ($fanStatus) ? $now : null;
+				UpdateStatusCycle($thermostatRec['deviceID'], $heatStatus, $coolStatus, $fanStatus);
 	
-					logIt( "Inserting record with $now H $heatStatus C $coolStatus F $fanStatus SDH $startDateHeat SDC $startDateCool SDF $startDateFan for ID ". $thermostatRec['deviceID'] );
-					$queryInsert->execute( array( $thermostatRec['deviceID'], $now, $startDateHeat, $startDateCool, $startDateFan, $heatStatus, $coolStatus, $fanStatus ) );
-				}
-				else
-				{
-					while( $row = $queryStatus->fetch( PDO::FETCH_ASSOC ) )
-					{ // This SQL had better pull only one row or else there is a data integrity problem!
-						// and without an ORDER BY on the SELECT there is no way to know you're geting the same row from this each time
-						$priorStartDateHeat = $row['start_date_heat'];
-						$priorStartDateCool = $row['start_date_cool'];
-						$priorStartDateFan = $row['start_date_fan'];
-						$priorHeatStatus = (bool)$row['heat_status'];
-						$priorCoolStatus = (bool)$row['cool_status'];
-						$priorFanStatus = (bool)$row['fan_status'];
-					}
-					logIt( "$stat->uuid GOT PRIOR STATE H $priorHeatStatus C $priorCoolStatus F $priorFanStatus SDH $priorStartDateHeat SDC $priorStartDateCool SDC $priorStartDateFan" );
-	
-					// update start dates if the cycle just started
-					$newStartDateHeat = (!$priorHeatStatus && $heatStatus) ? $now : $priorStartDateHeat;
-					$newStartDateCool = (!$priorCoolStatus && $coolStatus) ? $now : $priorStartDateCool;
-					$newStartDateFan = (!$priorFanStatus && $fanStatus) ? $now : $priorStartDateFan;
-	
-					// if status has changed from on to off, update hvac_cycles
-					if( $priorHeatStatus && !$heatStatus )
-					{
-						logIt( "$stat->uuid Finished Heat Cycle - Adding Hvac Cycle Record for $stat->uuid 1 $priorStartDateHeat $now" );
-						$cycleInsert->execute( array( $thermostatRec['deviceID'], 1, $priorStartDateHeat, $now ) );
-						$newStartDateHeat = null;
-					}
-					if( $priorCoolStatus && !$coolStatus )
-					{
-						logIt( "$stat->uuid Finished Cool Cycle - Adding Hvac Cycle Record for $stat->uuid 2 $priorStartDateCool $now" );
-						$cycleInsert->execute( array( $thermostatRec['deviceID'], 2, $priorStartDateCool, $now ) );
-						$newStartDateCool = null;
-					}
-					if( $priorFanStatus && !$fanStatus )
-					{
-						logIt( "$stat->uuid Finished Fan Cycle - Adding Hvac Cycle Record for $stat->uuid 3 $priorStartDateFan $now" );
-						$cycleInsert->execute( array( $thermostatRec['deviceID'], 3, $priorStartDateFan, $now ) );
-						$newStartDateFan = null;
-					}
-					
-					// update the status table
-					logIt( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for UUID $stat->uuid" );
-					$queryUpdate->execute( array( $now, $newStartDateHeat, $newStartDateCool, $newStartDateFan, $heatStatus, $coolStatus, $fanStatus, $thermostatRec['deviceID'] ) );
-				}
-				
 				// Instead of asking the thermostat what his model is, rely upon the entry in the thermostat table
 				if( strstr($stat->model, 'CT80') !== false )
 				{ // Get indoor humidity for CT80
@@ -173,28 +94,11 @@ function UpdateTemps() {
 				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
 				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp), NULL , to_celcius($target));
+				UpdateWeatherCurrent($thermostatRec['deviceID'], to_celcius($stat->temp), NULL, to_celcius($target));
 				UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'commandvalue' => to_celcius($stat->temp) ));
-
-	
-	
-				$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=". $thermostatRec['deviceID'] ." order by mdate desc limit 1";
-				if ($row = FetchRow($sql)) {
-					$last = strtotime($row['mdate']);
-					if (timeExpired($last, 60) ||  abs(to_celcius($stat->temp) - $row['temperature_c']) >= 1 || abs(to_celcius($target) - $row['set_point']) >= 1) {
-						logit( "Insert row into Weather Current" );
-						$ctemp = to_celcius($stat->temp);
-						$ttrend = setTrend($ctemp, $row['temperature_c']);
-						$queryCurrent->execute(array( $ctemp, to_celcius($target), $ttrend, $thermostatRec['deviceID']));
-					}
-				}
 	
 				//$runTimeData = $stat->getDataLog();
 				$stat->getDataLog();
-	
-				// Need to verify success of thermostat query before deleting/inserting data...
-				// Unless it throws an exception?
-	
-	
 				if ($thermostatRec['deviceID']<>999) {
 					// Remove zero or one rows for today and then insert one row for today.
 					$queryRunDelete->execute( array($today, $thermostatRec['deviceID']) );
@@ -206,56 +110,7 @@ function UpdateTemps() {
 					logIt( "Run Time Yesterday - Inserting RTH {$stat->runTimeHeatYesterday} RTC {$stat->runTimeCoolYesterday} U $stat->uuid T $yesterday" );
 					$queryRunInsert->execute( array($thermostatRec['deviceID'], $yesterday, $stat->runTimeHeatYesterday, $stat->runTimeCoolYesterday) );
 				} else {	// 114 = broke so update from run-cylces
-						// update hvac runtime from run-cycles broken timer upstarts
-						// Clear/Heat/Cool (Yesterday/Today)
-						$sql = 'delete FROM `hvac_run_times` 
-								WHERE deviceID = 114 AND date = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
-						RunQuery($sql);
-						$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
-									SELECT "114", subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
-						RunQuery($sql);
-						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
-								(
-									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-									FROM `hvac_cycles`
-									WHERE deviceID = 114 AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
-									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
-								) c ON h.deviceID = c.deviceID AND c.date = h.date
-								SET `heat_runtime` = c.runtime';
-						RunQuery($sql);
-						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
-								(
-									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-									FROM `hvac_cycles`
-									WHERE deviceID = 114 AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
-									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
-								) c ON h.deviceID = c.deviceID AND c.date = h.date
-								SET `cool_runtime` = c.runtime';
-						RunQuery($sql);
-						$sql = 'delete FROM `hvac_run_times` 
-								WHERE deviceID = 114 AND date = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
-						RunQuery($sql);
-						$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
-									SELECT "114", DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
-						RunQuery($sql);
-						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
-								(
-									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-									FROM `hvac_cycles`
-									WHERE deviceID = 114 AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
-									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
-								) c ON h.deviceID = c.deviceID AND c.date = h.date
-								SET `heat_runtime` = c.runtime';
-						RunQuery($sql);
-						$sql = 'UPDATE `hvac_run_times` h INNER JOIN
-								(
-									SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-									FROM `hvac_cycles`
-									WHERE deviceID = 114 AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
-									GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
-								) c ON h.deviceID = c.deviceID AND c.date = h.date
-								SET `cool_runtime` = c.runtime';
-						RunQuery($sql);
+					UpdateDailyRuntime(999);
 				}
 				
 				echo UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
@@ -275,6 +130,5 @@ function UpdateTemps() {
 		fclose($lock);
 	}
 }
-
 //touch( '/home/fratell1/freitag.theinscrutable.us/thermo2/scripts/thermo_update_temps.end' );
 ?>

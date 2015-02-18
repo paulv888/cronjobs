@@ -42,20 +42,20 @@ if (!($sdata=="")) { 					//import_event
 	logEvent($message);
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
-                if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
-                        if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
-                        $h = NULL;
-                        if (array_key_exists('ExtData', $rcv_message)) {
-                                if (array_key_exists('T', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['T'];
-                                $h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
-                        }
-                        if (isset($t)) {
-                                UpdateWeatherNow($message['deviceID'], $t, $h );
-                                UpdateWeatherCurrent($message['deviceID'], $t, $h );
-                        }
-                }
-     		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {
-//Add running or not to HVAC cylcles and calc hours/day
+		if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
+				if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
+				$h = NULL;
+				if (array_key_exists('ExtData', $rcv_message)) {
+						if (array_key_exists('T', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['T'];
+						$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
+				}
+				if (isset($t)) {
+						UpdateWeatherNow($message['deviceID'], $t, $h );
+						UpdateWeatherCurrent($message['deviceID'], $t, $h );
+				}
+		}
+		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {
+			//Add running or not to HVAC cylcles and calc hours/day
 //{"Device" : "202" , "Command" : "285" , "Status" : "0" , "Value" : "438" , "InOut" : "1" , "ExtData" : {"V":"438","R":"0","S":"500","T":"10"}}
 //{"Device" : "208" , "Command" : "285" , "Status" : "1" , "Value" : "27" , "InOut" : "1" , "ExtData" : {"V":"27","R":"1","S":"24","T":"1"}}
 			if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
@@ -65,6 +65,16 @@ if (!($sdata=="")) { 					//import_event
 				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
 				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
 			}
+			$heatStatus = false;
+			$coolStatus = false;
+			$fanStatus  = false;
+			if ($message['typeID'] == DEV_TYPE_ARD_HEAT) {
+				$heatStatus = $rcv_message['ExtData']['R'] == 1;
+			} else {
+				$coolStatus = $rcv_message['ExtData']['R'] == 1;
+			}
+			UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
+			UpdateDailyRuntime($message['deviceID']);
 			if (isset($t)) {
 			 	UpdateWeatherNow($message['deviceID'], $t, $h , $s);
 				UpdateWeatherCurrent($message['deviceID'], $t, $h, $s);
@@ -73,18 +83,5 @@ if (!($sdata=="")) { 					//import_event
 		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'errormessage' => implode(" - ", $extdata)));
 		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
 	}
-}
-
-
-
-function getDeviceType($deviceID){
-
-	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ="'.$deviceID.'"';
-	if ($rowdevice = FetchRow($mysql)) {
-		return $rowdevice['typeID'];
-	}
-	
-	return false ;
-	
 }
 ?>

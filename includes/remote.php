@@ -1,6 +1,8 @@
 <?php
 function loadremote($remoteID) {
-    $resdivs = mysql_query('SELECT * FROM ha_remote_divs WHERE showonremote = "-1" AND remoteID = '.$remoteID.' ORDER BY sort');
+
+     $select = (substr  ($_SERVER['REMOTE_ADDR'],0,9) == '192.168.2' ? 3 : 2);
+    $resdivs = mysql_query('SELECT * FROM ha_remote_divs WHERE showonremote != "0" AND showonremote < "'.$select.'" AND remoteID = '.$remoteID.' ORDER BY sort');
 	$numrows = mysql_num_rows ($resdivs);
     $mycount = 1;
 	if ($numrows > 1) {
@@ -27,14 +29,14 @@ function loadremote($remoteID) {
 		echo '</ul>';
 		echo '<div id="myTabContent" class="tab-content">';
 	}
-	loadRemotePaneContent($remoteID);
+	loadRemotePaneContent($remoteID, $select);
 	if ($numrows > 1) echo '</div></div>';
 	echo '<div id="spinner">Executing...</div>';
 }
 
-function loadRemotePaneContent($remoteID) {
+function loadRemotePaneContent($remoteID, $select) {
 
-    $resdivs = mysql_query("SELECT * FROM ha_remote_divs WHERE showonremote = '-1' AND remoteID = ".$remoteID." ORDER BY sort");
+    $resdivs = mysql_query('SELECT * FROM ha_remote_divs WHERE showonremote != "0" AND showonremote < "'.$select.'" AND remoteID = '.$remoteID.' ORDER BY sort');
 	$mycount=1;
     while ($rowdivs = mysql_fetch_array($resdivs)) {
 		if ($mycount==1) {

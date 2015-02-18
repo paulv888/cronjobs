@@ -25,10 +25,10 @@
 function HvacToggle($callerID, $deviceID, $status = NULL) {
 
 global $lock;
-global $thermostats;
 
 $now = date( 'Y-m-d H:i:s' );
 
+	$thermostats = getThermoStats();
 	$thermostatRec = $thermostats[$deviceID];
 	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
 	{

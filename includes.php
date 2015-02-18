@@ -6,8 +6,8 @@ include_once 'defines.php';
 
 include_once 'process.php';
 include_once 'thermo_process.php';
-include_once 'thermo_common.php';
 
+include_once 'includes/thermo_common.php';
 include_once 'includes/remote.php';
 include_once 'includes/shared_db.php';
 include_once 'includes/shared_file.php';

@@ -167,7 +167,6 @@ class Stat
 	{
 		$commandURL = $this->URL . $command;
 
-		
 		curl_setopt($this->ch, CURLOPT_URL,$commandURL);
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($value));
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     

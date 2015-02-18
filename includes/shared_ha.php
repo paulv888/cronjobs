@@ -262,61 +262,41 @@ function logEvent($log) {
 	if ($log['result'] === FALSE) $log['result'] = "FALSE";
 	if ($log['result'] === TRUE) $log['result'] = "TRUE";
 	
-	//
-	// Check for repeat logs
-	//
 	$repeatcount=1;
-	//$mysql = 'SELECT * FROM `ha_events` ' .
-	//		' WHERE `inout` = '.$log['inout']. ' AND `callerID` ='.$log['callerID'].' AND commandID = '.$log['commandID'].
-	//		' AND  DATE_ADD(`mdate`,INTERVAL  65 SECOND) > "'.date("Y-m-d H:i:s").'"  AND  repeatcount < 10';
-
-	//if ($log['deviceID'] != Null) $mysql .= ' AND `deviceID` = '.$log['deviceID']; else $mysql .= ' AND `deviceID` IS NULL';
-	//if ($log['data'] != Null) $mysql .= ' AND `data` = "'.$log['data'].'"'; else $mysql .= ' AND `data` IS NULL';
-
-	//if (!$resevents=mysql_query($mysql)) {	
-	//	mySqlError($mysql);
-	//	return false;
-	//} 
-	//if ($rowevents=mysql_fetch_array($resevents)) {
-	//	$repeatcount = $rowevents['repeatcount'] + 1;
-	//	$mysql='UPDATE `ha_events` SET `repeatcount` = '.$repeatcount. ' WHERE `ha_events`.`id` ='.$rowevents['id'];
-	//	if (!mysql_query($mysql)) mySqlError($mysql);
-	//} else {
-		//
-		//	Get device type and monitorid
-		//
-		$log['typeID'] = NULL;
-		if ($log['deviceID'] != Null) {
-			$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus FROM `ha_mf_devices` d " . 
-						" LEFT JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
-						" WHERE d.id = ".$log['deviceID']; 
-			if (!$resdevice=mysql_query($mysql)) {
-				mySqlError($mysql); 
-				return false;
-			}
-			$rowdevice=mysql_fetch_array($resdevice);
-			$log['typeID'] = $rowdevice['typeID'];
-			if ($rowdevice['invertstatus'] === 0) $log['extdata'] = "Inverted ".$log['extdata']; 
+	//
+	//	Get device type and monitorid
+	//
+	$log['typeID'] = NULL;
+	if ($log['deviceID'] != Null) {
+		$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus FROM `ha_mf_devices` d " . 
+					" LEFT JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
+					" WHERE d.id = ".$log['deviceID']; 
+		if (!$resdevice=mysql_query($mysql)) {
+			mySqlError($mysql); 
+			return false;
 		}
-		
-		$log['mdate'] = date("Y-m-d H:i:s");
+		$rowdevice=mysql_fetch_array($resdevice);
+		$log['typeID'] = $rowdevice['typeID'];
+		if ($rowdevice['invertstatus'] === 0) $log['extdata'] = "Inverted ".$log['extdata']; 
+	}
+	
+	$log['mdate'] = date("Y-m-d H:i:s");
 
-		if (is_null($log['loglevel']))	{
-			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
-			if (!$rescommand=mysql_query($mysql)) {
-				mySqlError($mysql);
-			} else {
-				$rowcommand=mysql_fetch_array($rescommand);
-				$log['loglevel'] = $rowcommand['loglevel'];
-			}
+	if (is_null($log['loglevel']))	{
+		$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
+		if (!$rescommand=mysql_query($mysql)) {
+			mySqlError($mysql);
+		} else {
+			$rowcommand=mysql_fetch_array($rescommand);
+			$log['loglevel'] = $rowcommand['loglevel'];
 		}
-		if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
+	}
+	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
+	
+	if (DEBUG_HA) echo "***log";
+	if (DEBUG_HA) print_r($log);
 		
-		if (DEBUG_HA) echo "***log";
-		if (DEBUG_HA) print_r($log);
-			
-		mysql_insert_assoc ("ha_events", $log);
-	//}
+	mysql_insert_assoc ("ha_events", $log);
 }
 
 function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $errormessage = Null) {
@@ -362,13 +342,35 @@ function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = NULL, $setpoint =
 	$values['temperature_c'] = $temp_c;
 	$values['humidity_r'] = $humidity;
 	$values['set_point'] = $setpoint;
-	$sql = "SELECT * FROM `ha_weather_current`  WHERE deviceID=".  $deviceID ." order by mdate desc limit 1";
+	$sql = 'SELECT * FROM `ha_weather_current`  WHERE deviceID='.  $deviceID .' order by mdate desc limit 1';
 	if ($row = FetchRow($sql)) {
 		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
 		if (!is_null($humidity)) $values['htrend'] = setTrend($humidity, $row['humidity_r']);
+		$last = strtotime($row['mdate']);
+		if (timeExpired($last, 55) ||  abs($temp_c - $row['temperature_c']) >= 1 || abs($setpoint - $row['set_point']) >= 1) {
+			// Collect runtime since last update
+			// Force runtime cycle - In case cycle didn't end yet O still want to create graph point
+			$sdate = $row['mdate'];
+			$edate = $values['mdate'];
+			$typeID = getDeviceType($deviceID);
+			if ($typeID == DEV_TYPE_HEAT || $typeID == DEV_TYPE_ARD_HEAT) {
+				$system = 1;
+				UpdateStatusCycle($deviceID, false, false, false, true);		// Force cycle insert
+			}
+			if ($typeID == DEV_TYPE_COOL || $typeID == DEV_TYPE_ARD_COOL) {
+				$system = 2;
+				UpdateStatusCycle($deviceID, false, false, false, true);		// Force cycle insert
+			}
+			$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+					FROM `hvac_cycles`
+					WHERE deviceID ='.$deviceID.' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
+					GROUP BY deviceID, system';
+			if ($row = FetchRow($sql)) {
+				$values['runtime'] = $row['runtime'];
+			}
+			mysql_insert_assoc ('ha_weather_current', $values);
+		}
 	}
-	mysql_insert_assoc ('ha_weather_current', $values);
-	
 }
 
 function UpdateThermType($deviceID, $typeID){
@@ -399,5 +401,15 @@ function setTrend($new, $old) {
 	if ( $new > $old )  return 1;
 	if ( $new < $old )  return 2;
 	return 0;
+}
+function getDeviceType($deviceID){
+
+	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ="'.$deviceID.'"';
+	if ($rowdevice = FetchRow($mysql)) {
+		return $rowdevice['typeID'];
+	}
+	
+	return false ;
+	
 }
 ?>
