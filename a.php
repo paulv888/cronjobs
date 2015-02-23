@@ -80,7 +80,8 @@ if (!($sdata=="")) { 					//import_event
 				UpdateWeatherCurrent($message['deviceID'], $t, $h, $s);
 			}
 		}
-		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'errormessage' => implode(" - ", $extdata)));
+		$errormessage = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
+		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'errormessage' => $errormessage));
 		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
 	}
 }
