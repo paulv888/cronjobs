@@ -164,5 +164,7 @@ define("THERMO_CONNECTION_TIMEOUT", 10);
 define("REPEAT_ONCE_DAY", 0);
 define("REPEAT_ONCE_HOUR", 60);
 
+define("MY_SUBNET", "192.168.2");
+
 define("CRLF", "</br>\n");
 ?>
