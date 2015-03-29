@@ -22,12 +22,21 @@ function getDuskDawn() {
 //echo trim(htmlspecialchars($get->getresponse())).CRLF;
             	if ($feedback) {
               		$xml = new SimpleXMLElement(trim($get->getresponse()));
-//	print_r($xml);
-			$mySql = 'UPDATE `ha_mf_device_extra` SET `dawn` = "'.$xml->morning->twilight->civil. '", `dusk` ="'.$xml->evening->twilight->civil.'" WHERE deviceID = {DEVICE_DARK_OUTSIDE}'; 
-			if (RunQuery($mySql)) {
+					if ($xml->date->dst == "1") {
+						$dawn = date('H:i:s', strtotime(date('H:i:s',strtotime($xml->morning->twilight->civil)). ' -1 hour')); 
+						$dusk = date('H:i:s', strtotime(date('H:i:s',strtotime($xml->evening->twilight->civil)). ' -1 hour')); 
+					} else {
+						$dawn = $xml->morning->twilight->civil;
+						$dusk = $xml->evening->twilight->civil;
+					}
+					
+					
+//print_r($xml);
+					$mySql = 'UPDATE `ha_mf_device_extra` SET `dawn` = "'.$dawn. '", `dusk` ="'.$dusk.'" WHERE deviceID = {DEVICE_DARK_OUTSIDE}'; 
+					if (RunQuery($mySql)) {
             			UpdateLink (DEVICE_DARK_OUTSIDE);
-			}
-                	$success = true; 
+					}
+					$success = true; 
             	}
 		}
             catch (Exception $e) {
