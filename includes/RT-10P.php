@@ -63,11 +63,12 @@ tcp   192.168.2.110:62589                      208.111.131.125:443              
 	$noresult = preg_match_all($pattern, $response, $matches);
 	$lasterr = preg_last_error();
 	$t1 = '';
-	if ($matches[1][1] != '')
+	if (array_key_exists(1, $matches[1]) and $matches[1][1] != '')
     {
         $t1=$matches[1][1];
     } else {
     	echo $response;
+		return -1;
     } 
     	
 //print_r($t1);    
@@ -170,6 +171,7 @@ function FindAddress($ip) {
 function ImportSessions() {
  
 	$sessionsresponse=GetSessions();
+	if ($sessionsresponse < 0) return -1;
 	
 	$sessionsimported=0;
    	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
@@ -289,12 +291,12 @@ function GetDeviceList() {
 // echo "<pre>";
 //print_r($matches);
 	$lasterr = preg_last_error();
-	if ($matches[0][0] != '')
+	if (array_key_exists(0, $matches[0]) and $matches[0][0] != '')
     {
         $t1 = explode("<", $matches[1][0]);
     } else {
     	echo $response;
-		return 0;
+		return -1;
     } 
    	
 	unset($t1[0]);
