@@ -282,13 +282,38 @@ function ImportSessions() {
 function GetDeviceList() {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
-	$post = RestClient::get("http://192.168.2.1/device-map/clients.asp",null,FIREWALL_USER,FIREWALL_PASSWORD);
+	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,FIREWALL_USER,FIREWALL_PASSWORD);
 	$response= $post->getResponse();
 	$post = RestClient::get("http://192.168.2.1/Logout.asp");
 
-	$pattern = "/client_list_array = '(.*?)';/si";
+	$pattern = "/fromNetworkmapd: '(.*?)'./si";
+	
+	
+/* 
+ * 	There is more info here, wired wireless, DB, 2 or 5gb ...
+ * 
+?originDataTmp = originData;
+originData = {
+customList: decodeURIComponent('').replace(/>/g, ">").replace(/</g, "<").split('<'),
+asusDevice: decodeURIComponent('%3C3%3ERT%2DN65U%3E192%2E168%2E2%2E1%3E74%3AD0%3A2B%3A8B%3A08%3AA4%3E0%3E%3E%3Evlohome%3E255%2E255%2E255%2E0%3C3%3ERT%2DN10P%3E192%2E168%2E2%2E2%3EE0%3A3F%3A49%3AF0%3AF7%3AB8%3E0%3E%3E%3Evlohome1%3E255%2E255%2E255%2E0').replace(/>/g, ">").replace(/</g, "<").split('<'),
+fromDHCPLease: '',
+staticList: decodeURIComponent('').replace(/>/g, ">").replace(/</g, "<").split('<'),
+fromNetworkmapd: '<6>>192.168.2.110>54:04:A6:0A:58:20>0>0>0<0>>192.168.2.2>E0:3F:49:F0:F7:B8>0>0>0<0>>192.168.2.101>52:54:00:62:E5:67>0>0>0<0>>192.168.2.100>00:00:00:00:00:01>0>0>0<0>>192.168.2.102>52:54:00:30:98:3C>0>0>0<0>>192.168.2.104>54:04:A6:80:F9:69>0>0>0<0>>192.168.2.120>00:1E:C0:11:D5:AA>0>0>0<0>>192.168.2.125>00:0E:F3:1E:CC:75>0>0>0<0>>192.168.2.131>00:01:4A:2F:B6:E6>0>0>0<0>>192.168.2.132>00:18:1A:0C:30:3E>0>0>0<0>>192.168.2.162>F0:25:B7:A3:44:56>0>0>0<0>>192.168.2.195>4C:82:CF:F0:E6:BE>0>0>0<0>>192.168.2.127>14:7D:C5:74:11:F9>0>0>0<0>>192.168.2.128>88:30:8A:1A:0A:02>0>0>0<0>>192.168.2.218>60:A1:0A:C0:40:61>0>0>0<0>>192.168.2.122>44:A7:CF:51:1E:D6>0>0>0<0>>192.168.2.138>00:14:D1:7A:E3:77>0>0>0'.replace(/>/g, ">").replace(/</g, "<").split('<'),
+fromBWDPI: ''.replace(/>/g, ">").replace(/</g, "<").split('<'),
+wlList_2g: [["00:14:D1:7A:E3:77", "Yes", "", "-62"], ["F0:25:B7:A3:44:56", "Yes", "", "-54"], ["00:18:1A:0C:30:3E", "Yes", "", "-79"], ["00:1E:C0:11:D5:AA", "Yes", "", "-79"], ["4C:82:CF:F0:E6:BE", "Yes", "", "-66"], ["14:7D:C5:74:11:F9", "Yes", "", "-63"], ["88:30:8A:1A:0A:02", "Yes", "", "-68"], ["60:A1:0A:C0:40:61", "Yes", "", "-77"], ["44:A7:CF:51:1E:D6", "Yes", "", "-53"]],
+wlList_5g: [],
+qosRuleList: decodeURIComponent('%3CWeb%20Surf%3E%3E80%3Etcp%3E0%7E512%3E0%3CHTTPS%3E%3E443%3Etcp%3E0%7E512%3E0%3CFile%20Transfer%3E%3E80%3Etcp%3E512%7E%3E3%3CFile%20Transfer%3E%3E443%3Etcp%3E512%7E%3E3').replace(/>/g, ">").replace(/</g, "<").split('<')
+}
+networkmap_fullscan = '0';
+if(networkmap_fullscan == 1) genClientList();
+*/
+
+
+
+ 
 	$noresult = preg_match_all($pattern, $response, $matches);
-// echo "<pre>";
+//echo "<pre>";
+//echo $response;
 //print_r($matches);
 	$lasterr = preg_last_error();
 	if (array_key_exists(0, $matches[0]) and $matches[0][0] != '')
@@ -309,7 +334,7 @@ function GetDeviceList() {
 		$deviceslist[] = explode(">", $row);
 	}
 
-	//echo "<pre>";
+//echo "<pre>";
 // print_r($deviceslist);
     
 	$devicesimported=0;
