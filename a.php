@@ -1,6 +1,7 @@
 <?php
 require_once 'includes.php';
 
+define("MY_DEVICE_ID", 214);
 /*
 	 Process can execute following commands
 	 1) Store data to HA_Database

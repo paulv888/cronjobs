@@ -120,7 +120,7 @@ function GetPrices($input,$output) {
 					$last=floatval($quote["l91"]);
 				}  else {
 					$date= date("Y-m-d H:i:s");
-					$last=floatval($quote["l10"]);
+					$last=floatval((array_key_exists('l10', $quote) ? $quote["l10"] : 0));
 				}
 			}
 			if (isset($quote["c63"])) {
@@ -129,11 +129,11 @@ function GetPrices($input,$output) {
 				$change=0;
 			}
 			if (isset ($quote["v53"])) $volume=$quote["v53"];
-			$percchange=floatval($quote["p43"]);
+			$percchange=floatval((array_key_exists('p43', $quote) ? $quote["p43"] : 0));
 			if (isset($quote["l84"])) {
 				$previousclose=$quote["l84"]-$change;
 			} else {
-				$previousclose=$quote["l10"]-$change;
+				$previousclose=(array_key_exists('l10', $quote) ? $quote["l10"]-$change : 0);
 			}
 			//					" `pricedirection` = '".$pricedirection."'," .
 
