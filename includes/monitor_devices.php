@@ -3,7 +3,7 @@ function monitorDevices($linkmonitor) {
 	$mysql = 'SELECT `ha_mf_devices`.`id` AS `deviceID` , `ha_mf_devices`.`monitortypeID` AS `monitortypeID` , `ha_mf_monitor_link`.`linkmonitor` AS `linkmonitor` , '.
 			'`ha_mf_monitor_link`.`pingport` AS `pingport` FROM ha_mf_devices '.
 			' LEFT JOIN `ha_mf_monitor_link` ON `ha_mf_devices`.`id` = `ha_mf_monitor_link`.`deviceID` '.
-			' WHERE (`ha_mf_devices`.`monitortypeID` > 1 AND `linkmonitor` = "'.$linkmonitor.'")';
+			' WHERE (`ha_mf_devices`.`inuse` = 1 AND `ha_mf_devices`.`monitortypeID` > 1 AND `linkmonitor` = "'.$linkmonitor.'")';
 	
 	if (!$reslinks = mysql_query($mysql)) {
 		mySqlError($mysql); 
