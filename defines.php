@@ -3,6 +3,7 @@
 define("INSTEON_SLEEP_MICRO", 300000); // 500mS
 
 // Monitor Link Values
+define("MONITOR_NONE", 1);
 define("MONITOR_LINK", 2);
 define("MONITOR_STATUS", 3);
 define("MONITOR_LINK_STATUS", 4);
@@ -165,6 +166,7 @@ define("REPEAT_ONCE_DAY", 0);
 define("REPEAT_ONCE_HOUR", 60);
 
 define("MY_SUBNET", "192.168.2");
+define("MY_VPN_SUBNET", "192.168.10");
 
 define("CRLF", "</br>\n");
 ?>

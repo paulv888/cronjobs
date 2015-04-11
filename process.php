@@ -152,7 +152,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 		} else {
 			foreach ($selection AS $remotekeyID) {
 				$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-				$feedback[]['updatestatus']=GetStatus($callerID, Array ( 'deviceID' => $rowkeys['deviceID']));
+				$feedback[]['updatestatus']=GetStatusLink($callerID, Array ( 'deviceID' => $rowkeys['deviceID']));
 			}
 		}
 	}
@@ -162,7 +162,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 	if (DEBUG_RETURN) print_r($feedback);
 	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
 
-	$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1);
+	$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1);
 	doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	if (DEBUG_RETURN) echo "Filtered: >";
 	if (DEBUG_RETURN) print_r($result);
@@ -666,7 +666,7 @@ function doFilter(&$arr, $nodefilter, &$filter, &$result) {
     return;
 }
 
-function RemoteKeys ($result) {
+function RemoteKeys($result) {
 
 // add link status to this
 
@@ -690,16 +690,28 @@ function RemoteKeys ($result) {
 					$last_id=GetLastKey($feedback);
 					$feedback[$last_id]["remotekey"] = $rowkeys['id'];
 					if ($node == 'updatestatus') {
-						if ($res['updatestatus']['status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
-							$feedback[$last_id]["status"]="off";
-						} elseif ($res['updatestatus']['status'] == STATUS_UNKNOWN) {
-							$feedback[$last_id]["status"]="unknown";
-						} elseif ($res['updatestatus']['status'] == STATUS_ON) {
-							$feedback[$last_id]["status"]="on";
-						} elseif ($res['updatestatus']['status'] == STATUS_ERROR) {
-							$feedback[$last_id]["status"]="error";
-						} else { 										// else assume a value
-							$feedback[$last_id]["status"]="undefined";
+						if (array_key_exists('status', $res['updatestatus'])) {
+							if ($res['updatestatus']['status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
+								$feedback[$last_id]["status"]="off";
+							} elseif ($res['updatestatus']['status'] == STATUS_UNKNOWN) {
+								$feedback[$last_id]["status"]="unknown";
+							} elseif ($res['updatestatus']['status'] == STATUS_ON) {
+								$feedback[$last_id]["status"]="on";
+							} elseif ($res['updatestatus']['status'] == STATUS_ERROR) {
+								$feedback[$last_id]["status"]="error";
+							} else { 										// else assume a value
+								$feedback[$last_id]["status"]="undefined";
+							}
+						}
+						if (array_key_exists('link', $res['updatestatus'])) {
+							if ($res['updatestatus']['link'] == LINK_DOWN) {    	
+									$feedback[$last_id]["link"]="link-down";
+								} elseif ($res['updatestatus']['link'] == LINK_UP) {
+								} elseif ($res['updatestatus']['link'] == LINK_WARNING) {
+									$feedback[$last_id]["link"]="link-down";
+								} else { 										// else assume a value
+									$feedback[$last_id]["link"]="undefined";
+							}
 						}
 					}
 				}

@@ -109,7 +109,7 @@ function loadRemoteDiv($divid) {
 							$resmonitor = mysql_query("SELECT link FROM ha_mf_monitor_link WHERE deviceID =".$rowremotekeys['deviceID']);
 							if  ($resmonitor) {
 								$rowmonitor = mysql_fetch_array($resmonitor);
-									$link = ($rowmonitor['link'] == LINK_UP ? '' : ($rowmonitor['link'] == LINK_WARNING ? 'btn-warning' : 'btn-danger'));
+									$link = ($rowmonitor['link'] == LINK_UP ? '' : ($rowmonitor['link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
 							}
 						}
 					}

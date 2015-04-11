@@ -221,20 +221,29 @@ function UpdateStatus ($callerID, $params)
 	return;
 }	
 
-function GetStatus ($callerID, $params)
+function GetStatusLink($callerID, $params)
 {
 //$deviceID, $commandID = NULL, $status = NULL) 
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 
 	// Only retrieve if Monitor Type = Status Monitor
-	$mysql = "SELECT typeID, inuse, monitortypeID, deviceID, status, statusDate, invertstatus, commandvalue FROM `ha_mf_devices` d " . 
-				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
-				" WHERE deviceID = ".$deviceID. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
+	$mysql = "SELECT typeID, inuse, monitortypeID FROM `ha_mf_devices`  WHERE id = ".$deviceID. " AND (monitortypeID <> ".MONITOR_NONE.")"; 
 	//if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
 	if ($row = FetchRow($mysql)) {
 		$feedback['deviceID'] = $deviceID;
-		$feedback['status'] = $row['status'];
-		$feedback['commandvalue'] = $row['commandvalue'];
+		if ($row['monitortypeID'] == MONITOR_STATUS or $row['monitortypeID'] == MONITOR_LINK_STATUS) { 
+			$mysql = "SELECT status, statusDate, commandvalue FROM `ha_mf_monitor_status`  WHERE deviceID = ".$deviceID. ""; 
+			if ($rows = FetchRow($mysql)) {
+				$feedback['status'] = $rows['status'];
+				$feedback['commandvalue'] = $rows['commandvalue'];
+			}
+		}
+		if ($row['monitortypeID'] == MONITOR_LINK or $row['monitortypeID'] == MONITOR_LINK_STATUS) { 
+			$mysql = "SELECT link FROM `ha_mf_monitor_link`  WHERE deviceID = ".$deviceID. ""; 
+			if ($rowl = FetchRow($mysql)) {
+				$feedback['link'] = $rowl['link'];
+			}
+		}
 		return $feedback;
 	}
 	return;
