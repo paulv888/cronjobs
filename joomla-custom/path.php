@@ -22,7 +22,7 @@ class PhocaGalleryPath extends JObject
 			$baseFront						= JURI::root(true);
 //			$instance->image_abs 			= JPATH_ROOT . DS . 'images' . DS . 'phocagallery' . DS ;
 //			$instance->image_rel			= 'images/phocagallery/';
-			$instance->image_abs 			= '/home/public_html/data/phocagallery' . DS ;
+			$instance->image_abs 			= JPATH_ROOT . '/data/phocagallery' . DS ;
 			$instance->image_rel			= 'data/phocagallery/';
 			$instance->avatar_abs 			= JPATH_ROOT . DS . 'images' . DS . 'phocagallery' . DS . 'avatars' . DS ;
 			$instance->avatar_rel			= 'images/phocagallery/avatars/';

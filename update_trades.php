@@ -729,8 +729,8 @@ function AlertsActionsTR(){
 		//echo "Nothing to do<br/>\r\n";
 		return 0;
 	}
-	$headers = 'From: pvloon66@gmail.com' . "\r\n" .
-    			'Reply-To: pvloon66@gmail.com' . "\r\n" .
+	$headers = 'From: myvlohome@gmail.com' . "\r\n" .
+    			'Reply-To: myvloshome@gmail.com' . "\r\n" .
     			'X-Mailer: PHP/' . phpversion();
 	$send = 0;
 	while ($actions = mysql_fetch_assoc($resactions)) {

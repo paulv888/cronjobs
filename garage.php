@@ -20,7 +20,7 @@
 </head>
 <body style="padding:0px">
 <?php
-   require_once '/home/public_html/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/includes.php'; 
+   require_once 'includes.php'; 
    loadRemote(6);?>
    <div id='system-message-container'></div>
    <div class="pull-right" style="padding:2px"><input type="button" class="btn button btn-info"  value="Refresh" 
