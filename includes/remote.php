@@ -170,14 +170,14 @@ function loadRemoteDiv($divid) {
 					if (strlen($class)>1) echo ' '.$class;
 					echo '"';
 					if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
-					echo ' remotekey="'.$rowremotekeys['id'].'">';
+					echo ' data-remotekey="'.$rowremotekeys['id'].'">';
 					if ($booticon != null) {								// if icon then do icon <i>
 						echo '<i class="btn-icon '.$booticon;
 						if ($text != null) echo ' '.'rem-icon-left';
 						echo '">';
 						echo '</i>';
 					} 
-					if ($text != null) echo '<div>'.$text.'</div>';
+					if ($text != null) echo ''.$text.'';
 
 					//echo '</p>';
 					//echo "</td>";
@@ -191,7 +191,7 @@ function loadRemoteDiv($divid) {
 						if (strlen($link)>1) echo ' '.$link;
 						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
-						echo ' remotekey="'.$rowremotekeys['id'].'"';
+						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo ' type="button" data-toggle="dropdown">';
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
 //							echo '<i class="btn-icon icon-arrow-down-3 rem-icon-left"></i>';
@@ -205,8 +205,8 @@ function loadRemoteDiv($divid) {
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
-						echo '<ul class="dropdown-menu btndropdown" role="menu" myvalue="'.$option[0].'"'; 			// properly set default to first
-						echo ' remotekey="'.$rowremotekeys['id'].'"';
+						echo '<ul class="dropdown-menu btndropdown" role="menu" data-myvalue="'.$option[0].'"'; 			// properly set default to first
+						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 						echo '>';
 						//$first= true;
@@ -215,18 +215,18 @@ function loadRemoteDiv($divid) {
 							if ($option[0] == '-') {
 								echo '<li class="divider"></li>';
 							} else {
-								echo '<li><a href=# value="'.$option[0].'">'.$option[1].'</a></li>';
+								echo '<li><a href=# data-value="'.$option[0].'">'.$option[1].'</a></li>';
 							}
 						}
 						echo '</ul></div>';
 						echo '</td>';
 					}
 					if ($rowremotekeys['inputtype']=="dropdown") {
-						echo '<form class="formdropdown" method="get" remotekey="'.$rowremotekeys['id'].'">';
+						echo '<form class="formdropdown" method="get" data-remotekey="'.$rowremotekeys['id'].'">';
 						echo '<select';
 						if (strlen($cellid)>1) echo ' id='.$cellid;
 						echo ' class="controlselect"';
-						echo ' remotekey="'.$rowremotekeys['id'].'"';
+						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo '>';
 						$first= true;
 						$options = explode(";",$rowremotekeys['inputoptions']);
@@ -244,11 +244,11 @@ function loadRemoteDiv($divid) {
 						echo '</td>';
 					}
 					if ($rowremotekeys['inputtype']=="dropdownlist") {
-						echo '<form class="formdropdownlist" method="get" remotekey="'.$rowremotekeys['id'].'">';
+						echo '<form class="formdropdownlist" method="get" data-remotekey="'.$rowremotekeys['id'].'">';
 						echo '<select';
 						if (strlen($cellid)>1) echo ' id='.$cellid;
 						echo ' class="controlselect-button"';
-						echo ' remotekey="'.$rowremotekeys['id'].'"';
+						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo '>';
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						foreach ($options as $optionstring) {
@@ -259,7 +259,7 @@ function loadRemoteDiv($divid) {
 						echo '<button type="submit" class="btn button jump-button';
 						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
-						echo ' remotekey="'.$rowremotekeys['id'].'">';
+						echo ' data-remotekey="'.$rowremotekeys['id'].'">';
 						if (strlen($rowremotekeys['booticon'])>0) {
 							echo '<i class="'.$rowremotekeys['booticon'];
 							echo '"></i>';
