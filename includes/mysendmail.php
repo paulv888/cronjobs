@@ -198,7 +198,7 @@ function sendmail($to, $subject, $message, $fromname) {
 	$mailer->Subject = $subject;
 	
 	$mailer->AddAddress($to);
-				
+	//$mailer->AddCustomHeader("Content-Type: text/html; charset=UTF-8\r\n");
 	$send = 0;
 	
 	if(!$mailer->Send()) {

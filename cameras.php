@@ -7,11 +7,6 @@ define("MAX_FILES_DIR", 1202);
 
 require_once 'includes.php';
 
-// 1 - 15041622571600.jpg
-// 2 - 00606E608DDA(cam-2) motion alarm at 20150416215944
-// 3 - 
-
-
 $cameras = readCameraProperties(readCameras());
 while (1) {
 	foreach ($cameras AS $key => $camera) {
@@ -24,7 +19,7 @@ while (1) {
 }
 
 function readCameras() {
-	$mysql = 'SELECT id, description FROM ha_mf_devices 
+	$mysql = 'SELECT id AS deviceID,  description FROM ha_mf_devices 
 			  WHERE ha_mf_devices.typeID = '.DEV_TYPE_CAMERA. ' AND inuse = 1';
 	$cameras = FetchRows($mysql);
 	return $cameras;
@@ -35,7 +30,7 @@ function readCameraProperties($cameras) {
 	foreach ($cameras AS $key => $camera) {
 		$mysql = 'SELECT ha_mi_property.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
 					JOIN ha_mi_property ON ha_mf_device_properties.propertyID = ha_mi_property.id 
-				  WHERE ha_mf_device_properties.deviceID ='.$camera['id'];
+				  WHERE ha_mf_device_properties.deviceID ='.$camera['deviceID'];
 		$props = FetchRows($mysql);
 		unset($cams);
 		foreach ($props as $prop) {
@@ -111,10 +106,11 @@ function movePictures($camera) {
 				$numfiles = 0;
 
 				// Do not generate alert on New Group /bc Max Files
-				if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 && $camera['properties']['ALERTS'] > 0) {
+				if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1) {
 				//https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30&folder=/cam-8/2015-04-18/15_00003
 					$html='<a href=\"https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'\">Goto Gallery</a>';
-					Alerts($camera['properties']['ALERTS'], Array('deviceID' => $camera['id'], 'ha_alerts___v1' => $html));
+					UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $camera['deviceID'], 'device_description' => $camera['description'], 'status' => STATUS_ON, 'message' => $html));
+					//Alerts($camera['properties']['ALERTS'], Array('deviceID' => $camera['id'], 'ha_alerts___v1' => $html));
 				}
 			} 
 
@@ -123,7 +119,7 @@ function movePictures($camera) {
 			}
 			if (!file_exists($targetdir)) {
 				mkdir($targetdir);
-				PDOinsert('ha_cam_recordings', Array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['id'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+				PDOinsert('ha_cam_recordings', Array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 			}
 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;
@@ -140,6 +136,7 @@ function movePictures($camera) {
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
 			PDOupdate("ha_cam_recordings", Array('count' => $numfiles), Array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+			UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
 		}
 		return $filetime;
 	}  

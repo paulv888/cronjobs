@@ -116,7 +116,8 @@ function GetSchemaName($schemaID) {
 }
 
 
-function UpdateTimers($callerID) {
+function UpdateTimers($dummy) {
+// PHP Command Dummy parm
 	$devstatusrows = FetchRows("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
 	if (DEBUG_HA) print_r($devstatusrow);
 	$feedback = "";
@@ -124,7 +125,7 @@ function UpdateTimers($callerID) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_HA) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand($callerID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
+				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand(MY_DEVICE_ID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
 			} else {
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);

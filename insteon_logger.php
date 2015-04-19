@@ -56,7 +56,7 @@ while (true) {
 				$errors = 0;
 				$message = $inst_hub->getMessage(); 
 				if ($deviceID = setDeviceID($message)) { 		// No device founds so use my_id as callerID
-					$message['callerID'] = $deviceID;
+					$message['callerID'] = MY_DEVICE_ID;
 				} else {
 					$message['callerID'] = MY_DEVICE_ID;
 				}

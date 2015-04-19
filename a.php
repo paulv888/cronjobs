@@ -39,7 +39,7 @@ if (!($sdata=="")) { 					//import_event
 	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
 	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
-	$message['callerID'] = $message['deviceID'];
+	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
@@ -81,8 +81,8 @@ if (!($sdata=="")) { 					//import_event
 				UpdateWeatherCurrent($message['deviceID'], $t, $h, $s);
 			}
 		}
-		$errormessage = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		UpdateStatus($message['callerID'], array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'errormessage' => $errormessage));
+		$message1 = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
+		UpdateStatus(MY_DEVICE_ID, array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $message1));
 		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
 	}
 }
