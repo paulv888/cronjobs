@@ -115,7 +115,7 @@ function getYahooWeather($station) {
 		if ($row['severity'] == SEVERITY_WARNING) {
 			$array['class'] = SEVERITY_WARNING_CLASS;
 		}
-		PDOupdate("ha_weather_extended", $array, "deviceID");
+		PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $mydeviceID[$station]));
 	
 		unset($array);
 		$i = 0;

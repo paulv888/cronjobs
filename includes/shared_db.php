@@ -153,7 +153,7 @@ function mySqlError($mysql) {
 
 
 //public function PDOinsert($table, $cols, $values){
-function PDOupdate($table, $array, $where){
+function PDOupdate($table, $fields, $where){
 
 //$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
 //$queryUpdate = $pdo->prepare( $sql );
@@ -161,20 +161,20 @@ function PDOupdate($table, $array, $where){
 
 	global $pdo;
 
-    $placeholder = array();
+    $placeholder = Array();
 
-	$values = array_values($array);
-	$cols = array_keys($array);
+	$values = Array_values($fields);
+	$cols = Array_keys($fields);
 	
 	$numItems = count($values);
-	//print_r($cols);
-	//print_r($values);
+	// print_r($cols);
+	// print_r($values);
 	
 	$sql = 'UPDATE '. $table . ' SET ';
 	$i = 0;
-	while (list($key, $value) = each($array)) {
+	while (list($key, $value) = each($fields)) {
 //		echo "Key: $key; Value: $value<br />\n";
-		if (is_array($value)) $value = json_encode($value);
+		if (is_Array($value)) $value = json_encode($value);
 		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
 		if (is_null($value)) {
 			$value="NULL";
@@ -189,15 +189,15 @@ function PDOupdate($table, $array, $where){
 		}
     }
   
-	if (array_key_exists($where, $array)) {
-		$sql .= ' WHERE `'.$where."` = ?";
-		$values[] = $array[$where];
-	} else {
-		echo "Error: Cannot find where value";
-		return -1;
+  
+	$sql .= ' WHERE ';
+	while (list($key, $value) = each($where)) {
+		$sql .= "`".$key."` = ?";
+		$values[] = $value;
 	}
 
-	//echo "sql sofar: ". $sql.CRLF;
+	// echo "sql sofar: ". $sql.CRLF;
+	// print_r($values);
 
 
 	try
@@ -208,6 +208,7 @@ function PDOupdate($table, $array, $where){
 	catch( Exception $e )
 	{
 		doError( 'DB Exception: ' . $e->getMessage() );
+		echo CRLF.$sql.CRLF;
 	}
 	$result;
 }
@@ -229,7 +230,8 @@ function PDOinsert($table, $array){
     $sql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
     $sql.= 'VALUES (' . implode(", ", $placeholder) . ')';
 
-	//echo "sql sofar: ". $sql.CRLF;
+	// echo "sql sofar: ". $sql.CRLF;
+	// print_r($values);
 	
  	try
 	{
