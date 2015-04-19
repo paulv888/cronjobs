@@ -1,0 +1,29 @@
+/* "Very Simple Image Gallery" Plugin for Joomla 3.1 - Version 1.6.8
+/* License: GNU General Public License version 2 or later; see LICENSE.txt
+/* Author: Andreas Berger - andreas_berger@bretteleben.de
+/* Copyright (C) 2013 Andreas Berger - http://www.bretteleben.de. All rights reserved.
+/* Project page and Demo at http://www.bretteleben.de
+/* ***Last update: 2013-08-15*** */
+.vsig {border:0px solid transparent !important;;padding:0px 0px 0px 0px !important;}
+.vsig_clr {clear:both !important;}
+.vsig_cont {float:left !important;padding:0 !important;}
+.vsig_top {position:relative !important;padding:0px 0px 0px 0px !important;margin-bottom:5px !important;text-align:center !important;}
+.vsig_top img {float:none !important;border:1px solid #ccc !important;margin:0px !important;padding:4px !important;z-index:1 !important;background:#fff !important;}
+.vsig_top a, .vsig_top a:link, .vsig_top a:visited, .vsig_top a:focus, .vsig_top a:hover, .vsig_top a:active {font-size:0px !important;line-height:0px !important;text-decoration:none !important;background-color:transparent !important;}
+.vsig_ruler {margin:0px 0px 0px 0px !important;padding:0px 0px 0px 0px !important;}
+.vsig_thumb {float:left !important;margin:0px !important;padding:0px !important;}
+.vsig_thumb img {display:block !important;position:relative !important;background:#fff !important;border:1px solid #ccc !important;margin:0px !important;padding:3px !important;}
+.vsig_top div.inside {text-align:left !important;line-height:0 !important;font-size:0 !important;filter:alpha(opacity=60) !important;opacity:0.60 !important;z-index:2 !important;position:absolute !important;left:0px !important;bottom:5px !important;display:block !important;margin:0px 5px 0px 5px !important;background:#fff !important;padding:0px !important;border:none !important;}
+.vsig_top div.outside {text-align:left !important;z-index:2 !important;position:relative !important;display:block !important;margin:0px 4px 0px 4px !important;}
+.vsig span a, .vsig span a:link, .vsig span a:visited, .vsig span a:focus, .vsig span a:hover, .vsig span a:active {text-decoration:none !important;line-height:12px !important;font-size:12px !important;font-weight:bold !important;color:#000 !important;background:transparent !important;}
+.vsig span + span a, .vsig span + span a:link, .vsig span + span a:visited, .vsig span + span a:focus, .vsig span + span a:hover, .vsig span + span a:active {text-decoration:none !important;line-height:12px !important;font-size:12px !important;font-weight:normal !important;color:#000 !important;background:transparent !important;}
+.vsig_top div span {line-height:12px !important;font-size:12px !important;margin:3px !important;display:block !important;font-weight:bold !important;color:#000 !important;}
+.vsig_top div span + span {font-weight:normal !important;margin-bottom:5px !important;}
+.vsig_ctrls {margin:0px !important;}
+.vsig_ctrls div {display:block !important;margin:0px 0px 0px 0px !important;}
+.vsig_ctrl_left a, .vsig_ctrl_right a {}
+.vsig_ctrl_left {float:left !important;margin:0px !important;padding:0px !important;height:20px !important;}
+.vsig_ctrl_right {float:right !important;margin:0px !important;padding:0px !important;height:20px !important;}
+.vsig_ctrl_left img, .vsig_ctrl_right img {margin:0px 0px -5px 0px !important;padding:0 !important;border:none !important;}
+.vsig_counter {font-size:12px !important;font-weight:bold !important;color:#666 !important;background:transparent !important;}
+/* --- END --- */
