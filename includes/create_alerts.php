@@ -18,12 +18,15 @@ function Alerts($alert_textID , $params = NULL ){
 //echo "<pre>";print_r($params);echo "</pre>";
 	if ($params['deviceID'] != Null) {
 		replaceText(Array('deviceID' => $params['deviceID']), $description, $alert_text, $params);
+		$deviceID = $params['deviceID'];
+	} else {
+		$deviceID = 'NULL';
 	}
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 
-	$mysql = 'INSERT INTO `ha_alerts` (`description`, `alert_date`, `alert_text`, `priorityID`) 
+	$mysql = 'INSERT INTO `ha_alerts` (`deviceID`, `description`, `alert_date`, `alert_text`, `priorityID`) 
 				(
-				   SELECT  "'. $description.'", NOW(), "'.$alert_text.'","'. $params['priorityID'].'"
+				   SELECT  '. $deviceID. ', "'. $description.'", NOW(), "'.$alert_text.'","'. $params['priorityID'].'"
 				)';
 
 	if (DEBUG_ALERT) echo $mysql."</br>";				
