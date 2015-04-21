@@ -228,7 +228,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 					//write the styles for the gallery
 					if($_th_right_!="1"&&$_th_right_!="3"){
 						$vsig_cssadd.=".vsig_cont".$identifier." {margin:0 ".$_space_."px ".$_space_."px 0 !important;width:".($_width_+8)."px;height:".($_height_+8)."px;}\n";
-						$vsig_cssadd.=".vsig_top".$identifier." {width:".$_im_area_."px;margin:0px 0px 0px 0px;}\n";
+						//$vsig_cssadd.=".vsig_top".$identifier." {width:".$_im_area_."px;margin:0px 0px 0px 0px;}\n";
 						}
 					else{
 						if($_th_right_=="1"){
@@ -481,7 +481,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 					}
 					//add controls
 					if($_sets_use_&&$_sets_number_>=2) {
-						$html4="<div class='pagination vsig_ctrls_".$identifier."'>";
+						$html4="<div class='pagination".$identifier."'>";
 						$html4.="<div class='vsig_ctrl_left'></div><ul class='pagination-list'>";
 						//back
 						if($_sets_current_>=2){
