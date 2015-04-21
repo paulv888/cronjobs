@@ -4,6 +4,9 @@ define("MY_DEVICE_ID", 215);
 define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
+define("MIN_ALERT_FILES", 3);
+define("MOTION_URL1","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30");
+define("MOTION_URL2","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=527");
 
 require_once 'includes.php';
 
@@ -15,7 +18,7 @@ while (1) {
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(5);
-        echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+        echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated".CRLF;
 }
 
 function readCameras() {
@@ -44,7 +47,7 @@ function readCameraProperties($cameras) {
 
 function movePictures($camera) {
 
-	// echo ">$camera[description]".CRLF;
+	echo date("Y-m-d H:i:s").": ".$camera['description'].CRLF;
 
 	$files = array();
 	$filetimes = array();
@@ -61,7 +64,7 @@ function movePictures($camera) {
 		closedir($handle);
 
 		if (count($files) == 0) {
-			//echo "nothing to do".CRLF;
+			echo date("Y-m-d H:i:s").": ".$camera['description']." Nothing to do.".CRLF;
 			return $lastfiletime;
 		}
  // echo '<pre>';
@@ -77,6 +80,7 @@ function movePictures($camera) {
 		$seq = 0;
 		$group_dir = null;
 		$numfiles = 0;
+		$newgroupcreated = false;
 
 		// Sleep .5 second before moving...
 		usleep(500000);
@@ -93,8 +97,9 @@ function movePictures($camera) {
 			}
 
 			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {			
-							// New Motion Group on 1 minute interval OR max_files Else keep together
+							// New Motion Group on; 1 minute gap OR max_files
 
+				echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
 				if (is_null($group_dir) || (substr($group_dir,0,2) != date("H",$filetime)) ) {	// no dir found
 					$nextcount = 1;
 				} else {
@@ -104,16 +109,13 @@ function movePictures($camera) {
 				$group_dir = date("H",$filetime).'_'.str_pad($nextcount, 5, '0', STR_PAD_LEFT);
 				$targetdir = $dir.$datedir.'/'.$group_dir;
 				$numfiles = 0;
+				$newgroupcreated = true;
 
-				// Do not generate alert on New Group /bc Max Files
-				if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1) {
-				//https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30&folder=/cam-8/2015-04-18/15_00003
-					$html='<a href=\"https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'\">Goto Gallery</a>';
-					UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $camera['deviceID'], 'device_description' => $camera['description'], 'status' => STATUS_ON, 'message' => $html));
-					//Alerts($camera['properties']['ALERTS'], Array('deviceID' => $camera['id'], 'ha_alerts___v1' => $html));
-				}
 			} 
 
+			if (!file_exists($dir)) {
+				mkdir($dir);
+			}
 			if (!file_exists($dir.$datedir)) {
 				mkdir($dir.$datedir);
 			}
@@ -131,8 +133,17 @@ function movePictures($camera) {
 			$numfiles++;
 		}	// Handled all file in old to new order
 		// echo "Done: ".$numfiles.CRLF;
-		if (isset($newname)) {
-			// echo "inside".CRLF;
+		if (isset($newname)) {		// i.e. we did something
+			if ($newgroupcreated && $numfiles >= MIN_ALERT_FILES)  {
+				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
+				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
+				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
+				UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $camera['deviceID'], 'device_description' => $camera['description'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
+			}
+			echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Thumbnail.".CRLF;
+			if (!file_exists(LASTIMAGEDIR)) {
+				mkdir(LASTIMAGEDIR);
+			}
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
 			PDOupdate("ha_cam_recordings", Array('count' => $numfiles), Array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
