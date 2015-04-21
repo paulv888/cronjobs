@@ -13,7 +13,7 @@ include_once 'includes/shared_db.php';
 include_once 'includes/shared_file.php';
 include_once 'includes/shared_ha.php';
 include_once 'includes/shared_gen.php';
-include_once 'includes/mysendmail.php';
+include_once 'includes/sendmail.php';
 include_once 'includes/timers.php';
 include_once 'includes/create_alerts.php';
 include_once 'includes/weather.php';
@@ -21,6 +21,7 @@ include_once 'includes/duskdawn.php';
 include_once 'includes/RT-N65U.php';
 include_once 'includes/simple_html_dom.php';
 include_once 'includes/monitor_devices.php';
+include_once 'includes/bitly.php';
 
 include_once 'myclasses/thermo_lib.php';
 include_once 'myclasses/RestClient.class.php';
