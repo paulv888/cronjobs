@@ -7,13 +7,6 @@ function logit( $msg )
    echo $msg . "<br/>\r\n";
 }
 
-// Future logging method
-function doError( $msg )
-{
-   echo $msg . "\n";
-   file_put_contents( 'php://stderr', $msg . "<br/>\r\n" );
-}
-
 function getThermostats(){
 
 	global $pdo;
@@ -61,7 +54,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 	}
 	catch( Exception $e )
 	{
-		doError( 'DB Exception: ' . $e->getMessage() );
+		PDOError($sql, Array(), $e);
 	}
 
 	// Get prior state info from DB

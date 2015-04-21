@@ -2,6 +2,14 @@
 //define( 'DEBUG_DB', TRUE );
 if (!defined('DEBUG_DB')) define( 'DEBUG_DB', FALSE );
 
+// Future logging method
+function doError( $msg )
+{
+   echo $msg . "\n";
+   file_put_contents( 'php://stderr', $msg . "<br/>\r\n" );
+}
+
+
 function mysql_insert_assoc ($my_table, $my_array) {
      //
    // Insert values into a MySQL database
@@ -151,8 +159,34 @@ function mySqlError($mysql) {
 		}
 }
 
+function PDOError($mysql, $values, $e) {
+	global $pdo;		
+	global $dbConfig;		
 
-//public function PDOinsert($table, $cols, $values){
+	if ($e->getCode() == "HY000" || $e->getCode() == "08S01") {
+		$retry = 5;
+		$pdo = null;
+		while ($retry-- > 0) {
+			echo "Trying to reconnect PDO...\n";
+			try {
+				$pdo = new PDO( $dbConfig['dsn'], $dbConfig['username'], $dbConfig['password'] , array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+				return true;
+			}
+			catch(PDOException $ex){
+				sleep(10);
+			}
+		}
+		echo ('Lost connection PDO, exiting...\n');
+		throw(e);
+	} else {
+		echo "<pre>";
+		echo "Error on: ".$mysql."<br/>\r\n";
+		echo $e->getCode(). ": " . $e->getMessage() . "<br/>\r\n";
+		print_r($values);
+		echo "</pre>";
+	}
+}
+
 function PDOupdate($table, $fields, $where){
 
 //$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
@@ -207,8 +241,7 @@ function PDOupdate($table, $fields, $where){
 	}
 	catch( Exception $e )
 	{
-		doError( 'DB Exception: ' . $e->getMessage() );
-		echo CRLF.$sql.CRLF;
+		PDOError($sql, $values, $e);
 	}
 	$result;
 }
@@ -220,12 +253,25 @@ function PDOinsert($table, $array){
 	$values = array_values($array);
 	$cols = array_keys($array);
 	
-    for ($i = 0; $i < count($values); $i++)
-      $placeholder[] = '?';
+    for ($i = 0; $i < count($values); $i++) $placeholder[] = '?';
 
 	//echo "count".count($values);
 	//print_r($cols);
 	//print_r($values);
+	
+	foreach ($values AS $key => $value) {
+//		echo "Key: $key; Value: $value<br />\n";
+		if (is_Array($value)) $values[$key] = json_encode($value);
+		if (is_null($value)) {
+			$values[$key]='NULL';
+		} 
+		// if (is_String($value) && strlen($value)==0) {
+			// echo '>'.$value.'<'.CRLF;
+			// $values[$key] = $pdo->quote($value);
+			// echo '>'.$value.'<'.CRLF;
+		// }
+	}
+
 	
     $sql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
     $sql.= 'VALUES (' . implode(", ", $placeholder) . ')';
@@ -237,10 +283,10 @@ function PDOinsert($table, $array){
 	{
 		$stmt = $pdo->prepare($sql);
 		$stmt->execute($values);
-	}
+	} 
 	catch( Exception $e )
 	{
-		doError( 'DB Exception: ' . $e->getMessage() );
+		PDOError($sql, $values, $e);
 	}
 
 }

@@ -24,14 +24,9 @@ function Alerts($alert_textID , $params = NULL ){
 	}
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 
-	$mysql = 'INSERT INTO `ha_alerts` (`deviceID`, `description`, `alert_date`, `alert_text`, `priorityID`) 
-				(
-				   SELECT  '. $deviceID. ', "'. $description.'", NOW(), "'.$alert_text.'","'. $params['priorityID'].'"
-				)';
-
 	if (DEBUG_ALERT) echo $mysql."</br>";				
 
-	$inserts = RunQuery($mysql);
+	$inserts = PDOInsert("ha_alerts", Array ('deviceID' => $deviceID, 'description' => $description, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $alert_text, 'priorityID' => $params['priorityID']));
 	return $inserts;
 }
 ?>

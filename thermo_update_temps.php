@@ -32,7 +32,7 @@ function UpdateTemps() {
 	}
 	catch( Exception $e )
 	{
-		doError( 'DB Exception: ' . $e->getMessage() );
+		PDOError($sql, Array(), $e);
 	}
 	
 	global $lock;
@@ -118,7 +118,7 @@ function UpdateTemps() {
 			}
 			catch( Exception $e )
 			{
-				doError( 'Thermostat Exception: ' . $e->getMessage() );
+				PDOError($sql, Array(), $e);
 			}
 			flock( $lock, LOCK_UN );
 		}

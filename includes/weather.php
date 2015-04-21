@@ -121,7 +121,6 @@ function getYahooWeather($station) {
 		$i = 0;
 		foreach ($result->{'item'}->{'forecast'} as $forecast) {
 			//print_r($forecast);
-			$array['id'] = $i;
 			$array['deviceID'] = $mydeviceID[$station];
 			$array['mdate'] = date("Y-m-d H:i:s",strtotime($forecast->{'date'}));
 			$array['day'] = $forecast->{'day'};
@@ -142,7 +141,7 @@ function getYahooWeather($station) {
 			if ($row['severity'] == SEVERITY_WARNING) {
 				$array['class'] = SEVERITY_WARNING_CLASS;
 			}
-			PDOupdate("ha_weather_forecast", $array, "id");
+			PDOupdate("ha_weather_forecast", $array, Array('id' => $i));
 //			PDOinsert("ha_weather_forecast", $array);
 			$i++;
 		}
@@ -227,9 +226,10 @@ function cache_image($file, $url, $hours = 168) {
 
 	$file = $_SERVER['DOCUMENT_ROOT'].$file ;
 
+	$current_time = time(); 
+	$expire_time = $hours * 60 * 60; 
+	$file_time = filemtime($file);
 
-	$current_time = time(); $expire_time = $hours * 60 * 60; $file_time = filemtime($file);
-	//decisions, decisions
 	if(file_exists($file) && ($current_time - $expire_time < $file_time)) {
 		//echo 'returning from cached file';
 		return true;
