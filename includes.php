@@ -5,9 +5,7 @@ include_once 'defines.php';
 
 
 include_once 'process.php';
-include_once 'thermo_process.php';
 
-include_once 'includes/thermo_common.php';
 include_once 'includes/remote.php';
 include_once 'includes/shared_db.php';
 include_once 'includes/shared_file.php';
@@ -21,6 +19,8 @@ include_once 'includes/duskdawn.php';
 include_once 'includes/RT-N65U.php';
 include_once 'includes/simple_html_dom.php';
 include_once 'includes/monitor_devices.php';
+include_once 'includes/thermoprocess.php';
+include_once 'includes/thermo_common.php';
 include_once 'includes/bitly.php';
 
 include_once 'myclasses/thermo_lib.php';
