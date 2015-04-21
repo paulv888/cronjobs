@@ -74,7 +74,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
 	$selection = (array_key_exists('selection', $params) ? $params['selection'] : Null);
 	$mouse = (array_key_exists('mouse', $params) ? $params['mouse'] : Null);
-	header('Content-type: application/json'); 
+	if ($callerID == DEVICE_REMOTE) header('Content-type: application/json'); 
 
 
 	if (DEBUG_FLOW) echo '<pre>Entry executeCommand - Params: ';
@@ -364,7 +364,11 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		echo "callerID: ".$callerID.CRLF;
 	}
 
-	
+	if ($commandID == null) {
+		$feedback['error'] = 1;
+		$feedback['message'] = "No Command given";
+		return $feedback;			// error abort
+	}
 //
 //   Sends 1 single command to TCP, REST, EMAIL
 //	
@@ -422,9 +426,11 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 				" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 				" WHERE ha_mf_commands.id =".$commandID. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
 		if (!$rowcommands = FetchRow($mysql))  {
-			return false;			// error abort
+			$feedback['error'] = 1;
+			$feedback['message'] = "No outgoing Command found";
+			return $feedback;			// error abort
 		}
-	} 		
+	}
 
 	if ($targettype == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandID ".$commandID.CRLF;
