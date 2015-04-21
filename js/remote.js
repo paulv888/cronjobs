@@ -76,15 +76,15 @@ if(!window.scriptRemoteHasRun) {
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
 			if (selected == GROUP_SELECT_MODE)  {			// Select Mode 
+				mbut.addClass('btn-info');
+				mbut.removeClass('btn-success');
+			} else if (selected == GROUP_NO_SELECTED){
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-success');
-			} else if (selected == GROUP_NO_SELECTED){
-				mbut.addClass('btn-info');
-				mbut.removeClass('btn-success');
 				resetSelection();
 			} else {
-				mbut.addClass('btn-info');
-				mbut.removeClass('btn-success');
+				mbut.removeClass('btn-info');
+				mbut.addClass('btn-success');
 				resetSelection();
 				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
 				callAjax (params) ; 		// get group members here and set select
@@ -114,12 +114,12 @@ if(!window.scriptRemoteHasRun) {
 				// resetSelection(elArray); actually not here, but when toggling back to ???
 			}
 			if (selected == "19") {					// On/Off toggle
-				mbut.addClass('btn-info');
-				mbut.removeClass('btn-warning');
-			} else {								// dim value
-				if (arrayLength = 0) alert ('Please select light you want to dim or on/off together');
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-warning');
+			} else {								// dim value
+				if (arrayLength = 0) alert ('Please select light you want to dim or on/off together');
+				mbut.addClass('btn-info');
+				mbut.removeClass('btn-warning');
 			}
 
 			
