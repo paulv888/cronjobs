@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 require_once 'includes.php';
 
@@ -18,18 +19,18 @@ define("MY_DEVICE_ID", 103);
 
 //echo ImportOrders()." Orders Imported <br/>\r\n";
 //echo MoveTransactionsPositions()." Positions Opened or Closed  <br/>\r\n";
-echo GetPrices("trd_indexes", "trd_idx_performance"). " Indexes Updated <br/>\r\n";
-echo GetPrices("trd_positions","trd_pos_performance"). " Open Positions Prices Updated <br/>\r\n";
-echo UpdateRowvalues()." Calculation Queries Executed <br/>\r\n";
-echo AlertsTR()." Alerts generated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".GetPrices("trd_indexes", "trd_idx_performance"). " Indexes Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".GetPrices("trd_positions","trd_pos_performance"). " Open Positions Prices Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".UpdateRowvalues()." Calculation Queries Executed <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".AlertsTR()." Alerts generated <br/>\r\n";
 $starttime = '0700';
 $endtime = '2000';
 if(date('Hi')>$starttime and date('Hi')<$endtime) {
-	echo AlertsActionsTR()." Alerts sent <br/>\r\n";
+	echo date("Y-m-d H:i:s").": ".AlertsActionsTR()." Alerts sent <br/>\r\n";
 } else {
-	echo "Not sending Alerts. ". date('H:i')." outside $starttime - $endtime<br/>\r\n";
+	echo date("Y-m-d H:i:s").": "."Not sending Alerts. ". date('H:i')." outside $starttime - $endtime<br/>\r\n";
 }
-echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 
 function FindInFlex($flexresponse, $symbol) {
@@ -84,24 +85,24 @@ function GetFlexData($queryid) {
     
     
 	if (!is_numeric((string)$flexresponse->code)) {
-    		echo "Error: ".$xml->code."<br/>\r\n on: '".$url; 
+    		echo date("Y-m-d H:i:s").": "."Error: ".$xml->code."<br/>\r\n on: '".$url; 
 	    	die();
     	}
 
 	$url = "https://www.interactivebrokers.com/Universal/servlet/FlexStatementService.GetStatement?q=$flexresponse->code&t=$token&v=2" ;
 	//echo "Try: $retry <br />$url<br />";
 	$response = file_get_contents($url);
-	echo $response;
+	echo date("Y-m-d H:i:s").": ".$response;
 	$xmlheader="<?xml version='1.0' standalone='yes'?>";
 	$flexresponse = new SimpleXMLElement($xmlheader.$response);
 	$retry--;
 	if ($flexresponse->code=="Statement generation in progress. Please try again shortly." or 
 		$flexresponse->code=="Invalid request or unable to validate request.") {
 		if ($retry >0) {
-			echo "Sleeping(5) <br/>\r\n";
+			echo date("Y-m-d H:i:s").": "."Sleeping(5) <br/>\r\n";
 			sleep(5);
 		} else {
-			echo "Unable to retrieve Trade Confirms <br/>\r\n";
+			echo date("Y-m-d H:i:s").": "."Unable to retrieve Trade Confirms <br/>\r\n";
 			die();				
 		}
 	}
@@ -241,10 +242,10 @@ function MoveTransactionsPositions() {
 		
 		if ($position=$pos->Find($transactions['symbol'])) {       
 			if ($transactions['buy_sell']==$position['buy_sell']) { // 4)5) 	Open buy=buy or sell=sell postion found. Add to existing position
-				echo "Case 4/5; Open Pos Found, Add to Existing Position</br>";
+				echo date("Y-m-d H:i:s").": "."Case 4/5; Open Pos Found, Add to Existing Position</br>";
 				$ord= new Orders("OPEN");
 				if ($order=$ord->Find($position['id'],$transactions['id'])) { 	// Same order just update values instead of averageing
-					echo "Case 5; Found existing order, Update Order</br>";
+					echo date("Y-m-d H:i:s").": "."Case 5; Found existing order, Update Order</br>";
 					$order['orderid']=$transactions['id'];						// TODO:: Partial allocated order should be offset (now can find total quantity of order)
 					$order['date']=$transactions['updatedate'];
 					$order['qty']=$ext_qty;
@@ -252,7 +253,7 @@ function MoveTransactionsPositions() {
 					$order['comm']=$transactions['commission'];
 					$ord->Update($order);
 				} else {														// New order to current position
-					Echo "Case 5; No existing order found, create new order for same position</br>";
+					echo date("Y-m-d H:i:s").": "."Case 5; No existing order found, create new order for same position</br>";
 					$order['posid']=$position['id'];
 					$order['orderid']=$transactions['id'];
 					$order['date']=$transactions['updatedate'];
@@ -268,10 +269,10 @@ function MoveTransactionsPositions() {
 				}
 				$ord=NULL;
 			} else { 		// Open Position found and buy_sell<>buy_sell
-				echo "Case 1/2/3; Open Position found</br>";
+				echo date("Y-m-d H:i:s").": "."Case 1/2/3; Open Position found</br>";
 				switch (TRUE) {
 					case (abs($position['qty'])<=abs($ext_qty)):		// 1) open=close -> close all
-						echo "Case 1</br>";
+						echo date("Y-m-d H:i:s").": "."Case 1</br>";
 						$ord= new Orders("CLOSE");
 						$order['posid']=$position['id'];
 						$order['orderid']=$transactions['id'];
@@ -308,7 +309,7 @@ function MoveTransactionsPositions() {
    						//		-Remove qty from Closed position (done during copy orders)
    						//
    						// TODO:: if already closed part today then add to today closed one?
-						echo "Case 2;Current Open > Closing; Partial Close</br>";
+						echo date("Y-m-d H:i:s").": "."Case 2;Current Open > Closing; Partial Close</br>";
    						$newid=$pos->Copy($transactions['symbol'],$ext_qty);
 						$ord= new Orders("CLOSE");
 						$order['posid']=$newid;
@@ -328,7 +329,7 @@ function MoveTransactionsPositions() {
 					}
 				}
 			} else {		// No Open pos found, create new one
-				Echo "Case New; No Open Found, Create New</br>";
+				echo date("Y-m-d H:i:s").": "."Case New; No Open Found, Create New</br>";
 				$ord= new Orders("OPEN");
 	    		$result=MapTransToPosition($transactions);
 	    		$result['position']['status']="ACT";

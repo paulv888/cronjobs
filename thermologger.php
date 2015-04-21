@@ -1,11 +1,12 @@
+#!/usr/bin/php
 <?php
 require_once 'includes.php';
 
 
 define("MY_DEVICE_ID", 136);
 
-echo UpdateTemps();
-echo UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".UpdateTemps();
+echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 
 function UpdateTemps() {
 	global $pdo;
@@ -113,7 +114,7 @@ function UpdateTemps() {
 					UpdateDailyRuntime(999);
 				}
 				
-				echo UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
+				echo date("Y-m-d H:i:s").": ".UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
 	
 			}
 			catch( Exception $e )

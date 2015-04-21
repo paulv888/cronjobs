@@ -26,7 +26,7 @@ if(version_compare(PHP_VERSION, "5.3.0", '>=')){
 }
 
 while (true) {
-	echo monitorDevices("POLL2");
+	echo date("Y-m-d H:i:s").": ".monitorDevices("POLL2");
         echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
 	sleep(5);
 }

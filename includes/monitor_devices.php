@@ -52,7 +52,7 @@ function monitorDevice($deviceID, $pingport, $montype) {
 		$statverb = "Offline";
 	}
 
-	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID</br>";
+	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
 	UpdateLink($deviceID, $curlink, MY_DEVICE_ID, COMMAND_PING);
 }
 
