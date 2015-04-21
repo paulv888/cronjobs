@@ -44,6 +44,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 		*
 		*/
 
+		if ($callerID == 0) $callerID = $deviceID;
 
 		// Check current link UP for MONSTAT
 		switch ($link) {
@@ -304,7 +305,7 @@ function logEvent($log) {
 	if (DEBUG_HA) echo "***log";
 	if (DEBUG_HA) print_r($log);
 		
-	mysql_insert_assoc ("ha_events", $log);
+	PDOinsert("ha_events", $log);
 }
 
 function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $params = Null) {
