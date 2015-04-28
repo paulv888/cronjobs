@@ -14,8 +14,8 @@ if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 
 if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to tell where they are from.
 
-	$messtypeID=$_POST["messtype"];
-	$callerID=$_POST["caller"];
+	$messtypeID=$_POST['messtype'];
+	$callerID=$_POST['caller'];
 	if (DEBUG_FLOW) echo "callerID ".$callerID." ".$messtypeID.CRLF;
 	switch ($messtypeID)
 	{

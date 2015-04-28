@@ -17,12 +17,12 @@ define("MY_DEVICE_ID", 214);
  
 
 $sdata = file_get_contents("php://input");
-/*
-$file = 'tmp1.txt';
-$current = file_get_contents($file);
-$current .= $sdata."\n";
-file_put_contents($file, $current);
-*/
+
+//$file = 'tmp1.txt';
+//$current = file_get_contents($file);
+//$current .= $sdata."\n";
+//file_put_contents($file, $current);
+
 
 if (!($sdata=="")) { 					//import_event
 	$rcv_message = json_decode($sdata, $assoc = TRUE);

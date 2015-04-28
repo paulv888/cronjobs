@@ -193,7 +193,7 @@
         <File name="updatetrades.php" />
         <File name="X10Command.xml" />
     </Project>
-    <Project name="CronJobs - Vlosite">
+    <Project name="CronJobs - Vlosite/SrvMedia">
         <Folder name="includes">
             <Folder name="bitly.php.readme">
                 <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\bitly.php.readme\README.txt" />
@@ -262,8 +262,6 @@
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\garage.php" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\logins.php" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\timers.php" />
-        <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\yw.php" />
-        <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\php_errors.log" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\MyWorkSpaces++" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\tmp.txt" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\process.php" />

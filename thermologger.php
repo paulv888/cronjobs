@@ -36,15 +36,12 @@ function UpdateTemps() {
 		PDOError($sql, Array(), $e);
 	}
 	
-	global $lock;
 	
 	$now = (string)date('Y-m-d H:i:s');
 	
 	foreach( $thermostats as $thermostatRec )
 	{
 		
-		if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
-		{
 			try
 			{
 				// Query thermostat info
@@ -121,14 +118,6 @@ function UpdateTemps() {
 			{
 				PDOError($sql, Array(), $e);
 			}
-			flock( $lock, LOCK_UN );
-		}
-		else
-		{
-			// never comese here fopen has no timeout
-			die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
-		}
-		fclose($lock);
 	}
 }
 //touch( '/home/fratell1/freitag.theinscrutable.us/thermo2/scripts/thermo_update_temps.end' );
