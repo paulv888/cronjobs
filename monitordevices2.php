@@ -31,6 +31,11 @@ while (true) {
 	sleep(5);
 }
 
+function cleanup(){
+	echo "Cleaning up\n";
+	exit (1);
+}
+
 
 function signal_handler($signo){
         console::log("Caught a signal %d", array($signo));

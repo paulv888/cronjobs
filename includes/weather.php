@@ -59,7 +59,7 @@ function getYahooWeather($station) {
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
 		UpdateWeatherCurrent($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'} );
-		$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
 
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
@@ -206,7 +206,7 @@ function getWBUG($station) {
 	if (DEBUG_WBUG) echo "humi: ".$result->{'observation'}->{'humidity'}.CRLF;
 	UpdateWeatherNow($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'});
 	UpdateWeatherCurrent($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'} );
-	$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'observation'}->{'temperature'}));
+	$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'observation'}->{'temperature'}));
 	UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
 
 	return $feedback;
