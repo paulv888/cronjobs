@@ -34,7 +34,7 @@ function getDuskDawn() {
 //print_r($xml);
 					$mySql = 'UPDATE `ha_mf_device_extra` SET `dawn` = "'.$dawn. '", `dusk` ="'.$dusk.'" WHERE deviceID = {DEVICE_DARK_OUTSIDE}'; 
 					if (RunQuery($mySql)) {
-            			UpdateLink (DEVICE_DARK_OUTSIDE);
+            			UpdateLink (array( 'callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE));
 					}
 					$success = true; 
             	}

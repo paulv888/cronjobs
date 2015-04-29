@@ -54,7 +54,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 	}
 	catch( Exception $e )
 	{
-		PDOError($sql, Array(), $e);
+		PDOError($sql, array(), $e);
 	}
 
 	// Get prior state info from DB

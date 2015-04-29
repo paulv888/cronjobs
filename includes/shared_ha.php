@@ -12,7 +12,12 @@ function ReloadScreenShot() {
 	return;  // ReadCurlReturn($post);
 }
 
-function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
+function UpdateLink($params)
+{
+	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
+	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : $callerID);
+	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
+	$link = (array_key_exists('link', $params) ? $params['link'] : LINK_UP);
 
     if (DEBUG_HA) echo CRLF.CRLF."Update Link deviceID ".$deviceID." link:".$link.CRLF;
 
@@ -43,8 +48,6 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 		*		DOWN->UP
 		*
 		*/
-
-		if ($callerID == 0) $callerID = $deviceID;
 
 		// Check current link UP for MONSTAT
 		switch ($link) {
@@ -108,7 +111,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 		if ($prevlink != $link) { 								// link changed
 			if ($prevlink == LINK_UP && $link == LINK_DOWN) { 	
 					// echo "Down, Previous was up".CRLF;
-					logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
+					logEvent($log = array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 					$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 							  " `link` = '" . $link . "'" .
 							  " WHERE(`deviceID` ='" . $deviceID . "')";
@@ -120,7 +123,7 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 				} 
 			if ($prevlink == LINK_DOWN && $link == LINK_UP) { 	
 				//echo "Up, Previous was down; UPDATE to online and log event".CRLF;
-				logEvent($log = Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
+				logEvent($log = array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
 						  " `link` = '" . $link . "'" .
@@ -149,9 +152,9 @@ function UpdateLink($deviceID, $link = LINK_UP, $callerID = 0, $commandID = -1){
 	}
 }
 		
-function UpdateStatus($callerID, $params)
+function UpdateStatus($params)
 {
-//$deviceID, $commandID = NULL, $status = NULL) 
+ 	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
@@ -221,9 +224,8 @@ function UpdateStatus($callerID, $params)
 	return;
 }	
 
-function GetStatusLink($callerID, $params)
+function GetStatusLink($params)
 {
-//$deviceID, $commandID = NULL, $status = NULL) 
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 
 	// Only retrieve if Monitor Type = Status Monitor
@@ -320,7 +322,7 @@ function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $param
 			$params['loglevel'] = LOGLEVEL_MACRO;
 			$result = executeCommand($callerID, MESS_TYPE_SCHEME, $params); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
+			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
 		}
 	}
 	return $feedback;

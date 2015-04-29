@@ -90,7 +90,7 @@ function FetchRow($mysql) {
 
 function FetchRows($mysql) {
 	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
-	$result = Array ();
+	$result = array();
 	if (!$res_row = mysql_query($mysql)) {
 		mySqlError($mysql); 
 		return false;
@@ -195,10 +195,10 @@ function PDOupdate($table, $fields, $where){
 
 	global $pdo;
 
-    $placeholder = Array();
+    $placeholder = array();
 
-	$values = Array_values($fields);
-	$cols = Array_keys($fields);
+	$values = array_values($fields);
+	$cols = array_keys($fields);
 	
 	$numItems = count($values);
 	// print_r($cols);
@@ -208,7 +208,7 @@ function PDOupdate($table, $fields, $where){
 	$i = 0;
 	while (list($key, $value) = each($fields)) {
 //		echo "Key: $key; Value: $value<br />\n";
-		if (is_Array($value)) $value = json_encode($value);
+		if (is_array($value)) $value = json_encode($value);
 		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
 		if (is_null($value)) {
 			$value="NULL";
@@ -261,7 +261,7 @@ function PDOinsert($table, $array){
 	
 	foreach ($values AS $key => $value) {
 //		echo "Key: $key; Value: $value<br />\n";
-		if (is_Array($value)) $values[$key] = json_encode($value);
+		if (is_array($value)) $values[$key] = json_encode($value);
 		if (is_null($value)) {
 			$values[$key]='NULL';
 		} 

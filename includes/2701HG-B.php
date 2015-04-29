@@ -99,8 +99,8 @@ function GetSessions() {
 	*/
     
 	$t1 = preg_replace( '/\((\d+),(\d+)\)/', '$1_$2', $t1); // handle lnd: (60,0) and fnd (44,0):
-	$find = array ("\n",",sess[","]:","bkt","TCP state","TCP IN: is:","TCP OUT: is:","last used","unack'd","mss","windows_scale");
-	$repl = array (",","\nsess=",",","bkt=","TCP state:","IN_is:","OUT_is:","last_used:","unacked:","mss:","windows_scale:");
+	$find = array("\n",",sess[","]:","bkt","TCP state","TCP IN: is:","TCP OUT: is:","last used","unack'd","mss","windows_scale");
+	$repl = array(",","\nsess=",",","bkt=","TCP state:","IN_is:","OUT_is:","last_used:","unacked:","mss:","windows_scale:");
 	$t1 = str_replace($find,$repl, $t1);
 //	IN_is: 1434494543, sent: 40984, unacked: 339, mss: 0, windows_scale: 0 ,  OUT_is 3441205173, sent: 4817, unacked: 0, mss: 0, windows_scale: 0
     $sessions = explode("\n", $t1); 
@@ -117,14 +117,14 @@ function GetSessions() {
 	$status [0] = "secs_since_boot:".$secs_boot.",sessions_available:". $a5[2].",inbound_sessions:".$a4[0];
 	unset($sessions[0]);
 	foreach ($sessions  as &$value) {
-		$find = array ("/ sent/","/ unacked/","/ mss/","/ windows_scale/");
-		$repl = array ("IN_sent","IN_unacked","IN_mss","IN_windows_scale");
+		$find = array("/ sent/","/ unacked/","/ mss/","/ windows_scale/");
+		$repl = array("IN_sent","IN_unacked","IN_mss","IN_windows_scale");
 		$value = preg_replace($find, $repl, $value, 1);
-		$find = array ("/ sent/","/ unacked/","/ mss/","/ windows_scale/");
-		$repl = array ("OUT_sent","OUT_unacked","OUT_mss","OUT_windows_scale");
+		$find = array("/ sent/","/ unacked/","/ mss/","/ windows_scale/");
+		$repl = array("OUT_sent","OUT_unacked","OUT_mss","OUT_windows_scale");
 		$value = preg_replace($find, $repl, $value, 1);
-		$find = array (",",":"," ");
-		$repl = array ("&","=","");
+		$find = array(",",":"," ");
+		$repl = array("&","=","");
 		$value = str_replace($find,$repl, $value);
 		parse_str($value,$value);
 		$value['last_used'] = $secs_boot - $value['last_used'];
@@ -394,7 +394,7 @@ function GetDeviceList() {
 				$resdev = mysql_query($mysql);
 				if ($rowdev = mysql_fetch_array($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
 				$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___l1" => $mac, "ha_alerts___l2" => $rowdevice['connection'], "ha_alerts___l3" => $connection, "ha_alerts___l4" => $deviceID, "ha_alerts___v1" => $rowdevice['name'],"ha_alerts___v2" => $name, "ha_alerts___v3" => $rowdevice['ip'],"ha_alerts___v4" => $ip);
-				echo Alerts(ALERT_NETWORK_DEVICE_CHANGE,$params)." Alerts generated <br/>\r\n";
+				echo Alerts(ALERT_NETWORK_DEVICE_CHANGE, $params)." Alerts generated <br/>\r\n";
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
@@ -405,7 +405,7 @@ function GetDeviceList() {
 			}
 		}	else {				// New MAC
 			$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___v1" => $mac, "ha_alerts___v2" => $name, "ha_alerts___v3" => $ip, "ha_alerts___v4" => $connection);
-			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
+			echo Alerts(ALERT_NEW_NETWORK_DEVICE, $params)." Alerts generated <br/>\r\n";
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,
 						`mac` ,

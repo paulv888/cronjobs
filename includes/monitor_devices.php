@@ -25,7 +25,7 @@ function monitorDevicesTimeout() {
 		return false;
 	}
 	while ($rowlinks = mysql_fetch_assoc($reslinks)) {	
-		$feedback = UpdateLink($rowlinks['deviceID'],LINK_TIMEDOUT);
+		$feedback = UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $rowlinks['deviceID'], 'link' => LINK_TIMEDOUT));
 	}
 }
 
@@ -53,7 +53,7 @@ function monitorDevice($deviceID, $pingport, $montype) {
 	}
 
 	echo $rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
-	UpdateLink($deviceID, $curlink, MY_DEVICE_ID, COMMAND_PING);
+	UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $deviceID, 'link' => $curlink, 'commandID' => COMMAND_PING));
 }
 
 function pingip($host, $port, $timeout)

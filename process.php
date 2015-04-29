@@ -117,7 +117,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 					$commandID=$rowkeys['commandID'];
 				}
 			}
-			$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
+			$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
 		} else {
 			$callerparams['schemeID'] = $schemeID;
 			$feedback['RunScheme'] = RunScheme ($callerID, $callerparams);
@@ -125,11 +125,11 @@ function executeCommand($callerID, $messtypeID, $params) {
 		break;
 	case MESS_TYPE_SCHEME:
 		if (DEBUG_FLOW) echo "MESS_TYPE_SCHEME scheme: ".$schemeID.CRLF;
-		$feedback['SendCommand']=SendCommand($callerID, Array ('commandID' => COMMAND_RUN_SCHEME,  'commandvalue' => $schemeID), $callerparams);
+		$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'commandvalue' => $schemeID), $callerparams);
 		break;
 	case MESS_TYPE_COMMAND:        
 		if (DEBUG_FLOW) echo "MESS_TYPE_COMMAND commandID: ".$commandID." deviceID: ".$deviceID.CRLF;
-		$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => $commandID,  'commandvalue' => $commandvalue), $callerparams);
+		$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID,  'commandvalue' => $commandvalue), $callerparams);
 		break;
 	case MESS_TYPE_MULTI_KEY:
 		if ($commandID != COMMAND_GET_VALUE) {
@@ -147,12 +147,12 @@ function executeCommand($callerID, $messtypeID, $params) {
 			}
 			foreach ($selection AS $remotekeyID) {
 				$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-				$feedback['SendCommand'][]=SendCommand($callerID, Array ( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
+				$feedback['SendCommand'][]=SendCommand($callerID, array( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
 			}
 		} else {
 			foreach ($selection AS $remotekeyID) {
 				$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-				$feedback[]['updatestatus']=GetStatusLink($callerID, Array ( 'deviceID' => $rowkeys['deviceID']));
+				$feedback[]['updatestatus']=GetStatusLink(array( 'callerID' => $callerID, 'deviceID' => $rowkeys['deviceID']));
 			}
 		}
 	}
@@ -201,7 +201,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 	}
 	
 	while ($rowcond = mysql_fetch_assoc($rescond)) {	
-		$testvalue = Array();
+		$testvalue = array();
 		switch ($rowcond['type'])
 		{
 		case SCHEME_CONDITION_DEVICE_STATUS_VALUE: 									// what a mess already :(
@@ -324,7 +324,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 	if ($resschemesteps = mysql_query($sqlstr)) {
 		while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
 				$feedback['RunSchemeName'] = $rowshemesteps['name'];
-				if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, Array ( 'deviceID' => $rowshemesteps['deviceID'], 
+				if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, array( 'deviceID' => $rowshemesteps['deviceID'], 
 							'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 
 							'alert_textID' => $rowshemesteps['alert_textID']), $callerparams)) {
 			} 
@@ -333,7 +333,6 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		$feedback['message'] = 'No scheme steps found!';
 	}
 	if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
-//	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => $params['schemeID'], 'message' => $feedback, 'loglevel' => $loglevel));
 
 	return $feedback;
 
@@ -453,7 +452,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$message= $rowtext['message'];
 		//echo $commandvalue.CRLF.CRLF;
 		$callerparams['stepmessage'] = $commandvalue;
-		replaceText(Array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);
+		replaceText(array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);
 		//echo $message.CRLF.CRLF;
 		$feedback['error'] = (sendmail($rowcommands['command'], $subject, $message, 'VloHome') == true ? false : true);
 		break;
@@ -483,7 +482,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		if (!$feedback['error']) {
 			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $commandvalue;
-			$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
+			$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
@@ -525,7 +524,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		if (!$feedback['error']) {
 			$result[] = ($commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $commandvalue;
-			$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
+			$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));
 		}
 		break;
 	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
@@ -576,7 +575,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		case COMMAND_GET_GROUP:
 			$func = $rowcommands['command'];
 			$groups = $func($commandvalue);
-			$feedback = Array();
+			$feedback = array();
 			foreach($groups as $device) {
 				$feedback[]['groupselect']['deviceID'] = $device['deviceID'];
 			}
@@ -593,7 +592,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['error'] = $func($commandvalue);
 			break;
 		}
-		$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));
+		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));
 		break;
 	default:								// Generid
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
@@ -641,10 +640,10 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			break;
 		}
 		
-		$feedback['updatestatus'] = UpdateStatus($callerID, array( 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update base on command assumptions
+		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update base on command assumptions
 		break;		
 	}
-	logEvent(Array ('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
+	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
 	
 	if (DEBUG_FLOW) echo "Exit Send".CRLF;
 	
@@ -737,8 +736,8 @@ function RemoteKeys($result) {
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
 }
 
-function GetLastKey($array) {
-	end($array);
-	return key($array);
+function GetLastKey($arr) {
+	end($arr);
+	return key($arr);
 }
 ?>

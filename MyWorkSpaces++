@@ -262,7 +262,6 @@
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\garage.php" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\logins.php" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\timers.php" />
-        <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\MyWorkSpaces++" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\tmp.txt" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\process.php" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\updatetrades.php" />
@@ -279,5 +278,6 @@
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\robots.txt" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\X10Command.xml" />
         <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\readdevices.php" />
+        <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\insteonlogger.php" />
     </Project>
 </NotepadPlus>

@@ -106,13 +106,13 @@ function createthumb($name,$filename,$new_w,$new_h)
 }
 
 //clean all empty values from array
-function cleanArray($array)
+function cleanarray($array)
 {
     if (is_array($array))
     {
         foreach ($array as $key => $sub_array)
         {
-            $result = cleanArray($sub_array);
+            $result = cleanarray($sub_array);
             if ($result === false)
             {
                 unset($array[$key]);

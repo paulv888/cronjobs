@@ -688,7 +688,7 @@ class simple_html_dom_node
 //		$pattern = "/([\w-:\*]*)(?:\#([\w-]+)|\.([\w-]+))?(?:\[@?(!?[\w-]+)(?:([!*^$]?=)[\"']?(.*?)[\"']?)?\])?([\/, ]+)/is";
 		$pattern = "/([\w-:\*]*)(?:\#([\w-]+)|\.([\w-]+))?(?:\[@?(!?[\w-:]+)(?:([!*^$]?=)[\"']?(.*?)[\"']?)?\])?([\/, ]+)/is";
 		preg_match_all($pattern, trim($selector_string).' ', $matches, PREG_SET_ORDER);
-		if (is_object($debug_object)) {$debug_object->debug_log(2, "Matches Array: ", $matches);}
+		if (is_object($debug_object)) {$debug_object->debug_log(2, "Matches array: ", $matches);}
 
 		$selectors = array();
 		$result = array();

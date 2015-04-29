@@ -9,7 +9,7 @@ function loadWeather($station) {
 
 	ini_set('max_execution_time',30);
 
-	$mydeviceID = Array ("KBHM" => 65 , "KEET" => 66);
+	$mydeviceID = array("KBHM" => 65 , "KEET" => 66);
 	$retry = 5;
         $success = False;
 
@@ -23,7 +23,7 @@ function loadWeather($station) {
             		$xml = new SimpleXMLElement($get->getresponse());
             		UpdateWeatherNow($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity);
             		UpdateWeatherCurrent($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity );
-            		UpdateLink ($mydeviceID[$station]);
+            		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
                 	$success = true; 
             	}
         	}
@@ -41,7 +41,7 @@ function getYahooWeather($station) {
 
 	ini_set('max_execution_time',30);
 
-	$mydeviceID = Array ("USAL0594" => 196);
+	$mydeviceID = array("USAL0594" => 196);
 	//USAL0594
 
 	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
@@ -60,7 +60,6 @@ function getYahooWeather($station) {
 		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
 		UpdateWeatherCurrent($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'} );
 		$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
-//	UpdateLink ($mydeviceID[$station]);
 
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
@@ -141,12 +140,12 @@ function getYahooWeather($station) {
 			if ($row['severity'] == SEVERITY_WARNING) {
 				$array['class'] = SEVERITY_WARNING_CLASS;
 			}
-			PDOupdate("ha_weather_forecast", $array, Array('id' => $i));
+			PDOupdate("ha_weather_forecast", $array, array('id' => $i));
 //			PDOinsert("ha_weather_forecast", $array);
 			$i++;
 		}
 
-		UpdateLink ($mydeviceID[$station]);
+   		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
 	}
 
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
@@ -159,7 +158,7 @@ function getYahooWeather($station) {
 	
 function getWBUG($station) {
 
-	$mydeviceID = Array ("HOOVR" => 196);
+	$mydeviceID = array("HOOVR" => 196);
 	
 	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='WBUG'");
 	//https://thepulseapi.earthnetworks.com/oauth20/token?grant_type=client_credentials&client_id=XtlIwGloXerWOgENDDkXp2qeGji0v3uX&client_secret=JSok7jX6boeSS8t7
@@ -208,14 +207,8 @@ function getWBUG($station) {
 	UpdateWeatherNow($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'});
 	UpdateWeatherCurrent($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'} );
 	$feedback['updatestatus'] = UpdateStatus($mydeviceID[$station], array( 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'observation'}->{'temperature'}));
-	UpdateLink ($mydeviceID[$station]);
+	UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
 
-
-	//$mydeviceID[$station]
-	
-//	$marketopen=strpos($response["market"]["m_open_close"],"Markets close in");
-//			$obj = json_decode( $outputs );
-//	$this->temp = $obj->{'temp'};						 // Present temp in deg F (or C depending on thermostat setting)
 	return $feedback;
 	
 	}

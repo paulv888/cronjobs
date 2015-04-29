@@ -51,7 +51,7 @@ $now = date( 'Y-m-d H:i:s' );
 		}
 		catch( Exception $e )
 		{
-			PDOError($sql, Array(), $e);
+			PDOError($sql, array(), $e);
 		}
 		
 		flock( $lock, LOCK_UN );
@@ -107,7 +107,7 @@ $now = date( 'Y-m-d H:i:s' );
 		}
 		catch( Exception $e )
 		{
-			PDOError($sql, Array(), $e);
+			PDOError($sql, array(), $e);
 		}
 		
 		flock( $lock, LOCK_UN );

@@ -18,7 +18,7 @@ while (1) {
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(5);
-        echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated".CRLF;
+        echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated".CRLF;
 }
 
 function readCameras() {
@@ -104,7 +104,7 @@ function movePictures($camera) {
 					$nextcount = 1;
 				} else {
 					$nextcount = (int)(substr($group_dir,3)) + 1;
-					PDOupdate("ha_cam_recordings", Array('count' => $numfiles), Array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+					PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 				}
 				$group_dir = date("H",$filetime).'_'.str_pad($nextcount, 5, '0', STR_PAD_LEFT);
 				$targetdir = $dir.$datedir.'/'.$group_dir;
@@ -121,7 +121,7 @@ function movePictures($camera) {
 			}
 			if (!file_exists($targetdir)) {
 				mkdir($targetdir);
-				PDOinsert('ha_cam_recordings', Array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 			}
 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;
@@ -146,7 +146,7 @@ function movePictures($camera) {
 			}
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
-			PDOupdate("ha_cam_recordings", Array('count' => $numfiles), Array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+			PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 			UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
 		}
 		return $filetime;

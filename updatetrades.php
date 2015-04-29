@@ -30,7 +30,7 @@ if(date('Hi')>$starttime and date('Hi')<$endtime) {
 } else {
 	echo date("Y-m-d H:i:s").": "."Not sending Alerts. ". date('H:i')." outside $starttime - $endtime<br/>\r\n";
 }
-echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
 
 
 function FindInFlex($flexresponse, $symbol) {

@@ -49,28 +49,27 @@ while (true) {
 		if ($inst_hub) {
 
 			$last = strtotime(date("Y-m-d H:i:s"));
-			echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+			echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
 
 			// Inf loop till signal or error
 			while (true) {
 				$errors = 0;
 				$message = $inst_hub->getMessage(); 
-				if ($deviceID = setDeviceID($message)) { 		// No device founds so use my_id as callerID
-					$message['callerID'] = MY_DEVICE_ID;
-				} else {
-					$message['callerID'] = MY_DEVICE_ID;
+				$message['callerID'] = MY_DEVICE_ID;
+				if (is_null($deviceID = setDeviceID($message))) { 		// No device founds so use my_id as callerID
+					$message['deviceID'] = MY_DEVICE_ID;
 				}
 				print_r($message);
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
-					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus($message['callerID'], array ( 'deviceID' => $deviceID, 'commandID' => $message['commandID'])))."</br>\n";
-					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink ($deviceID, LINK_TIMEDOUT, $message['callerID'], $message['commandID'])."</br>\n";
+					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus(array('callerID' => $message['callerID'], 'deviceID' => $deviceID, 'commandID' => $message['commandID'])))."</br>\n";
+					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink (array('callerID' => $message['callerID'], 'deviceID' => $deviceID, 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']))."</br>\n";
 				}
 				
 				// Update My Link 
 				if (timeExpired($last, 15)) {
-					echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+					echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
 				}
 			}
 		}
@@ -91,7 +90,6 @@ function setDeviceID(&$log){
 	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
 	if ($rowdevice = FetchRow($mysql)) {
 		$log['deviceID'] = $rowdevice['id'];
-		$log['callerID'] = $rowdevice['id'];
 		$log['typeID'] = $rowdevice['typeID'];
 		$deviceID = $rowdevice['id'];
 	}

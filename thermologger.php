@@ -2,11 +2,10 @@
 <?php
 require_once 'includes.php';
 
-
 define("MY_DEVICE_ID", 136);
 
 echo date("Y-m-d H:i:s").": ".UpdateTemps();
-echo date("Y-m-d H:i:s").": ".UpdateLink(MY_DEVICE_ID)." My Link Updated <br/>\r\n";
+echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
 
 function UpdateTemps() {
 	global $pdo;
@@ -33,7 +32,7 @@ function UpdateTemps() {
 	}
 	catch( Exception $e )
 	{
-		PDOError($sql, Array(), $e);
+		PDOError($sql, array(), $e);
 	}
 	
 	
@@ -93,7 +92,7 @@ function UpdateTemps() {
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
 				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp), NULL , to_celcius($target));
 				UpdateWeatherCurrent($thermostatRec['deviceID'], to_celcius($stat->temp), NULL, to_celcius($target));
-				UpdateStatus(MY_DEVICE_ID, array( 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'commandvalue' => to_celcius($stat->temp) ));
+				UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'commandvalue' => to_celcius($stat->temp) ));
 	
 				//$runTimeData = $stat->getDataLog();
 				$stat->getDataLog();
@@ -111,12 +110,12 @@ function UpdateTemps() {
 					UpdateDailyRuntime(999);
 				}
 				
-				echo date("Y-m-d H:i:s").": ".UpdateLink($thermostatRec['deviceID'])." My Link Updated <br/>\r\n";
+				echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID']))." My Link Updated <br/>\r\n";
 	
 			}
 			catch( Exception $e )
 			{
-				PDOError($sql, Array(), $e);
+				PDOError($sql, array(), $e);
 			}
 	}
 }

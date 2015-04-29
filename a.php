@@ -82,8 +82,8 @@ if (!($sdata=="")) { 					//import_event
 			}
 		}
 		$message1 = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		UpdateStatus(MY_DEVICE_ID, array ( 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $message1));
-		UpdateLink ($message['deviceID'], LINK_TIMEDOUT, $message['callerID'], $message['commandID']);
+		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $message1));
+		UpdateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']);
 	}
 }
 ?>

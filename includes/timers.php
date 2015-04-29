@@ -65,7 +65,7 @@ function RunTimers(){
 						$message = executeCommand(MY_DEVICE_ID, MESS_TYPE_SCHEME, array( 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE));
 					}
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
-					if ($timer['priorityID'] != '99') logEvent($log = Array ('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
+					if ($timer['priorityID'] != '99') logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 
 								 'data' => GetSchemaName($timer['schemeID']), 'message' => $message ));
 					
 					$mysql="UPDATE `ha_timers` ".
@@ -125,7 +125,7 @@ function UpdateTimers($dummy) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_HA) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand(MY_DEVICE_ID, Array ( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
+				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand(MY_DEVICE_ID, array( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
 			} else {
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
@@ -139,7 +139,7 @@ function UpdateTimers($dummy) {
 
 function StartTimer($callerID, $deviceID, $time) {
 
-	$feedback['SendCommand']=SendCommand($callerID, Array ( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
+	$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
 	RunQuery ('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
 	return $feedback;
 }
