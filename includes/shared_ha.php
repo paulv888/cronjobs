@@ -116,9 +116,9 @@ function UpdateLink($params)
 							  " `link` = '" . $link . "'" .
 							  " WHERE(`deviceID` ='" . $deviceID . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
-					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+					$result = HandleTriggers($params, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
 					if (!empty($result)) print_r ($result);
-					$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_OFF);
+					$result = HandleTriggers($params, MONITOR_LINK, TRIGGER_AFTER_OFF);
 					if (!empty($result)) print_r ($result);
 				} 
 			if ($prevlink == LINK_DOWN && $link == LINK_UP) { 	
@@ -129,9 +129,9 @@ function UpdateLink($params)
 						  " `link` = '" . $link . "'" .
 						  " WHERE(`deviceID` ='" . $deviceID . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
-				$result =  HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
+				$result =  HandleTriggers($params, MONITOR_LINK, TRIGGER_AFTER_CHANGE);
 				if (!empty($result)) print_r ($result);
-				$result = HandleTriggers($callerID, $deviceID, MONITOR_LINK, TRIGGER_AFTER_ON);
+				$result = HandleTriggers($params, MONITOR_LINK, TRIGGER_AFTER_ON);
 				if (!empty($result)) print_r ($result);
 			}
 		} else {			// link is same as prev link
@@ -204,16 +204,16 @@ function UpdateStatus($params)
 			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
 			if (!mysql_query($mysql)) mySqlError($mysql);
 			// run on change
-			$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_CHANGE, $params);
+			$result = HandleTriggers($params, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
 			if (!empty($result)) $feedback['Triggers'] = $result;
 			if ($status == STATUS_ON ) {
-				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ON, $params);
+				$result = HandleTriggers($params, MONITOR_STATUS, TRIGGER_AFTER_ON);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($status == STATUS_OFF ) {
-				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_OFF, $params);
+				$result = HandleTriggers($params, MONITOR_STATUS, TRIGGER_AFTER_OFF);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($status == STATUS_ERROR ){
-				$result = HandleTriggers($callerID, $deviceID, MONITOR_STATUS, TRIGGER_AFTER_ERROR, $params);
+				$result = HandleTriggers($params, MONITOR_STATUS, TRIGGER_AFTER_ERROR);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 
 			}
@@ -310,25 +310,29 @@ function logEvent($log) {
 	PDOinsert("ha_events", $log);
 }
 
-function HandleTriggers($callerID, $deviceID, $monitortype, $triggertype, $params = Null) {
+function HandleTriggers($params, $monitortype, $triggertype) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
-			'WHERE (`deviceID` = '. $deviceID. ' AND statuslink = '.$monitortype.' AND `triggertype` = '.$triggertype.')';
+			'WHERE (`deviceID` = '. $params['deviceID']. ' AND statuslink = '.$monitortype.' AND `triggertype` = '.$triggertype.')';
 	$feedback =  Null; 
+	
+	if (DEBUG_HA) echo "Handle Triggers Params";
+	if (DEBUG_HA) print_r($params);
+	
 	if ($triggerrows = FetchRows($mysql)) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
 			$params['schemeID'] = $trigger['schemeID'];
 			$params['loglevel'] = LOGLEVEL_MACRO;
-			$result = executeCommand($callerID, MESS_TYPE_SCHEME, $params); 
+			$result = executeCommand($params['callerID'], MESS_TYPE_SCHEME, $params); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
+			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
 		}
 	}
 	return $feedback;
 }
 
-function UpdateWeatherNow($deviceID,$temp, $humidity = NULL, $set_point = NULL){
+function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
 	$ttrend = NULL;

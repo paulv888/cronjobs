@@ -2,15 +2,17 @@
 //define("DEBUG_ALERT", TRUE);
 define("DEBUG_ALERT", FALSE);
 
-function Alerts($alert_textID , $params = NULL ){
+function Alerts($alert_textID , $params ){
 
-	if (!is_array($params)) $params[] ='';
 	
-	$labels = array( 'l1', 'l2', 'l3', 'l4', 'l5' ) ;
-	$values = array( 'v1', 'v2', 'v3', 'v4', 'v5' ) ;
 	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
 	$params['priorityID']  = (array_key_exists('priorityID', $params) ? $params['priorityID'] : 'NULL');
-
+	if (array_key_exists('callerID', $params)) {
+		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['callerID']))  {
+			$params['callerID___description']= $cd['description'];
+		}
+	}
+	
 	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 	$description= $rowtext['description'];
 	$alert_text= $rowtext['message'];

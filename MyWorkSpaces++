@@ -200,7 +200,6 @@
             </Folder>
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\shared_ha.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\weather.php" />
-            <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\create_alerts.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\simple_html_dom.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\sendmail.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\2701HG-B.php" />
@@ -220,6 +219,7 @@
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\shared_gen.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\bitly.php" />
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\thermo_common.php" />
+            <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\includes\alerts.php" />
         </Folder>
         <Folder name="joomla-custom">
             <File name="\\VLOSITE\www\cronjobs\70D455DC-ACB4-4525-8A85-E6009AE93AF4\joomla-custom\verysimpleimagegallery.php" />

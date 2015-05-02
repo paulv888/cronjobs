@@ -450,6 +450,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 		$subject= $rowtext['description'];
 		$message= $rowtext['message'];
+		if (strlen($message) == 0) $message = " ";
 		//echo $commandvalue.CRLF.CRLF;
 		$callerparams['stepmessage'] = $commandvalue;
 		replaceText(array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);

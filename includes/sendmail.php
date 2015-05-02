@@ -167,6 +167,8 @@ function replaceText($params, &$subject, &$message = NULL, $callerparams = Null)
 		}
 	}
 	if ($callerparams != Null) {
+//echo "callerparams in replacetext";	
+//print_r($callerparams);	
 		unset ($pattern);
 		foreach ($callerparams as $key => $value) {
 			$pattern[$key]="/\{".$key."\}/";
