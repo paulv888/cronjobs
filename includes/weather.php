@@ -219,22 +219,20 @@ function cache_image($file, $url, $hours = 168) {
 
 	$file = $_SERVER['DOCUMENT_ROOT'].$file ;
 
+//echo "***".$file.CRLF;
 	$current_time = time(); 
 	$expire_time = $hours * 60 * 60; 
-	$file_time = filemtime($file);
 
-	if(file_exists($file) && ($current_time - $expire_time < $file_time)) {
-		//echo 'returning from cached file';
-		return true;
+	if(file_exists($file)) {
+		$file_time = filemtime($file);
+		if($current_time - $expire_time < $file_time) {
+			return true;
+		}
 	}
-	else {
-		$content = get_url($url);
-//		if($fn) { $content = $fn($content,$fn_args); }
-//		$content.= '<!-- cached:  '.time().'-->';
-		file_put_contents($file, $content);
-		//echo 'retrieved fresh from '.$url.':: '.$content;
-		return true;
-	}
+
+	$content = get_url($url);
+	file_put_contents($file, $content);
+	return true;
 }
 
 function get_url($url) {
