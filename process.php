@@ -96,6 +96,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 
 	$callerparams = $params;
 	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
+	$callerparams['callerID'] = $callerID;
 
 	$feedback['show_result'] = false;
 	switch ($messtypeID)
@@ -394,12 +395,13 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$commandclassID = $rowdevices['commandclassID'];
 		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
 
+		$resmonitor = mysql_query("SELECT status, invertstatus FROM ha_mf_monitor_status WHERE 			ha_mf_monitor_status.deviceID =".$deviceID);
+		$rowmonitor = mysql_fetch_array($resmonitor);
+
 		if ($commandID==COMMAND_TOGGLE) {   // Special handling for toggle
 			if ($commandvalue > 0 && $commandvalue < 100) { // if dimvalue given then update dim, else toggle
 				$commandID = COMMAND_ON;						
 			} else {
-				$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceID);
-				$rowmonitor = mysql_fetch_array($resmonitor);
 				if ($rowmonitor) {
 					if (DEBUG_DEVICES) echo "Status Toggle: ".$rowmonitor['status'].CRLF;
 					$commandID = ($rowmonitor['status'] == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
@@ -409,7 +411,15 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 				}
 			}
 		}
-
+		
+		if ($rowmonitor && !$rowmonitor['invertstatus']) {  // Invert Status is set
+			if (DEBUG_DEVICES) echo "Status Invert: ".$rowmonitor['status'].CRLF;
+			if ($commandID == COMMAND_OFF) {
+				$commandID = COMMAND_ON;
+			} elseif ($commandID == COMMAND_ON) {
+				$commandID = COMMAND_OFF;
+			}
+		}
 
 	} else {
 		$commandclassID = COMMAND_CLASS_PHP;
