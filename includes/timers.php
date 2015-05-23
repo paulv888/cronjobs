@@ -25,15 +25,15 @@ function RunTimers(){
 
 	foreach ($timers as $timer) {
 		// check if we are ready to generate
-		if (DEBUG_TIMERS) echo "Timer: ".$timer['id']." ".$timer['description'].CRLF;
+		if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Timer: ".$timer['id']." ".$timer['description'].CRLF;
 		$date = getdate();
 		if (is_int(strpos($timer['generate_days'],(string)$date["wday"])) === true) {								// Check Day
-			if (DEBUG_TIMERS) echo "Run Today".CRLF;
+			if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Run Today".CRLF;
 			if (checktime($timer['generate_start'],$timer['generate_end'], $timer['generate_offset'])) {			// Between Hours
 
-				if (DEBUG_TIMERS) echo "Last Run ".$timer['last_run_date'].CRLF;
-				if (DEBUG_TIMERS) echo "Right Time".CRLF;
-				if (DEBUG_TIMERS) echo "Repeat ".$timer['repeat'].CRLF;
+				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Last Run ".$timer['last_run_date'].CRLF;
+				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Right Time".CRLF;
+				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Repeat ".$timer['repeat'].CRLF;
 
 				$doit = false;
 				$last = strtotime($timer['last_run_date']);
@@ -70,7 +70,7 @@ function RunTimers(){
 					
 					$mysql="UPDATE `ha_timers` ".
 						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
-					if (DEBUG_TIMERS) echo $mysql."</br>";
+					if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": ".$mysql.CRLF;
 					RunQuery($mysql);
 				}
 				
@@ -103,8 +103,8 @@ function checktime ($setupstart,$setupend, $offset) {
 		$end = strtotime("today $end hours $offset minutes");
 	}
 	
-	if (DEBUG_TIMERS) echo "Start: ".date("Y-m-d H:i:s", $start).CRLF;
-	if (DEBUG_TIMERS) echo "End  : ".date("Y-m-d H:i:s", $end).CRLF;
+	if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Start: ".date("Y-m-d H:i:s", $start).CRLF;
+	if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."End  : ".date("Y-m-d H:i:s", $end).CRLF;
 	
 	return  time() >= $start AND time() < $end; ;
 	
@@ -140,7 +140,13 @@ function UpdateTimers($dummy) {
 function StartTimer($callerID, $deviceID, $time) {
 
 	$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
-	RunQuery ('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	// echo "<pre>";
+	// echo 'UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID.CRLF;
+	// $a = FetchRow('SELECT `timerMinute` , `timerRemaining` , timerDate FROM `ha_mf_monitor_status` WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	// print_r($a);
+	// echo "</pre>";
+
 	return $feedback;
 }
 ?>

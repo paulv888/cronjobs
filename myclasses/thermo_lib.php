@@ -136,7 +136,8 @@ class Stat
 
 		curl_setopt( $this->ch, CURLOPT_URL, $commandURL );
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");       
-		curl_setopt ($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
+		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
+		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT); 
 		
 		$outputs = curl_exec( $this->ch );
 		if (curl_errno ( $this->ch )<>0) throw new Thermostat_Exception( 'setStatData: ' . curl_error($this->ch) );
@@ -171,7 +172,8 @@ class Stat
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($value));
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     
 		curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt ($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
+		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
+		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT); 
 				
 		if( $this->debug)
 		{

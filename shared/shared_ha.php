@@ -199,6 +199,14 @@ function UpdateStatus($params)
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
 			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
+			if ($row['invertstatus'] == 0) {
+				if (DEBUG_HA) echo "Status Invert".CRLF;
+				if ($status == STATUS_ON) {
+					$status = STATUS_OFF;
+				} elseif ($status == STATUS_OFF) {
+					$status = STATUS_ON;
+				}
+			}
 			if ($status == STATUS_OFF) $mysql .= ', timerMinute = NULL, timerRemaining = NULL, timerDate = NULL';
 			$mysql .= ' WHERE deviceID = '.$deviceID;
 			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
@@ -288,7 +296,14 @@ function logEvent($log) {
 		}
 		$rowdevice=mysql_fetch_array($resdevice);
 		$log['typeID'] = $rowdevice['typeID'];
-		if ($rowdevice['invertstatus'] === 0) $log['extdata'] = "Inverted ".$log['extdata']; 
+		if ($rowdevice['invertstatus'] == 0) {
+			$log['extdata'] = "Inverted ".$log['extdata']; 
+			if ($log['commandID'] == COMMAND_OFF) {
+				$log['commandID'] = COMMAND_ON;
+			} elseif ($log['commandID'] == COMMAND_ON) {
+				$log['commandID'] = COMMAND_OFF;
+			}
+		}
 	}
 	
 	$log['mdate'] = date("Y-m-d H:i:s");
