@@ -3,7 +3,7 @@
 if (!defined('DEBUG_YAHOOWEATHER')) define( 'DEBUG_YAHOOWEATHER', FALSE );
 if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
-define('IMAGE_CACHE',"/images/yahoo/");
+define('IMAGE_CACHE',"/vlohome/images/yahoo/");
 
 function loadWeather($station) {
 
