@@ -189,20 +189,21 @@ function UpdateStatus($params)
 
 	// *** Inverting Start **** 
 	// Hack, to make setTimer work.
-	if ($row['invertstatus'] == 0) {
-		if (DEBUG_HA) echo "Status Invert".CRLF;
-		if ($commandID == COMMAND_ON) {
-			$status = STATUS_OFF;
-		} elseif ($commandID == COMMAND_OFF) {
-			$status = STATUS_ON;
-		}
-	}
 
 	if ($row = FetchRow($mysql)) {
+		if ($row['invertstatus'] == 0) {
+			if (DEBUG_HA) echo "Status Invert".CRLF;
+			if ($commandID == COMMAND_ON) {
+				$status = STATUS_OFF;
+			} elseif ($commandID == COMMAND_OFF) {
+				$status = STATUS_ON;
+			}
+		}
 		if (DEBUG_HA) echo "Status Status2:".$status.CRLF;
 		$feedback['deviceID'] = $deviceID;
 		$feedback['status'] = $status;
 		$feedback['commandvalue'] = $commandvalue;
+
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
 			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
