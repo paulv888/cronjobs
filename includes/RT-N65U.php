@@ -174,6 +174,10 @@ function FindAddress($ip) {
 function ImportSessions() {
  
 	$sessionsresponse=GetSessions();
+//echo "<pre>";
+//print_r($sessionsresponse);
+//echo "</pre>";
+
 	if ($sessionsresponse < 0) return -1;
 	
 	$sessionsimported=0;
