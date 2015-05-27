@@ -4,6 +4,7 @@ if (!defined('DEBUG_YAHOOWEATHER')) define( 'DEBUG_YAHOOWEATHER', FALSE );
 if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
 define('IMAGE_CACHE',"/vlohome/images/yahoo/");
+define('FRONT_DIR',"/images/yahoo/");
 
 function loadWeather($station) {
 
@@ -99,7 +100,7 @@ function getYahooWeather($station) {
 		if ($tpb>$tsr && $tpb<$tss) { $daynight = 'd'; } else { $daynight = 'n'; }
 		$image = $result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
 		cache_image(IMAGE_CACHE.$image, 'http://l.yimg.com/a/i/us/nws/weather/gr/'.$image);
-		$array['link1'] = IMAGE_CACHE.$image;
+		$array['link1'] = FRONT_DIR.$image;
 
 		$array['class'] = "";
 		if ($daynight == "d") {
@@ -131,7 +132,7 @@ function getYahooWeather($station) {
 			$array['code'] = $forecast->{'code'};
 			$image = $forecast->{'code'}.'s.png';
 			cache_image(IMAGE_CACHE.$image, 'http://l.yimg.com/a/i/us/nws/weather/gr/'.$image);
-			$array['link1'] = IMAGE_CACHE.$image;
+			$array['link1'] = FRONT_DIR.$image;
 			$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = ".$forecast->{'code'});
 			$array['class'] = "";
 			if ($row['severity'] == SEVERITY_DANGER) {
