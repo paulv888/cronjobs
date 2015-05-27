@@ -24,14 +24,14 @@
 
 function HvacToggle($callerID, $deviceID, $status = NULL) {
 
-global $lock;
+// global $lock;
 
 $now = date( 'Y-m-d H:i:s' );
 
 	$thermostats = getThermoStats();
 	$thermostatRec = $thermostats[$deviceID];
-	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
-	{
+	// if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
+	// {
 		try
 		{
 			$thermostatRec = $thermostats[$deviceID];
@@ -55,13 +55,13 @@ $now = date( 'Y-m-d H:i:s' );
 			PDOError($sql, array(), $e);
 		}
 		
-		flock( $lock, LOCK_UN );
-	}
-	else
-	{
-		die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
-	}
-	fclose( $lock );
+		// flock( $lock, LOCK_UN );
+	// }
+	// else
+	// {
+		// die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
+	// }
+	// fclose( $lock );
 
 }
 function HvacOff($callerID, $deviceID) {
@@ -80,15 +80,15 @@ function HvacOn($callerID, $deviceID) {
 
 function HvacTempAdd($callerID, $deviceID, $addtemp) {
 
-global $lock;
+//global $lock;
 global $thermostats;
 
 $now = date( 'Y-m-d H:i:s' );
 
 	$thermostats = getThermoStats();
 	$thermostatRec = $thermostats[$deviceID];
-	if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
-	{
+	// if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
+	// {
 		try
 		{
 			$thermostatRec = $thermostats[$deviceID];
@@ -112,13 +112,13 @@ $now = date( 'Y-m-d H:i:s' );
 			PDOError($sql, array(), $e);
 		}
 		
-		flock( $lock, LOCK_UN );
-	}
-	else
-	{
-		die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
-	}
-	fclose( $lock );
+		// flock( $lock, LOCK_UN );
+	// }
+	// else
+	// {
+		// die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
+	// }
+	// fclose( $lock );
 
 }
 
