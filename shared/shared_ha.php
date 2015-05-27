@@ -154,6 +154,9 @@ function UpdateLink($params)
 		
 function UpdateStatus($params)
 {
+	// If inverted (from process.php, coming in with negated command
+
+
  	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
@@ -183,15 +186,19 @@ function UpdateStatus($params)
 				" JOIN `ha_mf_monitor_status` s ON d.id = s.deviceID ". 
 				" WHERE deviceID = ".$deviceID. " AND (monitortypeID = ".MONITOR_STATUS. " OR monitortypeID = ".MONITOR_LINK_STATUS.")"; 
 	if (DEBUG_HA) echo "Sql: ".$mysql.CRLF;
-	if ($row = FetchRow($mysql)) {
-		if ($row['invertstatus'] == 0) {
-			if (DEBUG_HA) echo "Status Invert".CRLF;
-			if ($status == STATUS_ON) {
-				$status = STATUS_OFF;
-			} elseif ($status == STATUS_OFF) {
-				$status = STATUS_ON;
-			}
+
+	// *** Inverting Start **** 
+	// Hack, to make setTimer work.
+	if ($row['invertstatus'] == 0) {
+		if (DEBUG_HA) echo "Status Invert".CRLF;
+		if ($commandID == COMMAND_ON) {
+			$status = STATUS_OFF;
+		} elseif ($commandID == COMMAND_OFF) {
+			$status = STATUS_ON;
 		}
+	}
+
+	if ($row = FetchRow($mysql)) {
 		if (DEBUG_HA) echo "Status Status2:".$status.CRLF;
 		$feedback['deviceID'] = $deviceID;
 		$feedback['status'] = $status;
@@ -199,14 +206,6 @@ function UpdateStatus($params)
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
 			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
-			if ($row['invertstatus'] == 0) {
-				if (DEBUG_HA) echo "Status Invert".CRLF;
-				if ($status == STATUS_ON) {
-					$status = STATUS_OFF;
-				} elseif ($status == STATUS_OFF) {
-					$status = STATUS_ON;
-				}
-			}
 			if ($status == STATUS_OFF) $mysql .= ', timerMinute = NULL, timerRemaining = NULL, timerDate = NULL';
 			$mysql .= ' WHERE deviceID = '.$deviceID;
 			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
@@ -294,9 +293,9 @@ function logEvent($log) {
 			mySqlError($mysql); 
 			return false;
 		}
-		$rowdevice=mysql_fetch_array($resdevice);
+		$rowdevice=FetchRow($mysql);
 		$log['typeID'] = $rowdevice['typeID'];
-		if ($rowdevice['invertstatus'] == 0) {
+		if ($rowdevice['invertstatus'] == "0") {
 			$log['extdata'] = "Inverted ".$log['extdata']; 
 			if ($log['commandID'] == COMMAND_OFF) {
 				$log['commandID'] = COMMAND_ON;

@@ -4,9 +4,9 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-//define( 'DEBUG_FLOW', TRUE );
-//define( 'DEBUG_RETURN', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_RETURN', TRUE );
+// define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
@@ -395,7 +395,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$commandclassID = $rowdevices['commandclassID'];
 		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
 
-		$resmonitor = mysql_query("SELECT status, invertstatus FROM ha_mf_monitor_status WHERE 			ha_mf_monitor_status.deviceID =".$deviceID);
+		$resmonitor = mysql_query("SELECT status, invertstatus FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$deviceID);
 		$rowmonitor = mysql_fetch_array($resmonitor);
 
 		if ($commandID==COMMAND_TOGGLE) {   // Special handling for toggle
@@ -651,7 +651,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			break;
 		}
 		
-		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update base on command assumptions
+		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update based on command assumptions
 		break;		
 	}
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
