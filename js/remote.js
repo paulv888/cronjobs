@@ -5,7 +5,7 @@ if(!window.scriptRemoteHasRun) {
 	var COMMAND_GET_GROUP = 282;
 	var COMMAND_GET_VALUE = 136;
 	var MY_DEVICE_ID = 164;
-	var  GROUP_SELECT_MODE = 100;
+	var GROUP_SELECT_MODE = 100;
 	var GROUP_NO_SELECTED = 0;
 	var DIM_NO_SELECTED = 19;
 
@@ -55,7 +55,7 @@ if(!window.scriptRemoteHasRun) {
 		$$('.btndropdown li a').addEvent('click', function(event){
 			//event.stop();
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
-			mbut.firstChild.textContent = this.text+' ';
+			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
 			if (selected.charAt(0) == 'S') {
