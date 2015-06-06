@@ -2,8 +2,7 @@
 <?php
 require_once 'mc-includes.php';
 
-define("MY_DEVICE_ID", 999);
+define("MY_DEVICE_ID", 218);
 
-
-print_r(clarify());
+print_r(clarify("CHANGES"));
 ?>
