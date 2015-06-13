@@ -276,6 +276,7 @@ function storeCR($rows) {
 	foreach ($rows as $fields) {
 		if (strlen($fields['CR_ID']) > 0) {
 			$where['CR_ID'] = $fields['CR_ID'];
+			$where['Case_ID'] = $fields['Case_ID'];
 			$CRfields['CR_ID'] = $fields['CR_ID'];
 			$CRfields['Case_ID'] = $fields['Case_ID'];
 			$CRfields['CR_Fix_In_Ver'] = $fields['CR_Fix_In_Ver'];
