@@ -189,7 +189,6 @@ function loadRemoteDiv($divid) {
 						echo '<button class="btn btn-block btn-success dropdown-toggle rem-button';
 						if (strlen($status)>1) echo ' '.$status;
 						if (strlen($link)>1) echo ' '.$link;
-						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo ' type="button" data-toggle="dropdown">';
@@ -201,11 +200,13 @@ function loadRemoteDiv($divid) {
 							echo '">';
 							echo '</i>';
 						} 
-						echo '<span class="buttontext">'.$rowremotekeys['name'].'</span>'.' '.'<span class="caret"></span></button>';
+						echo '<span class="buttontext">'.$rowremotekeys['name'].'</span>'.'&nbsp;'.'<span class="caret"></span></button>';
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
-						echo '<ul class="dropdown-menu btndropdown" role="menu" data-myvalue="'.$option[0].'"'; 			// properly set default to first
+						echo '<ul class="dropdown-menu btndropdown ';
+						if (strlen($class)>1) echo ' '.$class;
+						echo '" role="menu" data-myvalue="'.$option[0].'"'; 			// properly set default to first
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 						echo '>';

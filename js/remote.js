@@ -38,10 +38,10 @@ if(!window.scriptRemoteHasRun) {
 			event.stop();
 			if ($$('#group').get('data-myvalue') !=  GROUP_SELECT_MODE) {
 				var commandvalue = 100;
-				if (document.id('dim')) { 
-					commandvalue = parseInt($$('#dim').get('data-myvalue'));
-					if (commandvalue ==  DIM_NO_SELECTED) commandvalue = null;
-				}
+				
+//				html body div.bs-example.bs-example-tabs div#myTabContent.tab-content div#divid_22.tab-pane.active table.table.table-rem-condensed.table tbody tr.keysrow td.keyscell div ul#dim.dropdown-menu.btndropdown.dimmer
+				commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
+				if (commandvalue ==  DIM_NO_SELECTED) commandvalue = null;
 				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), commandvalue: commandvalue};
 				resetSelection();
 				this.addClass('group-select');
@@ -92,11 +92,12 @@ if(!window.scriptRemoteHasRun) {
 		});
 
 		
-		$$('#dim li a').removeEvents('click');
-		$$('#dim li a').addEvent('click', function(event){
+		$$('.dimmer li a').removeEvents('click');
+		$$('.dimmer li a').addEvent('click', function(event){
 //			event.stop();
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
-			mbut.firstChild.textContent = ' '+this.text;
+//			mbut.firstChild.textContent = ' '+this.text;
+			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
 
@@ -181,9 +182,10 @@ if(!window.scriptRemoteHasRun) {
 		$$('#myTab a').removeEvents('click');
 		$$('#myTab a').addEvent('click', function(event){
 			$$('#system-message-container').set('html', '');
-			$$('#dim li a[value='+DIM_NO_SELECTED+']').fireEvent('click');
+			$$('.dimmer li a[value='+DIM_NO_SELECTED+']').fireEvent('click');
 			$$('#group li a[value='+GROUP_NO_SELECTED+']').fireEvent('click');
 			resetSelection();
+			//window.scrollTo(0,document.body.scrollHeight);
 		})
 		
 		window.setInterval(function(){
