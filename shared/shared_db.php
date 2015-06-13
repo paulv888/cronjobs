@@ -189,9 +189,18 @@ function PDOError($mysql, $values, $e) {
 
 function PDOupsert($table, $fields, $where) {
 
+
+	$i=0;
 	while (list($key, $value) = each($where)) {
-		$sql = 'SELECT '.$key.' FROM '.$table.' WHERE `'.$key.'` = "'.$value.'"';
+		if ($i==0) {
+			$sql = 'SELECT '.$key.' FROM '.$table.' WHERE  ';
+		} else {
+			$sql.= " AND ";
+		}
+		$sql.= '`'.$key.'` = "'.$value.'"';
+		$i++;
 	}
+//	echo "Up: ".$sql.CRLF;
 	if (FetchRow($sql)) {
 		PDOupdate($table, $fields, $where);
 	} else {
@@ -238,9 +247,12 @@ function PDOupdate($table, $fields, $where){
   
   
 	$sql .= ' WHERE ';
+	$i = 0;
 	while (list($key, $value) = each($where)) {
-		$sql .= "`".$key."` = ?";
+		if ($i>0) $sql.= " AND ";
+		$sql.= "`".$key."` = ?";
 		$values[] = $value;
+		$i++;
 	}
 
 //	echo "sql sofar: ". $sql.CRLF;
