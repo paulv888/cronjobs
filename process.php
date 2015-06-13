@@ -447,7 +447,6 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo " command ". $rowcommands['command'].CRLF;
 	//if (DEBUG_DEVICES) echo " command commandvalue ". $rowcommands['commandvalue'].CRLF;
-	
 	switch ($commandclassID)
 	{
 	case COMMAND_CLASS_3MFILTRETE:          
@@ -476,9 +475,13 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		if (!$rowextra['dimmable']) {
 			$commandvalue = 100;
 		}
+		if (DEBUG_DEVICES) echo "commandvalue a".$commandvalue.CRLF;
 		if ($commandvalue>100) $commandvalue=100;
-		if ($commandvalue!=100 && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if (DEBUG_DEVICES) echo "commandvalue b".$commandvalue.CRLF;
+		if (is_null($commandvalue) && $commandID == COMMAND_ON) $commandvalue= $rowextra['onlevel'];
+		if (DEBUG_DEVICES) echo "commandvalue c".$commandvalue.CRLF;
 		if ($commandvalue>0) $commandvalue=255/100*$commandvalue;
+		if (DEBUG_DEVICES) echo "commandvalue d".$commandvalue.CRLF;
 		if ($commandvalue == NULL && $commandID == COMMAND_ON) $commandvalue=255;		// Special case so satify the replace in on command
 		$commandvalue = dec2hex($commandvalue,2);
 		if (DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
