@@ -52,7 +52,7 @@ if (!($sdata=="")) { 					//import_event
 				}
 				if (isset($t)) {
 						UpdateWeatherNow($message['deviceID'], $t, $h );
-						UpdateWeatherCurrent($message['deviceID'], $t, $h );
+						$v = $t;
 				}
 		}
 		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {
@@ -78,11 +78,18 @@ if (!($sdata=="")) { 					//import_event
 			UpdateDailyRuntime($message['deviceID']);
 			if (isset($t)) {
 			 	UpdateWeatherNow($message['deviceID'], $t, $h , $s);
-				UpdateWeatherCurrent($message['deviceID'], $t, $h, $s);
+				$v = $t;
+			}
+		}
+		if (!isset($t)) {			// Did not find a temp / heat / cool (for Light and Water Sensor
+			if (array_key_exists('ExtData', $rcv_message)) {		// Search for any other Values/Setpoints or Humidity
+				$v = (array_key_exists('V', $rcv_message['ExtData']) ? $rcv_message['ExtData']['V'] : $v = NULL);
+				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
+				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
 			}
 		}
 		$message1 = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $message1));
+		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'commandvalue' => $v, 'humidity' => $h, 'setpoint' => $s));
 		UpdateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }

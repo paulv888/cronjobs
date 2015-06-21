@@ -23,7 +23,8 @@ function loadWeather($station) {
             	if ($feedback) {
             		$xml = new SimpleXMLElement($get->getresponse());
             		UpdateWeatherNow($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity);
-            		UpdateWeatherCurrent($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity );
+					UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
+						'commandvalue' => $xml->temp_c,  'humidity' => $xml->relative_humidity));
             		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
                 	$success = true; 
             	}
@@ -59,8 +60,8 @@ function getYahooWeather($station) {
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
-		UpdateWeatherCurrent($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'} );
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'item'}->{'condition'}->{'temp'}));
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
+			'commandvalue' => $result->{'item'}->{'condition'}->{'temp'},  'humidity' => $result->{'atmosphere'}->{'humidity'}));
 
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
@@ -206,7 +207,7 @@ function getWBUG($station) {
 	if (DEBUG_WBUG) echo "temp: ".$result->{'observation'}->{'temperature'}.CRLF;
 	if (DEBUG_WBUG) echo "humi: ".$result->{'observation'}->{'humidity'}.CRLF;
 	UpdateWeatherNow($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'});
-	UpdateWeatherCurrent($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'} );
+//	UpdateWeatherCurrent($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'} );
 	$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'observation'}->{'temperature'}));
 	UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
 

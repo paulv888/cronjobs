@@ -123,8 +123,8 @@ define("DEV_TYPE_HEAT", 19);
 define("DEV_TYPE_ARD_COOL", 32);
 define("DEV_TYPE_ARD_HEAT", 31);
 define("DEV_TYPE_TEMP_HUM", 11);
-define("DEV_TYPE_ARDUINO", 16);
 define("DEV_TYPE_CAMERA", 13);
+define("DEV_TYPE_WATER_LEVEL", 33);
 
 // Alerts
 define("ALERT_NETWORK_DEVICE_CHANGE", 21);

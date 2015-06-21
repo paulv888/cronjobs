@@ -203,6 +203,7 @@ function UpdateStatus($params)
 		$feedback['deviceID'] = $deviceID;
 		$feedback['status'] = $status;
 		$feedback['commandvalue'] = $commandvalue;
+		$params['status'] = $status;
 
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
@@ -225,6 +226,7 @@ function UpdateStatus($params)
 				if (!empty($result)) $feedback['Triggers'] = $result;
 
 			}
+			updateStatusLog($params);
 		}
 		
 		return $feedback;
@@ -347,6 +349,70 @@ function HandleTriggers($params, $monitortype, $triggertype) {
 	return $feedback;
 }
 
+
+function UpdateStatusLog ($params) {
+
+//$deviceID, $status, $commandvalue = 0, $humidity = NULL, $setpoint = NULL) {
+
+        $values['deviceID'] =  $params['deviceID'];
+        $values['mdate'] = date("Y-m-d H:i:s");
+        $values['status'] = $params['status'];
+        $typeIDArr = getDeviceTypeArr($params['deviceID']);
+		// echo "<pre>";
+		// print_r ($typeIDArr);
+		// echo "</pre>";
+	if ($typeIDArr['has_value'] || $typeIDArr['has_humidity'] || $typeIDArr['has_setpoint']) {
+	        $values['temperature_c'] = (array_key_exists("commandvalue", $params)) ? $params['commandvalue'] : 0;
+        	$values['humidity_r'] = (array_key_exists("humidity", $params)) ? $params['humidity'] : NULL;
+	        $values['set_point'] = (array_key_exists("setpoint", $params)) ? $params['setpoint'] : NULL;
+        	$sql = 'SELECT * FROM `ha_weather_current`  WHERE deviceID='.  $params['deviceID'] .' order by mdate desc limit 1';
+	        if ($row = FetchRow($sql)) {
+//                $values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
+//                if (!is_null($humidity)) $values['htrend'] = setTrend($humidity, $row['humidity_r']);
+        	        $last = strtotime($row['mdate']);
+                	$typeID = $typeIDArr['id'];
+	                if (timeExpired($last, 59) || $values['status'] <> $row['status'] ||  abs($values['temperature_c'] - $row['temperature_c']) >= 1 || abs($values['set_point'] - $row['set_point']) >= 1) {
+        	                // Collect runtime since last update
+                	        // Force runtime cycle - In case cycle didn't end yet O still want to create graph point
+                        	$sdate = $row['mdate'];
+	                        $edate = $values['mdate'];
+        	                $values['runtime'] = NULL;
+                	        if ($typeID == DEV_TYPE_HEAT || $typeID == DEV_TYPE_ARD_HEAT) {	
+                        	        $system = 1;
+                                	$values['runtime'] = 0;
+	                                UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+        	                        $sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+                	                                FROM `hvac_cycles`
+                        	                        WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
+                                	                GROUP BY deviceID, system';
+	                                if ($row = FetchRow($sql)) {
+        	                                $values['runtime'] = $row['runtime'];
+                        	        }
+                	        }
+	                        if ($typeID == DEV_TYPE_COOL || $typeID == DEV_TYPE_ARD_COOL) {	
+        	                        $system = 2;
+                	                $values['runtime'] = 0;
+                        	        UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+                                	$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+	                                                FROM `hvac_cycles`
+        	                                        WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
+                	                                GROUP BY deviceID, system';
+                        	        if ($row = FetchRow($sql)) {
+                                	        $values['runtime'] = $row['runtime'];
+	                                }
+        	                }
+							// End Runtime handling
+                	        mysql_insert_assoc ('ha_weather_current', $values);
+	                }
+        	} else {		// First one
+				mysql_insert_assoc ('ha_weather_current', $values);
+		}
+	}
+}
+
+
+
+
 function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
@@ -363,55 +429,6 @@ function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL)
 				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceID;
 
 	if (!mysql_query($mysql)) mySqlError($mysql);
-}
-
-function UpdateWeatherCurrent ($deviceID, $temp_c, $humidity = NULL, $setpoint = NULL) {
-
-	
-	$values['deviceID'] =  $deviceID;
-	$values['mdate'] = date("Y-m-d H:i:s");
-	$values['temperature_c'] = $temp_c;
-	$values['humidity_r'] = $humidity;
-	$values['set_point'] = $setpoint;
-	$sql = 'SELECT * FROM `ha_weather_current`  WHERE deviceID='.  $deviceID .' order by mdate desc limit 1';
-	if ($row = FetchRow($sql)) {
-		$values['ttrend'] = setTrend($temp_c, $row['temperature_c']);
-		if (!is_null($humidity)) $values['htrend'] = setTrend($humidity, $row['humidity_r']);
-		$last = strtotime($row['mdate']);
-		$typeID = getDeviceType($deviceID);
-		if (timeExpired($last, 59) ||  abs($temp_c - $row['temperature_c']) >= 1 || abs($setpoint - $row['set_point']) >= 1) {
-			// Collect runtime since last update
-			// Force runtime cycle - In case cycle didn't end yet O still want to create graph point
-			$sdate = $row['mdate'];
-			$edate = $values['mdate'];
-			$values['runtime'] = NULL;
-			if ($typeID == DEV_TYPE_HEAT || $typeID == DEV_TYPE_ARD_HEAT) {
-				$system = 1;
-				$values['runtime'] = 0;
-				UpdateStatusCycle($deviceID, false, false, false, true);		// Force cycle insert
-				$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-						FROM `hvac_cycles`
-						WHERE deviceID ='.$deviceID.' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
-						GROUP BY deviceID, system';
-				if ($row = FetchRow($sql)) {
-					$values['runtime'] = $row['runtime'];
-				}
-			}
-			if ($typeID == DEV_TYPE_COOL || $typeID == DEV_TYPE_ARD_COOL) {
-				$system = 2;
-				$values['runtime'] = 0;
-				UpdateStatusCycle($deviceID, false, false, false, true);		// Force cycle insert
-				$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-						FROM `hvac_cycles`
-						WHERE deviceID ='.$deviceID.' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
-						GROUP BY deviceID, system';
-				if ($row = FetchRow($sql)) {
-					$values['runtime'] = $row['runtime'];
-				}
-			}
-			mysql_insert_assoc ('ha_weather_current', $values);
-		}
-	}
 }
 
 function UpdateThermType($deviceID, $typeID){
@@ -448,6 +465,16 @@ function getDeviceType($deviceID){
 	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ="'.$deviceID.'"';
 	if ($rowdevice = FetchRow($mysql)) {
 		return $rowdevice['typeID'];
+	}
+	
+	return false ;
+	
+}
+function getDeviceTypeArr($deviceID){
+
+	$mysql='SELECT b.* FROM `ha_mf_devices` a JOIN `ha_mf_device_types` b ON a.typeID = b.id  WHERE a.id ="'.$deviceID.'"';
+	if ($rowdevice = FetchRow($mysql)) {
+		return $rowdevice;
 	}
 	
 	return false ;
