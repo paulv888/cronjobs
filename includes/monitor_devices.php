@@ -39,7 +39,7 @@ function monitorDevice($deviceID, $pingport, $montype) {
 	$status = false;
 	if ($rowip['ip'] != NULL) {
 		if ($pingport>0) {
-			$status = pingip ($rowip['ip'],$pingport,1);
+			$status = pingip ($rowip['ip'],$pingport,2);
 		} else {
 			$status = pingtcp ($rowip['ip'],100);
 		}
