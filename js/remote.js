@@ -41,7 +41,7 @@ if(!window.scriptRemoteHasRun) {
 				
 //				html body div.bs-example.bs-example-tabs div#myTabContent.tab-content div#divid_22.tab-pane.active table.table.table-rem-condensed.table tbody tr.keysrow td.keyscell div ul#dim.dropdown-menu.btndropdown.dimmer
 				commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
-				if (commandvalue ==  DIM_NO_SELECTED) commandvalue = null;
+				if (commandvalue ==  DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
 				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), commandvalue: commandvalue};
 				resetSelection();
 				this.addClass('group-select');
