@@ -53,8 +53,10 @@ function UpdateLink($params)
 		switch ($link) {
 		case LINK_TIMEDOUT: 		// Treat LINK_DOWN form polling and check TIMEDOUT same
 		case LINK_DOWN: 
-			if ($row['linkmonitor'] == "MONSTAT" && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID)) 
+			if ($row['linkmonitor'] == "MONSTAT" && !is_null($commandID) && ($row['listenfor1'] == $commandID || $row['listenfor2'] == $commandID || $row['listenfor3'] == $commandID)) {
+				if (DEBUG_HA) echo 'Found commandID, LINK_UP'.CRLF;
 				$link = LINK_UP;
+			}
 			break;
 		//case LINK_WARNING:  SHOULD NOT COME IN
 		//case LINK_UP: up is up
@@ -71,7 +73,7 @@ function UpdateLink($params)
 				$last = strtotime($row['mdate']);
 				$nowdt = strtotime(date("Y-m-d H:i:s"));
 				if (abs($nowdt-$last) / 60 > $min) {
-					//echo "Warning Time expired".CRLF;
+					if (DEBUG_HA) echo "Warning Time expired".CRLF;
 					$link = LINK_WARNING;
 				}
 			}
@@ -84,20 +86,22 @@ function UpdateLink($params)
 				$nowdt = strtotime(date("Y-m-d H:i:s"));
 			}
 			if ((abs($nowdt-$last) / 60 > $min) || $row['link_timeout'] == Null) {
-				//echo "Timeout Time expired".CRLF;
+				if (DEBUG_HA) echo "Timeout Time expired".CRLF;
 				$link = LINK_DOWN;
 			}
 			if ($link == LINK_TIMEDOUT)	{
-				//echo "Checked for timeout, was not, so do nothing".CRLF;
+				if (DEBUG_HA) echo "Checked for timeout, was not, so do nothing".CRLF;
 				return true;
 			} else {
-				//echo "Timeout out, handle transition".CRLF;
+				if (DEBUG_HA) echo "Timeout out, handle transition".CRLF;
 			}
 		}
 
+		if (DEBUG_HA) echo 'Still here, current link: '.$link.CRLF;
+
 		// New link = warning then update and exit
 		if ($link == LINK_WARNING) {
-			// echo "Went to LINK_WARNING, only update link not time".CRLF;
+			if (DEBUG_HA) echo "Went to LINK_WARNING, only update link not time".CRLF;
 			$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 					  "`link` = '" . LINK_WARNING . "'" .
 					  " WHERE(`deviceID` ='" . $deviceID . "')";
@@ -110,7 +114,7 @@ function UpdateLink($params)
 		// Handle transitions
 		if ($prevlink != $link) { 								// link changed
 			if ($prevlink == LINK_UP && $link == LINK_DOWN) { 	
-					// echo "Down, Previous was up".CRLF;
+					if (DEBUG_HA) echo "Down, Previous was up".CRLF;
 					logEvent($log = array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 					$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 							  " `link` = '" . $link . "'" .
@@ -122,7 +126,7 @@ function UpdateLink($params)
 					if (!empty($result)) print_r ($result);
 				} 
 			if ($prevlink == LINK_DOWN && $link == LINK_UP) { 	
-				//echo "Up, Previous was down; UPDATE to online and log event".CRLF;
+				if (DEBUG_HA) echo "Up, Previous was down; UPDATE to online and log event".CRLF;
 				logEvent($log = array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => ($link == LINK_UP ? "Up" : "Down")));
 				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 						  " `mdate` = '" . date("Y-m-d H:i:s") . "'," .
@@ -136,14 +140,14 @@ function UpdateLink($params)
 			}
 		} else {			// link is same as prev link
 			if ($link == LINK_UP) { 			// Link is up, UPDATE time
-				//echo "Up and same as prev link UPDATE".CRLF;
+				if (DEBUG_HA) echo "Up and same as prev link UPDATE".CRLF;
 				$mysql = "UPDATE `ha_mf_monitor_link` SET " .
 					  " `link` = '" . $link . "'," .
 					  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
 					  " WHERE(`deviceID` ='" . $deviceID . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
 			} else {
-				//echo "Down and same as prev link, Do nothing.</br>\n";
+				if (DEBUG_HA) echo "Down and same as prev link, Do nothing.</br>\n";
 			}
 		}
 		return true;
