@@ -351,10 +351,10 @@ if(networkmap_fullscan == 1) genClientList();
 		$name = $device[1];
 		$ip = $device[2];
 		$connection = $device[4];
-		$mac = $device[3];
+		$mac = strtoupper($device[3]);
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
-				" WHERE mac='".$mac."'";  
+				" WHERE UCASE(mac)='".$mac."'";  
 		$resdevices = mysql_query($mysql);
 		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
 
@@ -377,7 +377,7 @@ if(networkmap_fullscan == 1) genClientList();
 								"ha_alerts___v3" => $rowdevice['ip'],
 								"ha_alerts___v4" => $ip);
 				echo Alerts(ALERT_NETWORK_DEVICE_CHANGE,$params)." Alerts generated <br/>\r\n";
-				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
+				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", `last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 			} else {
