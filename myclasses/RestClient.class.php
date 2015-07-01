@@ -269,7 +269,8 @@ class RestClient {
       * @param string $contentType="multpary/form-data" [optional] commom post (multipart/form-data) as default
       * @return RestClient
       */
-     public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
+//   public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
+     public static function post($url,$params=null,$user=null,$pwd=null,$contentType="application/x-www-form-urlencoded",$timeout=null) {
          return self::call("POST",$url,$params,$user,$pwd,$contentType,$timeout);
      }
 
