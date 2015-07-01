@@ -63,8 +63,8 @@ while (true) {
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
-					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus(array('callerID' => $message['callerID'], 'deviceID' => $deviceID, 'commandID' => $message['commandID'])))."</br>\n";
-					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink (array('callerID' => $message['callerID'], 'deviceID' => $deviceID, 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']))."</br>\n";
+					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'commandID' => $message['commandID'])))."</br>\n";
+					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink (array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']))."</br>\n";
 				}
 				
 				// Update My Link 
