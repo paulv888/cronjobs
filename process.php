@@ -4,13 +4,15 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-// define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_FLOW', TRUE );
+//define( 'DEBUG_RETURN', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 
+if (DEBUG_FLOW) echo json_encode($_POST);
+if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
 if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to tell where they are from.
 
@@ -612,6 +614,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
 		switch ($targettype)
 		{
+		case "POSTAPP":          // PHP - vlosite
 		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
 			if (DEBUG_DEVICES) echo "POSTURL</p>";
@@ -630,6 +633,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 			if ($targettype == "POSTTEXT") { 
 				$post = restClient::post($url, $tcomm,"","","text/plain");
+			} elseif ($targettype == "POSTAPP") {
+				$post = restClient::post($url, $tcomm);
 			} else { 
 				$post = restClient::post($url.$tcomm);
 			}
