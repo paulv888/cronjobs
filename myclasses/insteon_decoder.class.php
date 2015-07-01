@@ -780,7 +780,12 @@ private static $x10_house_codes_enc;
 		} #if($FSM==)
 	} #while(!$abort)
 	$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
-	$plm_decode_result['inout'] = self::$inout_a[$plm_decode_result['plmcmdID']];
+	$decode_result= $plm_decode_result['plmcmdID'];
+	if (array_key_exists($decode_result, self::$inout_a)) {
+		$plm_decode_result['inout'] = self::$inout_a[$decode_result];
+	} else {
+		$plm_decode_result['inout'] = COMMAND_IO_NOT;
+	}
 //	return $plm_message;
 	return $plm_decode_result;
 }
