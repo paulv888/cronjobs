@@ -3,8 +3,9 @@
 if (!defined('DEBUG_YAHOOWEATHER')) define( 'DEBUG_YAHOOWEATHER', FALSE );
 if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
-define('IMAGE_CACHE',"/vlohome/images/yahoo/");
+define('IMAGE_CACHE',"/images/yahoo/");
 define('FRONT_DIR',"/images/yahoo/");
+//if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', 97);
 
 function loadWeather($station) {
 
@@ -55,12 +56,12 @@ function getYahooWeather($station) {
 	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
        	if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
-		$feedback['message'] = $result;
+		$feedback['message'] =  json_encode(json_decode($get->getresponse(), true));
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
 			'commandvalue' => $result->{'item'}->{'condition'}->{'temp'},  'humidity' => $result->{'atmosphere'}->{'humidity'}));
 
 		$array['deviceID'] = $mydeviceID[$station];
@@ -147,13 +148,11 @@ function getYahooWeather($station) {
 			$i++;
 		}
 
-   		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
+   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
 	}
 
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
-	
 	return $feedback;
-	
 }
 	
 
@@ -219,9 +218,12 @@ function getWBUG($station) {
 function cache_image($file, $url, $hours = 168) {
 	//vars
 
-	$file = $_SERVER['DOCUMENT_ROOT'].$file ;
+	// Has to run on vlosite
+//	$file = $_SERVER['DOCUMENT_ROOT'].$file ;
+	$file = '/home/www/vlohome'.$file ;
 
 //echo "***".$file.CRLF;
+
 	$current_time = time(); 
 	$expire_time = $hours * 60 * 60; 
 
