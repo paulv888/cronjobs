@@ -138,7 +138,7 @@ function movePictures($camera) {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
-				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'device_description' => $camera['description'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
+				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
 			}
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Thumbnail.".CRLF;
 			if (!file_exists(LASTIMAGEDIR)) {

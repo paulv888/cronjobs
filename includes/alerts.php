@@ -12,6 +12,11 @@ function Alerts($alert_textID , $params ){
 			$params['callerID___description']= $cd['description'];
 		}
 	}
+	if ($params['deviceID'] != Null) {
+		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['deviceID']))  {
+			$params['deviceID___description']= $cd['description'];
+		}
+	}
 	
 	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 	$description= $rowtext['description'];
