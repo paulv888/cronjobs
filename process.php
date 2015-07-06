@@ -424,7 +424,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 
 	} else {
-		$commandclassID = COMMAND_CLASS_PHP;
+		$commandclassID = COMMAND_CLASS_GENERIC;
 	}
 	
 
@@ -432,7 +432,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 			" WHERE ha_mf_commands.id =".$commandID. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
 	if (!$rowcommands = FetchRow($mysql))  {			// No device specific command found, try generic, else exit
-		$commandclassID = COMMAND_CLASS_PHP;
+		$commandclassID = COMMAND_CLASS_GENERIC;
 		$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 				" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 				" WHERE ha_mf_commands.id =".$commandID. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
@@ -576,8 +576,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$result[] = $commandvalue;
 		$feedback['error'] = 0;
 		break;
-	case COMMAND_CLASS_PHP:								// No device or no outgoing data
-		if (DEBUG_DEVICES) echo "COMMAND_CLASS_PHP</p>";
+	case COMMAND_CLASS_GENERIC:								// No device or no outgoing data
+		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
 		switch ($commandID)
 		{
 		case COMMAND_RUN_SCHEME:
@@ -610,7 +610,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));
 		break;
-	default:								// Generid
+	default:								// Everything else Ard/Sony/Cam/Irrigation
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
 		switch ($targettype)
 		{
@@ -694,7 +694,7 @@ function RemoteKeys($result) {
 
 // add link status to this
 
-	$feedback = null;
+	$feedback = Array();
 	foreach ($result as $key => $res) {
 		if (array_key_exists('message', $res)) {
 			if (is_array($feedback) && array_key_exists('message', $feedback)) {

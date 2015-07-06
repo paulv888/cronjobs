@@ -35,7 +35,8 @@ if (!($sdata=="")) { 					//import_event
 	} else {
 		$message['data'] = $rcv_message['Status'];
 	}
-	$message['typeID'] = getDeviceType($message['deviceID']);
+	$devType = getDeviceType($message['deviceID']);
+	$message['typeID'] = $devType['id'];
 	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
 	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
@@ -55,7 +56,7 @@ if (!($sdata=="")) { 					//import_event
 						$v = $t;
 				}
 		}
-		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {
+		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL || $message['typeID'] == DEV_TYPE_WATER_LEVEL) {
 			//Add running or not to HVAC cylcles and calc hours/day
 //{"Device" : "202" , "Command" : "285" , "Status" : "0" , "Value" : "438" , "InOut" : "1" , "ExtData" : {"V":"438","R":"0","S":"500","T":"10"}}
 //{"Device" : "208" , "Command" : "285" , "Status" : "1" , "Value" : "27" , "InOut" : "1" , "ExtData" : {"V":"27","R":"1","S":"24","T":"1"}}
@@ -66,16 +67,18 @@ if (!($sdata=="")) { 					//import_event
 				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
 				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
 			}
-			$heatStatus = false;
-			$coolStatus = false;
-			$fanStatus  = false;
-			if ($message['typeID'] == DEV_TYPE_ARD_HEAT) {
-				$heatStatus = $rcv_message['ExtData']['R'] == 1;
-			} else {
-				$coolStatus = $rcv_message['ExtData']['R'] == 1;
+			if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {		// Quick fix
+				$heatStatus = false;
+				$coolStatus = false;
+				$fanStatus  = false;
+				if ($message['typeID'] == DEV_TYPE_ARD_HEAT) {
+					$heatStatus = $rcv_message['ExtData']['R'] == 1;
+				} else {
+					$coolStatus = $rcv_message['ExtData']['R'] == 1;
+				}
+				UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
+				UpdateDailyRuntime($message['deviceID']);
 			}
-			UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-			UpdateDailyRuntime($message['deviceID']);
 			if (isset($t)) {
 			 	UpdateWeatherNow($message['deviceID'], $t, $h , $s);
 				$v = $t;
@@ -83,7 +86,8 @@ if (!($sdata=="")) { 					//import_event
 		}
 		if (!isset($t)) {			// Did not find a temp / heat / cool (for Light and Water Sensor
 			if (array_key_exists('ExtData', $rcv_message)) {		// Search for any other Values/Setpoints or Humidity
-				$v = (array_key_exists('V', $rcv_message['ExtData']) ? $rcv_message['ExtData']['V'] : $v = NULL);
+				$v = (array_key_exists('U', $rcv_message['ExtData']) ? $rcv_message['ExtData']['U'] : $v = NULL);	// Store uptime
+				$v = (array_key_exists('V', $rcv_message['ExtData']) ? $rcv_message['ExtData']['V'] : $v = $v);
 				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
 				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
 			}

@@ -139,12 +139,12 @@ function StartTimer($callerID, $deviceID, $time) {
 
 	$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $deviceID, 'commandID' => COMMAND_ON, 'timervalue' => $time));
 	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
-	// echo "<pre>";
-	// echo 'UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID.CRLF;
-	// $a = FetchRow('SELECT `timerMinute` , `timerRemaining` , timerDate FROM `ha_mf_monitor_status` WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
-	// print_r($a);
-	// echo "</pre>";
-
+	/*echo "<pre>";
+	echo 'UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID.CRLF;
+	$a = FetchRow('SELECT `timerMinute` , `timerRemaining` , timerDate FROM `ha_mf_monitor_status` WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	print_r($a);
+	echo "</pre>";
+*/
 	return $feedback;
 }
 ?>

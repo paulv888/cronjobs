@@ -361,7 +361,7 @@ function UpdateStatusLog ($params) {
         $values['deviceID'] =  $params['deviceID'];
         $values['mdate'] = date("Y-m-d H:i:s");
         $values['status'] = $params['status'];
-        $typeIDArr = getDeviceTypeArr($params['deviceID']);
+        $typeIDArr = getDeviceType($params['deviceID']);
 		// echo "<pre>";
 		// print_r ($typeIDArr);
 		// echo "</pre>";
@@ -420,19 +420,24 @@ function UpdateStatusLog ($params) {
 function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
 	
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
-	$ttrend = NULL;
-	$htrend = NULL;
+	$ttrend = 1;
+	$htrend = 1;
 	if ($row = FetchRow($mysql)) {
 		$ttrend = setTrend($temp, $row['temperature_c']);
 		$htrend = (!is_null($humidity) ? setTrend($humidity, $row['humidity_r']) :  "NULL");
-	}
+	} 
 	if (is_null($humidity)) $humidity="NULL";
 	if (is_null($set_point)) $set_point="NULL";
 
-	$mysql = "UPDATE ha_weather_now SET mdate = '". date("Y-m-d H:i:s")."'," .
-				" temperature_c = ". $temp ." , set_point = ". $set_point . ", ttrend = ".$ttrend.", humidity_r = ".$humidity.", htrend = ".$htrend."  WHERE deviceID = ".$deviceID;
+	$devTypeID = getDeviceType($deviceID)['id'];
+	//$message['typeID'] = $devType['id'];
+	
+	
+	$weathernow = Array('deviceID' => $deviceID, 'mdate' => date("Y-m-d H:i:s"), 'temperature_c' => $temp, 'set_point' => $set_point , 
+			'ttrend' => $ttrend, 'humidity_r' => $humidity, 'htrend' => $htrend, 'typeID' => $devTypeID,
+			'link1' => '<i class="condensed-icon iconmoon-ascendant6" alt="Chart"></i>');
+	PDOupsert("ha_weather_now", $weathernow, Array('deviceID' => $deviceID));
 
-	if (!mysql_query($mysql)) mySqlError($mysql);
 }
 
 function UpdateThermType($deviceID, $typeID){
@@ -464,17 +469,8 @@ function setTrend($new, $old) {
 	if ( $new < $old )  return 2;
 	return 0;
 }
-function getDeviceType($deviceID){
 
-	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `id` ="'.$deviceID.'"';
-	if ($rowdevice = FetchRow($mysql)) {
-		return $rowdevice['typeID'];
-	}
-	
-	return false ;
-	
-}
-function getDeviceTypeArr($deviceID){
+function getDeviceType($deviceID){
 
 	$mysql='SELECT b.* FROM `ha_mf_devices` a JOIN `ha_mf_device_types` b ON a.typeID = b.id  WHERE a.id ="'.$deviceID.'"';
 	if ($rowdevice = FetchRow($mysql)) {
