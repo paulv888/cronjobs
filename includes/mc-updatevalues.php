@@ -44,7 +44,7 @@ function updateValuesNew() {
 					mySqlError($mysql);
 					return false;
 	}
-	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Rows inserted in mongoDB_user_domain".CRLF;
+	$text.= "<b>".date("Y-m-d H:i:s").": ".mysql_affected_rows()." Rows inserted in mongoDB_user_domain</b>".CRLF;
 	
 	// Setup user type based on domain table
 	$mysql = 'UPDATE `mongoDB_users` a LEFT JOIN mongoDB_user_domains b ON a.domain = b.domain SET a.user_type = b.user_type;';
