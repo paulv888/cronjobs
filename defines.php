@@ -93,6 +93,7 @@ define ("COMMAND_CLASS_X10_INSTEON", 10);
 define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
 
+
 // Special X10_INSTEON dim handling
 define ("COMMAND_DIM_CLASS_X10_INSTEON_OFF", "0263{code}380|");
 define ("COMMAND_DIM_CLASS_X10_INSTEON_DIMM", "|0263{code}480");

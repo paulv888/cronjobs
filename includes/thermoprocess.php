@@ -45,7 +45,9 @@ $now = date( 'Y-m-d H:i:s' );
 			$result['deviceID'] = $thermostatRec['deviceID'];
 			$result['callerID'] = $callerID;
 			$result['setpoint'] = to_celcius($stat->ttemp);
-			
+// echo "<pre>HVACToggle ";			
+// print_r($result);
+// echo "</pre>";			
 			$feedback = UpdateStatus($result);
 			UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
 
@@ -70,6 +72,11 @@ function HvacOff($callerID, $deviceID) {
 	// Using Toggle so flip status ON=OFF
 	return HvacToggle($callerID, $deviceID, STATUS_ON);
 
+}
+
+function HvacStartTimer($callerID, $deviceID, $time) {
+	HvacOn($callerID, $deviceID);
+	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
 }
 
 function HvacOn($callerID, $deviceID) {

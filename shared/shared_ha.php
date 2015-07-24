@@ -362,9 +362,10 @@ function UpdateStatusLog ($params) {
         $values['mdate'] = date("Y-m-d H:i:s");
         $values['status'] = $params['status'];
         $typeIDArr = getDeviceType($params['deviceID']);
-		// echo "<pre>";
-		// print_r ($typeIDArr);
-		// echo "</pre>";
+// echo "<pre>UpdateStatusLog ";
+// print_r ($params);
+// print_r ($typeIDArr);
+// echo "</pre>";
 	if ($typeIDArr['has_value'] || $typeIDArr['has_humidity'] || $typeIDArr['has_setpoint']) {
 	        $values['temperature_c'] = (array_key_exists("commandvalue", $params)) ? $params['commandvalue'] : 0;
         	$values['humidity_r'] = (array_key_exists("humidity", $params)) ? $params['humidity'] : NULL;
@@ -381,8 +382,8 @@ function UpdateStatusLog ($params) {
                         	$sdate = $row['mdate'];
 	                        $edate = $values['mdate'];
         	                $values['runtime'] = NULL;
-                	        if ($typeID == DEV_TYPE_HEAT || $typeID == DEV_TYPE_ARD_HEAT) {	
-                        	        $system = 1;
+                	        if ($typeIDArr['has_runtime']) {	
+                        	        $system = $typeIDArr['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
                                 	$values['runtime'] = 0;
 	                                UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
         	                        $sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
@@ -393,18 +394,6 @@ function UpdateStatusLog ($params) {
         	                                $values['runtime'] = $row['runtime'];
                         	        }
                 	        }
-	                        if ($typeID == DEV_TYPE_COOL || $typeID == DEV_TYPE_ARD_COOL) {	
-        	                        $system = 2;
-                	                $values['runtime'] = 0;
-                        	        UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
-                                	$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-	                                                FROM `hvac_cycles`
-        	                                        WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
-                	                                GROUP BY deviceID, system';
-                        	        if ($row = FetchRow($sql)) {
-                                	        $values['runtime'] = $row['runtime'];
-	                                }
-        	                }
 							// End Runtime handling
                 	        mysql_insert_assoc ('ha_weather_current', $values);
 	                }

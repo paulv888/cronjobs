@@ -4,9 +4,9 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-//define( 'DEBUG_FLOW', TRUE );
-//define( 'DEBUG_RETURN', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_RETURN', TRUE );
+// define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
@@ -355,7 +355,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 
 	if (DEBUG_FLOW || DEBUG_DEVICES) {
-		echo "Enter SendCommand ".CRLF;
+		echo "<pre>Enter SendCommand ".CRLF;
 		echo "This Command: ";
 		if ($ct = FetchRow("SELECT description FROM ha_mf_commands  WHERE ha_mf_commands.id =".$commandID))  {
 			echo $ct['description'].' ';			// error abort
@@ -576,7 +576,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$result[] = $commandvalue;
 		$feedback['error'] = 0;
 		break;
-	case COMMAND_CLASS_GENERIC:								// No device or no outgoing data
+	case COMMAND_CLASS_GENERIC:								// No device 
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
 		switch ($commandID)
 		{
@@ -610,8 +610,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		}
 		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));
 		break;
-	default:								// Everything else Ard/Sony/Cam/Irrigation
-		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
+	default:								// Everything else Ard/Sony/Cam/Irrigation/Virtual Devices
+		if (DEBUG_DEVICES) echo "COMMAND_CLASS_OTHER</p>";
 		switch ($targettype)
 		{
 		case "POSTAPP":          // PHP - vlosite
@@ -658,13 +658,12 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['error'] =  0;
 			break;
 		}
-		
 		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID));		// Update based on command assumptions
 		break;		
 	}
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerID, 'deviceID' => $deviceID, 'commandID' => $commandID, 'data' => $commandvalue, 'message' => $feedback, 'loglevel' => $loglevel));
 	
-	if (DEBUG_FLOW) echo "Exit Send".CRLF;
+	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;
 	
 	return $feedback;
 } 
@@ -732,7 +731,7 @@ function RemoteKeys($result) {
 									$feedback[$last_id]["link"]="link-down";
 								} elseif ($res['updatestatus']['link'] == LINK_UP) {
 								} elseif ($res['updatestatus']['link'] == LINK_WARNING) {
-									$feedback[$last_id]["link"]="link-down";
+									$feedback[$last_id]["link"]="link-warning";
 								} else { 										// else assume a value
 									$feedback[$last_id]["link"]="undefined";
 							}
