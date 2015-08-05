@@ -463,7 +463,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		$message= $rowtext['message'];
 		if (strlen($message) == 0) $message = " ";
 		//echo $commandvalue.CRLF.CRLF;
-		$callerparams['stepmessage'] = $commandvalue;
+		//$callerparams['stepmessage'] = $commandvalue;
+		$callerparams['commandvalue'] = $commandvalue;
 		replaceText(array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);
 		//echo $message.CRLF.CRLF;
 		$feedback['error'] = (sendmail($rowcommands['command'], $subject, $message, 'VloHome') == true ? false : true);
@@ -585,7 +586,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$feedback['runscheme'] = RunScheme($callerID, $callerparams);
 			break;
 		case COMMAND_LOG_ALERT:
-			$callerparams['stepmessage'] = $commandvalue;
+			$callerparams['commandvalue'] = $commandvalue;
 			$feedback['message'] = Alerts($alert_textID, $callerparams).' created';
 			break;
 		case COMMAND_GET_GROUP:
