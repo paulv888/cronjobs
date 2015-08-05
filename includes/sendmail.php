@@ -150,7 +150,8 @@ function replaceText($params, &$subject, &$message = NULL, $callerparams = Null)
 	LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes` ON `ha_remote_schemes`.`id` = `ha_mf_monitor_triggers`.`schemeID` WHERE ha_mf_devices.id = '.$params['deviceID'];
 	}
  
-//echo "<pre>"; print_r ($params); echo "</pre>";
+// echo "<pre> params"; print_r ($params); echo "</pre>";
+// echo "<pre> callerparams"; print_r ($callerparams); echo "</pre>";
  
 	if (isset($mysql)) {
 
@@ -167,14 +168,17 @@ function replaceText($params, &$subject, &$message = NULL, $callerparams = Null)
 		}
 	}
 	if ($callerparams != Null) {
-//echo "callerparams in replacetext";	
-//print_r($callerparams);	
+		if (array_key_exists('callerID', $callerparams)) {
+			if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$callerparams['callerID']))  {
+				$callerparams['callerID___description']= $cd['description'];
+			}
+		}	
 		unset ($pattern);
 		foreach ($callerparams as $key => $value) {
 			$pattern[$key]="/\{".$key."\}/";
 		}
-//echo "<pre>"; print_r ($callerparams); echo "</pre>";
-//echo "<pre>"; print_r ($pattern); echo "</pre>";
+// echo "<pre>"; print_r ($callerparams); echo "</pre>";
+// echo "<pre>"; print_r ($pattern); echo "</pre>";
 		$subject=preg_replace($pattern, $callerparams, $subject);
 		if ($message != Null) $message=preg_replace($pattern, $callerparams, $message); // twice to support tag in tag
 	}
