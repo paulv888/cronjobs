@@ -6,11 +6,16 @@ require_once 'includes.php';
 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 
+if (isset($_GET['Message'])) {
+	// Loading JSON get variables form cam-5 in Post
+	$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
+	$_POST=$sdata;
+}
 if (DEBUG_FLOW) echo json_encode($_POST);
 if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
@@ -618,7 +623,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		case "POSTAPP":          // PHP - vlosite
 		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
-			if (DEBUG_DEVICES) echo "POSTURL</p>";
+			if (DEBUG_DEVICES) echo $targettype."</p>";
 			$tcomm = str_replace("{mycommandID}",trim($commandID),$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",trim($deviceID),$tcomm);
 			$tcomm = str_replace("{unit}",trim($rowdevices['unit']),$tcomm);
@@ -631,7 +636,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			} else {
 				$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			}
-			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
+			if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
 			if ($targettype == "POSTTEXT") { 
 				$post = restClient::post($url, $tcomm,"","","text/plain");
 			} elseif ($targettype == "POSTAPP") {

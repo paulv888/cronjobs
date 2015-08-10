@@ -13,15 +13,19 @@ define("MY_DEVICE_ID", 214);
 	 1) Type
 	 2) Fields matching the above query
 
+	 // 8/9/2015 Now receiving for Axis Cam
  */
  
+if (isset($_GET["Message"])) {
+	$sdata=$_GET["Message"];
+} else {
+	$sdata = file_get_contents("php://input");
+}
 
-$sdata = file_get_contents("php://input");
-
-//$file = 'tmp1.txt';
-//$current = file_get_contents($file);
-//$current .= $sdata."\n";
-//file_put_contents($file, $current);
+// $file = 'tmp1.txt';
+// $current = file_get_contents($file);
+// $current .= $sdata."\n";
+// file_put_contents($file, $current);
 
 
 if (!($sdata=="")) { 					//import_event
@@ -29,7 +33,9 @@ if (!($sdata=="")) { 					//import_event
 //print_r($rcv_message);
 	$message['deviceID'] = $rcv_message['Device'];
 	$message['commandID'] = $rcv_message['Command'];
+	if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = 1;
 	$message['inout'] = $rcv_message['InOut'];
+	if (!array_key_exists('Status', $rcv_message)) $rcv_message['Status'] = null;
 	if (array_key_exists('Value', $rcv_message)) {
 		$message['data'] = $rcv_message['Value'];
 	} else {
@@ -93,7 +99,11 @@ if (!($sdata=="")) { 					//import_event
 			}
 		}
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'commandvalue' => $v, 'humidity' => $h, 'setpoint' => $s, 'message' => $error_message));
+		if (is_null($rcv_message['Status'])) {
+			UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID']));
+		} else {
+			UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'commandvalue' => $v, 'humidity' => $h, 'setpoint' => $s, 'message' => $error_message));
+		}
 		UpdateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }
