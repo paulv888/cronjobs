@@ -6,15 +6,15 @@ require_once 'includes.php';
 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
+// define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 
-if (isset($_GET['Message'])) {
+if (isset($_GET['caller'])) {
 	// Loading JSON get variables form cam-5 in Post
-	$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
-	$_POST=$sdata;
+	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
+	$_POST=$_GET;
 }
 if (DEBUG_FLOW) echo json_encode($_POST);
 if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
@@ -652,6 +652,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 			$tcomm = str_replace("{mycommandID}",$commandID,$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",$deviceID,$tcomm);
 			$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
+			$tcomm = str_replace("{commandvalue}",trim($commandvalue),$tcomm);
+			$tcomm = str_replace("{timervalue}",trim($timervalue),$tcomm);
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 			$get = restClient::get($url.$tcomm);
