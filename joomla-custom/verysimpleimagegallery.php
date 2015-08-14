@@ -302,7 +302,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 					//start collecting html for main-image-part
 					$html2='';
 					//start collecting html for thumbs-part
-					$html3='';
+					$html3='<div>';
 
 					//create current javascript array
 					if($_usescript_){
@@ -408,7 +408,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 								if($_link_use_&&isset($$vsiglinks)){ //links are activated and set
 								$html2 .= "\n<a href='".$cur_link[0]."' title='".$cur_link[1]."' target='".$cur_link[2]."'>";
 								}
-								$html2 .= "\n<img id='topimg".$identifier."' src='".$cur_webpath."' title='".$cur_alt."' alt='".$cur_alt."'/>";
+								$html2 .= "\n<img id='topimg".$identifier."' data-thumbid='0' src='".$cur_webpath."' title='".$cur_alt."' alt='".$cur_alt."'/>";
 								if($_link_use_&&isset($$vsiglinks)){ //links are activated and set
 								$html2 .= "\n</a>";
 								}
@@ -436,9 +436,9 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 								$html3 .= '<div id="thbvsig_'.$identifier.'_'.$thumbs_in_set.'" class="vsig_cont vsig_cont'.$identifier.'"><div class="vsig_thumb">';
 								$html3 .= '<a href="'.$target[$identifier].'vsig'.$identifier.'='.$a.'" rel="nofollow"';
 								if($_usescript_>=1){ //javascript is activated, insert the onclick event
-								$html3 .= ' onclick=\'switchimg(vsig_'.$identifier.'['.$a.'],vsig_'.$identifier.'_b);return false;\'';
+								$html3 .= ' onclick=\'switchimg("vsig_'.$identifier.'",'.$a.');return false;\'';
 									if($_hover_>=1){ //change main image on thumbhover too
-									$html3 .= ' onmouseover=\'switchimg(vsig_'.$identifier.'['.$a.'],vsig_'.$identifier.'_b);return false;\'';
+									$html3 .= ' onmouseover=\'switchimg("vsig_'.$identifier.'",'.$a.');return false;\'';
 									}
 								}
 								$html3 .= ' title="'.$cur_alt.'">';
@@ -479,10 +479,12 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 							$thumbs_in_set++;
 						}
 					}
+					$html3.='</div>'; 
 					//add controls
+					$html4="<div class='controls'>";
 					if($_sets_use_&&$_sets_number_>=2) {
-						$html4="<div class='pagination".$identifier."'>";
-						$html4.="<div class='vsig_ctrl_left'></div><ul class='pagination-list'>";
+						$html4.="<div class='pagination'>";
+						$html4.="<ul class='pagination-list'>";
 						//back
 						if($_sets_current_>=2){
 							$html4.= '<li class="pagination-prev">';
@@ -509,7 +511,8 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 						//counter
 						$html4.= '<li class="">';
 //						$html4.="&nbsp;&nbsp;".$_sets_txt_."<span id='countervsig_".$identifier."' class='vsig_counter'>&nbsp;".$_sets_current_."/".$_sets_number_."</span>&nbsp;&nbsp;";
-						$html4.="<span id='countervsig_".$identifier."' class='vsig_counter'>&nbsp;".$_sets_current_."/".$_sets_number_."</span>&nbsp;&nbsp;";$html4.= '</il>';
+						$html4.="<span id='countervsig_".$identifier."' class='vsig_counter'>&nbsp;".$_sets_current_."/".$_sets_number_."</span>";
+						//$html4.= '</il>';
 						//forward
 						if($_sets_current_<=$_sets_number_-1){
 							$html4.= '<li class="pagination-next">';
@@ -533,8 +536,23 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 						// else{$html4.=$_ctrl_fwd_;}
 						$html4.="Next";
 						$html4.="</a></li>";
-						$html4.="</ul></div>\n";
 					}
+					$html4.='</ul>';
+					
+					$html4.='<ul>';
+					$html4.='<li class="prev-img"><a onclick="change_img(-1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href="">Prev Frame</a></li>';
+					$html4.='<li><a onclick="play(-1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Rewind</a></li>';
+					$html4.='<li class="stop" id="stop"><a onclick="stop_img(1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Stop</a></li>';
+					$html4.='<li class="play" id="play"><a onclick="play(1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Play</a></li>';
+					$html4.='<li class="next-img"><a onclick="change_img(1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href="">Next Frame</a></li>';
+					$html4.='</ul>';
+
+					$html4.='<ul>';
+					$html4.='<li><a onclick="play( 0, -1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Speed /2</a></li>';
+					$html4.='<li><a onclick="play( 0, 1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Speed x2</a></li>';
+					$html4.='</ul>';
+					
+					$html4.="</div></div>\n";
 
 					//combine top image, controls and thumbs####################
 					if($_sets_use_&&$_sets_number_>=2) {
