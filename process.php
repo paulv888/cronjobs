@@ -16,6 +16,24 @@ if (isset($_GET['caller'])) {
 	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
 	$_POST=$_GET;
 }
+
+if (isset($argv)) {
+	var_dump($argv);
+	foreach ($argv as $arg) {
+		$e=explode("=",$arg);
+        if(count($e)==2) $_POST[$e[0]]=$e[1];
+    }
+	define( 'ASYNC_THREAD', TRUE );
+}
+if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
+
+if (isset($_GET['caller'])) {
+	// Loading JSON get variables form cam-5 in Post
+	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
+	$_POST=$_GET;
+}
+
+
 if (DEBUG_FLOW) echo json_encode($_POST);
 if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
@@ -70,6 +88,7 @@ if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to 
 /*
 */
 
+// Public (Timers, Triggers)
 function executeCommand($callerID, $messtypeID, $params) {
 
 	/* Get the Keys Schema or Device */
@@ -81,6 +100,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
 	$selection = (array_key_exists('selection', $params) ? $params['selection'] : Null);
 	$mouse = (array_key_exists('mouse', $params) ? $params['mouse'] : Null);
+	$asynchronous = (array_key_exists('asynchronous', $params) ? $params['asynchronous'] : false);
 	if ($callerID == DEVICE_REMOTE) header('Content-type: application/json'); 
 
 
@@ -128,7 +148,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 			$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
 		} else {
 			$callerparams['schemeID'] = $schemeID;
-			$feedback['RunScheme'] = RunScheme ($callerID, $callerparams);
+			$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'commandvalue' => $schemeID), $callerparams);
 		}
 		break;
 	case MESS_TYPE_SCHEME:
@@ -186,168 +206,7 @@ function executeCommand($callerID, $messtypeID, $params) {
 			
 }
 
-function RunScheme($callerID, $params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
-
-// Check conditions
-	
-	$schemeID = $params['schemeID'];
-	$loglevel = (array_key_exists('loglevel', $params) ? $params['loglevel'] : Null);
-
-	preg_match ( "/^[1-9][0-9]*/", $schemeID, $matches);
-	$schemeID = $matches[0];
-
-	if (DEBUG_FLOW) echo "<pre>Enter Runscheme $schemeID".CRLF;
-	if (DEBUG_FLOW) print_r($params);
-	if (DEBUG_FLOW) echo "callerID: ".$callerID.CRLF;
-	
-	
-	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
-	
-	if (!$rescond = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	
-	while ($rowcond = mysql_fetch_assoc($rescond)) {	
-		$testvalue = array();
-		switch ($rowcond['type'])
-		{
-		case SCHEME_CONDITION_DEVICE_STATUS_VALUE: 									// what a mess already :(
-//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND: 
-//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
-			$devstatusrow = FetchRow("SELECT status FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			$testvalue[] = $devstatusrow['status'];
-			break;
-		case SCHEME_CONDITION_DEVICE_VALUE_VALUE: 									// what a mess already :(
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_VALUE</p>";
-			$devstatusrow = FetchRow("SELECT commandvalue FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			$testvalue[] = $devstatusrow['commandvalue'];
-			break;
-		case SCHEME_CONDITION_GROUP_STATUS_AND:
-		case SCHEME_CONDITION_GROUP_STATUS_OR:
-			$groups = GetGroup($rowcond['groupID']);
-			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
-// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
-				$test = 1;
-			} else {
-				$test = 0;
-			}
-			foreach ($groups as $device) {
-				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
-// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
-					$test = $test & $device['status'];
-				} else {
-					$test = $test | $device['status'];
-				}
-			}
-			$testvalue[] = $test;
-			break;
-		case SCHEME_CONDITION_GROUP_LINK_OR:
-			$groups = GetGroup($rowcond['groupID']);
-			$test = 0;
-			foreach ($groups as $device) {
-				$test = $test | $device['link'];
-			}
-			$testvalue[] = $test;
-			break;
-		case SCHEME_CONDITION_TIMER_EXPIRED: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_TIMER_EXPIRED</p>";
-			$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			if (DEBUG_FLOW) print_r($devstatusrow);
-			$testvalue[] = $devstatusrow['timerRemaining'];
-			break;
-		case SCHEME_CONDITION_CURRENT_TIME: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
-			$testvalue[] = time();
-			break;
-		}
-
-		if ($rowcond['value'] !== NULL) {
-			switch (strtoupper($rowcond['value']))
-			{
-			case "ON":
-				$testvalue[] = STATUS_ON;
-				break;
-			case "OFF":
-				$testvalue[] = STATUS_OFF;
-				break;
-			default:
-				switch ($rowcond['type'])
-				{
-				case SCHEME_CONDITION_CURRENT_TIME: 
-					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
-					$temp[0] = strtoupper($temp[0]);
-					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
-						if ($temp[0] == "DAWN") $temp[0] = GetDawn();
-						if ($temp[0] == "DUSK") $temp[0] = GetDusk();
-						if (isset($temp[1])) {
-							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
-						} else {
-							$testvalue[] = strtotime("today $temp[0]");
-						}
-					} else {
-						$testvalue[] = strtotime("today $temp[0]");
-					}
-					break;
-				default:
-					$testvalue[] = $rowcond['value'];
-					break;
-				}
-				break;
-			}
-		}
-		switch ($rowcond['operator'])
-		{
-		case CONDITION_GREATER:
-			if ($testvalue[0] <= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
-				return $feedback;
-			}
-			break;
-		case CONDITION_LESS:
-			if ($testvalue[0] >= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
-				return $feedback;
-			}
-			break;
-		case CONDITION_EQUAL:
-			if ($testvalue[0] != $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
-				return $feedback;
-			}
-			break;
-		}
-		if (DEBUG_FLOW) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
-	}
-	
-	$callerparams = $params;
-	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$sqlstr = "SELECT ha_remote_schemes.name, ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
-	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
-	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeID.")) ORDER BY ha_remote_scheme_steps.sort";
-	if ($resschemesteps = mysql_query($sqlstr)) {
-		while ($rowshemesteps = mysql_fetch_array($resschemesteps)) {  // loop all steps
-				$feedback['RunSchemeName'] = $rowshemesteps['name'];
-				if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, array( 'deviceID' => $rowshemesteps['deviceID'], 
-							'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 
-							'alert_textID' => $rowshemesteps['alert_textID']), $callerparams)) {
-			} 
-		}
-	} else {
-		$feedback['message'] = 'No scheme steps found!';
-	}
-	if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
-
-	return $feedback;
-
-}
-
-
-
+// Private
 function SendCommand($callerID, $thiscommand, $callerparams = array()) { 
 
 	$deviceID = (array_key_exists('deviceID', $thiscommand) ? $thiscommand['deviceID'] : Null);
@@ -358,6 +217,8 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	$timervalue = (array_key_exists('timervalue', $thiscommand) ? $thiscommand['timervalue'] : 0);
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
+
+	
 
 	if (DEBUG_FLOW || DEBUG_DEVICES) {
 		echo "<pre>Enter SendCommand ".CRLF;
@@ -454,6 +315,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo " command ". $rowcommands['command'].CRLF;
 	//if (DEBUG_DEVICES) echo " command commandvalue ". $rowcommands['commandvalue'].CRLF;
+
 	switch ($commandclassID)
 	{
 	case COMMAND_CLASS_3MFILTRETE:          
@@ -676,8 +538,185 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	return $feedback;
 } 
 
+// Private (Only Called from SendCommand)
+function RunScheme($callerID, $params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
+
+// Check conditions
+	
+	$schemeID = $params['schemeID'];
+	$loglevel = (array_key_exists('loglevel', $params) ? $params['loglevel'] : Null);
+
+	preg_match ( "/^[1-9][0-9]*/", $schemeID, $matches);
+	$schemeID = $matches[0];
+
+	if (DEBUG_FLOW) echo "<pre>Enter Runscheme $schemeID".CRLF;
+	if (DEBUG_FLOW) print_r($params);
+	if (DEBUG_FLOW) echo "callerID: ".$callerID.CRLF;
+	
+	
+	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
+	
+	if (!$rescond = mysql_query($mysql)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	
+	while ($rowcond = mysql_fetch_assoc($rescond)) {	
+		$testvalue = array();
+		switch ($rowcond['type'])
+		{
+		case SCHEME_CONDITION_DEVICE_STATUS_VALUE: 									// what a mess already :(
+//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND: 
+//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR: 
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
+			$devstatusrow = FetchRow("SELECT status FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
+			$testvalue[] = $devstatusrow['status'];
+			break;
+		case SCHEME_CONDITION_DEVICE_VALUE_VALUE: 									// what a mess already :(
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_VALUE</p>";
+			$devstatusrow = FetchRow("SELECT commandvalue FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
+			$testvalue[] = $devstatusrow['commandvalue'];
+			break;
+		case SCHEME_CONDITION_GROUP_STATUS_AND:
+		case SCHEME_CONDITION_GROUP_STATUS_OR:
+			$groups = GetGroup($rowcond['groupID']);
+			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
+// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
+				$test = 1;
+			} else {
+				$test = 0;
+			}
+			foreach ($groups as $device) {
+				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
+// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
+					$test = $test & $device['status'];
+				} else {
+					$test = $test | $device['status'];
+				}
+			}
+			$testvalue[] = $test;
+			break;
+		case SCHEME_CONDITION_GROUP_LINK_OR:
+			$groups = GetGroup($rowcond['groupID']);
+			$test = 0;
+			foreach ($groups as $device) {
+				$test = $test | $device['link'];
+			}
+			$testvalue[] = $test;
+			break;
+		case SCHEME_CONDITION_TIMER_EXPIRED: 
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_TIMER_EXPIRED</p>";
+			$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
+			if (DEBUG_FLOW) print_r($devstatusrow);
+			$testvalue[] = $devstatusrow['timerRemaining'];
+			break;
+		case SCHEME_CONDITION_CURRENT_TIME: 
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
+			$testvalue[] = time();
+			break;
+		}
+
+		if ($rowcond['value'] !== NULL) {
+			switch (strtoupper($rowcond['value']))
+			{
+			case "ON":
+				$testvalue[] = STATUS_ON;
+				break;
+			case "OFF":
+				$testvalue[] = STATUS_OFF;
+				break;
+			default:
+				switch ($rowcond['type'])
+				{
+				case SCHEME_CONDITION_CURRENT_TIME: 
+					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
+					$temp[0] = strtoupper($temp[0]);
+					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
+						if ($temp[0] == "DAWN") $temp[0] = GetDawn();
+						if ($temp[0] == "DUSK") $temp[0] = GetDusk();
+						if (isset($temp[1])) {
+							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
+						} else {
+							$testvalue[] = strtotime("today $temp[0]");
+						}
+					} else {
+						$testvalue[] = strtotime("today $temp[0]");
+					}
+					break;
+				default:
+					$testvalue[] = $rowcond['value'];
+					break;
+				}
+				break;
+			}
+		}
+		switch ($rowcond['operator'])
+		{
+		case CONDITION_GREATER:
+			if ($testvalue[0] <= $testvalue[1]) {
+				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
+				return $feedback;
+			}
+			break;
+		case CONDITION_LESS:
+			if ($testvalue[0] >= $testvalue[1]) {
+				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
+				return $feedback;
+			}
+			break;
+		case CONDITION_EQUAL:
+			if ($testvalue[0] != $testvalue[1]) {
+				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
+				return $feedback;
+			}
+			break;
+		}
+		if (DEBUG_FLOW) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
+	}
+	
+		
+	$callerparams = $params;
+	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
+	$sqlstr = "SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
+	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
+	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeID.")) ORDER BY ha_remote_scheme_steps.sort";
+	
+	if ($resschemesteps = mysql_query($sqlstr)) {
+		// Trap any async SCHEMES here
+		$rowshemesteps = mysql_fetch_array($resschemesteps);
+		if (!ASYNC_THREAD && $rowshemesteps['runasync']) {
+			//$pid = shell_exec($cmd);
+			$getparams = "caller=$params[callerID] messtype=MESS_TYPE_SCHEME scheme=$params[schemeID]";
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
+			$outputfile="async.log";
+			$pidfile="async.pid";
+			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+			$feedback['message'] = $rowshemesteps['name']." Spawned ";
+			return $feedback;		// GET OUT
+		}
+		do {  // loop all steps
+				$feedback['RunSchemeName'] = $rowshemesteps['name'];
+				if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, array( 'deviceID' => $rowshemesteps['deviceID'], 
+							'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 
+							'alert_textID' => $rowshemesteps['alert_textID']), $callerparams)) {
+			} 
+		} while ($rowshemesteps = mysql_fetch_array($resschemesteps));
+	} else {
+		$feedback['message'] = 'No scheme steps found!';
+	}
+	if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
+
+	return $feedback;
+
+}
+
+// Private
 function NOP() {return;}
 
+// Private
 function doFilter(&$arr, $nodefilter, &$filter, &$result) {
 
     foreach ($arr as $key => $value) {
@@ -697,6 +736,7 @@ function doFilter(&$arr, $nodefilter, &$filter, &$result) {
     return;
 }
 
+// Private
 function RemoteKeys($result) {
 
 // add link status to this
@@ -762,6 +802,7 @@ function RemoteKeys($result) {
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
 }
 
+// Private
 function GetLastKey($arr) {
 	end($arr);
 	return key($arr);
