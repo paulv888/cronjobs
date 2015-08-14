@@ -540,16 +540,16 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 					$html4.='</ul>';
 					
 					$html4.='<ul>';
-					$html4.='<li class="prev-img"><a onclick="change_img(-1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href="">Prev Frame</a></li>';
-					$html4.='<li><a onclick="play(-1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Rewind</a></li>';
-					$html4.='<li class="stop" id="stop"><a onclick="stop_img(1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Stop</a></li>';
-					$html4.='<li class="play" id="play"><a onclick="play(1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Play</a></li>';
-					$html4.='<li class="next-img"><a onclick="change_img(1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href="">Next Frame</a></li>';
+					$html4.='<li title="Previous Frame"><a onclick="change_img(-1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href=""><i class="icon-leftarrow"></i></a></li>';
+					$html4.='<li title="Rewind"><a onclick="play(-1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href=""><i class="icon-backward-2"></i></a></li>';
+					$html4.='<li title="Stop"><a onclick="stop_img(1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href=""><i class="icon-stop"></i></a></li>';
+					$html4.='<li title="Play"><a onclick="play(1, 0, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href=""><i class="icon-play"></i></a></li>';
+					$html4.='<li title="Next Frame"><a onclick="change_img(1, \'vsig_'.$identifier.'\'); return false;" rel="nofollow" href=""><i class="icon-rightarrow"></i></a></li>';
 					$html4.='</ul>';
 
 					$html4.='<ul>';
-					$html4.='<li><a onclick="play( 0, -1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Speed /2</a></li>';
-					$html4.='<li><a onclick="play( 0, 1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href="">Speed x2</a></li>';
+					$html4.='<li title="Speed 1/2"><a onclick="play( 0, -1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href=""><i class="icon-backward"></i></a></li>';
+					$html4.='<li title="Speed x2"><a onclick="play( 0, 1, \'vsig_'.$identifier.'\'); return false;"  rel="nofollow" href=""><i class="icon-forward"></i></a></li>';
 					$html4.='</ul>';
 					
 					$html4.="</div></div>\n";

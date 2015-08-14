@@ -85,32 +85,26 @@ function movePictures($camera) {
 		// Sleep .5 second before moving...
 		usleep(500000);
 		foreach ($files as $index => $file) {
-			$filetime = $filetimes[$index];
+			$filetime = $filetimes[$index];		// Time of currently handled file
 			// echo ">$file<".CRLF;
 
 			$datedir = date ("Y-m-d", $filetime);
-			if (is_null($group_dir)) {									// Only execute on entry
-				if ($group_dir = findLastGroupDir($dir.$datedir)) {			// Only if found
+			if (is_null($group_dir)) {					// Did we find a group dir? If not find the last one and the num files in it
+				if ($group_dir = findLastGroupDir($dir.$datedir)) {		
 					$targetdir = $dir.$datedir.'/'.$group_dir;
 					$numfiles  = iterator_count(new DirectoryIterator($targetdir)) - 2;
 				} 
 			}
 
-			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {			
-							// New Motion Group on; 1 minute gap OR max_files
-
+			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {  // New Motion Group on; 1 minute gap OR max_files
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
-				if (is_null($group_dir) || (substr($group_dir,0,2) != date("H",$filetime)) ) {	// no dir found
-					$nextcount = 1;
-				} else {
-					$nextcount = (int)(substr($group_dir,3)) + 1;
-					PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
-				}
-				$group_dir = date("H",$filetime).'_'.str_pad($nextcount, 5, '0', STR_PAD_LEFT);
+
+				//|| (substr($group_dir,0,2) != date("H",$filetime)) ) {	// not sure i need this?
+				$group_dir = date("H-i-s",$filetime);
+				//PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 				$targetdir = $dir.$datedir.'/'.$group_dir;
 				$numfiles = 0;
 				$newgroupcreated = true;
-
 			} 
 
 			if (!file_exists($dir)) {
@@ -121,10 +115,10 @@ function movePictures($camera) {
 			}
 			if (!file_exists($targetdir)) {
 				mkdir($targetdir);
-				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir, 'firstfiletime' => $filetime));
 			}
 
-			if ($camera['lastfiletime'] != $filetime) $seq = 0;
+			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
 			$camera['lastfiletime'] = $filetime;
 			//echo $dir.$file.'->';
 			//echo $targetdir.'/'.date("Y-m-d H:i:s",$filetime).'_'.str_pad($seq, 2, '0', STR_PAD_LEFT).'.jpg'.CRLF;
@@ -133,8 +127,8 @@ function movePictures($camera) {
 			$numfiles++;
 		}	// Handled all file in old to new order
 		// echo "Done: ".$numfiles.CRLF;
-		if (isset($newname)) {		// i.e. we did something
-			if ($newgroupcreated && $numfiles >= MIN_ALERT_FILES)  {
+		if (isset($newname)) {						// We did something, there is a new name
+			if ($newgroupcreated && $numfiles >= MIN_ALERT_FILES)  {		// Bug here, do not want to alert on every numfiles > alert, 
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
@@ -146,7 +140,7 @@ function movePictures($camera) {
 			}
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
-			PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+			PDOupdate("ha_cam_recordings", array('count' => $numfiles, 'lastfiletime' => $camera['lastfiletime'] ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 			UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
 		}
 		return $filetime;
@@ -166,6 +160,7 @@ function findLastGroupDir($dir) {
 			closedir($handle);
 			if (count($files)>0) {
 				sort($files);
+//print_r($files);
 				return end($files);
 			}
 			return null;
