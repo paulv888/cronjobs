@@ -105,6 +105,7 @@ function movePictures($camera) {
 				$targetdir = $dir.$datedir.'/'.$group_dir;
 				$numfiles = 0;
 				$newgroupcreated = true;
+				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir, 'firstfiletime' =>  date ("H:i:s",$filetime)));
 			} 
 
 			if (!file_exists($dir)) {
@@ -115,7 +116,6 @@ function movePictures($camera) {
 			}
 			if (!file_exists($targetdir)) {
 				mkdir($targetdir);
-				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir, 'firstfiletime' => $filetime));
 			}
 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
@@ -140,7 +140,7 @@ function movePictures($camera) {
 			}
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
-			PDOupdate("ha_cam_recordings", array('count' => $numfiles, 'lastfiletime' => $camera['lastfiletime'] ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+			PDOupdate("ha_cam_recordings", array('count' => $numfiles, 'lastfiletime' => date("H:i:s",$camera['lastfiletime']) ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 			UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
 		}
 		return $filetime;
