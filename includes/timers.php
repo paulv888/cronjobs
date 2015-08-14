@@ -123,7 +123,7 @@ function UpdateTimers($dummy) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_TIMERS) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['SendCommand:'.$devstatusrow['deviceID']]=SendCommand(MY_DEVICE_ID, array( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
+				$feedback['SendCommand:'.$devstatusrow['deviceID']]=executeCommand(MY_DEVICE_ID, MESS_TYPE_COMMAND, array( 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
 			} else {
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
