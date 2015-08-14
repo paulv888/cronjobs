@@ -482,8 +482,8 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 					$html3.='</div>'; 
 					//add controls
 					$html4="<div class='controls'>";
+					$html4.="<div class='pagination'>";
 					if($_sets_use_&&$_sets_number_>=2) {
-						$html4.="<div class='pagination'>";
 						$html4.="<ul class='pagination-list'>";
 						//back
 						if($_sets_current_>=2){
@@ -591,6 +591,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 						}
 						else{ //if thumbs are below NO sets are used => topimage-thumbs
 							$html1 .=$html2;
+							$html1 .=$html4;
 							$html1 .=$html3;
 						}
 					}

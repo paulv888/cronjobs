@@ -98,6 +98,8 @@ var t_ident_b = window[identifier+'_b'];
 	vsig_dom(topimg).alt = t_ident[6];
 	vsig_dom(topimg).title = t_ident[6];
 	vsig_dom(topimg).setAttribute('data-thumbid',thumbidx);
+	var t =  t_ident[0].split(/[\s.]+/);
+	vsig_dom('currenttime').innerHTML= t[1].substr(0, 2)+':'+t[1].substr(2, 2)+':'+t[1].substr(4, 2)+t[1].substr(6);
 }
 
 //switch set
