@@ -148,12 +148,12 @@ function executeCommand($callerID, $messtypeID, $params) {
 			$feedback['SendCommand']=SendCommand($callerID, array( 'deviceID' => $rowkeys['deviceID'], 'commandID' => $commandID, 'commandvalue' => $commandvalue), $callerparams);
 		} else {
 			$callerparams['schemeID'] = $schemeID;
-			$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'commandvalue' => $schemeID), $callerparams);
+			$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'schemeID' => $schemeID), $callerparams);
 		}
 		break;
 	case MESS_TYPE_SCHEME:
 		if (DEBUG_FLOW) echo "MESS_TYPE_SCHEME scheme: ".$schemeID.CRLF;
-		$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'commandvalue' => $schemeID), $callerparams);
+		$feedback['SendCommand']=SendCommand($callerID, array('commandID' => COMMAND_RUN_SCHEME,  'schemeID' => $schemeID), $callerparams);
 		break;
 	case MESS_TYPE_COMMAND:        
 		if (DEBUG_FLOW) echo "MESS_TYPE_COMMAND commandID: ".$commandID." deviceID: ".$deviceID.CRLF;
@@ -215,6 +215,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 	$commandID = (array_key_exists('commandID', $thiscommand) ? $thiscommand['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $thiscommand) ? $thiscommand['commandvalue'] : 100);
 	$timervalue = (array_key_exists('timervalue', $thiscommand) ? $thiscommand['timervalue'] : 0);
+	$schemeID = (array_key_exists('schemeID', $thiscommand) ? $thiscommand['schemeID'] : Null);
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$alert_textID = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 
@@ -449,7 +450,7 @@ function SendCommand($callerID, $thiscommand, $callerparams = array()) {
 		switch ($commandID)
 		{
 		case COMMAND_RUN_SCHEME:
-			$callerparams['schemeID'] = $commandvalue;
+			$callerparams['schemeID'] = $schemeID;
 			$feedback['runscheme'] = RunScheme($callerID, $callerparams);
 			break;
 		case COMMAND_LOG_ALERT:
@@ -545,9 +546,6 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 	
 	$schemeID = $params['schemeID'];
 	$loglevel = (array_key_exists('loglevel', $params) ? $params['loglevel'] : Null);
-
-	preg_match ( "/^[1-9][0-9]*/", $schemeID, $matches);
-	$schemeID = $matches[0];
 
 	if (DEBUG_FLOW) echo "<pre>Enter Runscheme $schemeID".CRLF;
 	if (DEBUG_FLOW) print_r($params);
@@ -680,7 +678,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		
 	$callerparams = $params;
 	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$sqlstr = "SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
+	$sqlstr = "SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
 	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeID.")) ORDER BY ha_remote_scheme_steps.sort";
 	
@@ -700,7 +698,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		do {  // loop all steps
 				$feedback['RunSchemeName'] = $rowshemesteps['name'];
 				if ($feedback['RunScheme:'.$rowshemesteps['id']]=SendCommand($callerID, array( 'deviceID' => $rowshemesteps['deviceID'], 
-							'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 
+							'commandID' => $rowshemesteps['commandID'], 'commandvalue' => $rowshemesteps['value'], 'schemeID' => $rowshemesteps['runschemeID'], 
 							'alert_textID' => $rowshemesteps['alert_textID']), $callerparams)) {
 			} 
 		} while ($rowshemesteps = mysql_fetch_array($resschemesteps));
