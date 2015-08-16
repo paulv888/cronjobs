@@ -21,10 +21,17 @@ if (isset($argv)) {
 	var_dump($argv);
 	foreach ($argv as $arg) {
 		$e=explode("=",$arg);
-        if(count($e)==2) $_POST[$e[0]]=$e[1];
-    }
-	define( 'ASYNC_THREAD', TRUE );
+        if(count($e)==2) {
+			$_POST[$e[0]]=$e[1];
+		} else {
+			if ($e[0] == "ASYNC_THREAD") {
+				define( 'ASYNC_THREAD', TRUE );
+				echo "ASYNC_THREAD".CRLF;
+			}
+		}
+	}
 }
+
 if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
 
 if (isset($_GET['caller'])) {
@@ -687,7 +694,7 @@ function RunScheme($callerID, $params) {      // its a scheme, process steps. Sc
 		$rowshemesteps = mysql_fetch_array($resschemesteps);
 		if (!ASYNC_THREAD && $rowshemesteps['runasync']) {
 			//$pid = shell_exec($cmd);
-			$getparams = "caller=$params[callerID] messtype=MESS_TYPE_SCHEME scheme=$params[schemeID]";
+			$getparams = "ASYNC_THREAD caller=$params[callerID] messtype=MESS_TYPE_SCHEME scheme=$params[schemeID]";
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
 			$outputfile="async.log";
 			$pidfile="async.pid";
