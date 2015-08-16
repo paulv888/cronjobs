@@ -6,8 +6,8 @@ define("MY_DEVICE_ID", 137);
 define("INSTEON_HUB_IP", "192.168.2.125");
 define("INSTEON_HUB_PORT", 9761);
 
-define( 'DEBUG_INSTEON', FALSE );
-//define( 'DEBUG_INSTEON', TRUE );
+define( 'DEBUG_INSTEON', TRUE );
+if (!defined('DEBUG_INSTEON')) define( 'DEBUG_INSTEON', FALSE );
 
 
 class console{
@@ -59,7 +59,9 @@ while (true) {
 				if (is_null($deviceID = setDeviceID($message))) { 		// No device founds so use my_id as callerID
 					$message['deviceID'] = MY_DEVICE_ID;
 				}
+				echo date("Y-m-d H:i:s")." +++Logger: message\n";
 				print_r($message);
+				echo date("Y-m-d H:i:s")." ===Logger: message\n";
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {

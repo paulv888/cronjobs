@@ -43,41 +43,48 @@ class InsteonCoder
 	'plm_get_config' 		=> '0273'
 );
 
-private static $plmcmdlen = array (
-	'0221' => array (11, 11),
-	'0250' => array (11, 11),
-	'0251' => array (25, 25),
-	'0252' => array (4, 4),
-	'0253' => array (10, 10),
-	'0254' => array (3, 3),
-	'0255' => array (2, 2),
-	'0256' => array (6, 6),
-	'0257' => array (10, 10),
-	'0258' => array (3, 3),
-	'0260' => array (2, 9),
-	'0261' => array (5, 6),
-	'0262' => array (8, 9, 22, 23), # could get 9 or 23 array (Standard or Extended Message received)
-	'0263' => array (4, 5),
-	'0264' => array (4, 5),
-	'0265' => array (2, 3),
-	'0266' => array (5, 6),
-	'0267' => array (2, 3),
-	'0268' => array (3, 4),
-	'0269' => array (2, 3),
-	'026A' => array (2, 3),
-	'026B' => array (3, 4),
-	'026C' => array (2, 3),
-	'026D' => array (2, 3),
-	'026E' => array (2, 3),
-	'026F' => array (11, 12),
-	'0270' => array (3, 4),
-	'0271' => array (4, 5),
-	'0272' => array (2, 3),
-	'0273' => array (5, 6),
+// Using 0 * 2 
+// I am using 0 to feedback length for buffer cut off
+private static $plmcmdlen = array (			
+	'0204' => array (10, 10), 	// Added 8/16/15
+	'020B' => array (10, 10), 	// Added 8/16/15
+	'0221' => array (10, 10),	// Fix was grabbing next 02
+	'0224' => array (10, 10), 	// Added 8/16/15
+	'0250' => array (11, 11),   // OK
+	'0251' => array (25, 25),	// Not getting or logging
+	'0252' => array (4, 4),     // OK
+	'0253' => array (10, 10),	// Not getting or logging
+	'0254' => array (3, 3),		// Not getting or logging
+	'0255' => array (2, 2),		// Not getting or logging
+	'0256' => array (6, 6),		// Not getting or logging
+	'0257' => array (10, 10),	// Not getting or logging
+	'0258' => array (3, 3),		// Not getting or logging
+	'0260' => array (2, 9),		// Not getting or logging
+	'0261' => array (5, 6),		// Not getting or logging
+	'0262' => array (9, 9 ), 	// Pretty consistent 9
+	'0263' => array (5, 5),		// OK
+	'0264' => array (4, 5),  	// Not getting or logging
+	'0265' => array (2, 3),		// Not getting or logging
+	'0266' => array (5, 6),		// Not getting or logging
+	'0267' => array (2, 3),		// Not getting or logging
+	'0268' => array (3, 4),		// Not getting or logging
+	'0269' => array (2, 3),		// Not getting or logging
+	'026A' => array (2, 3),		// Not getting or logging
+	'026B' => array (3, 4),		// Not getting or logging
+	'026C' => array (2, 3),		// Not getting or logging
+	'026D' => array (2, 3),		// Not getting or logging
+	'026E' => array (2, 3),		// Not getting or logging
+	'026F' => array (11, 12),	// Not getting or logging
+	'0270' => array (3, 4),		// Not getting or logging
+	'0271' => array (4, 5),		// Not getting or logging
+	'0272' => array (2, 3),		// Not getting or logging
+	'0273' => array (6, 6),		// OK 
 );	
 
 private static $inout_a = Array (
-		'0221' => COMMAND_IO_NOT,
+		'0204' => COMMAND_IO_RECV,	// Added 8/16/15
+		'020B' => COMMAND_IO_RECV,	// Added 8/16/15
+		'0221' => COMMAND_IO_RECV,
 		'0250' => COMMAND_IO_RECV,
 		'0251' => COMMAND_IO_RECV,
 		'0252' => COMMAND_IO_RECV,
@@ -556,6 +563,10 @@ private static $x10_house_codes_enc;
 	$FSM = 0;
 	$abort = 0;
 	$finished = 0;
+	if (strlen($plm_string) < 4) {
+		$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
+		$abort = 1;
+	}
 	while(!$abort and !$finished) {
 		if($FSM==0) {
 			#FSM:0 - Look for PLM STX
@@ -783,8 +794,10 @@ private static $x10_house_codes_enc;
 	$decode_result= $plm_decode_result['plmcmdID'];
 	if (array_key_exists($decode_result, self::$inout_a)) {
 		$plm_decode_result['inout'] = self::$inout_a[$decode_result];
+		$plm_decode_result['length'] = self::$plmcmdlen[strtoupper($plmcmdID)][0] * 2;
 	} else {
 		$plm_decode_result['inout'] = COMMAND_IO_NOT;
+		$plm_decode_result['length'] = 0;
 	}
 //	return $plm_message;
 	return $plm_decode_result;
@@ -974,7 +987,7 @@ private function insteon_decode_r($command_string) {
 		#SCA: Standard Direct Cleanup ACK/NACK
 		$result = $this->insteon_decode_cmd_r('SCA', $cmd1, $cmd2, $extended, $data);
 	} else {
-		$result['extdata'] = "Insteon message type not decoded\n";
+		$result['extdata'] = "Insteon Message Undefined\n";
 	}
 
 	return $result;
@@ -1040,7 +1053,7 @@ private function insteon_decode_cmd($cmdLookup, $cmd1, $cmd2, $extended, $Data) 
 		$insteon_message .= sprintf("%28s: ",'Cmd 2').$cmd2."\n";
 		 if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n";
 	} else {
-		$insteon_message .= "Parse database has undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
+		$insteon_message .= "Parse database has Undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
 	}
 
 	return $insteon_message;
@@ -1110,7 +1123,7 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 		$result['data'] = $cmd2;
 		if( $extended) $result['extdata'] = $Data;
 	} else {
-		$result['extdata'] = "Parse database has undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
+		$result['extdata'] = "Parse database has Undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
 	}
 
 	return $result;
@@ -1118,7 +1131,7 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 
 #$plm_cmd is 2 byte hexdec cmd; $send_rec is 0 for send, 1, for rec; $is_extended is 1 if extended send
 #returns expected byte strlen
-private function insteon_cmd_len ($plm_cmd, $send_rec, $is_extended) {
+private function insteon_cmd_len($plm_cmd, $send_rec, $is_extended = false) {
 	 
 	if ($is_extended && self::$plmcmdlen[strtoupper($plm_cmd)] > 2) {
 		return self::$plmcmdlen[strtoupper($plm_cmd)][($send_rec+2)];

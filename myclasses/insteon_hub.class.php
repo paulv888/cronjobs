@@ -13,38 +13,6 @@ public static $defaultDebug=false;
 public $debug;
 protected $last;
 
-private static $inout_a = Array (
-		'0250' => 2,
-		'0251' => 2,
-		'0252' => 2,
-		'0253' => 3,
-		'0254' => 2,
-		'0255' => 3,
-		'0256' => 3,
-		'0257' => 3,
-		'0258' => 3,
-		'0260' => 2,
-		'0261' => 1,
-		'0262' => 1,
-		'0263' => 1,
-		'0264' => 3,
-		'0265' => 3,
-		'0266' => 3,
-		'0267' => 3,
-		'0268' => 3,
-		'0269' => 3,
-		'026A' => 3,
-		'026B' => 3,
-		'026C' => 3,
-		'026D' => 3,
-		'026E' => 3,
-		'026F' => 3,
-		'0270' => 2,
-		'0271' => 2,
-		'0272' => 3,
-		'0273' => 3
-);
-
 /**
  *
  */
@@ -77,18 +45,10 @@ private static $inout_a = Array (
 		$short_message = 0;
 		$result = "";
 		while ($this->messages->count()<1) {
-		/*		try {
-		 $result=$transport->readAll(100);
-		}
-		catch (Exception $e) {
-		echo "<p>There was an error.</p>";
-		echo $e->getCode();
-		echo $e->getMessage();
-		} */
 	
-			$result.= $this->transport->readAll();
-			if ($result) {
-				$plm_decode_result = $this->inst_coder->plm_decode(bin2hex($result));
+			$result.= bin2hex($this->transport->readAll());
+			while ($result) {
+				$plm_decode_result = $this->inst_coder->plm_decode($result);
 				// check for to short for PLM message, if so save result for rest
 				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = Null;
 				switch ($plm_decode_result['extdata'])
@@ -102,25 +62,23 @@ private static $inout_a = Array (
 						break;
 					case ERROR_STX_MISSING:				// not handled yet. 
 						echo "ERROR_STX_MISSING"." Not storing"."\n";
-						echo date("Y-m-d H:i:s")."\n";
+						echo date("Y-m-d H:i:s")."plm_decode_result:\n";
 						print_r($plm_decode_result);
-						$result = "";														// Clear result padding
+						$result = "";								// Clear result padding
 						break;
 					default:
-						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")."\n";
+						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." +++plm_decode_result\n";
 						if (DEBUG_INSTEON) print_r($plm_decode_result);
+						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." ===end plm_decode_result\n";
 						$this->addMessage($plm_decode_result);
-						$result = "";														// Clear result padding
+						if ($plm_decode_result['length'] > 0) {		// This was a readable message
+							$result = substr($result,$plm_decode_result['length']);	
+						} else { 									// non recognize code, throw all away (or mayby try next 4?
+							$result = "";
+						}
 						break;
 				}
-			} else {
-				// havent heard anything for 15min, check if still alive.
-				$nowdt = strtotime(date("Y-m-d H:i:s"));
-				if (timeExpired($this->last, 15)) {
-					$this->transport->write(hex2bin("0273"));
-				}
-				$result = "";														// Clear result padding
-			}
+			} 
 		}
 		return $this->messages->dequeue();
 	}
