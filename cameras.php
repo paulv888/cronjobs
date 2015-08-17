@@ -150,6 +150,7 @@ function movePictures($camera) {
 
 function findLastGroupDir($dir) {
 // Last dir or nul if no dir found
+	$files = Array();
 	if (file_exists($dir)) {
 		if ($handle = opendir($dir)) {
 			while (false !== ($file = readdir($handle))) {
