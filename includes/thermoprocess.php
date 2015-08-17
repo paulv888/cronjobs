@@ -24,48 +24,30 @@
 
 function HvacToggle($callerID, $deviceID, $status = NULL) {
 
-// global $lock;
-
 $now = date( 'Y-m-d H:i:s' );
 
 	$thermostats = getThermoStats();
 	$thermostatRec = $thermostats[$deviceID];
-	// if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
-	// {
-		try
-		{
-			$thermostatRec = $thermostats[$deviceID];
-			// Query thermostat info
-			//logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['tstat_uuid']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
-			$stat = new Stat( $thermostatRec );
-			$stat->getStat();
-			
-			$result['status'] = $stat->Toggle($status);
-			$result['commandvalue'] =  to_celcius($stat->temp);
-			$result['deviceID'] = $thermostatRec['deviceID'];
-			$result['callerID'] = $callerID;
-			$result['setpoint'] = to_celcius($stat->ttemp);
-// echo "<pre>HVACToggle ";			
-// print_r($result);
-// echo "</pre>";			
-			$feedback = UpdateStatus($result);
-			UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
-
-			return $feedback;
-		}
-		catch( Exception $e )
-		{
-			PDOError($sql, array(), $e);
-		}
+	try
+	{
+		$thermostatRec = $thermostats[$deviceID];
+		$stat = new Stat( $thermostatRec );
+		$stat->getStat();
 		
-		// flock( $lock, LOCK_UN );
-	// }
-	// else
-	// {
-		// die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
-	// }
-	// fclose( $lock );
+		$result['status'] = $stat->Toggle($status);
+		$result['commandvalue'] =  to_celcius($stat->temp);
+		$result['deviceID'] = $thermostatRec['deviceID'];
+		$result['callerID'] = $callerID;
+		$result['setpoint'] = to_celcius($stat->ttemp);
+		$feedback = UpdateStatus($result);
+		UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
 
+		return $feedback;
+	}
+	catch( Exception $e )
+	{
+		echo 'Caught exception: ',  $e->getMessage(), CRLF;
+	}
 }
 function HvacOff($callerID, $deviceID) {
 
@@ -95,42 +77,29 @@ $now = date( 'Y-m-d H:i:s' );
 
 	$thermostats = getThermoStats();
 	$thermostatRec = $thermostats[$deviceID];
-	// if(openLockFile('/tmp/thermo.lock'. $thermostatRec['deviceID']))
-	// {
-		try
-		{
-			$thermostatRec = $thermostats[$deviceID];
-			// Query thermostat info
-			//logIt( "Connecting to {$thermostatRec['id']} {$thermostatRec['tstat_uuid']} {$thermostatRec['targetaddress']} {$thermostatRec['name']}" );
-			$stat = new Stat( $thermostatRec );
-			$stat->getStat();
-			
-			$result['status'] = $stat->getTargetOnOff();
-			$stat->TempAdd($addtemp);
+	try
+	{
+		$thermostatRec = $thermostats[$deviceID];
+		$stat = new Stat( $thermostatRec );
+		$stat->getStat();
 		
-			$result['commandvalue'] =  to_celcius($stat->temp);
-			$result['deviceID'] = $thermostatRec['deviceID'];
-			$result['callerID'] = $callerID;
-			$result['setpoint'] = to_celcius($stat->ttemp);
-			
-			$feedback = UpdateStatus($result);
-			UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
+		$result['status'] = $stat->getTargetOnOff();
+		$stat->TempAdd($addtemp);
+	
+		$result['commandvalue'] =  to_celcius($stat->temp);
+		$result['deviceID'] = $thermostatRec['deviceID'];
+		$result['callerID'] = $callerID;
+		$result['setpoint'] = to_celcius($stat->ttemp);
 		
-			return $feedback;
-		}
-		catch( Exception $e )
-		{
-			PDOError($sql, array(), $e);
-		}
-		
-		// flock( $lock, LOCK_UN );
-	// }
-	// else
-	// {
-		// die( "Couldn't get file lock for thermostat {$thermostatRec['id']}" );
-	// }
-	// fclose( $lock );
-
+		$feedback = UpdateStatus($result);
+		UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
+	
+		return $feedback;
+	}
+	catch( Exception $e )
+	{
+		echo 'Caught exception: ',  $e->getMessage(), CRLF;
+	}
 }
 
 function HvacUp($callerID, $deviceID) {

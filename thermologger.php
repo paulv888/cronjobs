@@ -115,6 +115,7 @@ function UpdateTemps() {
 			}
 			catch( Exception $e )
 			{
+				echo 'Caught exception: ',  $e->getMessage(), CRLF;
 				PDOError($sql, array(), $e);
 			}
 	}
