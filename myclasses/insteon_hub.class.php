@@ -48,6 +48,7 @@ protected $last;
 	
 			$result.= bin2hex($this->transport->readAll());
 			while ($result) {
+				$this->last = time();
 				$plm_decode_result = $this->inst_coder->plm_decode($result);
 				// check for to short for PLM message, if so save result for rest
 				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = Null;
@@ -79,6 +80,7 @@ protected $last;
 						break;
 				}
 			} 
+			if (timeExpired($this->last, 15)) $this->transport->write(hex2bin("0273"));
 		}
 		return $this->messages->dequeue();
 	}

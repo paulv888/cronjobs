@@ -21,7 +21,7 @@ function timeExpired(&$lasttime, $minutes) {
 	}
 //	if ((int)(abs(time()-$lasttime) / 60) >= $minutes) {
 // 	Try to prevent drifting (really depends on the calling interval)
-	if  ($minutes > 0) $minutes--;
+	if  ($minutes > 10) $minutes--;
 	if ((int)(abs(time()-$lasttime) / 60) >= $minutes) {
 		$lasttime = time();
 		return true;
