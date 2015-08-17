@@ -5,7 +5,7 @@ require_once 'includes.php';
 // TODO:: clean up feedback , status and return JSON
 
 // define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
+//define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
@@ -138,8 +138,8 @@ function executeCommand($callerID, $messtypeID, $params) {
 	case MESS_TYPE_REMOTE_KEY:    // Key pressed on remote
 		$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
 		$schemeID = $rowkeys['schemeID'];
-		$feedback['show_result'] = false;
-		if (!empty($rowkeys)) if ($rowkeys['show_result']) $feedback['show_result'] = true;
+		$feedback['show_result'] = $rowkeys['show_result'];
+		//if (!empty($rowkeys)) if ($rowkeys['show_result']) $feedback['show_result'] = true;
 		
 		if ($schemeID <=0) {  													// not a scheme, Execute
 			if ($commandID===NULL) {
@@ -192,13 +192,17 @@ function executeCommand($callerID, $messtypeID, $params) {
 		}
 	}
 	
-	if ($mouse == 'down') return;
 	if (DEBUG_RETURN) echo "Feedback: >";
 	if (DEBUG_RETURN) print_r($feedback);
 	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
 
-	$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1);
-	doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
+	if ($feedback['show_result']) {
+		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1);
+		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
+	} else {
+		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1);
+		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1), $filterkeep, $result);
+	}
 	if (DEBUG_RETURN) echo "Filtered: >";
 	if (DEBUG_RETURN) print_r($result);
 	if ($callerID == DEVICE_REMOTE) {
