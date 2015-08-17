@@ -21,7 +21,6 @@ include_once 'shared/simple_html_dom.php';
 include_once 'includes/monitor_devices.php';
 include_once 'includes/thermoprocess.php';
 include_once 'includes/thermo_common.php';
-include_once 'includes/bitly.php';
 
 include_once 'myclasses/thermo_lib.php';
 include_once 'myclasses/RestClient.class.php';
