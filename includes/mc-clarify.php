@@ -44,9 +44,10 @@ function clarify($init = "CHANGES") {
 
 function lastXDays($qname) {
 
+		$text = "";
 		$result = getCases($qname);							// No Distinct - Last 3 days
 		if ($result != "ERROR:") {
-			$text = date("Y-m-d H:i:s").": ".$result." Cases/CR's Read".CRLF;			// No Distinct - Last 3 days
+			$text.= date("Y-m-d H:i:s").": ".$result." Cases/CR's Read".CRLF;			// No Distinct - Last 3 days
 			$text.= date("Y-m-d H:i:s").": ".storeCase(formatData())." Cases Upserted.".CRLF;
 			$text.= date("Y-m-d H:i:s").": ".storeCR(formatData())." CRs Upserted.".CRLF;
 		} 
