@@ -1,6 +1,6 @@
 <?php
 
-//define( 'DEBUG_HA', TRUE );
+// define( 'DEBUG_HA', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 
 
@@ -314,12 +314,14 @@ function logEvent($log) {
 	$log['mdate'] = date("Y-m-d H:i:s");
 
 	if (is_null($log['loglevel']))	{
-		$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
-		if (!$rescommand=mysql_query($mysql)) {
-			mySqlError($mysql);
-		} else {
-			$rowcommand=mysql_fetch_array($rescommand);
-			$log['loglevel'] = $rowcommand['loglevel'];
+		if (!is_null($log['commandID'])) {
+			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
+			if (!$rescommand=mysql_query($mysql)) {
+				mySqlError($mysql);
+			} else {
+				$rowcommand=mysql_fetch_array($rescommand);
+				$log['loglevel'] = $rowcommand['loglevel'];
+			}
 		}
 	}
 	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
@@ -342,11 +344,14 @@ function HandleTriggers($params, $monitortype, $triggertype) {
 		foreach ($triggerrows as $trigger) {
 			if (DEBUG_HA) echo "trigger: ";
 			if (DEBUG_HA) print_r($trigger);
-			$params['schemeID'] = $trigger['schemeID'];
-			$params['loglevel'] = LOGLEVEL_MACRO;
-			$result = executeCommand($params['callerID'], MESS_TYPE_SCHEME, $params); 
+			$thiscommand['commandID'] = COMMAND_RUN_SCHEME;
+			$thiscommand['schemeID'] = $trigger['schemeID'];
+			$thiscommand['loglevel'] = LOGLEVEL_MACRO;
+			$thiscommand['messtypeID'] = MESS_TYPE_SCHEME;
+			$thiscommand['caller'] = $params['caller'];
+			$result = sendCommand($thiscommand); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
+			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
 		}
 	}
 	return $feedback;

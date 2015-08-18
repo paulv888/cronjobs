@@ -67,6 +67,7 @@ function movePictures($camera) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Nothing to do.".CRLF;
 			return $lastfiletime;
 		}
+		
  // echo '<pre>';
  // print_r($files);
  // print_r($filetimes);
@@ -116,6 +117,7 @@ function movePictures($camera) {
 			}
 			if (!file_exists($targetdir)) {
 				mkdir($targetdir);
+				echo "*******".$targetdir.CRLF;
 			}
 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
@@ -128,11 +130,14 @@ function movePictures($camera) {
 		}	// Handled all file in old to new order
 		// echo "Done: ".$numfiles.CRLF;
 		if (isset($newname)) {						// We did something, there is a new name
-			if ($newgroupcreated && $numfiles >= MIN_ALERT_FILES)  {		// Bug here, do not want to alert on every numfiles > alert, 
+			echo "numfiles: $numfiles".CRLF;
+			if (($newgroupcreated && $numfiles >= MIN_ALERT_FILES))  {		// Bug here if 1 file read into new directory then no alert generated.
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
-				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
+        			echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messtypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_TIMER, 
+						'commandvalue' => 1, 'emailmessage' => $html, 'smsmessage' => $html1));
+//				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
 			}
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Thumbnail.".CRLF;
 			if (!file_exists(LASTIMAGEDIR)) {
@@ -141,7 +146,7 @@ function movePictures($camera) {
 			$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
 			createthumb($newname,$thumbname,200,200);
 			PDOupdate("ha_cam_recordings", array('count' => $numfiles, 'lastfiletime' => date("H:i:s",$camera['lastfiletime']) ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
-			UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
+//			UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'status' => STATUS_OFF));
 		}
 		return $filetime;
 	}  
