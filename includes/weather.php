@@ -5,7 +5,7 @@ if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
 define('IMAGE_CACHE',"/images/yahoo/");
 define('FRONT_DIR',"/images/yahoo/");
-//if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', 97);
+//if (!defined(MY_DEVICE_ID)) define( MY_DEVICE_ID, 97);
 
 function loadWeather($station) {
 
@@ -61,7 +61,7 @@ function getYahooWeather($station) {
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
 			'commandvalue' => $result->{'item'}->{'condition'}->{'temp'},  'humidity' => $result->{'atmosphere'}->{'humidity'}));
 
 		$array['deviceID'] = $mydeviceID[$station];
@@ -148,7 +148,7 @@ function getYahooWeather($station) {
 			$i++;
 		}
 
-   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
+   		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $mydeviceID[$station]));
 	}
 
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";

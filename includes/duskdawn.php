@@ -28,8 +28,8 @@ function getDuskDawn($station) {
 		$tss = date("H:i:s", strtotime($result->{'astronomy'}->{'sunset'}));
 
 		PDOupdate("ha_mf_device_extra", Array('dawn' => $tsr, 'dusk' => $tss), array( 'deviceID' => DEVICE_DARK_OUTSIDE));
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => STATUS_ON));
-   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE));
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => STATUS_ON));
+   		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE));
 	}
 
 	if (DEBUG_DUSKDAWN) echo "</pre>";
