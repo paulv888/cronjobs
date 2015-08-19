@@ -29,6 +29,9 @@ if (isset($_GET["Message"])) {
 
 
 if (!($sdata=="")) { 					//import_event
+        $v = Null;
+        $h = Null;
+        $s = Null;
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
 //print_r($rcv_message);
 	$message['deviceID'] = $rcv_message['Device'];
