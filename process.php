@@ -4,18 +4,12 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-//define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
-
-if (isset($_GET['caller'])) {
-	// Loading JSON get variables form cam-5 in Post
-	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
-	$_POST=$_GET;
-}
 
 if (isset($argv)) {
 	var_dump($argv);
@@ -34,7 +28,7 @@ if (isset($argv)) {
 
 if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
 
-if (isset($_GET['caller'])) {
+if (isset($_GET['callerID'])) {
 	// Loading JSON get variables form cam-5 in Post
 	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
 	$_POST=$_GET;
@@ -44,30 +38,9 @@ if (isset($_GET['caller'])) {
 if (DEBUG_FLOW) echo json_encode($_POST);
 if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
-if (isset($_POST["messtype"]) && isset($_POST["caller"])) {						// All have to tell where they are from.
+if (isset($_POST["messagetypeID"]) && isset($_POST["callerID"])) {						// All have to tell where they are from.
 
-	if (DEBUG_FLOW) echo "callerID ".$_POST['caller']." ".$_POST['messtype'].CRLF;
-
-	$_POST['messtypeID']=$_POST['messtype'];
-	unset($_POST['messtype']);
-	$_POST['callerID']=$_POST['caller'];
-	unset($_POST['caller']);
-	if (isset($_POST["remotekey"])) {							// Called with key number Can come with command from drop-down, key number needed for device
-		$_POST['remotekeyID']= $_POST["remotekey"];
-		unset($_POST['remotekey']);
-	}
-	if (isset($_POST["command"])) {										// Internal, then device not required
-		$_POST['commandID']=(!empty($_POST["command"]) ? $_POST["command"] : NULL);
-		unset($_POST['command']);
-	}
-	if (isset($_POST["scheme"])) {							
-		$_POST['schemeID'] = $_POST["scheme"];
-		unset($_POST['scheme']);
-	}
-	if (isset($_POST["device"])) {							
-		$_POST['deviceID'] = (!empty($_POST["device"]) ? $_POST["device"] : NULL);
-		unset($_POST['device']);
-	}
+	if (DEBUG_FLOW) echo "callerID ".$_POST['callerID']." ".$_POST['messagetypeID'].CRLF;
 	echo executeCommand($_POST);
 }
 
@@ -78,8 +51,8 @@ function executeCommand($callerparams) {
 // This will store and keep original caller params
 
 	/* Get the Keys Schema or Device */
-	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : Null);
-	if (IsNullOrEmptyString($callerparams['deviceID'])) $callerparams['deviceID'] = Null;
+	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : Null);
+	//if (IsNullOrEmptyString($callerparams['deviceID'])) $callerparams['deviceID'] = Null;
 	$callerparams['schemeID'] = (array_key_exists('schemeID', $callerparams) ? $callerparams['schemeID'] : Null);
 	$callerparams['remotekeyID'] = (array_key_exists('remotekeyID', $callerparams) ? $callerparams['remotekeyID'] : Null);
 	$callerparams['commandID'] = (array_key_exists('commandID', $callerparams) ? $callerparams['commandID'] : Null);
@@ -93,78 +66,71 @@ function executeCommand($callerparams) {
 	global $inst_coder;
 
 	$inst_coder = new InsteonCoder();
-	$feedback['messtypeID'] = $callerparams['messtypeID'];
+	$feedback['messagetypeID'] = $callerparams['messagetypeID'];
 
-	$callerparams['caller'] = $callerparams;
-	$callerparams['caller']['deviceID'] = (array_key_exists('deviceID', $callerparams['caller']) ? $callerparams['caller']['deviceID'] : $callerID);
+//	$callerparams['caller']['deviceID'] = (array_key_exists('deviceID', $callerparams['caller']) ? $callerparams['caller']['deviceID'] : $callerID);
 
 	if (DEBUG_FLOW) echo '<pre>Entry executeCommand - Callerparams: ';
 	if (DEBUG_FLOW) echo print_r($callerparams);
-
-	
+			
 	$feedback['show_result'] = false;
-	switch ($callerparams['messtypeID'])
+	switch ($callerparams['messagetypeID'])
 	{
 	case MESS_TYPE_REMOTE_KEY:    // Key pressed on remote
-		$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$callerparams['remotekeyID']);
-		$callerparams['schemeID'] = $rowkeys['schemeID'];
-		$feedback['show_result'] = $rowkeys['show_result'];
-		
-		if ($callerparams['schemeID'] <=0) {  													// not a scheme, Execute
-			if ($callerparams['commandID']===NULL) {
-				if ($callerparams['mouse']=='down') { 
-					$callerparams['commandID']=$rowkeys['commandIDdown'];
-					if (is_null($callerparams['commandID'])) {
-						return false;
-					}
-				} else {
-					$callerparams['commandID']=$rowkeys['commandID'];
-				}
-			}
+		foreach ($callerparams['keys'] AS $remotekeyID) {
+			unset($callerparams['keys']);
+			$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
+			$callerparams['schemeID'] = $rowkeys['schemeID'];
+			$feedback['show_result'] = $rowkeys['show_result'];
 			$callerparams['deviceID'] = $rowkeys['deviceID'];
-			$feedback['SendCommand']=SendCommand($callerparams );
-		} else {
-			$callerparams['commandID'] = COMMAND_RUN_SCHEME;
-			$feedback['SendCommand']=SendCommand($callerparams);
+		
+			if ($callerparams['schemeID'] <=0) {  													// not a scheme, Execute
+				if ($callerparams['commandID']===NULL) {
+					if ($callerparams['mouse']=='down') { 
+						$callerparams['commandID']=$rowkeys['commandIDdown'];
+						if (is_null($callerparams['commandID'])) {
+							return false;
+						}
+					} else {
+						$callerparams['commandID']=$rowkeys['commandID'];
+					}
+				}
+			} else {
+				$callerparams['commandID'] = COMMAND_RUN_SCHEME;
+			}
+			$callerparams['caller'] = $callerparams;
+			$feedback['SendCommand'][]=SendCommand($callerparams);
 		}
 		break;
 	case MESS_TYPE_SCHEME:
 		if (DEBUG_FLOW) echo "MESS_TYPE_SCHEME scheme: ".$callerparams['schemeID'].CRLF;
 		$callerparams['commandID'] = COMMAND_RUN_SCHEME;
-		$feedback['SendCommand']=SendCommand($callerparams);
+		$callerparams['caller'] = $callerparams;
+		$feedback['SendCommand'][]=SendCommand($callerparams);
 		break;
-	case MESS_TYPE_COMMAND:        
-		if (DEBUG_FLOW) echo "MESS_TYPE_COMMAND commandID: ".$callerparams['commandID']." deviceID: ".$callerparams['deviceID'].CRLF;
-		$feedback['SendCommand']=SendCommand($callerparams);
-		break;
-	case MESS_TYPE_MULTI_KEY:			// This all can go; Treat COMMAND_GET_VALUE in SendCommand, create command for GetStatusLink and same. Update normal MESS_TYPE_REMOTE_KEY to send as possible multiselect
-		if ($callerparams['commandID'] != COMMAND_GET_VALUE) {
-			switch ($callerparams['commandvalue'])
-			{
-				case 0:
-					$callerparams['commandID'] = COMMAND_OFF;
-					break;
-				case 100:
-					$callerparams['commandID'] = COMMAND_ON;
-					break;
-				default:
-					$callerparams['commandID'] = COMMAND_DIM;
-					break;
-			}
-			foreach ($callerparams['selection'] AS $remotekeyID) {
+	case MESS_TYPE_COMMAND:
+		// Comes either with deviceID or keys
+		if (array_key_exists('keys', $callerparams)) {
+			foreach ($callerparams['keys'] AS $remotekeyID) {
+				unset($callerparams['keys']);
 				$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
 				$callerparams['deviceID'] = $rowkeys['deviceID'];
-				$feedback['SendCommand'][]=SendCommand($callerparams);
+				//$callerparams['caller'] = $callerparams;
+				if ($callerparams['commandID'] == COMMAND_GET_VALUE) {
+					$feedback[]['updatestatus']=GetStatusLink($callerparams);
+				} else {
+					$callerparams['caller'] = $callerparams;
+					$feedback['SendCommand'][]=SendCommand($callerparams);
+				}
 			}
-		} else {
-			foreach ($callerparams['selection'] AS $remotekeyID) {
-				$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-				$callerparams['deviceID'] = $rowkeys['deviceID'];
-				$feedback[]['updatestatus']=GetStatusLink($callerparams);
-			}
+		} else {			
+			if (DEBUG_FLOW) echo "MESS_TYPE_COMMAND commandID: ".$callerparams['commandID']." deviceID: ".$callerparams['deviceID'].CRLF;
+			$callerparams['caller'] = $callerparams;
+			$feedback['SendCommand'][]=SendCommand($callerparams);
 		}
+		break;
 	}
-	
+
 	if (DEBUG_RETURN) echo "Feedback: >";
 	if (DEBUG_RETURN) print_r($feedback);
 	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
@@ -194,7 +160,6 @@ function executeCommand($callerparams) {
 function SendCommand($thiscommand) { 
 
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
-//	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : Null);		// not sending non key to a
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
 	$thiscommand['deviceID'] = (array_key_exists('deviceID', $thiscommand) ? $thiscommand['deviceID'] : Null);
 	if (IsNullOrEmptyString($thiscommand['deviceID'])) $thiscommand['deviceID'] = Null;
@@ -312,10 +277,9 @@ function SendCommand($thiscommand) {
 		$subject= $rowtext['description'];
 		$message= $rowtext['message'];
 		if (strlen($message) == 0) $message = " ";
-		//echo $thiscommand['commandvalue'].CRLF.CRLF;
-		//$callerparams['stepmessage'] = $thiscommand['commandvalue'];
-		$callerparams['commandvalue'] = $thiscommand['commandvalue'];
-		replaceText(array('deviceID' => $callerparams['deviceID']), $subject, $message, $callerparams);
+		// echo "thiscommand".CRLF.CRLF;
+		// print_r($thiscommand);
+		replaceText($subject, $message, $thiscommand);
 		//echo $message.CRLF.CRLF;
 		$feedback['error'] = (sendmail($rowcommands['command'], $subject, $message, 'VloHome') == true ? false : true);
 		break;
@@ -437,8 +401,7 @@ function SendCommand($thiscommand) {
 			$thiscommand['commandvalue'] = (array_key_exists('RunSchemeName', $feedback['runscheme']) ? $feedback['runscheme']['RunSchemeName'] : "Not Executed");
 			break;
 		case COMMAND_LOG_ALERT:
-			$callerparams['commandvalue'] = $thiscommand['commandvalue'];
-			$feedback['message'] = Alerts($thiscommand['alert_textID'], $callerparams).' created';
+			$feedback['message'] = Alerts($thiscommand['alert_textID'], $thiscommand).' created';
 			break;
 		case COMMAND_GET_GROUP:
 			$func = $rowcommands['command'];
@@ -659,7 +622,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 	}
 	
 		
-	$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
+	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$sqlstr = "SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID ";
 	$sqlstr.= " FROM (ha_remote_schemes INNER JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID) ";
 	$sqlstr.=  "WHERE(((ha_remote_schemes.id) =".$schemeID.")) ORDER BY ha_remote_scheme_steps.sort";
@@ -669,8 +632,9 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		$rowshemesteps = mysql_fetch_array($resschemesteps);
 		if (!ASYNC_THREAD && $rowshemesteps['runasync']) {
 			//$pid = shell_exec($cmd);
-			$getparams = "ASYNC_THREAD caller=$callerparams[callerID] messtype=MESS_TYPE_SCHEME scheme=$schemeID";
-			$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
+			$getparams = "ASYNC_THREAD callerID=$callerparams[callerID] messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+			//$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/pvloon/php/process.php '.$getparams;
 			$outputfile="async.log";
 			$pidfile="async.pid";
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));

@@ -8,28 +8,29 @@ if(!window.scriptRemoteHasRun) {
 	var GROUP_SELECT_MODE = 100;
 	var GROUP_NO_SELECTED = 0;
 	var DIM_NO_SELECTED = 19;
+	var COMMAND_SET_VALUE = 145;
+	
 
 	var myurl = '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php';
 
 	var lastKey = null;
 	window.addEvent('domready', function(){
 
-		//launchFullScreen(document.documentElement) // the whole page	
-		//toggleFullScreen(); does not allow auto :)
-		
-		//checkInstalled();
-
 		$$('.click-down').removeEvents('mousedown');
 		$$('.click-down').addEvent('mousedown', function(event){
 			event.stop();
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), mouse: 'down'};
+			var keys = [];
+			keys.push(this.get("data-remotekey"));
+			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
 			callAjax (params) ;
 		});	
 
 		$$('.click-down').removeEvents('mouseup');
 		$$('.click-down').addEvent('mouseup', function(event){
 			event.stop();
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), mouse: 'up'};
+			var keys = [];
+			keys.push(this.get("data-remotekey"));
+			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
 			callAjax (params) ;
 		});	
 
@@ -42,7 +43,9 @@ if(!window.scriptRemoteHasRun) {
 //				html body div.bs-example.bs-example-tabs div#myTabContent.tab-content div#divid_22.tab-pane.active table.table.table-rem-condensed.table tbody tr.keysrow td.keyscell div ul#dim.dropdown-menu.btndropdown.dimmer
 				commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
 				if (commandvalue ==  DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), commandvalue: commandvalue};
+				var keys = [];
+				keys.push(this.get("data-remotekey"));
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
 				resetSelection();
 				this.addClass('group-select');
 				callAjax (params) ;
@@ -58,12 +61,14 @@ if(!window.scriptRemoteHasRun) {
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
+			var keys = [];
+			keys.push(this.parentNode.parentNode.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', remotekey: this.parentNode.parentNode.get("data-remotekey"), scheme:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.parentNode.parentNode.get("data-remotekey"), command:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 			} else {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.parentNode.parentNode.get("data-remotekey"), commandvalue:selected};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected};
 			}
 			callAjax (params) ;
 		});
@@ -86,7 +91,7 @@ if(!window.scriptRemoteHasRun) {
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-success');
 				resetSelection();
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command: COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
 				callAjax (params) ; 		// get group members here and set select
 			}
 		});
@@ -102,14 +107,14 @@ if(!window.scriptRemoteHasRun) {
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
 
 			// now find all selected button and send dim value (Either selected over click or over group)
-			var selection = [];
+			var keys = [];
 			var elArray = $$('.group-select');
 			var arrayLength = elArray.length;
 			if (arrayLength > 0 && selected != "19") {				// some selections
 				for (var i = 0; i < arrayLength; i++) {
-					selection.push(elArray[i].get('data-remotekey'));
+					keys.push(elArray[i].get('data-remotekey'));
 				}
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, commandvalue: parseInt(selected)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: COMMAND_SET_VALUE, commandvalue: parseInt(selected)};
 				callAjax (params) ;
 				//alert ('Now all selected lights ('+sel+') in custom group will be set to same dim-value, optimize order (i.e. use X10 group dim)');
 				// resetSelection(elArray); actually not here, but when toggling back to ???
@@ -134,12 +139,14 @@ if(!window.scriptRemoteHasRun) {
 		$$('.controlselect-button').addEvent('change', function(event){
 			event.stop();
 			var selected = this.get('value');
+			var keys = [];
+			keys.push(this.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', remotekey: this.get("data-remotekey"), scheme:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), command:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), commandvalue:selected};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected};
 			}
 			callAjax (params) ;
 		});	
@@ -150,12 +157,14 @@ if(!window.scriptRemoteHasRun) {
 		$$('.jump-button').addEvent('click', function(event){
 			event.stop();
 			var selected = this.getPrevious('.controlselect-button').value;
+			var keys = [];
+			keys.push(this.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', scheme:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C'){
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), command:selected.substring(1)};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_REMOTE_KEY', remotekey: this.get("data-remotekey"), command:selected};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected};
 			}
 			callAjax (params) ;
 
@@ -163,7 +172,7 @@ if(!window.scriptRemoteHasRun) {
 		$$('.scheme-button').removeEvents('click');
 		$$('.scheme-button').addEvent('click', function(event){
 			event.stop();
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_SCHEME', scheme:this.get('value')};
+			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:this.get('value')};
 			callAjax (params) ;
 		});	
 
@@ -171,7 +180,7 @@ if(!window.scriptRemoteHasRun) {
 		$$('.command-button').removeEvents('click');
 		$$('.command-button').addEvent('click', function(event){
 			event.stop();
-			var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_COMMAND', command:this.get('value')};
+			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:this.get('value')};
 			callAjax (params) ;
 		});	
 
@@ -211,14 +220,14 @@ if(!window.scriptRemoteHasRun) {
 	function refreshDiv () {
 
 		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
-			var selection = [];
+			var keys = [];
 			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, field, .link-warning, .link-down');
 			var arrayLength = elArray.length;
 			if (arrayLength > 0) {				// some selections
 				for (var i = 0; i < arrayLength; i++) {
-					selection.push(elArray[i].get('data-remotekey'));
+					keys.push(elArray[i].get('data-remotekey'));
 				}
-				var params = {caller: MY_DEVICE_ID, messtype: 'MESS_TYPE_MULTI_KEY', selection: selection, command: COMMAND_GET_VALUE};
+				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: COMMAND_GET_VALUE};
 				callAjaxNoSpin (params) ;
 			}
 		}

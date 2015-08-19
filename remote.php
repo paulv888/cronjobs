@@ -3,13 +3,13 @@ require_once 'includes.php';
 //define( 'REM_DEBUG', TRUE );
 if (!defined('REM_DEBUG')) define( 'REM_DEBUG', FALSE );
 
-if (isset($_GET["messtype"]) && isset($_GET["caller"])) {						// All have to tell where they are from.
+if (isset($_GET["messagetypeID"]) && isset($_GET["caller"])) {						// All have to tell where they are from.
 
-	$messtypeID=$_GET["messtype"];
+	$messagetypeID=$_GET["messagetypeID"];
 	$callerID=$_GET["caller"];
-	if (REM_DEBUG) echo "callerID ".$callerID." ".$messtypeID.CRLF;
+	if (REM_DEBUG) echo "callerID ".$callerID." ".$messagetypeID.CRLF;
 
-	switch ($messtypeID)
+	switch ($messagetypeID)
 	{
 	case MESS_TYPE_REMOTE_DIV:    									// Key pressed on remote
 		if (isset($_GET["divid"])) {							// Called with key number		Can come with command from drop-down, key number needed for device

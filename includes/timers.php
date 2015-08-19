@@ -60,9 +60,9 @@ function RunTimers(){
 					$runcount++;
 					if (!DEBUG_TIMERS) ob_start();
 					if ($timer['priorityID'] != '99') {
-						$message = executeCommand(array('callerID' => MY_DEVICE_ID, 'messtypeID' => MESS_TYPE_SCHEME, 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
+						$message = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_MACRO)); 
 					} else {
-						$message = executeCommand(array('callerID' => MY_DEVICE_ID, 'messtypeID' => MESS_TYPE_SCHEME, 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE));
+						$message = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE));
 					}
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
 					if ($timer['priorityID'] != '99') logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($timer['schemeID']), 'message' => $message ));
@@ -123,7 +123,7 @@ function UpdateTimers($dummy) {
 		foreach ($devstatusrows as $devstatusrow) {
 			if (DEBUG_TIMERS) print_r($devstatusrow);
 			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['ExecuteCommand:'.$devstatusrow['deviceID']]=executeCommand(array('callerID' => MY_DEVICE_ID, 'messtypeID' => MESS_TYPE_COMMAND, 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
+				$feedback['ExecuteCommand:'.$devstatusrow['deviceID']]=executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
 			} else {
 				if ($devstatusrow['timerMinute'] > 0) {
 					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
@@ -141,7 +141,7 @@ function StartTimer($params) {
 	// print_r($params);
 	// echo "</pre>===StartTimer";
 	$thiscommand['loglevel'] = LOGLEVEL_COMMAND;
-	$thiscommand['messtypeID'] = MESS_TYPE_COMMAND;
+	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
 	$thiscommand['caller'] = $params['caller'];
 	$thiscommand['commandID'] = COMMAND_ON;
 	$thiscommand['timervalue'] = $params['commandvalue'];

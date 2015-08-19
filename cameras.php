@@ -17,8 +17,8 @@ while (1) {
 		$cameras[$key]['lastfiletime'] = movePictures($camera);
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
-	sleep(5);
-        echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated".CRLF;
+	sleep(15);
+    echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated".CRLF;
 }
 
 function readCameras() {
@@ -135,7 +135,7 @@ function movePictures($camera) {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
-        			echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messtypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_TIMER, 
+        			echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_TIMER, 
 						'commandvalue' => 1, 'emailmessage' => $html, 'smsmessage' => $html1));
 //				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
 			}

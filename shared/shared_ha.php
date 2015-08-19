@@ -347,7 +347,7 @@ function HandleTriggers($params, $monitortype, $triggertype) {
 			$thiscommand['commandID'] = COMMAND_RUN_SCHEME;
 			$thiscommand['schemeID'] = $trigger['schemeID'];
 			$thiscommand['loglevel'] = LOGLEVEL_MACRO;
-			$thiscommand['messtypeID'] = MESS_TYPE_SCHEME;
+			$thiscommand['messagetypeID'] = MESS_TYPE_SCHEME;
 			$thiscommand['caller'] = $params['caller'];
 			$result = sendCommand($thiscommand); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
