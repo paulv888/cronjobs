@@ -1,4 +1,11 @@
 <?php
+function getPath(){
+	$str = $_SERVER['SCRIPT_FILENAME'];
+	$chunks = explode('/', $str);
+	unset($chunks[count($chunks)-1]);
+	return implode('/', $chunks).'/';
+}
+
 function to_celcius($f) {
  return roundUpToAny(($f-32)*5/9,0.5);
 }

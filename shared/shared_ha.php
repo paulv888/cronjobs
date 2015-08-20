@@ -14,6 +14,7 @@ function ReloadScreenShot() {
 
 function UpdateLink($params)
 {
+ 	if (!array_key_exists('caller', $params)) $params['caller'] = $params;
 	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
 	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : $callerID);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
@@ -160,8 +161,7 @@ function UpdateStatus($params)
 {
 	// If inverted (from process.php, coming in with negated command
 
-
- 	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
+ 	if (!array_key_exists('caller', $params)) $params['caller'] = $params;
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
