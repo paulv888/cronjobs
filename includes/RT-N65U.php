@@ -6,8 +6,8 @@ function natSessions() {
 	return $result;
 }
 
-function deviceList() {
-	$result=GetDeviceList()." Devices Read <br/>\r\n";
+function deviceList($showlist) {
+	$result=GetDeviceList($showlist)." Devices Read <br/>\r\n";
 	return $result;
 }
 
@@ -286,7 +286,7 @@ function ImportSessions() {
 	return $sessionsimported;
 }
 
-function GetDeviceList() {
+function GetDeviceList($showlist = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
 	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,FIREWALL_USER,FIREWALL_PASSWORD);
@@ -341,12 +341,14 @@ if(networkmap_fullscan == 1) genClientList();
 		$deviceslist[] = explode(">", $row);
 	}
 
+	
 //echo "<pre>";
-// print_r($deviceslist);
+//print_r($deviceslist);
+//echo "</pre>";
     
 	$devicesimported=0;
-// echo "</pre>";
    	
+        if ($showlist) echo "<pre>";
 	foreach ($deviceslist as $device) {
 		$name = $device[1];
 		$ip = $device[2];
@@ -357,8 +359,10 @@ if(networkmap_fullscan == 1) genClientList();
 				" WHERE UCASE(mac)='".$mac."'";  
 		$resdevices = mysql_query($mysql);
 		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
-
-		// does not work anymore on name, names are empty
+                        if ($showlist) {
+                                echo "$name - $ip - $connection - $mac".CRLF;
+                        }
+ 		// does not work anymore on name, names are empty
 			if (strlen($name) == 0) $name = $rowdevice['name'];
 			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
 				$mysql="SELECT * ". 
@@ -418,6 +422,7 @@ if(networkmap_fullscan == 1) genClientList();
 				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
 		if (!mysql_query($mysql)) mySqlError($mysql);
     }
+    if ($showlist) echo "</pre>";
 	
 	
     

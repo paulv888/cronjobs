@@ -6,9 +6,7 @@ if (!defined('DEBUG_ALERT')) define( 'DEBUG_ALERT', FALSE );
 function Alerts($alert_textID , $params ) {
 
 	
-	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
 	$params['priorityID']  = (array_key_exists('priorityID', $params) ? $params['priorityID'] : 'NULL');
-
 	
 	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
 	$subject = $rowtext['description'];
@@ -29,6 +27,8 @@ if (DEBUG_ALERT) {
 
 function replaceText(&$subject, &$message, $params){
 
+	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
+	
 	if (array_key_exists('caller', $params)) {
 		$callerparams = $params['caller'];
 		unset ($params['caller']);
@@ -37,6 +37,7 @@ function replaceText(&$subject, &$message, $params){
 	replaceFields($subject, $message, $params);
 
 	if (isset($callerparams)) {
+		$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : 'NULL');
 		$subject = str_replace("{caller___", "{", $subject); 			// Now replace all {caller___ha_table___field} to (ha_table___field}
 		$message = str_replace("{caller___", "{", $message); 			// Now replace all {caller___ha_table___field} to (ha_table___field}
 		replaceFields($subject, $message, $callerparams);

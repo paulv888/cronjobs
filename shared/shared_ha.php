@@ -20,7 +20,9 @@ function UpdateLink($params)
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 	$link = (array_key_exists('link', $params) ? $params['link'] : LINK_UP);
 
-    if (DEBUG_HA) echo CRLF.CRLF."Update Link deviceID ".$deviceID." link:".$link.CRLF;
+    if (DEBUG_HA) echo CRLF.CRLF."Update Link params ".CRLF;
+    if (DEBUG_HA) print_r($params);
+	
 
 	$mysql = "SELECT * FROM `ha_mf_monitor_link` WHERE deviceID = ".$deviceID; 
 	if ($row = FetchRow($mysql)) {

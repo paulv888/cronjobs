@@ -4,7 +4,7 @@ define("MY_DEVICE_ID", 215);
 define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
-define("MIN_ALERT_FILES", 5);
+define("MIN_STATUS_FILES", 5);
 define("MOTION_URL1","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30");
 define("MOTION_URL2","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=527");
 
@@ -39,6 +39,7 @@ function readCameraProperties($cameras) {
 		foreach ($props as $prop) {
 			$camprop[strtoupper(preg_replace('/\s+/', '', $prop['description']))] = $prop['value'];
 		}
+		if (!array_key_exists('MINSTATUSFILES', $camprop)) $camprop['MINSTATUSFILES'] = 0;
 		$cameras[$key]['properties']=$camprop;
 		$cameras[$key]['lastfiletime']=0;
 	}
@@ -131,7 +132,7 @@ function movePictures($camera) {
 		// echo "Done: ".$numfiles.CRLF;
 		if (isset($newname)) {						// We did something, there is a new name
 			echo "numfiles: $numfiles".CRLF;
-			if (($newgroupcreated && $numfiles >= MIN_ALERT_FILES))  {		// Bug here if 1 file read into new directory then no alert generated.
+			if ($newgroupcreated && $numfiles >= $camera['properties']['MINSTATUSFILES'])  {		// Bug here if 1 file read into new directory then no alert generated.
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
