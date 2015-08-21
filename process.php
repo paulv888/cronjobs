@@ -5,8 +5,8 @@ require_once 'includes.php';
 // TODO:: clean up feedback , status and return JSON
 
 // define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
@@ -299,7 +299,10 @@ function SendCommand($thiscommand) {
 		$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$tcomm.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
 		$get = restClient::get($url);
-		if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) $feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+		if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) 
+			$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+		else 
+			$feedback['message'] = $get->getresponse();
 		usleep(INSTEON_SLEEP_MICRO);
 		if (!array_key_exists('error', $feedback)) {
 			$result[] = ($thiscommand['commandID'] == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
@@ -339,7 +342,10 @@ function SendCommand($thiscommand) {
 			$url=$rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].$rowdevicelinks['page'].$command.'=I=3';
 			if (DEBUG_DEVICES) echo $url.CRLF;
 			$get = restClient::get($url);
-			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) $feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) 
+				$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			else 
+				$feedback['message'] = $get->getresponse();
 			usleep(INSTEON_SLEEP_MICRO);
 		}     
 		if (!array_key_exists('error', $feedback)){
@@ -441,7 +447,10 @@ function SendCommand($thiscommand) {
 			} else { 
 				$post = restClient::post($url.$tcomm);
 			}
-			if ($post->getresponsecode() != 200 && $post->getresponsecode() != 204) $feedback['error'] = $get->getresponsecode().": ".$post->getresponse();
+			if ($post->getresponsecode() != 200 && $post->getresponsecode() != 204) 
+				$feedback['error'] = $post->getresponsecode().": ".$post->getresponse();
+			else 
+				$feedback['message'] = $post->getresponse();
 			break;
 		case "GET":          // Sony Cam at the moment
 			if (DEBUG_DEVICES) echo "GET</p>";
@@ -453,7 +462,10 @@ function SendCommand($thiscommand) {
 			$url= $rowdevicelinks['targetaddress'].":".$rowdevicelinks['targetport'].'/'.$rowdevicelinks['page'];
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 			$get = restClient::get($url.$tcomm);
-			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) $feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204)
+				$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			else 
+				$feedback['message'] = $get->getresponse();
 			break;
 		case null:
 		case "NONE":          // Virtual Devices
