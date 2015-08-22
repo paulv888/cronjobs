@@ -698,10 +698,11 @@ function RemoteKeys($result) {
 	$feedback = Array();
 	foreach ($result as $key => $res) {
 		if (array_key_exists('message', $res)) {
+			//echo "***".$res['message']."___".preg_replace( "/\r|\n/", "", $res['message'])."***".strlen(str_replace(' ', '', preg_replace( "/\r|\n/", "", $res['message']))).CRLF;
 			if (is_array($feedback) && array_key_exists('message', $feedback)) {
-				$feedback['message'].= $res['message'].' ';
+				if (strlen(str_replace(' ', '', preg_replace( "/\r|\n/", "", $res['message']))) > 0) $feedback['message'].= $res['message'].' ';
 			} else {
-				$feedback['message'] = $res['message'].' ';
+				if (strlen(str_replace(' ', '', preg_replace( "/\r|\n/", "", $res['message']))) > 0) $feedback['message'] = $res['message'].' ';
 			}
 		} else if (array_key_exists('error', $res)) {
 			if (is_array($feedback) && array_key_exists('error', $feedback)) {
@@ -759,6 +760,7 @@ function RemoteKeys($result) {
 			}
 		}
 	}
+	//if (array_key_exists('message'.$feedback) && $feedback['message'] = preg_replace("/\s+/", " ", $$feedback['message'] );
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
 }
 
