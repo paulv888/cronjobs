@@ -426,6 +426,7 @@ function SendCommand($thiscommand) {
 		case "POSTAPP":          // PHP - vlosite
 		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
+		case "JSON":          // Wink
 			if (DEBUG_DEVICES) echo $targettype."</p>";
 			$tcomm = str_replace("{mycommandID}",trim($thiscommand['commandID']),$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",trim($thiscommand['deviceID']),$tcomm);
@@ -444,6 +445,10 @@ function SendCommand($thiscommand) {
 				$post = restClient::post($url, $tcomm,"","","text/plain");
 			} elseif ($targettype == "POSTAPP") {
 				$post = restClient::post($url, $tcomm);
+			} elseif ($targettype == "JSON") {
+				parse_str($tcomm, $params);
+				if (DEBUG_DEVICES) echo $url." Params: ".json_encode($params).CRLF;
+				$post = restClient::post($url, json_encode($params),"","","application/json");
 			} else { 
 				$post = restClient::post($url.$tcomm);
 			}

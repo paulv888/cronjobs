@@ -66,9 +66,9 @@ while (true) {
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-						'commandID' => $message['commandID'])))."</br>\n";
+						'commandID' => $message['commandID'], 'caller' => $message)))."</br>\n";
 					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink (array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-							'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']))."</br>\n";
+							'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID'], 'caller' => $message))."</br>\n";
 				}
 				
 				// Update My Link 
@@ -86,23 +86,6 @@ while (true) {
 	}
 	
 }	
-
-function setDeviceID(&$log){
-
-
-	$deviceID = null;
-	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
-	if ($rowdevice = FetchRow($mysql)) {
-		$log['deviceID'] = $rowdevice['id'];
-		$log['typeID'] = $rowdevice['typeID'];
-		$deviceID = $rowdevice['id'];
-	}
-	unset($log['code']);
-	unset($log['unit']);
-	
-	return $deviceID ;
-	
-}
 
 function cleanup(){
 	global $inst_hub;

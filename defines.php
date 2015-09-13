@@ -170,5 +170,7 @@ define("REPEAT_ONCE_HOUR", 60);
 define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 
+define("WINK_CODE", "U");
+
 define("CRLF", "</br>\n");
 ?>

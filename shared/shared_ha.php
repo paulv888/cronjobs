@@ -415,7 +415,7 @@ function UpdateStatusLog($params) {
 
 
 function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
-	
+	// TODD:: move  $temp, $humidity = NULL, $set_point = NULL to generic attributes
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
 	$ttrend = 1;
 	$htrend = 1;
@@ -475,6 +475,23 @@ function getDeviceType($deviceID){
 	}
 	
 	return false ;
+	
+}
+
+function setDeviceID(&$log){
+
+
+	$deviceID = null;
+	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
+	if ($rowdevice = FetchRow($mysql)) {
+		$log['deviceID'] = $rowdevice['id'];
+		$log['typeID'] = $rowdevice['typeID'];
+		$deviceID = $rowdevice['id'];
+	}
+	unset($log['code']);
+	unset($log['unit']);
+	
+	return $deviceID ;
 	
 }
 ?>

@@ -22,7 +22,7 @@ if (isset($_GET["Message"])) {
 	$sdata = file_get_contents("php://input");
 }
 
-// $file = 'tmp1.txt';
+// $file = 'arduino.log';
 // $current = file_get_contents($file);
 // $current .= $sdata."\n";
 // file_put_contents($file, $current);
