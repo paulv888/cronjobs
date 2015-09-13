@@ -239,7 +239,7 @@ function UpdateStatus($params)
 	return;
 }	
 
-function GetStatusLink($params)
+function getStatusLink($params)
 {
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 
@@ -463,7 +463,7 @@ function UpdateThermType($deviceID, $typeID){
 	return true;
 }
 
-function GetGroup($groupID){
+function getGroup($groupID){
 
 	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse, monitortypeID, status, statusDate, link, invertstatus, commandvalue FROM ha_mf_device_group g 
 					JOIN `ha_mf_devices` d ON g.deviceID = d.id 

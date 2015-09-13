@@ -132,6 +132,7 @@ protected $last;
 			}
 			if (array_key_exists("insteon",$plm_decode_result)) {
 				$insteon = $plm_decode_result['insteon'];
+				if (array_key_exists("commandvalue",$insteon )) $compl['commandvalue'] = $insteon['commandvalue'];
 				if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
 				if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
 //				$rescommands = mysql_query("SELECT * FROM ha_mf_commands_detail WHERE ha_mf_commands_detail.id =".$insteon['commandID']);
