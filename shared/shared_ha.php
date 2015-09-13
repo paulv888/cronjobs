@@ -1,6 +1,6 @@
 <?php
 
-// define( 'DEBUG_HA', TRUE );
+//define( 'DEBUG_HA', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 
 
@@ -408,6 +408,19 @@ function UpdateStatusLog($params) {
 				mysql_insert_assoc ('ha_weather_current', $values);
 		}
 	}
+	
+ 	$properties = (array_key_exists('properties', $params) ? $params['properties'] : Null);
+	if (isset($properties)) {
+		foreach($properties as $key => $property) {
+			$properties[$key]['propertyID'] = getPropertyID($property['description']);
+			$properties[$key]['deviceID']= $params['deviceID'];
+			unset($properties[$key]['description']);
+			PDOinsert('ha_properties_log', $properties[$key]);
+			PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
+		}
+		//print_r($properties);
+	}
+	
 	if (DEBUG_HA) echo "</pre>";
 }
 
@@ -472,6 +485,19 @@ function getDeviceType($deviceID){
 	$mysql='SELECT b.* FROM `ha_mf_devices` a JOIN `ha_mf_device_types` b ON a.typeID = b.id  WHERE a.id ="'.$deviceID.'"';
 	if ($rowdevice = FetchRow($mysql)) {
 		return $rowdevice;
+	}
+	
+	return false ;
+	
+}
+
+function getPropertyID($description){
+
+	$mysql='SELECT id FROM `ha_mi_property` WHERE UCASE(description) ="'.strtoupper($description).'"';
+	if ($rowproperty = FetchRow($mysql)) {
+		return $rowproperty['id'];
+	} else {
+		return PDOinsert('ha_mi_property', Array('description' => $description));
 	}
 	
 	return false ;

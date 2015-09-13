@@ -310,6 +310,7 @@ function PDOinsert($table, $fields){
 	{
 		$stmt = $pdo->prepare($sql);
 		$stmt->execute($values);
+		return $pdo->lastInsertId();
 	} 
 	catch( Exception $e )
 	{
