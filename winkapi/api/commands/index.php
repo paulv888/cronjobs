@@ -27,21 +27,35 @@
   {
   case COMMAND_ON:
   case COMMAND_OFF:
-	$value = ($command->commandid == COMMAND_ON ? "TRUE" : "FALSE");
-	$attr = ' -t ' . escapeshellarg($command->attributeid) . ' -v ' . escapeshellarg($value);
-	exec('aprontest -u -m ' . escapeshellarg($command->masterid) . $attr);
-	$responses[] = ['status' => 'ok', 'exec' => 'aprontest -u -m ' . escapeshellarg($command->masterid) . $attr];
+	if ($command->masterid == 999) {	// Led Handling
+		if ($command->commandid == COMMAND_OFF) {
+ 			exec('set_rgb 0 0 0');
+		}
+	} else {
+		$value = ($command->commandid == COMMAND_ON ? "TRUE" : "FALSE");
+		$attr = ' -t ' . escapeshellarg($command->attributeid) . ' -v ' . escapeshellarg($value);
+		exec('aprontest -u -m ' . escapeshellarg($command->masterid) . $attr);
+		$responses[] = ['status' => 'ok', 'exec' => 'aprontest -u -m ' . escapeshellarg($command->masterid) . $attr];
+	}
+	break;
+  case COMMAND_SET_VALUE:
+	if ($command->masterid == 999) {	// Led Handling
+		switch ($command->commandvalue) 
+		{
+		case 1:
+			exec('set_rgb 255 0 0 0 0 0 flash 500000');
+			break;
+		}
+	}
 	break;
   case COMMAND_GET_VALUE:
         $db = get_db();
         $db->busyTimeout(5000);
 
-	$query = <<<SQL
-SELECT m.deviceid AS unit, m.username AS deviceName, d.nodeId
+	$query = 'SELECT m.deviceid AS unit, m.username AS deviceName, d.nodeId
 	FROM masterDevice AS m 
 	LEFT JOIN zwaveDevice AS d ON d.masterId = m.deviceId 
-	WHERE m.deviceId = '$command->masterid';
-SQL;
+	WHERE m.deviceId = "'.$command->masterid.'";';
 
         $devices_result = $db->query($query);
         $devices = array();

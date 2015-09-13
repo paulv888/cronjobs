@@ -7,6 +7,7 @@ define("COMMAND_OFF", 20);
 define("COMMAND_DIM", 13);
 define("COMMAND_UNKNOWN", 267);
 define("COMMAND_SET_RESULT", 285);
+define("COMMAND_SET_VALUE", 145);
 define("COMMAND_GET_GROUP", 282);
 define("COMMAND_GET_VALUE", 136);
 define("COMMAND_SET_TIMER", 287);
