@@ -5,7 +5,7 @@ require_once 'includes.php';
 // TODO:: clean up feedback , status and return JSON
 
 //define( 'DEBUG_FLOW', TRUE );
-define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
@@ -311,7 +311,7 @@ function SendCommand($thiscommand) {
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
 		$tcomm = str_replace("{mycommandID}",$thiscommand['commandID'],$rowcommands['command']);
-		if (strtoupper(getPropertyValue($thiscommand['deviceID'],'Dimmable')) != "YES") {
+		if (strtoupper(getPropertyValue($thiscommand['deviceID'],'Dimmable')) == "YES") {
 			$dims = 0;
 			if ($thiscommand['commandvalue']>0 && $thiscommand['commandvalue'] < 100) $dims=(integer)round(10-10/100*$thiscommand['commandvalue']);
 			if (DEBUG_DEVICES) echo "commandvalue ".$thiscommand['commandvalue'].CRLF;
