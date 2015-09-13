@@ -632,7 +632,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		$rowshemesteps = mysql_fetch_array($resschemesteps);
 		if (!ASYNC_THREAD && $rowshemesteps['runasync']) {
 			//$pid = shell_exec($cmd);
-			$getparams = "ASYNC_THREAD callerID=$callerparams[callerID] messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+			$getparams = "ASYNC_THREAD callerID=$callerparams[callerID] deviceID=$callerparams[deviceID] messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
 			//$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$getparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
