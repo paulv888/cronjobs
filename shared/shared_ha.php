@@ -491,6 +491,17 @@ function getDeviceType($deviceID){
 	
 }
 
+function getPropertyValue($deviceID, $description){
+
+	$id = getPropertyID($description);
+	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$deviceID.' AND propertyID = '.$id)) {
+		return $rowproperty['value'];
+	}
+	
+	return false ;
+}
+
+
 function getPropertyID($description){
 
 	$mysql='SELECT id FROM `ha_mi_property` WHERE UCASE(description) ="'.strtoupper($description).'"';
@@ -501,7 +512,6 @@ function getPropertyID($description){
 	}
 	
 	return false ;
-	
 }
 
 function setDeviceID(&$log){

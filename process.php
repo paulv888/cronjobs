@@ -5,7 +5,7 @@ require_once 'includes.php';
 // TODO:: clean up feedback , status and return JSON
 
 //define( 'DEBUG_FLOW', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
+define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
@@ -280,14 +280,13 @@ function SendCommand($thiscommand) {
 		$tcomm = str_replace("{mycommandID}",$thiscommand['commandID'],$rowcommands['command']);
 		$tcomm = str_replace("{deviceID}",$thiscommand['deviceID'],$tcomm);
 		$tcomm = str_replace("{unit}",$rowdevices['unit'],$tcomm);
-		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $thiscommand['deviceID']);
-		if (!$rowextra['dimmable']) {
-			$thiscommand['commandvalue'] = 100;
+		if (strtoupper(getPropertyValue($thiscommand['deviceID'],'Dimmable')) != "YES") {
+			//$thiscommand['commandvalue'] = 100;
 		}
 		if (DEBUG_DEVICES) echo "commandvalue a".$thiscommand['commandvalue'].CRLF;
 		if ($thiscommand['commandvalue']>100) $thiscommand['commandvalue']=100;
 		if (DEBUG_DEVICES) echo "commandvalue b".$thiscommand['commandvalue'].CRLF;
-		if (is_null($thiscommand['commandvalue']) && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']= $rowextra['onlevel'];
+		if (is_null($thiscommand['commandvalue']) && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']= getPropertyValue($thiscommand['deviceID'],'On Level');
 		if (DEBUG_DEVICES) echo "commandvalue c".$thiscommand['commandvalue'].CRLF;
 		if ($thiscommand['commandvalue']>0) $thiscommand['commandvalue']=255/100*$thiscommand['commandvalue'];
 		if (DEBUG_DEVICES) echo "commandvalue d".$thiscommand['commandvalue'].CRLF;
@@ -312,8 +311,7 @@ function SendCommand($thiscommand) {
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
 		$tcomm = str_replace("{mycommandID}",$thiscommand['commandID'],$rowcommands['command']);
-		$rowextra = FetchRow('SELECT * FROM `ha_mf_device_extra` WHERE deviceID = '. $thiscommand['deviceID']);
-		if ($rowextra['dimmable']) {
+		if (strtoupper(getPropertyValue($thiscommand['deviceID'],'Dimmable')) != "YES") {
 			$dims = 0;
 			if ($thiscommand['commandvalue']>0 && $thiscommand['commandvalue'] < 100) $dims=(integer)round(10-10/100*$thiscommand['commandvalue']);
 			if (DEBUG_DEVICES) echo "commandvalue ".$thiscommand['commandvalue'].CRLF;
@@ -327,7 +325,7 @@ function SendCommand($thiscommand) {
 			$thiscommand['commandvalue'] = 100;
 		}
 		if ($thiscommand['commandvalue']>100) $thiscommand['commandvalue']=100;
-		if ($thiscommand['commandvalue']!=100 && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']= $rowextra['onlevel'];
+		if ($thiscommand['commandvalue']!=100 && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']= getPropertyValue($thiscommand['deviceID'],'On Level');
 		if ($thiscommand['commandvalue'] == NULL && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']=100;		// Special case so satify the replace in on command
 //		$tcomm .={code}a80=I=3;	$tcomm .={code}b80=I=3 $tcomm .= "|{code}{unit}00=I=3"; $tcomm .= "|{code}a80=I=3";	$tcomm .= "|0b80=I=3";
 //		$tcomm .= "|{code}480=I=3";			// dim 480  $tcomm .= "|a780=I=3";	$tcomm .= "|0b80=I=3";

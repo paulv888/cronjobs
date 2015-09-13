@@ -27,72 +27,23 @@ function getDuskDawn($station) {
 		$tsr = date("H:i:s", strtotime($result->{'astronomy'}->{'sunrise'}));
 		$tss = date("H:i:s", strtotime($result->{'astronomy'}->{'sunset'}));
 
-		PDOupdate("ha_mf_device_extra", Array('dawn' => $tsr, 'dusk' => $tss), array( 'deviceID' => DEVICE_DARK_OUTSIDE));
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => STATUS_ON));
-   		UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE));
+		//PDOupsert("ha_mf_device_properties", Array('description' => 'Astronomy Sunrise', 'value' => $tsr), array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => 'Astronomy Sunrise'));
+		$properties[] =  Array('description' => 'Astronomy Sunrise', 'value' => $tsr);
+		$properties[] =  Array('description' => 'Astronomy Sunset', 'value' => $tss);
+		$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => STATUS_ON, 'properties' => $properties));
+   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE));
 	}
 
 	if (DEBUG_DUSKDAWN) echo "</pre>";
 	return $feedback;
 }
 
-function getDuskDawnEarthTools() {
-
-	$mydeviceID = DEVICE_DARK_OUTSIDE;
-	$rowconf = FetchRow("SELECT * FROM ha_configuration WHERE id=1");
-	$retry = 5;
-        $success = False;
-
-        while ($retry > 0 && !$success) {
-            try {
-
-//            	$url= 'http://www.earthtools.org/sun/33.371241/-86.756570/16/1/-6/0';
-            	$url= 'http://www.earthtools.org/sun/'.$rowconf['long'].'/'.$rowconf['lat'].'/'.date("j").'/'.date("m").'/'.str_replace("0","",date('O')).'/'.date('I');
-            	$get = restClient::get($url);
-                $feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponse());
-                $feedback['message'] = trim($get->getresponse());
-
-//echo "<pre>";
-//echo $url.CRLF;
-//echo htmlspecialchars($get->getresponsecode()).CRLF;
-//echo trim(htmlspecialchars($get->getresponse())).CRLF;
-            	if (!$feedback['error']) {
-              		$xml = new SimpleXMLElement(trim($get->getresponse()));
-					if ($xml->date->dst == "1") {
-						$dawn = date('H:i:s', strtotime(date('H:i:s',strtotime($xml->morning->twilight->civil)). ' -1 hour')); 
-						$dusk = date('H:i:s', strtotime(date('H:i:s',strtotime($xml->evening->twilight->civil)). ' -1 hour')); 
-					} else {
-						$dawn = $xml->morning->twilight->civil;
-						$dusk = $xml->evening->twilight->civil;
-					}
-//print_r($xml);
-					$mySql = 'UPDATE `ha_mf_device_extra` SET `dawn` = "'.$dawn. '", `dusk` ="'.$dusk.'" WHERE deviceID = {DEVICE_DARK_OUTSIDE}'; 
-					if (RunQuery($mySql)) {
-            			UpdateLink (array( 'callerID' => MY_DEVICE_ID, 'deviceID' => DEVICE_DARK_OUTSIDE));
-					}
-					$success = true; 
-            	}
-		}
-            catch (Exception $e) {
-                //Error trapping
-                //My.Application.Log.WriteException(exc, TraceEventType.Error, "Error reading data from" & My.Settings.WeatherUrl & MyStation & ".xml", 301)
-                 echo 'Caught exception: ',  $e->getMessage(), "\n";
-			} 
-			$retry = $retry - 1;
-		}
-	return ($feedback);
-//	return ($success ? true : false);
-//echo "</pre>";
-}
-
 function GetDawn() {
-	$devextraow = FetchRow("SELECT dawn FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
-	return $devextraow['dawn'];
+	return getPropertyValue(DEVICE_DARK_OUTSIDE, "Astronomy Sunrise");
 }
 
 function GetDusk() {
-	$devextraow = FetchRow("SELECT dusk FROM ha_mf_device_extra  WHERE deviceID = ".DEVICE_DARK_OUTSIDE);
-	return $devextraow['dusk'];
+	return getPropertyValue(DEVICE_DARK_OUTSIDE, "Astronomy Sunset");
 }
 
 ?>
