@@ -399,6 +399,7 @@ function UpdateStatusLog($params) {
 												GROUP BY deviceID, system';
 								if ($row = FetchRow($sql)) {
 										$values['runtime'] = $row['runtime'];
+										$runtime = $row['runtime'];
 								}
 						}
 						// End Runtime handling
@@ -408,26 +409,57 @@ function UpdateStatusLog($params) {
 				mysql_insert_assoc ('ha_weather_current', $values);
 		}
 	}
-	
- 	$properties = (array_key_exists('properties', $params) ? $params['properties'] : Null);
-	if (isset($properties)) {
-		foreach($properties as $key => $property) {
-			$properties[$key]['propertyID'] = getPropertyID($property['description']);
-			$properties[$key]['deviceID']= $params['deviceID'];
-			unset($properties[$key]['description']);
-			PDOinsert('ha_properties_log', $properties[$key]);
-			PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
-		}
-		//print_r($properties);
+
+	// The new generic properties
+	// TODO:: Tie to graphs
+	// TODO:: Remove Temp now
+	// DONE:: Add non flooding? 1 degree, and 1 point per hour
+	// TODO:: Remove weather history
+	$params['properties'][] = Array('description' => 'Status', 'value' => $params['status']);
+	if ($typeIDArr['has_value']) {
+		if (array_key_exists("commandvalue", $params)) $params['properties'][] = Array('description' => 'Value', 'value' => $params['commandvalue']);
 	}
-	
+	if ($typeIDArr['has_humidity']) {
+		if (array_key_exists("humidity", $params)) $params['properties'][] = Array('description' => 'Humidity', 'value' => $params['humidity']);
+	}
+	if ($typeIDArr['has_setpoint']) {
+		if (array_key_exists("setpoint", $params)) $params['properties'][] = Array('description' => 'Setpoint', 'value' => $params['setpoint']);
+	}
+	if ($typeIDArr['has_runtime']) {	
+		if (isset($runtime)) $params['properties'][] = Array('description' => 'Runtime', 'value' => $runtime);
+	}
+ 	$properties = $params['properties'];
+	if (DEBUG_HA) print_r($properties);
+	foreach($properties as $key => $property) {
+		$properties[$key]['propertyID'] = getPropertyID($property['description']);
+		$properties[$key]['deviceID']= $params['deviceID'];
+		$description =  $properties[$key]['description'];
+		unset($properties[$key]['description']);
+		if (strtoupper($properties[$key]['value']) == "TRUE" || strtoupper($properties[$key]['value']) == "ON") $properties[$key]['value'] = STATUS_ON;
+		if (strtoupper($properties[$key]['value']) == "FALSE" || strtoupper($properties[$key]['value']) == "OFF") $properties[$key]['value'] = STATUS_OFF;
+		// Check for age and value changed
+       	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $params['deviceID'].' AND propertyID='.$properties[$key]['propertyID'].' order by updatedate desc limit 1';
+        if ($row = FetchRow($sql)) {
+			if (DEBUG_HA) print_r($row);
+			$last = strtotime($row['updatedate']);
+			if (timeExpired($last, 59) || abs(floatval($properties[$key]['value'])-floatval($row['value'])) >= 1 ) {
+				PDOinsert('ha_properties_log', $properties[$key]);
+			} else {
+				if (DEBUG_HA) echo "Not Logging: ".$description.CRLF;
+			}
+        } else {		// First one
+			PDOinsert('ha_properties_log', $properties[$key]);
+		}
+		PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
+	}
+ 	
 	if (DEBUG_HA) echo "</pre>";
 }
 
 
 
 
-function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
+function updateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
 	// TODD:: move  $temp, $humidity = NULL, $set_point = NULL to generic attributes
 	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
 	$ttrend = 1;
@@ -450,7 +482,7 @@ function UpdateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL)
 
 }
 
-function UpdateThermType($deviceID, $typeID){
+function updateThermType($deviceID, $typeID){
 
 	$mysql = "UPDATE `ha_mf_devices` SET " .
     			  " `typeID` = " . $typeID . "" .
@@ -486,7 +518,6 @@ function getDeviceType($deviceID){
 	if ($rowdevice = FetchRow($mysql)) {
 		return $rowdevice;
 	}
-	
 	return false ;
 	
 }
