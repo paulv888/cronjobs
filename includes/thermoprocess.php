@@ -35,13 +35,15 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat->getStat();
 		
 		$result['status'] = $stat->Toggle($status);
-		$result['commandvalue'] =  to_celcius($stat->temp);
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
-		$result['setpoint'] = to_celcius($stat->ttemp);
-		$feedback = UpdateStatus($result);
-		UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
+		
+		$properties['Value'] =  to_celcius($stat->temp);
+		$properties['Temperature'] = to_celcius($stat->temp);
+		$properties['Setpoint'] =  to_celcius($stat->ttemp);
 
+		$result['properties'] = $properties;
+		$feedback = UpdateStatus($result);
 		return $feedback;
 	}
 	catch( Exception $e )
@@ -83,16 +85,17 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
 		
-		$result['status'] = $stat->getTargetOnOff();
 		$stat->TempAdd($addtemp);
-	
-		$result['commandvalue'] =  to_celcius($stat->temp);
+		$result['status'] = $stat->getTargetOnOff();
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
-		$result['setpoint'] = to_celcius($stat->ttemp);
 		
+		$properties['Value'] =  to_celcius($stat->temp);
+		$properties['Temperature'] = to_celcius($stat->temp);
+		$properties['Setpoint'] =  to_celcius($stat->ttemp);
+		
+		$result['properties'] = $properties;
 		$feedback = UpdateStatus($result);
-		UpdateWeatherNow($thermostatRec['deviceID'], $result['commandvalue'], NULL, $result['setpoint']);
 	
 		return $feedback;
 	}

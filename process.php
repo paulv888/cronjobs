@@ -760,6 +760,15 @@ function RemoteKeys($result) {
 					//print_r($res['updatestatus']);
 					//echo "field ".$tarr[1]." table ".$tarr[0]." val ".$row[$tarr[1]].CRLF;
 				}
+				if ($rowkeys['inputtype']== "property") {
+					$feedback[]["remotekey"] = $rowkeys['id'];
+					$last_id=GetLastKey($feedback);
+					$feedback[$last_id]["commandvalue"]=getPropertyValue($res['updatestatus']['deviceID'],trim($rowkeys['inputoptions']));
+					//$feedback[$last_id]["commandvalue"] = "here***********************".$rowkeys['inputoptions'].' '.trim($rowkeys['inputoptions']);
+					//echo "****".
+					//print_r($res['updatestatus']);
+					//echo "field ".$tarr[1]." table ".$tarr[0]." val ".$row[$tarr[1]].CRLF;
+				}
 			}
 		}
 	}

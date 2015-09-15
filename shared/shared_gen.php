@@ -138,4 +138,12 @@ function cleanarray($array)
 
     return $array;
 }
+
+function ReloadScreenShot() {
+	$url = 'http://htpc:8085/HipScreenShot.jpg';
+	$img = 'images/HIPScreenshot.jpg';
+	file_put_contents($img, file_get_contents($url));
+	$post = RestClient::post('http://htpc:8085/index.htm');
+	return;  // ReadCurlReturn($post);
+}
 ?>

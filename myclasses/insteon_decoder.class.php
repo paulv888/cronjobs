@@ -1116,7 +1116,6 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 		$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."";
 		$result['commandID'] = $cmdDecoder1['commandID'];
 		$result['commandvalue'] = hexdec($cmd2);
-		echo "**************".$cmd2.CRLF;
 		if( $extended) $result['extdata'] = $Data;
 	} elseif( $cmdDecoder1['Cmd2Flag'] == 'NA') {
 		$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."";

@@ -4,15 +4,7 @@
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 
 
-function ReloadScreenShot() {
-	$url = 'http://htpc:8085/HipScreenShot.jpg';
-	$img = 'images/HIPScreenshot.jpg';
-	file_put_contents($img, file_get_contents($url));
-	$post = RestClient::post('http://htpc:8085/index.htm');
-	return;  // ReadCurlReturn($post);
-}
-
-function UpdateLink($params)
+function updateLink($params)
 {
  	if (!array_key_exists('caller', $params)) $params['caller'] = $params;
 	$callerID = (array_key_exists('callerID', $params) ? $params['callerID'] : Null);
@@ -159,20 +151,25 @@ function UpdateLink($params)
 	}
 }
 		
-function UpdateStatus($params)
+function updateStatus($params)
 {
 	// If inverted (from process.php, coming in with negated command
 
  	if (!array_key_exists('caller', $params)) $params['caller'] = $params;
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
-	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : Null);
+	$commandvalue = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : (array_key_exists('Value', $params['properties']) ? $params['properties']['Value'] : Null));
 	$status = (array_key_exists('status', $params) ? $params['status'] : Null);
 
 	// Interpret status value based on current command, i.e. On/Off/Error
-	if (DEBUG_HA) echo "Status commandID:".$commandID.CRLF;
-	if (DEBUG_HA) echo "Status deviceID: ".$deviceID.CRLF;
-	if (DEBUG_HA) echo "Status status: ".$status.CRLF;
+	if (DEBUG_HA) {
+		echo "params";
+		print_r($params);
+		echo "commandID:".$commandID.CRLF;
+		echo "deviceID: ".$deviceID.CRLF;
+		echo "status: ".$status.CRLF;
+		echo "commandvalue: ".$commandvalue.CRLF;
+	}
 	if (!array_key_exists('status', $params)) {
 		if ($commandID != NULL) {
 			if (!$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID)) mySqlError($mysql);
@@ -364,9 +361,6 @@ function UpdateStatusLog($params) {
 
 //$deviceID, $status, $commandvalue = 0, $humidity = NULL, $setpoint = NULL) {
 
-	$values['deviceID'] =  $params['deviceID'];
-	$values['mdate'] = date("Y-m-d H:i:s");
-	$values['status'] = $params['status'];
 	$typeIDArr = getDeviceType($params['deviceID']);
 	
 	if (DEBUG_HA) {
@@ -375,68 +369,27 @@ function UpdateStatusLog($params) {
 		print_r ($typeIDArr);
 	}
 	
-	if ($typeIDArr['has_value'] || $typeIDArr['has_humidity'] || $typeIDArr['has_setpoint']) {
-	        $values['temperature_c'] = (array_key_exists("commandvalue", $params)) ? $params['commandvalue'] : 0;
-        	$values['humidity_r'] = (array_key_exists("humidity", $params)) ? $params['humidity'] : NULL;
-	        $values['set_point'] = (array_key_exists("setpoint", $params)) ? $params['setpoint'] : NULL;
-        	$sql = 'SELECT * FROM `ha_weather_current`  WHERE deviceID='.  $params['deviceID'] .' order by mdate desc limit 1';
-	        if ($row = FetchRow($sql)) {
-				if (DEBUG_HA) print_r($row);
-				$last = strtotime($row['mdate']);
-				$typeID = $typeIDArr['id'];
-				if (timeExpired($last, 59) || $values['status'] <> $row['status'] ||  abs($values['temperature_c'] - $row['temperature_c']) >= 1 || abs($values['set_point'] - $row['set_point']) >= 1) {
-//	echo "Inside";
-						$sdate = $row['mdate'];
-						$edate = $values['mdate'];
-						$values['runtime'] = NULL;
-						if ($typeIDArr['has_runtime']) {	
-								$system = $typeIDArr['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
-								$values['runtime'] = 0;
-								UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
-								$sql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-												FROM `hvac_cycles`
-												WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$sdate.'" AND end_time <= "' .$edate.'"
-												GROUP BY deviceID, system';
-								if ($row = FetchRow($sql)) {
-										$values['runtime'] = $row['runtime'];
-										$runtime = $row['runtime'];
-								}
-						}
-						// End Runtime handling
-						mysql_insert_assoc ('ha_weather_current', $values);
-				}
-        	} else {		// First one
-				mysql_insert_assoc ('ha_weather_current', $values);
-		}
-	}
-
 	// The new generic properties
 	// TODO:: Tie to graphs
 	// TODO:: Remove Temp now
 	// DONE:: Add non flooding? 1 degree, and 1 point per hour
 	// TODO:: Remove weather history
-	$params['properties'][] = Array('description' => 'Status', 'value' => $params['status']);
-	if ($typeIDArr['has_value']) {
-		if (array_key_exists("commandvalue", $params)) $params['properties'][] = Array('description' => 'Value', 'value' => $params['commandvalue']);
-	}
-	if ($typeIDArr['has_humidity']) {
-		if (array_key_exists("humidity", $params)) $params['properties'][] = Array('description' => 'Humidity', 'value' => $params['humidity']);
-	}
-	if ($typeIDArr['has_setpoint']) {
-		if (array_key_exists("setpoint", $params)) $params['properties'][] = Array('description' => 'Setpoint', 'value' => $params['setpoint']);
-	}
-	if ($typeIDArr['has_runtime']) {	
-		if (isset($runtime)) $params['properties'][] = Array('description' => 'Runtime', 'value' => $runtime);
-	}
+	$params['properties']['Status'] = $params['status'];
+
  	$properties = $params['properties'];
 	if (DEBUG_HA) print_r($properties);
-	foreach($properties as $key => $property) {
-		$properties[$key]['propertyID'] = getPropertyID($property['description']);
-		$properties[$key]['deviceID']= $params['deviceID'];
-		$description =  $properties[$key]['description'];
-		unset($properties[$key]['description']);
+	unset($startdate);
+	foreach($properties as $key => $value) {
+		$p = Array();
+		$p['propertyID'] = getPropertyID($key);
+		$p['value'] = $value;
+		$p['deviceID'] = $params['deviceID'];
+		$description =  $key;
+		$properties[$key] = $p;
+		
 		if (strtoupper($properties[$key]['value']) == "TRUE" || strtoupper($properties[$key]['value']) == "ON") $properties[$key]['value'] = STATUS_ON;
 		if (strtoupper($properties[$key]['value']) == "FALSE" || strtoupper($properties[$key]['value']) == "OFF") $properties[$key]['value'] = STATUS_OFF;
+		
 		// Check for age and value changed
        	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $params['deviceID'].' AND propertyID='.$properties[$key]['propertyID'].' order by updatedate desc limit 1';
         if ($row = FetchRow($sql)) {
@@ -444,42 +397,43 @@ function UpdateStatusLog($params) {
 			$last = strtotime($row['updatedate']);
 			if (timeExpired($last, 59) || abs(floatval($properties[$key]['value'])-floatval($row['value'])) >= 1 ) {
 				PDOinsert('ha_properties_log', $properties[$key]);
+				if ($typeIDArr['has_runtime'] && ($description == "IsRunning" || $description == "Status")) $startdate= strtotime($row['updatedate']);
 			} else {
 				if (DEBUG_HA) echo "Not Logging: ".$description.CRLF;
 			}
         } else {		// First one
 			PDOinsert('ha_properties_log', $properties[$key]);
 		}
+		$properties[$key]['trend'] = setTrend($properties[$key]['value'], getPropertyValueByID($params['deviceID'],$properties[$key]['propertyID']));
 		PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
+	}
+	
+	// This does not belong here
+	$property = Array();
+	if (isset($startdate)) {	
+			$startdate = date("Y-m-d H:i:s", $startdate);
+			$enddate = date("Y-m-d H:i:s");
+			// var_dump($startdate);
+			// var_dump($enddate);
+			$system = $typeIDArr['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
+			UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+			$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+							FROM `hvac_cycles`
+							WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
+							GROUP BY deviceID, system';
+			if (DEBUG_HA) echo $mysql;
+		
+			if ($row = FetchRow($mysql)) {
+				$property['deviceID']= $params['deviceID'];
+				$property['propertyID'] = getPropertyID("Runtime");
+				$property['value'] = $row['runtime'];
+				if (DEBUG_HA) print_r($property);
+				PDOinsert('ha_properties_log', $property);
+				PDOupsert('ha_mf_device_properties', $property, Array('deviceID' => $params['deviceID'], 'propertyID' => $property['propertyID'] ));
+			}
 	}
  	
 	if (DEBUG_HA) echo "</pre>";
-}
-
-
-
-
-function updateWeatherNow($deviceID, $temp, $humidity = NULL, $set_point = NULL){
-	// TODD:: move  $temp, $humidity = NULL, $set_point = NULL to generic attributes
-	$mysql = "SELECT temperature_c, humidity_r FROM ha_weather_now  WHERE deviceID = ".$deviceID; 
-	$ttrend = 1;
-	$htrend = 1;
-	if ($row = FetchRow($mysql)) {
-		$ttrend = setTrend($temp, $row['temperature_c']);
-		$htrend = (!is_null($humidity) ? setTrend($humidity, $row['humidity_r']) :  "NULL");
-	} 
-	if (is_null($humidity)) $humidity="NULL";
-	if (is_null($set_point)) $set_point="NULL";
-
-	$devTypeID = getDeviceType($deviceID)['id'];
-	//$message['typeID'] = $devType['id'];
-	
-	
-	$weathernow = Array('deviceID' => $deviceID, 'mdate' => date("Y-m-d H:i:s"), 'temperature_c' => $temp, 'set_point' => $set_point , 
-			'ttrend' => $ttrend, 'humidity_r' => $humidity, 'htrend' => $htrend, 'typeID' => $devTypeID,
-			'link1' => '<i class="condensed-icon iconmoon-ascendant6" alt="Chart"></i>');
-	PDOupsert("ha_weather_now", $weathernow, Array('deviceID' => $deviceID));
-
 }
 
 function updateThermType($deviceID, $typeID){
@@ -487,10 +441,6 @@ function updateThermType($deviceID, $typeID){
 	$mysql = "UPDATE `ha_mf_devices` SET " .
     			  " `typeID` = " . $typeID . "" .
 				  " WHERE(`id` ='" . $deviceID . "')";
-	if (!mysql_query($mysql)) mySqlError($mysql);
-	$mysql = "UPDATE `ha_weather_now` SET " .
-    			  " `typeID` = " . $typeID . "" .
-				  " WHERE(`deviceID` ='" . $deviceID . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return true;
 }
@@ -532,14 +482,23 @@ function getPropertyValue($deviceID, $description){
 	return false ;
 }
 
+function getPropertyValueByID($deviceID, $id){
+
+	//$id = getPropertyID($description);
+	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$deviceID.' AND propertyID = '.$id)) {
+		return $rowproperty['value'];
+	}
+	return false ;
+}
+
 
 function getPropertyID($description){
 
-	$mysql='SELECT id FROM `ha_mi_property` WHERE UCASE(description) ="'.strtoupper($description).'"';
+	$mysql='SELECT id FROM `ha_mi_properties` WHERE UCASE(description) ="'.strtoupper($description).'"';
 	if ($rowproperty = FetchRow($mysql)) {
 		return $rowproperty['id'];
 	} else {
-		return PDOinsert('ha_mi_property', Array('description' => $description));
+		return PDOinsert('ha_mi_properties', Array('description' => $description));
 	}
 	
 	return false ;

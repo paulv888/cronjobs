@@ -231,7 +231,7 @@ if(!window.scriptRemoteHasRun) {
 
 		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
 			var keys = [];
-			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, field, .link-warning, .link-down');
+			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, .field, .link-warning, .link-down');
 			var arrayLength = elArray.length;
 			if (arrayLength > 0) {				// some selections
 				for (var i = 0; i < arrayLength; i++) {

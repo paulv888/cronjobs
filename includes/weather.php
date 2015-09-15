@@ -23,9 +23,10 @@ function loadWeather($station) {
             	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
             	if ($feedback) {
             		$xml = new SimpleXMLElement($get->getresponse());
-            		UpdateWeatherNow($mydeviceID[$station], $xml->temp_c , $xml->relative_humidity);
-					UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
-						'commandvalue' => $xml->temp_c,  'humidity' => $xml->relative_humidity));
+					$properties['Value'] = $xml->temp_c;
+					$properties['Temperature'] = $xml->temp_c;
+					$properties['Humidity'] = $xml->relative_humidity;
+					UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'properties' => $properties));
             		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
                 	$success = true; 
             	}
@@ -60,10 +61,10 @@ function getYahooWeather($station) {
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
-		UpdateWeatherNow($mydeviceID[$station], $result->{'item'}->{'condition'}->{'temp'} , $result->{'atmosphere'}->{'humidity'});
-		$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 
-			'commandvalue' => $result->{'item'}->{'condition'}->{'temp'},  'humidity' => $result->{'atmosphere'}->{'humidity'}));
-
+		$properties['Value'] = $result->{'item'}->{'condition'}->{'temp'};
+		$properties['Temperature'] = $result->{'item'}->{'condition'}->{'temp'};
+		$properties['Humidity'] =  $result->{'atmosphere'}->{'humidity'};
+		$feedback['updatestatus'] = updateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'properties' => $properties));
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
 		$array['temp'] = $result->{'item'}->{'condition'}->{'temp'};
@@ -94,7 +95,7 @@ function getYahooWeather($station) {
 		$array['speed'] = $result->{'wind'}->{'speed'};
 		$array['code'] = $result->{'item'}->{'condition'}->{'code'};
 		$array['text'] = $result->{'item'}->{'condition'}->{'text'};
-		$array['typeID'] = DEV_TYPE_TEMP_HUM;
+		$array['typeID'] = DEV_TYPE_TEMP_HUMIDITY;
 		// Get night or day
 		$tpb = time();
 		$tsr = strtotime($result->{'astronomy'}->{'sunrise'});
@@ -155,65 +156,6 @@ function getYahooWeather($station) {
 	return $feedback;
 }
 	
-
-	
-function getWBUG($station) {
-
-	$mydeviceID = array("HOOVR" => 196);
-	
-	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='WBUG'");
-	//https://thepulseapi.earthnetworks.com/oauth20/token?grant_type=client_credentials&client_id=XtlIwGloXerWOgENDDkXp2qeGji0v3uX&client_secret=JSok7jX6boeSS8t7
-	//{"OAuth20":{"access_token":{"token":"efbc8548b81843a5a81ead3dfb3d","refresh_token":"efbc8548b81843a5a81ead3dfb3d","token_type":"bearer","expires_in":86399}}}
-	$burl = "https://thepulseapi.earthnetworks.com/oauth20/token";
-	if (DEBUG_WBUG) echo '<pre>';
-	$params['grant_type'] = "client_credentials";
-	$params['client_id'] = $row['clientID'];
-	$params['client_secret'] = $row['secret'];
-	if (DEBUG_WBUG) print_r($params);
-	
-	
-	$url = $burl."?grant_type=client_credentials&client_id=".$row['clientID']."&client_secret=".$row['secret'];
-	//$get = restClient::get($url);
-	$response = file_get_contents($url);
-	if (DEBUG_WBUG) echo "response: ".$response;
-	$result = json_decode( $response );
-	if (DEBUG_WBUG) print_r($result);
-
-	unset($params);
-	//https://thepulseapi.earthnetworks.com/data/observations/v3/current?providerid=3&stationid=HOOVR&units=metric&cultureinfo=en-en&verbose=true&access_token=setuk1wAqDXmUT3JY44QA1BQsxyj
-	$burl = "https://thepulseapi.earthnetworks.com/data/observations/v3/current";
-	$params['providerid'] = 3;
-	$params['stationid'] = $station;
-	$params['units'] = "metric";
-	$params['cultureinfo'] = "en-en";
-	$params['verbose'] = "true" ;  
-	$params['access_token'] = $result->{'OAuth20'}->{'access_token'}->{'token'};
-	$url = $burl."?providerid=3&stationid=".$params['stationid']."&units=metric&cultureinfo=en-en&verbose=true&access_token=".$params['access_token'];
-	//"https://thepulseapi.earthnetworks.com/data/observations/v3/current?providerid=3&stationid=HOOVR&units=metric&cultureinfo=en-en&verbose=true&access_token=2988eb34e2f640d9a98e20b36486"
-	$response = file_get_contents($url);
-	if (DEBUG_WBUG) echo "response: ".$response;
-	
-	//if (DEBUG_WBUG) print_r($params);
-	//$get = restClient::get($url, $params);
-	//$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
-	//$feedback['message'] = trim($get->getresponse());
-	//if (DEBUG_WBUG) echo $feedback['message'].CRLF;
-	
-	unset ($result);
-	$result = json_decode( $response );
-	if (DEBUG_WBUG) print_r($result);
-	if (DEBUG_WBUG) echo CRLF;
-	if (DEBUG_WBUG) echo "temp: ".$result->{'observation'}->{'temperature'}.CRLF;
-	if (DEBUG_WBUG) echo "humi: ".$result->{'observation'}->{'humidity'}.CRLF;
-	UpdateWeatherNow($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'});
-//	UpdateWeatherCurrent($mydeviceID[$station], $result->{'observation'}->{'temperature'} , $result->{'observation'}->{'humidity'} );
-	$feedback['updatestatus'] = UpdateStatus(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'status' => STATUS_ON, 'commandvalue' => $result->{'observation'}->{'temperature'}));
-	UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
-
-	return $feedback;
-	
-	}
-
 //function cache_image($file, $url, $hours = 168, $fn = '', $fn_args = '') {
 function cache_image($file, $url, $hours = 168) {
 	//vars

@@ -29,9 +29,6 @@ if (isset($_GET["Message"])) {
 
 
 if (!($sdata=="")) { 					//import_event
-        $v = Null;
-        $h = Null;
-        $s = Null;
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
 //print_r($rcv_message);
 	$message['deviceID'] = $rcv_message['Device'];
@@ -52,61 +49,57 @@ if (!($sdata=="")) { 					//import_event
 	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
 //print_r($message);
+	$properties = array();
 	if ($message['inout'] == COMMAND_IO_RECV) {
-		if ($message['typeID'] == DEV_TYPE_TEMP_HUM) {
-				if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
-				$h = NULL;
-				if (array_key_exists('ExtData', $rcv_message)) {
-						if (array_key_exists('T', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['T'];
-						$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
-				}
-				if (isset($t)) {
-						UpdateWeatherNow($message['deviceID'], $t, $h );
-						$v = $t;
-				}
+		if ($message['typeID'] == DEV_TYPE_ARDUINO_MODULES) {
+			// Extended Data is there
+			$properties['Memory'] = $rcv_message['ExtData']['M'];
+			$properties['Uptime'] = $rcv_message['ExtData']['U'];
+			$properties['Value'] = $rcv_message['ExtData']['U'];
 		}
-		if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL || $message['typeID'] == DEV_TYPE_WATER_LEVEL) {
-			//Add running or not to HVAC cylcles and calc hours/day
-//{"Device" : "202" , "Command" : "285" , "Status" : "0" , "Value" : "438" , "InOut" : "1" , "ExtData" : {"V":"438","R":"0","S":"500","T":"10"}}
-//{"Device" : "208" , "Command" : "285" , "Status" : "1" , "Value" : "27" , "InOut" : "1" , "ExtData" : {"V":"27","R":"1","S":"24","T":"1"}}
-			if (array_key_exists('Value', $rcv_message)) $t = $rcv_message['Value'];
-			$h = NULL;
-			if (array_key_exists('ExtData', $rcv_message)) {
-				if (array_key_exists('V', $rcv_message['ExtData'])) $t = $rcv_message['ExtData']['V'];
-				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
-				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
-			}
-			if ($message['typeID'] == DEV_TYPE_ARD_HEAT || $message['typeID'] == DEV_TYPE_ARD_COOL) {		// Quick fix
-				$heatStatus = false;
-				$coolStatus = false;
-				$fanStatus  = false;
-				if ($message['typeID'] == DEV_TYPE_ARD_HEAT) {
-					$heatStatus = $rcv_message['ExtData']['R'] == 1;
-				} else {
-					$coolStatus = $rcv_message['ExtData']['R'] == 1;
-				}
-				UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-				UpdateDailyRuntime($message['deviceID']);
-			}
-			if (isset($t)) {
-			 	UpdateWeatherNow($message['deviceID'], $t, $h , $s);
-				$v = $t;
-			}
+		if ($message['typeID'] == DEV_TYPE_LIGHT_SENSOR_ANALOG) {
+			// Extended Data is there
+			$properties['Value'] = $rcv_message['ExtData']['V'];
+			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold'] = $rcv_message['ExtData']['T'];
 		}
-		if (!isset($t)) {			// Did not find a temp / heat / cool (for Light and Water Sensor
-			if (array_key_exists('ExtData', $rcv_message)) {		// Search for any other Values/Setpoints or Humidity
-				$v = (array_key_exists('U', $rcv_message['ExtData']) ? $rcv_message['ExtData']['U'] : $v = NULL);	// Store uptime
-				$v = (array_key_exists('V', $rcv_message['ExtData']) ? $rcv_message['ExtData']['V'] : $v = $v);
-				$s = (array_key_exists('S', $rcv_message['ExtData']) ? $rcv_message['ExtData']['S'] : $s = NULL);
-				$h = (array_key_exists('H', $rcv_message['ExtData']) ? $rcv_message['ExtData']['H'] : $h = NULL);
+		if ($message['typeID'] == DEV_TYPE_AUTO_DOOR) {
+			// Extended Data is there
+			$properties['Power'] = $rcv_message['ExtData']['P'];
+			$properties['Direction'] = $rcv_message['ExtData']['D'];
+			$properties['Top Switch'] = $rcv_message['ExtData']['T'];
+			$properties['Bottom Switch'] = $rcv_message['ExtData']['B'];
+		}
+		if ($message['typeID'] ==  DEV_TYPE_THERMOSTAT_ARD_HEAT || $message['typeID'] == DEV_TYPE_THERMOSTAT_ARD_COOL) {
+			// Extended Data is there
+			$properties['Temperature'] = $rcv_message['ExtData']['V'];
+			$properties['IsRunning'] = $rcv_message['ExtData']['R'];
+			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold'] = $rcv_message['ExtData']['T'];
+
+			$heatStatus = false;
+			$coolStatus = false;
+			$fanStatus  = false;
+			if ($message['typeID'] == DEV_TYPE_THERMOSTAT_ARD_HEAT) {
+				$heatStatus = $properties['IsRunning'] == 1;
+			} else {
+				$coolStatus = $properties['IsRunning'] == 1;
 			}
+			UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
+			UpdateDailyRuntime($message['deviceID']);
+		}
+		if ($message['typeID'] == DEV_TYPE_WATER_LEVEL) {
+			// Extended Data is there
+			$properties['Value'] = $rcv_message['ExtData']['V'];
+			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold'] = $rcv_message['ExtData']['T'];
+		}
+		if ($message['typeID'] == DEV_TYPE_TEMP_HUMIDITY) {
+			$properties['Temperature'] = $rcv_message['ExtData']['T'];
+			$properties['Humidity'] = $rcv_message['ExtData']['H'];
 		}
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		if (is_null($rcv_message['Status'])) {
-			UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID']));
-		} else {
-			UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'commandvalue' => $v, 'humidity' => $h, 'setpoint' => $s, 'message' => $error_message));
-		}
+		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $error_message, 'properties' => $properties));
 		UpdateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }

@@ -28,8 +28,8 @@ function getDuskDawn($station) {
 		$tss = date("H:i:s", strtotime($result->{'astronomy'}->{'sunset'}));
 
 		//PDOupsert("ha_mf_device_properties", Array('description' => 'Astronomy Sunrise', 'value' => $tsr), array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => 'Astronomy Sunrise'));
-		$properties[] =  Array('description' => 'Astronomy Sunrise', 'value' => $tsr);
-		$properties[] =  Array('description' => 'Astronomy Sunset', 'value' => $tss);
+		$properties['Astronomy Sunrise'] = $tsr;
+		$properties['Astronomy Sunset'] = $tss;
 		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => getStatusLink(Array('deviceID' => DEVICE_DARK_OUTSIDE))['status'], 'properties' => $properties));
    		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE));
 	}

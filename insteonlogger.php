@@ -63,16 +63,15 @@ while (true) {
 				print_r($message);
 				echo date("Y-m-d H:i:s")." ===Logger: message\n";
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
+				$properties = Array();
 				if (array_key_exists('commandvalue',$message)) {
-					$commandvalue = $message['commandvalue'];
+					$properties['Value'] = $message['commandvalue'];
 					unset($message['commandvalue']);
-				} else {
-					$commandvalue = Null;
 				}
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(UpdateStatus(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-							'commandID' => $message['commandID'], 'commandvalue' => $commandvalue, 'caller' => $message)))."</br>\n";
+							'commandID' => $message['commandID'], 'properties' => $properties, 'caller' => $message)))."</br>\n";
 					echo date("Y-m-d H:i:s").": ".'Update Link: '.UpdateLink (array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
 							'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID'], 'caller' => $message))."</br>\n";
 				}

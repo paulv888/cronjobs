@@ -31,8 +31,8 @@ function readCameras() {
 function readCameraProperties($cameras) {
 
 	foreach ($cameras AS $key => $camera) {
-		$mysql = 'SELECT ha_mi_property.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
-					JOIN ha_mi_property ON ha_mf_device_properties.propertyID = ha_mi_property.id 
+		$mysql = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
+					JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
 				  WHERE ha_mf_device_properties.deviceID ='.$camera['deviceID'];
 		$props = FetchRows($mysql);
 		unset($cams);

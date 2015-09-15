@@ -78,11 +78,11 @@ function UpdateTemps() {
 				// Log the indoor and outdoor temperatures for this half-hour increment
 				// t_heat or t_cool may not exist if thermostat is running in battery mode
 				if ($stat->tmode == 1) { 
-					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_HEAT);
+					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_THERMOSTAT_CT30_HEAT);
 				}	elseif ($stat->tmode == 2) {
-					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_COOL);
+					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_THERMOSTAT_CT30_COOL);
 				} else {
-					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_OFF);
+					UpdateThermType($thermostatRec['deviceID'],DEV_TYPE_THERMOSTAT_CT30_OFF);
 				}
 					
 				$target = ($stat->tmode == 1) ? $stat->t_heat : $stat->t_cool;
@@ -90,9 +90,10 @@ function UpdateTemps() {
 				logIt( "Target $target" );
 				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
-				UpdateWeatherNow($thermostatRec['deviceID'], to_celcius($stat->temp), NULL , to_celcius($target));
-				UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(),
-					'commandvalue' => to_celcius($stat->temp), 'setpoint' =>  to_celcius($target)));
+				$properties['Value'] =  to_celcius($stat->temp);
+				$properties['Temperature'] = to_celcius($stat->temp);
+				$properties['Setpoint'] = to_celcius($target);
+				UpdateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'status' => $stat->getTargetOnOff(), 'properties' => $properties));
 	
 				//$runTimeData = $stat->getDataLog();
 				$stat->getDataLog();
