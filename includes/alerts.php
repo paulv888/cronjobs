@@ -25,6 +25,15 @@ if (DEBUG_ALERT) {
 	return $inserts;
 }
 
+
+function replacePlaceholder(&$subject, $params){
+
+	$message = Null;
+	if (preg_match("/\{.*\}/", $subject, $matches)) {
+		replaceFields($subject, $message, $params);
+	}
+}
+
 function replaceText(&$subject, &$message, $params){
 
 	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
@@ -193,6 +202,10 @@ function replaceFields(&$subject, &$message, $params){
 	`ha_mf_device_ipaddress` ON `ha_mf_device_ipaddress`.`id` = `ha_mf_devices`.`ipaddressID` LEFT JOIN `ha_mf_device_links` AS `ha_mf_device_links` ON `ha_mf_device_links`.`id` = 
 	`ha_mf_devices`.`devicelinkID` LEFT JOIN `ha_mf_monitor_triggers` AS `ha_mf_monitor_triggers` ON `ha_mf_monitor_triggers`.`deviceID` = `ha_mf_devices`.`id`
 	LEFT JOIN `ha_remote_schemes` AS `ha_remote_schemes` ON `ha_remote_schemes`.`id` = `ha_mf_monitor_triggers`.`schemeID` WHERE ha_mf_devices.id = '.$params['deviceID'];
+	
+	$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
+				JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
+				WHERE ha_mf_device_properties.deviceID ='.$params['deviceID'];
 	}
  
 if (DEBUG_ALERT) {
@@ -208,8 +221,8 @@ if (DEBUG_ALERT) {
 				$pattern[$key]="/\{".$key."\}/";
 			}
 if (DEBUG_ALERT) {
-//	echo "<pre>"; print_r ($data); echo "</pre>";
-//	echo "<pre>"; print_r ($pattern); echo "</pre>";
+	//echo "<pre>"; echo "DATA:"; print_r ($data); echo "</pre>";
+	//echo "<pre>"; echo "PATTERN:"; print_r ($pattern); echo "</pre>";
 }
 			$subject=preg_replace($pattern, $data, $subject);
 			$subject=preg_replace($pattern, $data, $subject); // twice to support tag in tag
@@ -218,6 +231,7 @@ if (DEBUG_ALERT) {
 		}
 	}
 	
+	// This is for all other values in the params i.e. Message
 	if ($params != Null) {
 	
 		if (array_key_exists('callerID', $params)) {
@@ -230,11 +244,33 @@ if (DEBUG_ALERT) {
 		foreach ($params as $key => $value) {
 			$pattern[$key]="/\{".$key."\}/";
 		}
-// echo "<pre>"; print_r ($callerparams); echo "</pre>";
-// echo "<pre>"; print_r ($pattern); echo "</pre>";
+if (DEBUG_ALERT) {
+	// echo "<pre>"; echo "DATA2:"; print_r ($params); echo "</pre>";
+	// echo "<pre>"; echo "PATTERN2:"; print_r ($pattern); echo "</pre>";
+}
 		$subject = preg_replace($pattern, $params, $subject);
 		if ($message != Null) $message=preg_replace($pattern, $params, $message); 
 	}
+	
+
+	// This is for the device properties
+	;
+	if ($props = FetchRows($mysqlp)) {
+	
+		unset ($pattern);
+		foreach ($props as $key => $value) {
+			$pattern[$value['description']]="/\{".$value['description']."\}/";
+			$newprops[$value['description']]=$value['value'];
+		}
+if (DEBUG_ALERT) {
+	// echo "<pre>"; echo "DATA3:"; print_r ($newprops); echo "</pre>";
+	// echo "<pre>"; echo "PATTERN3:"; print_r ($pattern); echo "</pre>";
+}
+		$subject = str_replace("{property___", "{", $subject);
+		$subject = preg_replace($pattern, $newprops, $subject);
+		if ($message != Null) $message=preg_replace($pattern, $newprops, $message); 
+	}
+
 	
 if (DEBUG_ALERT) {
 	echo "<pre>"; echo $subject.CRLF; echo "</pre>";

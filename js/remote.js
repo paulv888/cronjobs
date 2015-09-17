@@ -23,7 +23,7 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
 			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
-			callAjax (params) ;
+			callAjaxNoSpin (params) ;
 		});	
 
 		// regular up for mouse down class
@@ -279,6 +279,7 @@ if(!window.scriptRemoteHasRun) {
 				url: 	myurl,
 				method: 'post',
 				data: params,
+				timeout: 10000,
 				onRequest: function(){
 					//$$('#system-message-container').set('html', '');
 				},
@@ -290,6 +291,10 @@ if(!window.scriptRemoteHasRun) {
 				{
 					$$('#system-message-container').set('html', text+'</br>'+error);
 				},
+                                onTimeout: function(text, error)
+                                {
+                                        $$('#system-message-container').set('html', 'Connection Timed Out'+'</br>');
+                                },
 			}
         ).send();
 	};
@@ -341,8 +346,9 @@ if(!window.scriptRemoteHasRun) {
 					$(index).removeClass("undefined");
 					$(index).removeClass("unknown");
 					$(index).addClass(item.status);
-				} else if (typeof item.commandvalue !== 'undefined') {
-					$(index).set('html',item.commandvalue);
+				} else if (typeof item.text !== 'undefined') {
+					//$(index).set('html',item.text);
+					if (typeof (index).getElementsByClassName("buttontext")[0] !== 'undefined') (index).getElementsByClassName("buttontext")[0].set('html',item.text);
 				} else if (typeof item.groupselect !== 'undefined') {
 					$(index).addClass('group-select');
 				} 

@@ -215,6 +215,11 @@ function updateStatus($params)
 			$mysql .= ' WHERE deviceID = '.$deviceID;
 			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
 			if (!mysql_query($mysql)) mySqlError($mysql);
+			if ($status == STATUS_OFF) {
+				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Remaining'));
+				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Value'));
+			}
+			
 			// run on change
 			$result = HandleTriggers($params, MONITOR_STATUS, TRIGGER_AFTER_CHANGE);
 			if (!empty($result)) $feedback['Triggers'] = $result;
@@ -350,7 +355,7 @@ function HandleTriggers($params, $monitortype, $triggertype) {
 			$thiscommand['caller'] = $params['caller'];
 			$result = sendCommand($thiscommand); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($trigger['schemeID']), 'message' => $result ));
+			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($trigger['schemeID']), 'message' => $result ));
 		}
 	}
 	return $feedback;
@@ -396,6 +401,8 @@ function UpdateStatusLog($params) {
 			if (DEBUG_HA) print_r($row);
 			$last = strtotime($row['updatedate']);
 			if (timeExpired($last, 59) || abs(floatval($properties[$key]['value'])-floatval($row['value'])) >= 1 ) {
+			// echo "<pre>";
+			// print_r($properties[$key]);
 				PDOinsert('ha_properties_log', $properties[$key]);
 				if ($typeIDArr['has_runtime'] && ($description == "IsRunning" || $description == "Status")) $startdate= strtotime($row['updatedate']);
 			} else {
@@ -404,9 +411,11 @@ function UpdateStatusLog($params) {
         } else {		// First one
 			PDOinsert('ha_properties_log', $properties[$key]);
 		}
-		$properties[$key]['trend'] = setTrend($properties[$key]['value'], getPropertyValueByID($params['deviceID'],$properties[$key]['propertyID']));
+			// print_r($properties[$key]);
+			// echo "</pre>";
+		$properties[$key]['trend'] = setTrend($properties[$key]['value'], getPropertyValueByID(Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'])));
 		PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
-	}
+}
 	
 	// This does not belong here
 	$property = Array();
@@ -429,7 +438,8 @@ function UpdateStatusLog($params) {
 				$property['value'] = $row['runtime'];
 				if (DEBUG_HA) print_r($property);
 				PDOinsert('ha_properties_log', $property);
-				PDOupsert('ha_mf_device_properties', $property, Array('deviceID' => $params['deviceID'], 'propertyID' => $property['propertyID'] ));
+				setPropertyValueByID($property);
+				//PDOupsert('ha_mf_device_properties', $property, Array('deviceID' => $params['deviceID'], 'propertyID' => $property['propertyID'] ));
 			}
 	}
  	
@@ -472,25 +482,56 @@ function getDeviceType($deviceID){
 	
 }
 
-function getPropertyValue($deviceID, $description){
+function getPropertyValue($property){
 
-	$id = getPropertyID($description);
-	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$deviceID.' AND propertyID = '.$id)) {
+	$property['propertyID'] = getPropertyID($property['description']);
+	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
 		return $rowproperty['value'];
 	}
-	
 	return false ;
 }
 
-function getPropertyValueByID($deviceID, $id){
+function getPropertyValueByID($property){
 
 	//$id = getPropertyID($description);
-	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$deviceID.' AND propertyID = '.$id)) {
+	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
 		return $rowproperty['value'];
 	}
 	return false ;
 }
 
+function setPropertyValue($property) {
+
+	$propertyID = getPropertyID($property['description']);
+	unset($property['description']);
+	$property['propertyID'] = $propertyID;
+	setPropertyValueByID($property);
+	return true ;
+}
+
+function setPropertyValueByID($property){
+
+	//$propertyID = getPropertyID($description);
+	PDOupsert('ha_mf_device_properties', $property, Array('deviceID' => $property['deviceID'], 'propertyID' => $property['propertyID'] ));
+	return true ;
+}
+
+function removeProperty($property) {
+
+	$propertyID = getPropertyID($property['description']);
+	unset($property['description']);
+	$property['propertyID'] = $propertyID;
+	removePropertyByID($property);
+	return true ;
+}
+
+function removePropertyByID($property){
+
+	$mysql = 'DELETE FROM `ha_mf_device_properties` WHERE(`deviceID` ='.$property['deviceID'].' AND `propertyID`='.$property['propertyID'].');';
+	if (!mysql_query($mysql)) mySqlError($mysql);
+
+	return true ;
+}
 
 function getPropertyID($description){
 
@@ -519,5 +560,10 @@ function setDeviceID(&$log){
 	
 	return $deviceID ;
 	
+}
+
+function getSchemeName($schemaID) {
+        $schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".$schemaID);
+        return $schemarow['name'];
 }
 ?>

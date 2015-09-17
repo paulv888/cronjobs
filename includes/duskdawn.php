@@ -39,11 +39,11 @@ function getDuskDawn($station) {
 }
 
 function GetDawn() {
-	return getPropertyValue(DEVICE_DARK_OUTSIDE, "Astronomy Sunrise");
+	return getPropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"));
 }
 
 function GetDusk() {
-	return getPropertyValue(DEVICE_DARK_OUTSIDE, "Astronomy Sunset");
+	return getPropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"));
 }
 
 ?>

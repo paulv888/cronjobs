@@ -22,7 +22,7 @@
 	* Date is simply the last time the status was updated
 	*/
 
-function HvacToggle($callerID, $deviceID, $status = NULL) {
+function HvacToggle($callerID, $deviceID, $status = NULL, $timervalue = Null) {
 
 $now = date( 'Y-m-d H:i:s' );
 
@@ -41,7 +41,11 @@ $now = date( 'Y-m-d H:i:s' );
 		$properties['Value'] =  to_celcius($stat->temp);
 		$properties['Temperature'] = to_celcius($stat->temp);
 		$properties['Setpoint'] =  to_celcius($stat->ttemp);
-
+		if (!is_null($timervalue)) {
+			$properties['Timer Value'] = $timervalue;
+			$properties['Timer Remaining'] = $timervalue;
+		}
+		
 		$result['properties'] = $properties;
 		$feedback = UpdateStatus($result);
 		return $feedback;
@@ -58,15 +62,16 @@ function HvacOff($callerID, $deviceID) {
 
 }
 
-function HvacStartTimer($callerID, $deviceID, $time) {
-	HvacOn($callerID, $deviceID);
-	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$time.' , `timerRemaining` = '.$time.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+function HvacStartTimer($callerID, $deviceID, $timervalue) {
+	$result = HvacOn($callerID, $deviceID, $timervalue);
+	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$timervalue.' , `timerRemaining` = '.$timervalue.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
+	return $result;
 }
 
-function HvacOn($callerID, $deviceID) {
+function HvacOn($callerID, $deviceID, $timervalue = Null) {
 
 	// Using Toggle so flip status ON=OFF
-	return HvacToggle($callerID, $deviceID, STATUS_OFF);
+	return HvacToggle($callerID, $deviceID, STATUS_OFF, $timervalue);
 
 }
 

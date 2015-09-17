@@ -65,7 +65,7 @@ function RunTimers(){
 						$message = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'schemeID' => $timer['schemeID'], 'loglevel' => LOGLEVEL_NONE));
 					}
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
-					if ($timer['priorityID'] != '99') logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => GetSchemaName($timer['schemeID']), 'message' => $message ));
+					if ($timer['priorityID'] != '99') logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($timer['schemeID']), 'message' => $message ));
 					$mysql="UPDATE `ha_timers` ".
 						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": ".$mysql.CRLF;
@@ -78,7 +78,7 @@ function RunTimers(){
 	return $runcount;
 }
 
-function checktime ($setupstart,$setupend, $offset) {
+function checkTime ($setupstart,$setupend, $offset) {
 	// TODO:: implement dawn/dusk
 	$start= $setupstart;
 	if ($setupstart == TIME_DAWN) $start = GetDawn();
@@ -108,13 +108,7 @@ function checktime ($setupstart,$setupend, $offset) {
 	
 }
 
-function GetSchemaName($schemaID) {
-	$schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".$schemaID);
-	return $schemarow['name'];
-}
-
-
-function UpdateTimers($dummy) {
+function updateTimers($dummy) {
 // PHP Command Dummy parm
 	$devstatusrows = FetchRows("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
 	//if (DEBUG_TIMERS) print_r($devstatusrows);
@@ -135,7 +129,7 @@ function UpdateTimers($dummy) {
 	return $feedback;
 }
 
-function StartTimer($params) {
+function startTimer($params) {
 
 	// echo "<pre>+++StartTimer";
 	// print_r($params);
@@ -146,6 +140,8 @@ function StartTimer($params) {
 	$thiscommand['commandID'] = COMMAND_ON;
 	$thiscommand['timervalue'] = $params['commandvalue'];
 	$thiscommand['deviceID'] = $params['deviceID'];
+	$thiscommand['properties']['Timer Remaining'] = $params['commandvalue'];
+	$thiscommand['properties']['Timer Value'] = $params['commandvalue'];
 	$feedback['SendCommand']=sendCommand($thiscommand); 
 	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$params['commandvalue'].' , `timerRemaining` = '.$params['commandvalue'].', timerDate = NOW() 
 			WHERE  `ha_mf_monitor_status`.`deviceID` = '.$params['deviceID']);

@@ -65,6 +65,8 @@ define("COMMAND_LOG_ALERT", 152);
 define("COMMAND_GET_VALUE", 136);
 define("COMMAND_SET_TIMER", 287);
 define("COMMAND_PING", 151);
+define("COMMAND_SET_PROPERTY_VALUE", 314);
+
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);

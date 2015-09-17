@@ -129,13 +129,9 @@ function loadRemoteDiv($divid) {
 				}
 				echo ">";
 				$clicks = (is_null($rowremotekeys['commandIDdown']) ? "click-up rem-button" : "click-down rem-button");
-				if ($rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field" || $rowremotekeys['inputtype']=="property") {
+				if ($rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
 						$fieldtype = "div";
-						if ($rowremotekeys['inputtype']=="property") {
-							$fieldclass = "field";
-						} else {
 							$fieldclass = $rowremotekeys['inputtype'];
-						}
 				}
 				if ($rowremotekeys['inputtype']=="button") { 
 						$fieldtype = "button";
@@ -148,18 +144,14 @@ function loadRemoteDiv($divid) {
 				} else {
 					$booticon = null;
 				}
-				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field" || $rowremotekeys['inputtype']=="property") {
+				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
 					$text = null;
 					if ($booticon == null) {			// what text to show
 //echo $rowremotekeys['inputtype'];
 						if ($rowremotekeys['inputtype']=="field") {					// execute query from field
-							$tarr = explode("___",$rowremotekeys['inputoptions']);
-                		    $row = FetchRow("SELECT ".$tarr[1]." FROM ".$tarr[0]." WHERE `deviceID` =".$rowremotekeys['deviceID']);
-							$text = $row[$tarr[1]];
+							$text = $rowremotekeys['inputoptions'];
 						} elseif ($rowremotekeys['inputtype']=="display") {													// no icon show name
 							$text = ' '.$rowremotekeys['inputoptions'];	
-						} elseif ($rowremotekeys['inputtype']=="property") {
-							$text = getPropertyValue($rowremotekeys['deviceID'],trim($rowremotekeys['inputoptions']));
 						} else {
 							$text = ' '.$rowremotekeys['name'];
 						} 
@@ -184,10 +176,8 @@ function loadRemoteDiv($divid) {
 						echo '">';
 						echo '</i>';
 					} 
-					if ($text != null) echo ''.$text.'';
-
-					//echo '</p>';
-					//echo "</td>";
+					replacePlaceholder($text, Array('deviceID' => $rowremotekeys['deviceID']));
+					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
 					echo "</td>\n\r";
 				} else {
