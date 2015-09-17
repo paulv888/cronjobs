@@ -51,6 +51,7 @@ if (!($sdata=="")) { 					//import_event
 //print_r($message);
 	$properties = array();
 	if ($message['inout'] == COMMAND_IO_RECV) {
+		if ($message['commandID'] == COMMAND_PING || $message['commandID'] == COMMAND_SET_RESULT) {
 		if ($message['typeID'] == DEV_TYPE_ARDUINO_MODULES) {
 			// Extended Data is there
 			$properties['Memory'] = $rcv_message['ExtData']['M'];
@@ -97,6 +98,7 @@ if (!($sdata=="")) { 					//import_event
 		if ($message['typeID'] == DEV_TYPE_TEMP_HUMIDITY) {
 			$properties['Temperature'] = $rcv_message['ExtData']['T'];
 			$properties['Humidity'] = $rcv_message['ExtData']['H'];
+		}
 		}
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
 		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $error_message, 'properties' => $properties));
