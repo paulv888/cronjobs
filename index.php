@@ -1,4 +1,10 @@
-<?php require_once 'includes.php';?>
+<?php require_once 'includes.php';
+if (isset($_GET['remote'])) {
+	if (!$remoteID = FetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`)="'.strtoupper($_GET['remote']).'"')['id']) die('Invalid Remote');
+} else {
+	$remoteID=1;
+}
+?>
 <!DOCTYPE html>
 <!--  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> -->
 <html lang="en">
@@ -21,7 +27,7 @@
 <body style="padding:0px">
 <?php
    require_once 'includes.php'; 
-   loadRemote(1);?>
+   loadRemote($remoteID);?>
    <div id='system-message-container'></div>
    <div class=" row-fluid">
    <div class="pull-left" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div>
