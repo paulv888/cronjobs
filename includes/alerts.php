@@ -254,23 +254,23 @@ if (DEBUG_ALERT) {
 	
 
 	// This is for the device properties
-	;
-	if ($props = FetchRows($mysqlp)) {
-	
-		unset ($pattern);
-		foreach ($props as $key => $value) {
-			$pattern[$value['description']]="/\{".$value['description']."\}/";
-			$newprops[$value['description']]=$value['value'];
-		}
-if (DEBUG_ALERT) {
-	// echo "<pre>"; echo "DATA3:"; print_r ($newprops); echo "</pre>";
-	// echo "<pre>"; echo "PATTERN3:"; print_r ($pattern); echo "</pre>";
-}
-		$subject = str_replace("{property___", "{", $subject);
-		$subject = preg_replace($pattern, $newprops, $subject);
-		if ($message != Null) $message=preg_replace($pattern, $newprops, $message); 
+	if (isset($mysql)) {
+		if ($props = FetchRows($mysqlp)) {
+		
+			unset ($pattern);
+			foreach ($props as $key => $value) {
+				$pattern[$value['description']]="/\{".$value['description']."\}/";
+				$newprops[$value['description']]=$value['value'];
+			}
+	if (DEBUG_ALERT) {
+		// echo "<pre>"; echo "DATA3:"; print_r ($newprops); echo "</pre>";
+		// echo "<pre>"; echo "PATTERN3:"; print_r ($pattern); echo "</pre>";
 	}
-
+			$subject = str_replace("{property___", "{", $subject);
+			$subject = preg_replace($pattern, $newprops, $subject);
+			if ($message != Null) $message=preg_replace($pattern, $newprops, $message); 
+		}
+	}
 	
 if (DEBUG_ALERT) {
 	echo "<pre>"; echo $subject.CRLF; echo "</pre>";

@@ -211,13 +211,13 @@ function updateStatus($params)
 		if ($row['status'] != $status || $row['commandvalue'] != $commandvalue) {
 			// UPDATE before scheme to reduce race condition with logger
 			$mysql = 'UPDATE ha_mf_monitor_status SET status = ' . $status . ', commandvalue = '. ($commandvalue == Null ? 'NULL' : $commandvalue) .', statusDate = "'. $now .'"';
-			if ($status == STATUS_OFF) $mysql .= ', timerMinute = NULL, timerRemaining = NULL, timerDate = NULL';
 			$mysql .= ' WHERE deviceID = '.$deviceID;
 			if (DEBUG_HA) echo "Update Status: ".$mysql.CRLF;
 			if (!mysql_query($mysql)) mySqlError($mysql);
 			if ($status == STATUS_OFF) {
-				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Remaining'));
+				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Started'));
 				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Value'));
+				removeProperty(Array('deviceID' => $deviceID, 'description' => 'Timer Remaining'));
 			}
 			
 			// run on change
@@ -283,12 +283,9 @@ function logEvent($log) {
 	if (!array_key_exists("callerID", $log)) $log['callerID'] = Null;
 	if (!array_key_exists("repeatcount", $log)) $log['repeatcount'] = 1;
 	if (!array_key_exists("data", $log)) $log['data'] = Null;
-	if (!array_key_exists("result", $log)) $log['result'] = Null;
 	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
-	if ($log['result'] === FALSE) $log['result'] = "FALSE";
-	if ($log['result'] === TRUE) $log['result'] = "TRUE";
 	
 	$repeatcount=1;
 	//
@@ -482,20 +479,64 @@ function getDeviceType($deviceID){
 	
 }
 
+function getDeviceProperties($params){
+
+ 	if (array_key_exists('deviceID', $params)) {		// DeviceID given (only one)
+		echo "******Not implemented";
+	} else {
+		$comb = Array();
+		foreach ($params['properties'] as $description) {
+			$property['description'] = $description;
+			$res = getPropertyValue($property);
+			$comb = array_replace_recursive($comb, $res);
+// echo "<pre>comb";
+// print_r($comb);
+// echo "</pre>";
+		}
+		return $comb;
+	}
+}
+
+
 function getPropertyValue($property){
 
+	$description = $property['description'];
 	$property['propertyID'] = getPropertyID($property['description']);
-	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
-		return $rowproperty['value'];
+ 	if (array_key_exists('deviceID', $property)) {		// DeviceID given (only one)
+		$result = False;
+		if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
+			return $rowproperty['value'];
+		}
+	} else {
+		$result = Array();
+		if ($rowproperties = FetchRows('SELECT deviceID, propertyID, value FROM ha_mf_device_properties  WHERE propertyID = '.$property['propertyID'])) {
+			foreach ($rowproperties AS $prop) {
+				$result[$prop['deviceID']][$description] = $prop['value'];
+			}
+ // echo "<pre>";
+ // print_r($result);
+ // echo "<pre>";
+			return $result;
+		}
 	}
-	return false ;
+	return $result;
+
+	
+	
+	
 }
 
 function getPropertyValueByID($property){
 
 	//$id = getPropertyID($description);
-	if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
-		return $rowproperty['value'];
+ 	if (array_key_exists('deviceID', $property)) {		// DeviceID given (only one)
+		if ($rowproperty = FetchRow('SELECT value FROM ha_mf_device_properties  WHERE deviceID = '.$property['deviceID'].' AND propertyID = '.$property['propertyID'])) {
+			return $rowproperty['value'];
+		}
+	} else {
+		if ($rowproperties = FetchRows('SELECT deviceID, propertyID, value FROM ha_mf_device_properties  WHERE propertyID = '.$property['propertyID'])) {
+			return $rowproperties;
+		}
 	}
 	return false ;
 }

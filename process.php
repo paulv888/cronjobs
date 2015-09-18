@@ -569,12 +569,6 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			}
 			$testvalue[] = $test;
 			break;
-		case SCHEME_CONDITION_TIMER_EXPIRED: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_TIMER_EXPIRED</p>";
-			$devstatusrow = FetchRow("SELECT deviceID, timerMinute, timerDate FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			if (DEBUG_FLOW) print_r($devstatusrow);
-			$testvalue[] = $devstatusrow['timerRemaining'];
-			break;
 		case SCHEME_CONDITION_CURRENT_TIME: 
 			if (DEBUG_FLOW) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
 			$testvalue[] = time();
@@ -619,7 +613,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		{
 		case CONDITION_GREATER:
 			if ($testvalue[0] <= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
 				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail on ('.$feedback['RunSchemeName'].'): "'.$testvalue[0].'" > "'.$testvalue[1].'"';
 				return $feedback;
@@ -627,7 +621,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			break;
 		case CONDITION_LESS:
 			if ($testvalue[0] >= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
 				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
 				return $feedback;
@@ -635,7 +629,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			break;
 		case CONDITION_EQUAL:
 			if ($testvalue[0] != $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
 				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
 				return $feedback;

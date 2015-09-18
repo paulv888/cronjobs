@@ -42,6 +42,7 @@ $now = date( 'Y-m-d H:i:s' );
 		$properties['Temperature'] = to_celcius($stat->temp);
 		$properties['Setpoint'] =  to_celcius($stat->ttemp);
 		if (!is_null($timervalue)) {
+			$properties['Timer Started'] = date("Y-m-d H:i:s");
 			$properties['Timer Value'] = $timervalue;
 			$properties['Timer Remaining'] = $timervalue;
 		}
@@ -64,7 +65,6 @@ function HvacOff($callerID, $deviceID) {
 
 function HvacStartTimer($callerID, $deviceID, $timervalue) {
 	$result = HvacOn($callerID, $deviceID, $timervalue);
-	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$timervalue.' , `timerRemaining` = '.$timervalue.', timerDate = NOW() WHERE  `ha_mf_monitor_status`.`deviceID` = '.$deviceID);
 	return $result;
 }
 

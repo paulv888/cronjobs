@@ -110,24 +110,29 @@ function checkTime ($setupstart,$setupend, $offset) {
 
 function updateTimers($dummy) {
 // PHP Command Dummy parm
-	$devstatusrows = FetchRows("SELECT deviceID, timerMinute, timerDate, timerRemaining FROM ha_mf_monitor_status  WHERE timerMinute > 0");
-	//if (DEBUG_TIMERS) print_r($devstatusrows);
+
+	$devs = getDeviceProperties(Array( 'properties' => Array("Timer Started", "Timer Value", "Timer Remaining")));
+	
 	$feedback = "";
-	if ($devstatusrows) {
-		foreach ($devstatusrows as $devstatusrow) {
-			if (DEBUG_TIMERS) print_r($devstatusrow);
-			if ($testvalue[] = $devstatusrow['timerMinute'] > 0 && timeExpired($devstatusrow['timerDate'], $devstatusrow['timerMinute'])) {
-				$feedback['ExecuteCommand:'.$devstatusrow['deviceID']]=executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $devstatusrow['deviceID'], 'commandID' => COMMAND_OFF));
-			} else {
-				if ($devstatusrow['timerMinute'] > 0) {
-					$minutes = $devstatusrow['timerMinute']-(int)(abs(time()-$devstatusrow['timerDate']) / 60);
-					RunQuery('UPDATE ha_mf_monitor_status SET timerRemaining = '.$minutes.' WHERE deviceID = '.$devstatusrow['deviceID']);
-				}
+	foreach ($devs as $key => $device) {
+		//if (DEBUG_TIMERS) print_r($device);
+		if (!array_key_exists('Timer Started', $device)) $devs[$key]['Timer Started']="1970-01-01";
+		if (!array_key_exists('Timer Value', $device)) $devs[$key]['Timer Value']=0;
+		if (!array_key_exists('Timer Remaining', $device)) $devs[$key]['Timer Remaining']=0;
+		$timerStarted = $device['Timer Started'];
+		if ($testvalue[] = $device['Timer Value'] > 0 && timeExpired($timerStarted, $device['Timer Value'])) {
+			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
+			//echo 'ExecuteCommand:'.$key.'-----'.executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
+		} else {
+			if ($device['Timer Value'] > 0) {
+				$minutes = (int)$device['Timer Value']-(int)(abs(time() - strtotime($device['Timer Started'])) / 60);
+				setPropertyValue(Array('deviceID' => $key, 'description' => 'Timer Remaining', 'value' => $minutes));
 			}
 		}
 	}
 	return $feedback;
 }
+
 
 function startTimer($params) {
 
@@ -140,11 +145,10 @@ function startTimer($params) {
 	$thiscommand['commandID'] = COMMAND_ON;
 	$thiscommand['timervalue'] = $params['commandvalue'];
 	$thiscommand['deviceID'] = $params['deviceID'];
-	$thiscommand['properties']['Timer Remaining'] = $params['commandvalue'];
+	$thiscommand['properties']['Timer Started'] = date("Y-m-d H:i:s");
 	$thiscommand['properties']['Timer Value'] = $params['commandvalue'];
+	$thiscommand['properties']['Timer Remaining'] = $params['commandvalue'];
 	$feedback['SendCommand']=sendCommand($thiscommand); 
-	RunQuery('UPDATE `ha_mf_monitor_status` SET  `timerMinute` =  '.$params['commandvalue'].' , `timerRemaining` = '.$params['commandvalue'].', timerDate = NOW() 
-			WHERE  `ha_mf_monitor_status`.`deviceID` = '.$params['deviceID']);
 	return $feedback;
 }
 ?>
