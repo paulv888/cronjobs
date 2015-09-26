@@ -717,6 +717,7 @@ function doFilter(&$arr, $nodefilter, &$filter, &$result) {
 function RemoteKeys($result) {
 
 // add link status to this
+	// echo "<pre>";
 
 	$feedback = Array();
 	foreach ($result as $key => $res) {
@@ -740,7 +741,7 @@ function RemoteKeys($result) {
 
 			$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
 			while ($rowkeys = mysql_fetch_array($reskeys)) {
-				if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "field") {
+				if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 					$feedback[][$node] = true;
 					$last_id=GetLastKey($feedback);
 					$feedback[$last_id]["remotekey"] = $rowkeys['id'];
@@ -771,17 +772,22 @@ function RemoteKeys($result) {
 					}
 					$feedback[]["remotekey"] = $rowkeys['id'];
 					$last_id=GetLastKey($feedback);
-					$text = ($rowkeys['inputtype']== "field" ? $rowkeys['inputoptions'] : $rowkeys['name']);
+					$text = getDisplayText($rowkeys);
+					// echo $text.CRLF;
 					if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
 						$timerRemaining = getPropertyValue(Array('deviceID' => $res['updatestatus']['deviceID'], 'description' => "Timer Remaining"));
 						if ($timerRemaining) $text.=' ('.$timerRemaining.'min)';
 					}
 					replacePlaceholder($text, Array('deviceID' => $res['updatestatus']['deviceID']));
+					// echo $text.CRLF;
 					if ($text != $rowkeys['inputoptions']) $feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
 				}
 			}
 		}
 	}
+	
+	// echo "</pre>";
+
 	//if (array_key_exists('message'.$feedback) && $feedback['message'] = preg_replace("/\s+/", " ", $$feedback['message'] );
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
 }

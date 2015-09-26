@@ -24,8 +24,8 @@ function getDuskDawn($station) {
 		if (DEBUG_DUSKDAWN) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 
-		$tsr = date("H:i:s", strtotime($result->{'astronomy'}->{'sunrise'}));
-		$tss = date("H:i:s", strtotime($result->{'astronomy'}->{'sunset'}));
+		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
+		$tss = date("H:i", strtotime($result->{'astronomy'}->{'sunset'}));
 
 		//PDOupsert("ha_mf_device_properties", Array('description' => 'Astronomy Sunrise', 'value' => $tsr), array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => 'Astronomy Sunrise'));
 		$properties['Astronomy Sunrise'] = $tsr;

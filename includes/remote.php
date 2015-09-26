@@ -63,10 +63,10 @@ function loadRemoteDiv($divid) {
 		for ($myxcell = 1; $myxcell <= $myxmax; $myxcell++) {
 			$resremotekeys = mysql_query("SELECT * FROM ha_remote_keys where remotediv =".$divid." AND xpos =".$myxcell." AND ypos =".$myycell." ORDER BY remotediv DESC");
 			$rowremotekeys = mysql_fetch_array($resremotekeys);
-			$typeicon = null;
 			if ($rowremotekeys) {
 				$status = '';
 				$link = '';
+				$booticon = null;
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (strlen($rowremotekeys['deviceID'])>0) {
@@ -82,18 +82,17 @@ function loadRemoteDiv($divid) {
 							echo '<td style="width:'.$tdwidth.'%" class="keyscellempty">'.'</td>';
 							continue;
 						}
-						if  ($rowremotekeys['type_image'] > 0) {
+						if  ($rowremotekeys['type_image'] == 1 || $rowremotekeys['type_image'] == 2) {
 							if ($rowdevices) {
-								$typeicon = $rowdevices['booticon'] ;
+								$booticon = $rowdevices['booticon'] ;
 							} else {
-								$typeicon = null;
+								$booticon = null;
 							}
 						}
 						if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
 							$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowremotekeys['deviceID']);
 							if  ($resmonitor) {
 								$rowmonitor = mysql_fetch_array($resmonitor);
-//								if ($rowmonitor && ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="field")) {
 								if ($rowmonitor) {
 									$status = ($rowmonitor['status'] == STATUS_ON ? 'on' : 
 											  ($rowmonitor['status'] == STATUS_OFF ? 'off' : 
@@ -129,7 +128,7 @@ function loadRemoteDiv($divid) {
 				}
 				echo ">";
 				$clicks = (is_null($rowremotekeys['commandIDdown']) ? "click-up rem-button" : "click-down rem-button");
-				if ($rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
+				if ($rowremotekeys['inputtype']=="display") {
 						$fieldtype = "div";
 							$fieldclass = $rowremotekeys['inputtype'];
 				}
@@ -137,32 +136,13 @@ function loadRemoteDiv($divid) {
 						$fieldtype = "button";
 						$fieldclass = "btn btn-block button ". $clicks;
 				} 
-				if ($typeicon != null) {				// what icon to show
-					$booticon = $typeicon;
-				} elseif ($rowremotekeys['booticon'] != null) {
-					$booticon = $rowremotekeys['booticon'];
-				} else {
-					$booticon = null;
-				}
-				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="field") {
-					$text = null;
-					if ($booticon == null) {			// what text to show
-//echo $rowremotekeys['inputtype'];
-						if ($rowremotekeys['inputtype']=="field") {					// execute query from field
-							$text = $rowremotekeys['inputoptions'];
-						} elseif ($rowremotekeys['inputtype']=="display") {													// no icon show name
-							$text = ' '.$rowremotekeys['inputoptions'];	
-						} else {
-							$text = ' '.$rowremotekeys['name'];
-						} 
-					} else {														// display type icon, if not then use name, else check if something in input options
-						if ($typeicon != null || $rowremotekeys['type_image'] == 2) {
-							$text = ' '.$rowremotekeys['name'];
-						} else {
-							$text = ' '.$rowremotekeys['inputoptions']; 
-						}
+				if  ($rowremotekeys['type_image'] == 1 || $rowremotekeys['type_image'] == 2) {
+					if ($rowremotekeys['booticon'] != null) {
+						$booticon = $rowremotekeys['booticon'];
 					}
-					$text = rtrim($text);
+				}
+				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display") {
+					$text = getDisplayText($rowremotekeys);
 					echo '<'.$fieldtype.' class="'.$fieldclass;
 					if (strlen($status)>1) echo ' '.$status;
 					if (strlen($link)>1) echo ' '.$link;
@@ -197,7 +177,8 @@ function loadRemoteDiv($divid) {
 							echo '">';
 							echo '</i>';
 						} 
-						echo '<span class="buttontext">'.$rowremotekeys['name'].'</span>'.'&nbsp;'.'<span class="caret"></span></button>';
+						$text = getDisplayText($rowremotekeys);
+						echo '<span class="buttontext">'.$text.'</span>'.'&nbsp;'.'<span class="caret"></span></button>';
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
@@ -279,4 +260,16 @@ function loadRemoteDiv($divid) {
 echo "</table>";
 }
 
+function getDisplayText($row) {
+	$text = null;
+	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
+		$text = (!empty($row['inputoptions']) ? $row['inputoptions'] : $row['name']);
+		if ($row['inputtype']=="btndropdown") $text = $row['name'];
+		// var_dump($row['inputoptions']);
+		// echo (!empty($row['inputoptions']) ? "Not Emp" : "Empt" ).CRLF;
+		// var_dump($text);
+	}
+	$text = rtrim($text);
+	return $text;
+}
 ?>
