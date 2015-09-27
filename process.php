@@ -146,8 +146,34 @@ function executeCommand($callerparams) {
 			$result['message'] = '';
 		}
 	}
-	
-	return 	json_encode($result);
+	// print_r($result);
+	$result = json_encode($result);
+	switch (json_last_error()) {
+        case JSON_ERROR_NONE:
+            //echo ' - No errors';
+        break;
+        case JSON_ERROR_DEPTH:
+            echo ' - Maximum stack depth exceeded';
+        break;
+        case JSON_ERROR_STATE_MISMATCH:
+            echo ' - Underflow or the modes mismatch';
+        break;
+        case JSON_ERROR_CTRL_CHAR:
+            echo ' - Unexpected control character found';
+        break;
+        case JSON_ERROR_SYNTAX:
+            echo ' - Syntax error, malformed JSON';
+        break;
+        case JSON_ERROR_UTF8:
+            echo ' - Malformed UTF-8 characters, possibly incorrectly encoded';
+        break;
+        default:
+            echo ' - Unknown error';
+        break;
+    }
+	// echo "<pre>";
+
+	return 	$result;
 			
 }
 
@@ -425,7 +451,11 @@ function SendCommand($thiscommand) {
 			$text = $tarr[1];
 			replacePlaceholder($text, Array('deviceID' => $thiscommand['deviceID']));
 			$property = Array('deviceID' => $thiscommand['deviceID'], 'description' => $tarr[0], 'value' => $text);
-			setPropertyValue($property);
+			$feedback[] = setPropertyValue($property);
+			break;
+		case COMMAND_GRAPH_CREATE:
+			//$property = Array('deviceID' => $thiscommand['deviceID'], 'description' => $tarr[0], 'value' => $text);
+			$feedback = graphCreate($thiscommand);
 			break;
 		default:
 			$func = $rowcommands['command'];
@@ -772,7 +802,8 @@ function RemoteKeys($result) {
 					}
 					$feedback[]["remotekey"] = $rowkeys['id'];
 					$last_id=GetLastKey($feedback);
-					$text = getDisplayText($rowkeys);
+					$starttext = getDisplayText($rowkeys);
+					$text = $starttext;
 					// echo $text.CRLF;
 					if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
 						$timerRemaining = getPropertyValue(Array('deviceID' => $res['updatestatus']['deviceID'], 'description' => "Timer Remaining"));
@@ -780,7 +811,7 @@ function RemoteKeys($result) {
 					}
 					replacePlaceholder($text, Array('deviceID' => $res['updatestatus']['deviceID']));
 					// echo $text.CRLF;
-					if ($text != $rowkeys['inputoptions']) $feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
+					if ($text != $starttext) $feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
 				}
 			}
 		}

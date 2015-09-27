@@ -172,7 +172,8 @@ function updateStatus($params)
 	}
 	if (!array_key_exists('status', $params)) {
 		if ($commandID != NULL) {
-			if (!$rescommands = mysql_query("SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID)) mySqlError($mysql);
+			$mysql = "SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID;
+			if (!$rescommands = mysql_query($mysql)) mySqlError($mysql);
 			if ($rowcommands = mysql_fetch_array($rescommands)) {
 				$status = $rowcommands['status'];
 				if (DEBUG_HA) echo "Status Status:".$status.CRLF;
@@ -480,6 +481,10 @@ function getDeviceType($deviceID){
 }
 
 function getDeviceProperties($params){
+// List of properties
+//
+//	$devs = getDeviceProperties(Array( 'properties' => Array("Timer Started", "Timer Value", "Timer Remaining")));
+
 
  	if (array_key_exists('deviceID', $params)) {		// DeviceID given (only one)
 		echo "******Not implemented";
@@ -525,6 +530,22 @@ function getPropertyValue($property){
 	
 	
 }
+
+function listProperties($devices){
+//
+// Feed in property Array?
+// Make generic to retrieve values and combine
+//
+	//$id = getPropertyID($description);
+	if ($rows = FetchRows('SELECT propertyID FROM ha_mf_device_properties  WHERE deviceID IN ('.$devices.')')) {
+		foreach ($rows AS $prop) {
+			$result[] = $prop['propertyID'];
+		}
+		return $result;
+	}
+	return false ;
+}
+
 
 function getPropertyValueByID($property){
 
