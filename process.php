@@ -560,42 +560,25 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		$testvalue = array();
 		switch ($rowcond['type'])
 		{
-		case SCHEME_CONDITION_DEVICE_STATUS_VALUE: 									// what a mess already :(
-//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND: 
-//		case SCHEME_CONDITION_DEVICE_STATUS_GROUP_OR: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_STATUS</p>";
-			$devstatusrow = FetchRow("SELECT status FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			$testvalue[] = $devstatusrow['status'];
+		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
+			$testvalue[] = getPropertyByID(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
 			break;
-		case SCHEME_CONDITION_DEVICE_VALUE_VALUE: 									// what a mess already :(
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_VALUE</p>";
-			$devstatusrow = FetchRow("SELECT commandvalue FROM ha_mf_monitor_status  WHERE deviceID = ".$rowcond['deviceID']);
-			$testvalue[] = $devstatusrow['commandvalue'];
-			break;
-		case SCHEME_CONDITION_GROUP_STATUS_AND:
-		case SCHEME_CONDITION_GROUP_STATUS_OR:
-			$groups = GetGroup($rowcond['groupID']);
-			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
-// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
+		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
+		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
+			if (DEBUG_FLOW) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
+			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
 				$test = 1;
 			} else {
 				$test = 0;
 			}
+			$groups = getGroup($rowcond['groupID']);
 			foreach ($groups as $device) {
-				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_STATUS_AND) {
-// || $rowcond['type'] == SCHEME_CONDITION_DEVICE_STATUS_GROUP_AND) {
-					$test = $test & $device['status'];
+				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
+					$test = $test & getPropertyByID(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
 				} else {
-					$test = $test | $device['status'];
+					$test = $test | getPropertyByID(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
 				}
-			}
-			$testvalue[] = $test;
-			break;
-		case SCHEME_CONDITION_GROUP_LINK_OR:
-			$groups = GetGroup($rowcond['groupID']);
-			$test = 0;
-			foreach ($groups as $device) {
-				$test = $test | $device['link'];
 			}
 			$testvalue[] = $test;
 			break;
@@ -645,7 +628,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] <= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail on ('.$feedback['RunSchemeName'].'): "'.$testvalue[0].'" > "'.$testvalue[1].'"';
+				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getPropertyName($rowcond['propertyID']).' Fail on ('.$feedback['RunSchemeName'].'): "'.$testvalue[0].'" > "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;
@@ -653,7 +636,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] >= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
+				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getPropertyName($rowcond['propertyID']).' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;
@@ -661,7 +644,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] != $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
+				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getPropertyName($rowcond['propertyID']).' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
 				return $feedback;
 			}
 			break;
@@ -688,7 +671,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['RunSchemeName'] = $rowshemesteps['name'];
-			$feedback['error'] = "Spawned: ".$feedback['RunSchemeName'];
+			$feedback['error'] = "Spawned: ".$feedback['RunSchemeName']."  Log:".$outputfile;
 			return $feedback;		// GET OUT
 		}
 		do {  // loop all steps

@@ -134,11 +134,12 @@ function movePictures($camera) {
 			echo "numfiles: $numfiles".CRLF;
 			if ($newgroupcreated && $numfiles >= $camera['properties']['MINSTATUSFILES'])  {		// Bug here if 1 file read into new directory then no alert generated.
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Updating Status.".CRLF;
+				$properties['Pictures'] = $numfiles;
+				$properties['LastFileTime'] = date("H:i:s",$camera['lastfiletime']);
 				$html='<a href="'.MOTION_URL1.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'">Motion Detected</a>';
 				$html1=MOTION_URL2.'&folder='.$camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir.'"';
-        			echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_TIMER, 
-						'commandvalue' => 1, 'emailmessage' => $html, 'smsmessage' => $html1));
-//				UpdateStatus(array( 'callerID' => MY_DEVICE_ID,'deviceID' => $camera['deviceID'], 'status' => STATUS_ON, 'emailmessage' => $html, 'smsmessage' => $html1));
+        			echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_TIMER, 'commandvalue' => 1, 'emailmessage' => $html, 'smsmessage' => $html1 ,
+					'properties' => $properties));
 			}
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Thumbnail.".CRLF;
 			if (!file_exists(LASTIMAGEDIR)) {

@@ -2,17 +2,22 @@
 //define( 'DEBUG_GRAPH', TRUE );
 if (!defined('DEBUG_GRAPH')) define( 'DEBUG_GRAPH', FALSE );
 
+define( 'MAX_DATAPOINTS', 1000 );
+
 function graphCreate($params) {
 	if (DEBUG_GRAPH) echo "<pre>params: ";
 	if (DEBUG_GRAPH) print_r($params);
 	parse_str(urldecode($params['commandvalue']), $fparams);
-	//if (DEBUG_GRAPH) print_r($fparams);
+	if (DEBUG_GRAPH) print_r($fparams);
 
 	if (!array_key_exists('0', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
 		$result['error']="No Device selected";
 		return $result;
 	}
 	$devices = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0']);
+	foreach ($fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0'] as $deviceID) {
+		$caption[] = FetchRow('select description from ha_mf_devices where id='.$deviceID)['description'];
+	}
 	if (!array_key_exists('1', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
 		//$result['error']="No Device selected";
 		//return $result;
@@ -57,14 +62,31 @@ function graphCreate($params) {
 	
 		$tablename="graph_0";
 		$hidden = (DEBUG_GRAPH ? '' : ' hidden ');
-		$tickinterval=round(count($rows)/10,0);
-		//echo $tickinterval;
-		echo '<table id="'.$tablename.'" class="'.$tablename.$hidden.' table table-striped table-hover" data-graph-yaxis-2-opposite="1" data-graph-xaxis-tick-interval="'.$tickinterval.'" data-graph-xaxis-align="right" data-graph-xaxis-rotation="270" data-graph-type="spline" data-graph-container-before="1">';
+		
+		if (count($rows)> MAX_DATAPOINTS) {
+			$rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
+			echo "Too much data, took last : ".MAX_DATAPOINTS;
+		}
+		$s = $rows[0]['Date'];
+		$e = $rows[count($rows)-1]['Date'];
+		//	echo (int)(abs(strtotime($e)-strtotime($s))/300); //60*5 min intervals = 300?
+		$tickinterval=(abs(strtotime($e)-strtotime($s)))*100; 
+		//var_dump ($tickinterval);
+		$tickinterval=roundUpToAny(abs(strtotime($e)-strtotime($s))*50,3600000);
+		//var_dump($tickinterval);
+		//
+		//echo $tickinterval.CRLF;
+		//echo count($rows).CRLF;
+		
+		echo '<table id="'.$tablename.'" class="'.$tablename.$hidden.' table table-striped table-hover" data-graph-xaxis-type="datetime" data-graph-yaxis-2-opposite="1" 
+				data-graph-xaxis-tick-interval="'.$tickinterval.'" data-graph-xaxis-align="right" data-graph-xaxis-rotation="270" data-graph-type="spline" 
+				data-graph-container-before="1" data-graph-zoom-type="x" data-graph-height="500" >';
 		//data-graph-xaxis-type="datetime"
 
 		if (DEBUG_GRAPH) print_r($rowsprops);
+
 		if (DEBUG_GRAPH) echo "</pre>";
-		
+		echo '<caption>'.implode(", ",$caption).'</caption>';
 		echo '<thead><tr class="fabrik___heading">';
 		foreach($rows[0] as $header=>$value){
 			if ($header != "id") {
@@ -75,7 +97,8 @@ function graphCreate($params) {
 					$propID = getPropertyID($t[0]);
 					if (($prodIdx = findByKeyValue($rowsprops,'id',$propID)) !== false) {
 						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
-						if (!empty($rowsprops[$prodIdx]['color'])) $datastr.='data-graph-color="#'.$rowsprops[$prodIdx]['color'].'" ';
+						$rowsprops[$prodIdx]['color'] = colorDuplicateProperty($rows[0], $header, $rowsprops[$prodIdx]['color']);
+						if (!empty($rowsprops[$prodIdx]['color'])) $datastr.='data-graph-color="'.$rowsprops[$prodIdx]['color'].'" ';
 						if (!empty(trim($rowsprops[$prodIdx]['dash_style']))) $datastr.='data-graph-dash-style="'.$rowsprops[$prodIdx]['dash_style'].'" ';
 						if ($rowsprops[$prodIdx]['hidden']==1) $datastr.='data-graph-hidden="'.$rowsprops[$prodIdx]['hidden'].'" ';
 						if ($rowsprops[$prodIdx]['skip']) $datastr.='data-graph-skip="'.$rowsprops[$prodIdx]['skip'].'" ';
@@ -85,16 +108,17 @@ function graphCreate($params) {
 						if ($rowsprops[$prodIdx]['value_scale']) $datastr.='data-graph-value-scale="'.$rowsprops[$prodIdx]['value_scale'].'" ';
 						if ($rowsprops[$prodIdx]['datalabels_enabled']) $datastr.='data-graph-datalabels-enabled="'.$rowsprops[$prodIdx]['datalabels_enabled'].'" ';
 						if ($rowsprops[$prodIdx]['datalabels_color']) $datastr.='data-graph-datalabels-color="'.$rowsprops[$prodIdx]['datalabels_color'].'" ';
+						if ($rowsprops[$prodIdx]['markers_enabled']) $datastr.='data-graph-markers-enabled="'.$rowsprops[$prodIdx]['markers_enabled'].'" ';
 					} else {
 						echo "Property $header not found!!!: $prodIdx".CRLF;
 					}
 				}
 				echo '<th id="'.$tablename.'_'.$header.'_header" '.$datastr;
-				echo '>' . $header . '</th>';
+				echo '>' . str_replace('`',' ',$header). '</th>';
 			}
-			if ($value == " ") {
-				$rows[0][$header]="0";
-			}
+//			if ($value == " ") {
+//				$rows[0][$header]=" ";
+//			}
 		}
 		echo '</tr></thead>';
 		echo '<tbody>';
@@ -306,5 +330,57 @@ function ReloadScreenShot() {
 	file_put_contents($img, file_get_contents($url));
 	$post = RestClient::post('http://htpc:8085/index.htm');
 	return;  // ReadCurlReturn($post);
+}
+function hex2rgb($hex) {
+   $hex = str_replace("#", "", $hex);
+
+   if(strlen($hex) == 3) {
+      $r = hexdec(substr($hex,0,1).substr($hex,0,1));
+      $g = hexdec(substr($hex,1,1).substr($hex,1,1));
+      $b = hexdec(substr($hex,2,1).substr($hex,2,1));
+   } else {
+      $r = hexdec(substr($hex,0,2));
+      $g = hexdec(substr($hex,2,2));
+      $b = hexdec(substr($hex,4,2));
+   }
+   $rgb = array($r, $g, $b);
+   //return implode(",", $rgb); // returns the rgb values separated by commas
+   return $rgb; // returns an array with the rgb values
+}
+
+function rgb2hex($rgb) {
+   $hex = "#";
+   $hex .= str_pad(dechex($rgb[0]), 2, "0", STR_PAD_LEFT);
+   $hex .= str_pad(dechex($rgb[1]), 2, "0", STR_PAD_LEFT);
+   $hex .= str_pad(dechex($rgb[2]), 2, "0", STR_PAD_LEFT);
+
+   return $hex; // returns the hex value including the number sign (#)
+}
+function colorDuplicateProperty($rows0, $columnname, $lastcolor) {
+// Array {'Status`Zone 1' => 1,	'Status`Zone 2' => ""}
+
+	if ($columnname != "id" ||$columnname != "Date") {
+		$t = explode('`',$columnname);
+		$propname = $t[0];
+		//echo $propname.CRLF;
+		foreach ($rows0 as $header=>$value) {
+			if(substr($header, 0, strlen($propname))==$propname) {
+				if ($columnname!=$header) {
+					$colors = hex2rgb($lastcolor);
+					foreach($colors as $key=>$value) {
+						if ($value <= 127) {
+							$colors[$key] = $value+20;
+						} else {
+							$colors[$key] = $value-20;
+						}
+					}
+					$lastcolor=rgb2hex($colors);
+				}
+				break;
+			}
+		}
+	}
+//	echo $propname.' '.$lastcolor.CRLF;
+	return $lastcolor;
 }
 ?>

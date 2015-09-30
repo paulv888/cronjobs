@@ -25,7 +25,7 @@ function RunTimers(){
 
 	foreach ($timers as $timer) {
 		// check if we are ready to generate
-		if (DEBUG_TIMERS) echo CRLF.date("Y-m-d H:i:s").": "."Timer: ".$timer['id']." ".$timer['description'].CRLF;
+		if (DEBUG_TIMERS) echo CRLF.date("Y-m-d H:i:s").": "."Timer: ".$timer['id']."<B>".$timer['description']."</B>".CRLF;
 		$date = getdate();
 		if (is_int(strpos($timer['generate_days'],(string)$date["wday"])) === true) {								// Check Day
 			if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Run Today".CRLF;

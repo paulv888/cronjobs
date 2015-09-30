@@ -245,8 +245,8 @@ if (DEBUG_ALERT) {
 			$pattern[$key]="/\{".$key."\}/";
 		}
 if (DEBUG_ALERT) {
-	// echo "<pre>"; echo "DATA2:"; print_r ($params); echo "</pre>";
-	// echo "<pre>"; echo "PATTERN2:"; print_r ($pattern); echo "</pre>";
+	echo "<pre>"; echo "DATA2:"; print_r ($params); echo "</pre>";
+	echo "<pre>"; echo "PATTERN2:"; print_r ($pattern); echo "</pre>";
 }
 		$subject = preg_replace($pattern, $params, $subject);
 		if ($message != Null) $message=preg_replace($pattern, $params, $message); 
