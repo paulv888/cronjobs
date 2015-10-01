@@ -747,53 +747,53 @@ function RemoteKeys($result) {
 				$feedback['message'] = $res['error'].' ';
 			}
 		} else {
-			if (array_key_exists('updatestatus', $res)) $node = 'updatestatus';
-			if (array_key_exists('groupselect', $res)) $node = 'groupselect';
-				
-
-			$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
-			while ($rowkeys = mysql_fetch_array($reskeys)) {
-				if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
-					$feedback[][$node] = true;
-					$last_id=GetLastKey($feedback);
-					$feedback[$last_id]["remotekey"] = $rowkeys['id'];
-					if ($node == 'updatestatus') {
-						if (array_key_exists('status', $res['updatestatus'])) {
-							if ($res['updatestatus']['status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
-								$feedback[$last_id]["status"]="off";
-							} elseif ($res['updatestatus']['status'] == STATUS_UNKNOWN) {
-								$feedback[$last_id]["status"]="unknown";
-							} elseif ($res['updatestatus']['status'] == STATUS_ON) {
-								$feedback[$last_id]["status"]="on";
-							} elseif ($res['updatestatus']['status'] == STATUS_ERROR) {
-								$feedback[$last_id]["status"]="error";
-							} else { 										// else assume a value
-								$feedback[$last_id]["status"]="undefined";
-							}
-						}
-						if (array_key_exists('link', $res['updatestatus'])) {
-							if ($res['updatestatus']['link'] == LINK_DOWN) {    	
-									$feedback[$last_id]["link"]="link-down";
-								} elseif ($res['updatestatus']['link'] == LINK_UP) {
-								} elseif ($res['updatestatus']['link'] == LINK_WARNING) {
-									$feedback[$last_id]["link"]="link-warning";
+			if (!empty($node)) {
+				if (array_key_exists('updatestatus', $res)) $node = 'updatestatus';
+				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
+				$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
+				while ($rowkeys = mysql_fetch_array($reskeys)) {
+					if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
+						$feedback[][$node] = true;
+						$last_id=GetLastKey($feedback);
+						$feedback[$last_id]["remotekey"] = $rowkeys['id'];
+						if ($node == 'updatestatus') {
+							if (array_key_exists('status', $res['updatestatus'])) {
+								if ($res['updatestatus']['status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
+									$feedback[$last_id]["status"]="off";
+								} elseif ($res['updatestatus']['status'] == STATUS_UNKNOWN) {
+									$feedback[$last_id]["status"]="unknown";
+								} elseif ($res['updatestatus']['status'] == STATUS_ON) {
+									$feedback[$last_id]["status"]="on";
+								} elseif ($res['updatestatus']['status'] == STATUS_ERROR) {
+									$feedback[$last_id]["status"]="error";
 								} else { 										// else assume a value
-									$feedback[$last_id]["link"]="undefined";
+									$feedback[$last_id]["status"]="undefined";
+								}
+							}
+							if (array_key_exists('link', $res['updatestatus'])) {
+								if ($res['updatestatus']['link'] == LINK_DOWN) {    	
+										$feedback[$last_id]["link"]="link-down";
+									} elseif ($res['updatestatus']['link'] == LINK_UP) {
+									} elseif ($res['updatestatus']['link'] == LINK_WARNING) {
+										$feedback[$last_id]["link"]="link-warning";
+									} else { 										// else assume a value
+										$feedback[$last_id]["link"]="undefined";
+								}
 							}
 						}
+						$feedback[]["remotekey"] = $rowkeys['id'];
+						$last_id=GetLastKey($feedback);
+						$starttext = getDisplayText($rowkeys);
+						$text = $starttext;
+						// echo $text.CRLF;
+						if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
+							$timerRemaining = getDevicePropertyValue(Array('deviceID' => $res['updatestatus']['deviceID'], 'description' => "Timer Remaining"));
+							if ($timerRemaining) $text.=' ('.$timerRemaining.'min)';
+						}
+						replacePlaceholder($text, Array('deviceID' => $res['updatestatus']['deviceID']));
+						// echo $text.CRLF;
+						if ($text != $starttext) $feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
 					}
-					$feedback[]["remotekey"] = $rowkeys['id'];
-					$last_id=GetLastKey($feedback);
-					$starttext = getDisplayText($rowkeys);
-					$text = $starttext;
-					// echo $text.CRLF;
-					if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
-						$timerRemaining = getDevicePropertyValue(Array('deviceID' => $res['updatestatus']['deviceID'], 'description' => "Timer Remaining"));
-						if ($timerRemaining) $text.=' ('.$timerRemaining.'min)';
-					}
-					replacePlaceholder($text, Array('deviceID' => $res['updatestatus']['deviceID']));
-					// echo $text.CRLF;
-					if ($text != $starttext) $feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
 				}
 			}
 		}

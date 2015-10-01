@@ -172,8 +172,9 @@ function updateStatus($params)
  	$deviceID = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 	$commandID = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 	$commandvalue = (array_key_exists('Value', $params['properties']) ? $params['properties']['Value'] : Null); // Not reading $params'commandvalue' anymore
-	$status = (array_key_exists('status', $params['properties']) ? $params['properties']['Status'] : Null);
+	$status = (array_key_exists('Status', $params['properties']) ? $params['properties']['Status'] : Null);
 
+	$feedback = Array();
 	// Interpret status value based on current command, i.e. On/Off/Error
 	if (DEBUG_HA) {
 		echo "<PRE>Upd Stat";
@@ -184,7 +185,7 @@ function updateStatus($params)
 		echo "commandvalue: ".$commandvalue.CRLF;
 	}
 	
-	if (!array_key_exists('status', $params['properties'])) {
+	if (!array_key_exists('Status', $params['properties'])) {
 		if ($commandID != NULL) {
 			$mysql = "SELECT status FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID;
 			if (!$rescommands = mysql_query($mysql)) mySqlError($mysql);
@@ -250,7 +251,7 @@ function updateStatus($params)
 			} // if changed
 		}
 	}
-	$feedback['Properties'] = updateDeviceProperties($params);
+	$feedback['Properties'] = updateDeviceProperties($params); 
 	if (DEBUG_HA) echo "</PRE>Upd Stat";
 	return $feedback;
 }	
@@ -297,6 +298,11 @@ function setDevicePropertyValue($params, $description) {		// Move this to setDev
 		if (timeExpired($last, 59) || abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) {
 		// echo "<pre>";
 		// print_r($properties[$key]);
+			if ($property['datatype']=="BINARY") {		// relog old value with current time to make nice graph
+				PDOupsert('ha_properties_log', 	Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
+						'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))), Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
+						'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))));
+			}
 			PDOinsert('ha_properties_log', $deviceproperty);
 		} else {
 			if (DEBUG_HA) echo "Not Logging: ".$description.CRLF;
