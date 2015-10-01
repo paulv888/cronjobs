@@ -56,7 +56,6 @@ if (!($sdata=="")) { 					//import_event
 			// Extended Data is there
 			$properties['Memory'] = $rcv_message['ExtData']['M'];
 			$properties['Uptime'] = $rcv_message['ExtData']['U'];
-			$properties['Value'] = $rcv_message['ExtData']['U'];
 		}
 		if ($message['typeID'] == DEV_TYPE_LIGHT_SENSOR_ANALOG) {
 			// Extended Data is there
@@ -86,8 +85,8 @@ if (!($sdata=="")) { 					//import_event
 			} else {
 				$coolStatus = $properties['IsRunning'] == 1;
 			}
-			UpdateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-			UpdateDailyRuntime($message['deviceID']);
+			updateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
+			updateDailyRuntime($message['deviceID']);
 		}
 		if ($message['typeID'] == DEV_TYPE_WATER_LEVEL) {
 			// Extended Data is there
@@ -100,9 +99,10 @@ if (!($sdata=="")) { 					//import_event
 			$properties['Humidity'] = $rcv_message['ExtData']['H'];
 		}
 		}
+		$properties['Status'] = $rcv_message['Status'];
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		UpdateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'status' => $rcv_message['Status'], 'message' => $error_message, 'properties' => $properties));
-		UpdateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
+		updateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'properties' => $properties));
+		updateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }
 ?>

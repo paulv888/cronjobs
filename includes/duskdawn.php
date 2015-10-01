@@ -27,10 +27,10 @@ function getDuskDawn($station) {
 		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
 		$tss = date("H:i", strtotime($result->{'astronomy'}->{'sunset'}));
 
-		//PDOupsert("ha_mf_device_properties", Array('description' => 'Astronomy Sunrise', 'value' => $tsr), array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => 'Astronomy Sunrise'));
 		$properties['Astronomy Sunrise'] = $tsr;
 		$properties['Astronomy Sunset'] = $tss;
-		$feedback['updatestatus'] = UpdateStatus(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'status' => getStatusLink(Array('deviceID' => DEVICE_DARK_OUTSIDE))['status'], 'properties' => $properties));
+		$properties['Status'] = getStatusLink(Array('deviceID' => DEVICE_DARK_OUTSIDE))['status'];
+		$feedback['updatestatus'] = updateStatus(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'properties' => $properties));
    		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE));
 	}
 
@@ -39,11 +39,11 @@ function getDuskDawn($station) {
 }
 
 function GetDawn() {
-	return getPropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"));
+	return getDevicePropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"));
 }
 
 function GetDusk() {
-	return getPropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"));
+	return getDevicePropertyValue(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"));
 }
 
 ?>

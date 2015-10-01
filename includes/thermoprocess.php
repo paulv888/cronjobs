@@ -34,21 +34,21 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
 		
-		$result['status'] = $stat->Toggle($status);
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
 		
-		$properties['Value'] =  to_celcius($stat->temp);
+		$properties['Status'] = $stat->Toggle($status);
 		$properties['Temperature'] = to_celcius($stat->temp);
 		$properties['Setpoint'] =  to_celcius($stat->ttemp);
+		
 		if (!is_null($timervalue)) {
-			$properties['Timer Started'] = date("Y-m-d H:i:s");
+			$properties['Timer Date'] = date("Y-m-d H:i:s");
 			$properties['Timer Value'] = $timervalue;
 			$properties['Timer Remaining'] = $timervalue;
 		}
 		
 		$result['properties'] = $properties;
-		$feedback = UpdateStatus($result);
+		$feedback = updateStatus($result);
 		return $feedback;
 	}
 	catch( Exception $e )
@@ -91,16 +91,14 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat->getStat();
 		
 		$stat->TempAdd($addtemp);
-		$result['status'] = $stat->getTargetOnOff();
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
 		
-		$properties['Value'] =  to_celcius($stat->temp);
+		$properties['Status'] = $stat->getTargetOnOff();
 		$properties['Temperature'] = to_celcius($stat->temp);
 		$properties['Setpoint'] =  to_celcius($stat->ttemp);
-		
 		$result['properties'] = $properties;
-		$feedback = UpdateStatus($result);
+		$feedback = updateStatus($result);
 	
 		return $feedback;
 	}

@@ -188,8 +188,8 @@ function replaceFields(&$subject, &$message, $params){
 	`ha_mf_devices_thermostat`.`away_cool_temp_c` AS `ha_mf_devices_thermostat___away_cool_temp_c_raw`, `ha_mf_devices_thermostat`.`here_temp_cool_c` AS 
 	`ha_mf_devices_thermostat___here_temp_cool_c`, `ha_mf_devices_thermostat`.`here_temp_cool_c` AS `ha_mf_devices_thermostat___here_temp_cool_c_raw`, `ha_mf_monitor_triggers`.`id` 
 	AS `ha_mf_monitor_triggers___id`, `ha_mf_monitor_triggers`.`id` AS `ha_mf_monitor_triggers___id_raw`, `ha_mf_monitor_triggers`.`deviceID` AS `ha_mf_monitor_triggers___deviceID`,
-	`ha_mf_monitor_triggers`.`deviceID` AS `ha_mf_monitor_triggers___deviceID_raw`, `ha_mf_monitor_triggers`.`statuslink` AS `ha_mf_monitor_triggers___statuslink`,
-	`ha_mf_monitor_triggers`.`statuslink` AS `ha_mf_monitor_triggers___statuslink_raw`, `ha_mf_monitor_triggers`.`triggertype` AS `ha_mf_monitor_triggers___triggertype`,
+	`ha_mf_monitor_triggers`.`deviceID` AS `ha_mf_monitor_triggers___deviceID_raw`, `ha_mf_monitor_triggers`.`propertyID` AS `ha_mf_monitor_triggers___propertyID`,
+	`ha_mf_monitor_triggers`.`propertyID` AS `ha_mf_monitor_triggers___propertyID_raw`, `ha_mf_monitor_triggers`.`triggertype` AS `ha_mf_monitor_triggers___triggertype`,
 	`ha_mf_monitor_triggers`.`triggertype` AS `ha_mf_monitor_triggers___triggertype_raw`, `ha_mf_monitor_triggers`.`schemeID` AS `ha_mf_monitor_triggers___schemeID_raw`, 
 	`ha_remote_schemes`.`name` AS `ha_mf_monitor_triggers___schemeID`, `ha_mf_devices`.`id` AS slug , `ha_mf_devices`.`id` AS `__pk_val` FROM `ha_mf_devices` LEFT JOIN `ha_mf_locations` 
 	AS `ha_mf_locations` ON `ha_mf_locations`.`id` = `ha_mf_devices`.`locationID` LEFT JOIN `ha_mi_monitor_type` AS `ha_mi_monitor_type` ON `ha_mi_monitor_type`.

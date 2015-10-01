@@ -36,8 +36,10 @@ function loadremote($remoteID) {
 
 function loadRemotePaneContent($remoteID, $select) {
 
-    $resdivs = mysql_query('SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND remoteID = '.$remoteID.' ORDER BY sort');
-	$mycount=1;
+    
+    $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
+    $resdivs = mysql_query($mysql);
+    $mycount=1;
     while ($rowdivs = mysql_fetch_array($resdivs)) {
 		if ($mycount==1) {
 			echo '<div class="tab-pane active in" id="divid_'.$rowdivs['id'].'">';

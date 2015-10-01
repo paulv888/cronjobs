@@ -21,7 +21,7 @@ function graphCreate($params) {
 	if (!array_key_exists('1', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
 		//$result['error']="No Device selected";
 		//return $result;
-		$result = listProperties($devices);
+		$result = listDeviceProperties($devices);
 		$result = array_unique($result, SORT_NUMERIC);
 		//if (DEBUG_GRAPH) print_r($result);
 		$properties = implode(",", $result);
@@ -94,7 +94,7 @@ function graphCreate($params) {
 				if ($header != "Date") {
 					//print_r($rows[0]);
 					$t = explode('`',$header);
-					$propID = getPropertyID($t[0]);
+					$propID = getProperty($t[0])['id'];
 					if (($prodIdx = findByKeyValue($rowsprops,'id',$propID)) !== false) {
 						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
 						$rowsprops[$prodIdx]['color'] = colorDuplicateProperty($rows[0], $header, $rowsprops[$prodIdx]['color']);

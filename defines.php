@@ -17,7 +17,6 @@ define("SEVERITY_DANGER_CLASS", "alert-danger");
 define("SEVERITY_WARNING_CLASS", "alert");
 define("SEVERITY_INFO_CLASS", "alert-info");
 
-
 // Link Values
 define("LINK_DOWN", 0);
 define("LINK_UP", 1);
@@ -39,8 +38,8 @@ define("COMMAND_IO_SEND", 2 );		// Send or Outgoing
 define("COMMAND_IO_BOTH", 3 );		// Can be send or received
 
 // Status Values, Retrieved from command
-define("STATUS_ON", 1 );
 define("STATUS_OFF", 0 );
+define("STATUS_ON", 1 );
 define("STATUS_UNKNOWN", 2 );
 define("STATUS_ERROR", -1 );
 define("STATUS_NOT_DEFINED", 10);		// Used for defining status on commands 
@@ -184,6 +183,7 @@ define("CONDITION_EQUAL", 30);
 
 define("THERMO_CONNECTION_TIMEOUT", 10);
 
+define("PRIORITY_HIDE", 99);
 
 define("REPEAT_ONCE_DAY", 0);
 define("REPEAT_ONCE_HOUR", 60);
