@@ -72,7 +72,7 @@ function loadRemoteDiv($divid) {
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (strlen($rowremotekeys['deviceID'])>0) {
-					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, monitortypeID, booticon FROM ha_mf_devices ' .
+					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, booticon FROM ha_mf_devices ' .
 							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$rowremotekeys['deviceID'].
 							' AND inuse = 1' ;
 					$resdevices = mysql_query($mysql);
@@ -91,27 +91,17 @@ function loadRemoteDiv($divid) {
 								$booticon = null;
 							}
 						}
-						if ($rowdevices['monitortypeID']==MONITOR_STATUS || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-							$resmonitor = mysql_query("SELECT ha_mf_monitor_status.status FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$rowremotekeys['deviceID']);
-							if  ($resmonitor) {
-								$rowmonitor = mysql_fetch_array($resmonitor);
-								if ($rowmonitor) {
-									$status = ($rowmonitor['status'] == STATUS_ON ? 'on' : 
-											  ($rowmonitor['status'] == STATUS_OFF ? 'off' : 
-											   ($rowmonitor['status'] == STATUS_UNKNOWN ? 'unknown' : 
-											   ($rowmonitor['status'] == STATUS_ERROR ? 'error' : 
-											   'undefined'))));
-								} else {
-									$status = '';
-								}
-							}
+						// Really should read all at once
+						$statuslink = getStatusLink(Array('deviceID' => $rowremotekeys['deviceID']));
+						if (array_key_exists('status',$statuslink)) {
+							$status = ($statuslink['status'] == STATUS_ON ? 'on' : 
+									($statuslink['status'] == STATUS_OFF ? 'off' : 
+									($statuslink['status'] == STATUS_UNKNOWN ? 'unknown' : 
+									($statuslink['status'] == STATUS_ERROR ? 'error' : 
+									  'undefined'))));
 						}
-						if ($rowdevices['monitortypeID']==MONITOR_LINK || $rowdevices['monitortypeID']==MONITOR_LINK_STATUS) {
-							$resmonitor = mysql_query("SELECT link FROM ha_mf_monitor_link WHERE deviceID =".$rowremotekeys['deviceID']);
-							if  ($resmonitor) {
-								$rowmonitor = mysql_fetch_array($resmonitor);
-									$link = ($rowmonitor['link'] == LINK_UP ? '' : ($rowmonitor['link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
-							}
+						if (array_key_exists('link',$statuslink)) {
+							$link = ($statuslink['link'] == LINK_UP ? '' : ($statuslink['link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
 						}
 					}
 				}
@@ -267,9 +257,6 @@ function getDisplayText($row) {
 	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
 		$text = (!empty($row['inputoptions']) ? $row['inputoptions'] : $row['name']);
 		if ($row['inputtype']=="btndropdown") $text = $row['name'];
-		// var_dump($row['inputoptions']);
-		// echo (!empty($row['inputoptions']) ? "Not Emp" : "Empt" ).CRLF;
-		// var_dump($text);
 	}
 	$text = rtrim($text);
 	return $text;

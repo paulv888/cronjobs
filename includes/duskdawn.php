@@ -30,7 +30,7 @@ function getDuskDawn($station) {
 		$properties['Astronomy Sunrise'] = $tsr;
 		$properties['Astronomy Sunset'] = $tss;
 		$properties['Status'] = getStatusLink(Array('deviceID' => DEVICE_DARK_OUTSIDE))['status'];
-		$feedback['updatestatus'] = updateStatus(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'properties' => $properties));
+		$feedback['updatestatus'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'properties' => $properties));
    		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => DEVICE_DARK_OUTSIDE));
 	}
 

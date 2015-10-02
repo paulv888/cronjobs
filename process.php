@@ -131,10 +131,12 @@ function executeCommand($callerparams) {
 	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
 
 	if ($feedback['show_result']) {
-		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1, 'error' => 1);
+//		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1, 'error' => 1);
+		$filterkeep = array( 'status' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1, 'error' => 1);
 		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
-		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1, 'error' => 1);
+//		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1, 'error' => 1);
+		$filterkeep = array( 'status' => 1, 'deviceID' => 1, 'link' => 1, 'error' => 1);
 		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1), $filterkeep, $result);
 	}
 	if (DEBUG_RETURN) echo "Filtered: >";
@@ -228,7 +230,8 @@ function SendCommand($thiscommand) {
 		$commandclassID = $rowdevices['commandclassID'];
 		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
 
-		$resmonitor = mysql_query("SELECT status, invertstatus FROM ha_mf_monitor_status WHERE ha_mf_monitor_status.deviceID =".$thiscommand['deviceID']);
+		$resmonitor = mysql_query("SELECT invertstatus FROM ha_mf_monitor_property WHERE propertyID = 123 AND deviceID =".$thiscommand['deviceID']);
+		$status = getDevicePropertyValue(Array('deviceID' => $thiscommand['deviceID'],'description' => 'Status'));
 		$rowmonitor = mysql_fetch_array($resmonitor);
 
 		// Special handling for toggle
@@ -237,8 +240,8 @@ function SendCommand($thiscommand) {
 				$thiscommand['commandID'] = COMMAND_ON;						
 			} else {
 				if ($rowmonitor) {
-					if (DEBUG_DEVICES) echo "Status Toggle: ".$rowmonitor['status'].CRLF;
-					$thiscommand['commandID'] = ($rowmonitor['status'] == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
+					if (DEBUG_DEVICES) echo "Status Toggle: ".$status.CRLF;
+					$thiscommand['commandID'] = ($status == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
 				} else {		// not status monitoring 
 					if (DEBUG_DEVICES) echo "NO STATUS RECORD FOUND, GETTING OUT".CRLF;
 					return;
@@ -248,7 +251,7 @@ function SendCommand($thiscommand) {
 		
 		// Invert Status is set
 		if ($rowmonitor && !$rowmonitor['invertstatus']) {  
-			if (DEBUG_DEVICES) echo "Status Invert: ".$rowmonitor['status'].CRLF;
+			if (DEBUG_DEVICES) echo "Status Invert: ".$status.CRLF;
 			if ($thiscommand['commandID'] == COMMAND_OFF) {
 				$thiscommand['commandID'] = COMMAND_ON;
 			} elseif ($thiscommand['commandID'] == COMMAND_ON) {
@@ -328,8 +331,10 @@ function SendCommand($thiscommand) {
 		if (!array_key_exists('error', $feedback)) {
 			$result[] = ($thiscommand['commandID'] == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $thiscommand['commandvalue'];
-			$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
-			$feedback['updatestatus'] = updateStatus($thiscommand);
+			if (strtoupper(getDevicePropertyValue(Array('deviceID' => $thiscommand['deviceID'], 'description' => 'Dimmable'))) == "YES") {
+				$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
+			}
+			$feedback['updatestatus'] = updateDeviceProperties($thiscommand);
 		}
 		break;
 	case COMMAND_CLASS_X10_INSTEON:
@@ -372,8 +377,10 @@ function SendCommand($thiscommand) {
 		if (!array_key_exists('error', $feedback)){
 			$result[] = ($thiscommand['commandID'] == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
 			$result[] = $thiscommand['commandvalue'];
-			$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
-			$feedback['updatestatus'] = updateStatus($thiscommand);
+			if (strtoupper(getDevicePropertyValue(Array('deviceID' => $thiscommand['deviceID'], 'description' => 'Dimmable'))) == "YES") {
+				$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
+			}
+			$feedback['updatestatus'] = updateDeviceProperties($thiscommand);
 		}
 		break;
 	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
@@ -458,8 +465,8 @@ function SendCommand($thiscommand) {
 			break;
 		}
 		if ($rowcommands['need_device']) {
-			$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
-			$feedback['updatestatus'] = updateStatus($thiscommand);
+			//$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
+			$feedback['updatestatus'] = updateDeviceProperties($thiscommand);
 		}
 		break;
 	default:								// Everything else Ard/Sony/Cam/Irrigation/Virtual Devices
@@ -521,7 +528,7 @@ function SendCommand($thiscommand) {
 			break;
 		}
 		$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
-		$feedback['updatestatus'] = updateStatus($thiscommand);
+		$feedback['updatestatus'] = updateDeviceProperties($thiscommand);
 		break;		
 	}
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message' => $feedback, 'loglevel' => $thiscommand['loglevel']));
@@ -747,10 +754,11 @@ function RemoteKeys($result) {
 				$feedback['message'] = $res['error'].' ';
 			}
 		} else {
-			if (!empty($node)) {
+			if (!empty($res)) {
 				if (array_key_exists('updatestatus', $res)) $node = 'updatestatus';
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 				$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
+				
 				while ($rowkeys = mysql_fetch_array($reskeys)) {
 					if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 						$feedback[][$node] = true;

@@ -41,8 +41,7 @@ if (!($sdata=="")) { 					//import_event
 	} else {
 		$message['data'] = $rcv_message['Status'];
 	}
-	$devType = getDeviceType($message['deviceID']);
-	$message['typeID'] = $devType['id'];
+	$message['typeID'] = getDeviceType($message['deviceID'])['id'];
 	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
 	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
@@ -101,7 +100,7 @@ if (!($sdata=="")) { 					//import_event
 		}
 		$properties['Status'] = $rcv_message['Status'];
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		updateStatus(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'properties' => $properties));
+		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'properties' => $properties));
 		updateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }

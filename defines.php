@@ -2,12 +2,6 @@
 // process configuration
 define("INSTEON_SLEEP_MICRO", 300000); // 500mS
 
-// Monitor Link Values
-define("MONITOR_NONE", 1);
-define("MONITOR_LINK", 2);
-define("MONITOR_STATUS", 3);
-define("MONITOR_LINK_STATUS", 4);
-
 define("SEVERITY_NONE", 0);
 define("SEVERITY_DANGER", 1);
 define("SEVERITY_WARNING", 2);

@@ -97,8 +97,13 @@ function graphCreate($params) {
 					$propID = getProperty($t[0])['id'];
 					if (($prodIdx = findByKeyValue($rowsprops,'id',$propID)) !== false) {
 						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
-						$rowsprops[$prodIdx]['color'] = colorDuplicateProperty($rows[0], $header, $rowsprops[$prodIdx]['color']);
-						if (!empty($rowsprops[$prodIdx]['color'])) $datastr.='data-graph-color="'.$rowsprops[$prodIdx]['color'].'" ';
+						if (!empty($rowsprops[$prodIdx]['color'])) {
+							if (strpos($rowsprops[$prodIdx]['color'],",")>0) { 	// First time  read RGB from DB
+								$rowsprops[$prodIdx]['color'] = rgb2hex(explode(",",$rowsprops[$prodIdx]['color']));
+							}
+							$rowsprops[$prodIdx]['color'] = colorDuplicateProperty($rows[0], $header, $rowsprops[$prodIdx]['color']);
+							$datastr.='data-graph-color="'.$rowsprops[$prodIdx]['color'].'" ';
+						}
 						if (!empty(trim($rowsprops[$prodIdx]['dash_style']))) $datastr.='data-graph-dash-style="'.$rowsprops[$prodIdx]['dash_style'].'" ';
 						if ($rowsprops[$prodIdx]['hidden']==1) $datastr.='data-graph-hidden="'.$rowsprops[$prodIdx]['hidden'].'" ';
 						if ($rowsprops[$prodIdx]['skip']) $datastr.='data-graph-skip="'.$rowsprops[$prodIdx]['skip'].'" ';

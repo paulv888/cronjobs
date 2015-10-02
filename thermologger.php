@@ -93,7 +93,7 @@ function UpdateTemps() {
 				$properties['Temperature'] = to_celcius($stat->temp);
 				$properties['Setpoint'] = to_celcius($target);
 				$properties['Status'] = $stat->getTargetOnOff();
-				updateStatus(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'properties' => $properties));
+				updateDeviceProperties(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'properties' => $properties));
 	
 				//$runTimeData = $stat->getDataLog();
 				$stat->getDataLog();

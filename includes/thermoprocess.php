@@ -48,7 +48,7 @@ $now = date( 'Y-m-d H:i:s' );
 		}
 		
 		$result['properties'] = $properties;
-		$feedback = updateStatus($result);
+		$feedback = updateDeviceProperties($result);
 		return $feedback;
 	}
 	catch( Exception $e )
@@ -98,7 +98,7 @@ $now = date( 'Y-m-d H:i:s' );
 		$properties['Temperature'] = to_celcius($stat->temp);
 		$properties['Setpoint'] =  to_celcius($stat->ttemp);
 		$result['properties'] = $properties;
-		$feedback = updateStatus($result);
+		$feedback = updateDeviceProperties($result);
 	
 		return $feedback;
 	}

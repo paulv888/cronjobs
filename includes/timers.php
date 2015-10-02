@@ -126,7 +126,7 @@ function updateTimers($dummy) {
 		} else {
 			if ($device['Timer Value'] > 0) {
 				$minutes = (int)$device['Timer Value']-(int)(abs(time() - strtotime($device['Timer Date'])) / 60);
-				$deviceproperty['propertyID'] = getProperty('Timer Remaining');
+				$deviceproperty['propertyID'] = getProperty('Timer Remaining')['id'];
 				$deviceproperty['deviceID'] = $key;
 				$deviceproperty['value'] = $minutes;
 				PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
