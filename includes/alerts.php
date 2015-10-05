@@ -13,14 +13,14 @@ function Alerts($alert_textID , $params ) {
 	$message  = $rowtext['message'];
 	
 if (DEBUG_ALERT) {
-	echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
+	echo "<pre>Alerts Params123: "; print_r($params); echo "</pre>";
 }
 	
 	replaceText($subject, $message, $params);
 		
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 
-	$inserts = PDOInsert("ha_alerts", array('deviceID' => $params['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID']));
+	$inserts = PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID']));
 	
 	return $inserts;
 }
@@ -192,8 +192,8 @@ if (DEBUG_ALERT) {
 	echo "<pre>"; echo "DATA2:"; print_r ($params); echo "</pre>";
 	echo "<pre>"; echo "PATTERN2:"; print_r ($pattern); echo "</pre>";
 }
-		$subject = preg_replace($pattern, $params, $subject);
-		if ($message != Null) $message=preg_replace($pattern, $params, $message); 
+		$subject = preg_replace_array($pattern, $params, $subject);
+		if ($message != Null) $message=preg_replace_array($pattern, $params, $message); 
 	}
 	
 
@@ -215,11 +215,21 @@ if (DEBUG_ALERT) {
 			if ($message != Null) $message=preg_replace($pattern, $newprops, $message); 
 		}
 	}
-	
+
+
 if (DEBUG_ALERT) {
 	echo "<pre>"; echo $subject.CRLF; echo "</pre>";
 	echo "<pre>"; echo $message.CRLF; echo "</pre>";
 }	
 	return true;
 }
+
+function preg_replace_array($pattern, $replacement, $subject, $limit=-1) {
+    if (is_array($subject)) {
+        foreach ($subject as &$value) $value=preg_replace_array($pattern, $replacement, $value, $limit);
+        return $subject;
+    } else {
+        return preg_replace($pattern, $replacement, $subject, $limit);
+    }
+}  
 ?>

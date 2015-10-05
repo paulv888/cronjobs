@@ -70,8 +70,11 @@ while (true) {
 				}
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
+				
+					$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $message['deviceID']));
+					$device['properties'] = $properties;
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-							'commandID' => $message['commandID'], 'properties' => $properties, 'caller' => $message)))."</br>\n";
+							'commandID' => $message['commandID'], 'device' => $device, 'caller' => $message)))."</br>\n";
 					echo date("Y-m-d H:i:s").": ".'Update Link: '.updateLink (array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
 							'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID'], 'caller' => $message))."</br>\n";
 				}

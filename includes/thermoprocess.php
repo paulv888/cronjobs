@@ -33,21 +33,23 @@ $now = date( 'Y-m-d H:i:s' );
 		$thermostatRec = $thermostats[$deviceID];
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
-		
+	
+		$result['device']['previous_properties'] = getDeviceProperty(Array('deviceID' => $thermostatRec['deviceID']));
+
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
 		
-		$properties['Status'] = $stat->Toggle($status);
-		$properties['Temperature'] = to_celcius($stat->temp);
-		$properties['Setpoint'] =  to_celcius($stat->ttemp);
+		$properties['Status']['value'] = $stat->Toggle($status);
+		$properties['Temperature']['value'] = to_celcius($stat->temp);
+		$properties['Setpoint']['value'] =  to_celcius($stat->ttemp);
 		
 		if (!is_null($timervalue)) {
-			$properties['Timer Date'] = date("Y-m-d H:i:s");
-			$properties['Timer Value'] = $timervalue;
-			$properties['Timer Remaining'] = $timervalue;
+			$properties['Timer Date']['value'] = date("Y-m-d H:i:s");
+			$properties['Timer Value']['value'] = $timervalue;
+			$properties['Timer Remaining']['value'] = $timervalue;
 		}
 		
-		$result['properties'] = $properties;
+		$result['device']['properties'] = $properties;
 		$feedback = updateDeviceProperties($result);
 		return $feedback;
 	}
@@ -90,14 +92,16 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
 		
+		$result['device']['previous_properties'] = getDeviceProperty(Array('deviceID' => $thermostatRec['deviceID']));
 		$stat->TempAdd($addtemp);
+
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
 		
-		$properties['Status'] = $stat->getTargetOnOff();
-		$properties['Temperature'] = to_celcius($stat->temp);
-		$properties['Setpoint'] =  to_celcius($stat->ttemp);
-		$result['properties'] = $properties;
+		$properties['Status']['value'] = $stat->getTargetOnOff();
+		$properties['Temperature']['value'] = to_celcius($stat->temp);
+		$properties['Setpoint']['value'] =  to_celcius($stat->ttemp);
+		$result['device']['properties'] = $properties;
 		$feedback = updateDeviceProperties($result);
 	
 		return $feedback;

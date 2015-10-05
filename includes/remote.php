@@ -92,16 +92,16 @@ function loadRemoteDiv($divid) {
 							}
 						}
 						// Really should read all at once
-						$statuslink = getStatusLink(Array('deviceID' => $rowremotekeys['deviceID']));
-						if (array_key_exists('status',$statuslink)) {
-							$status = ($statuslink['status'] == STATUS_ON ? 'on' : 
-									($statuslink['status'] == STATUS_OFF ? 'off' : 
-									($statuslink['status'] == STATUS_UNKNOWN ? 'unknown' : 
-									($statuslink['status'] == STATUS_ERROR ? 'error' : 
+						$statuslink = getStatusLink($rowremotekeys['deviceID']);
+						if (array_key_exists('Status',$statuslink)) {
+							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
+									($statuslink['Status'] == STATUS_OFF ? 'off' : 
+									($statuslink['Status'] == STATUS_UNKNOWN ? 'unknown' : 
+									($statuslink['Status'] == STATUS_ERROR ? 'error' : 
 									  'undefined'))));
 						}
-						if (array_key_exists('link',$statuslink)) {
-							$link = ($statuslink['link'] == LINK_UP ? '' : ($statuslink['link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
+						if (array_key_exists('Link',$statuslink)) {
+							$link = ($statuslink['Link'] == LINK_UP ? '' : ($statuslink['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
 						}
 					}
 				}

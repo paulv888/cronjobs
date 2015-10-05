@@ -111,21 +111,21 @@ function checkTime ($setupstart,$setupend, $offset) {
 function updateTimers($dummy) {
 // PHP Command Dummy parm
 
-	$devs = getDeviceProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
+	$devs = getDevicesWithProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
 	
 	$feedback = "";
 	foreach ($devs as $key => $device) {
 		//if (DEBUG_TIMERS) print_r($device);
-		if (!array_key_exists('Timer Date', $device)) $devs[$key]['Timer Date']="1970-01-01";
-		if (!array_key_exists('Timer Value', $device)) $devs[$key]['Timer Value']=0;
-		if (!array_key_exists('Timer Remaining', $device)) $devs[$key]['Timer Remaining']=0;
-		$timerStarted = $device['Timer Date'];
-		if ($testvalue[] = $device['Timer Value'] > 0 && timeExpired($timerStarted, $device['Timer Value'])) {
-			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
+		if (!array_key_exists('Timer Date', $device)) $devs[$key]['Timer Date']['value']="1970-01-01";
+		if (!array_key_exists('Timer Value', $device)) $devs[$key]['Timer Value']['value']=0;
+		if (!array_key_exists('Timer Remaining', $device)) $devs[$key]['Timer Remaining']['value']=0;
+		$timerStarted = $device['Timer Date']['value'];
+		if ($testvalue[] = $device['Timer Value']['value'] > 0 && timeExpired($timerStarted, $device['Timer Value']['value'])) {
+			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
 			//echo 'ExecuteCommand:'.$key.'-----'.executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
 		} else {
-			if ($device['Timer Value'] > 0) {
-				$minutes = (int)$device['Timer Value']-(int)(abs(time() - strtotime($device['Timer Date'])) / 60);
+			if ($device['Timer Value']['value'] > 0) {
+				$minutes = (int)$device['Timer Value']['value']-(int)(abs(time() - strtotime($device['Timer Date']['value'])) / 60);
 				$deviceproperty['propertyID'] = getProperty('Timer Remaining')['id'];
 				$deviceproperty['deviceID'] = $key;
 				$deviceproperty['value'] = $minutes;
@@ -148,9 +148,9 @@ function startTimer($params) {
 	$thiscommand['commandID'] = COMMAND_ON;
 	$thiscommand['timervalue'] = $params['commandvalue'];
 	$thiscommand['deviceID'] = $params['deviceID'];
-	$thiscommand['properties']['Timer Date'] = date("Y-m-d H:i:s");
-	$thiscommand['properties']['Timer Value'] = $params['commandvalue'];
-	$thiscommand['properties']['Timer Remaining'] = $params['commandvalue'];
+	$thiscommand['device']['properties']['Timer Date']['value'] = date("Y-m-d H:i:s");
+	$thiscommand['device']['properties']['Timer Value']['value'] = $params['commandvalue'];
+	$thiscommand['device']['properties']['Timer Remaining']['value'] = $params['commandvalue'];
 	$feedback['SendCommand']=sendCommand($thiscommand); 
 	return $feedback;
 }

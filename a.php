@@ -41,7 +41,7 @@ if (!($sdata=="")) { 					//import_event
 	} else {
 		$message['data'] = $rcv_message['Status'];
 	}
-	$message['typeID'] = getDeviceType($message['deviceID'])['id'];
+	$message['typeID'] = getDevice($message['deviceID'])['typeID'];
 	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
 	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
@@ -53,54 +53,58 @@ if (!($sdata=="")) { 					//import_event
 		if ($message['commandID'] == COMMAND_PING || $message['commandID'] == COMMAND_SET_RESULT) {
 		if ($message['typeID'] == DEV_TYPE_ARDUINO_MODULES) {
 			// Extended Data is there
-			$properties['Memory'] = $rcv_message['ExtData']['M'];
-			$properties['Uptime'] = $rcv_message['ExtData']['U'];
+			$properties['Memory']['value'] = $rcv_message['ExtData']['M'];
+			$properties['Uptime']['value'] = $rcv_message['ExtData']['U'];
 		}
 		if ($message['typeID'] == DEV_TYPE_LIGHT_SENSOR_ANALOG) {
 			// Extended Data is there
-			$properties['Value'] = $rcv_message['ExtData']['V'];
-			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
-			$properties['Threshold'] = $rcv_message['ExtData']['T'];
+			$properties['Value']['value'] = $rcv_message['ExtData']['V'];
+			$properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
 		}
 		if ($message['typeID'] == DEV_TYPE_AUTO_DOOR) {
 			// Extended Data is there
-			$properties['Power'] = $rcv_message['ExtData']['P'];
-			$properties['Direction'] = $rcv_message['ExtData']['D'];
-			$properties['Top Switch'] = $rcv_message['ExtData']['T'];
-			$properties['Bottom Switch'] = $rcv_message['ExtData']['B'];
+			$properties['Power']['value'] = $rcv_message['ExtData']['P'];
+			$properties['Direction']['value'] = $rcv_message['ExtData']['D'];
+			$properties['Top Switch']['value'] = $rcv_message['ExtData']['T'];
+			$properties['Bottom Switch']['value'] = $rcv_message['ExtData']['B'];
 		}
 		if ($message['typeID'] ==  DEV_TYPE_THERMOSTAT_ARD_HEAT || $message['typeID'] == DEV_TYPE_THERMOSTAT_ARD_COOL) {
 			// Extended Data is there
-			$properties['Temperature'] = $rcv_message['ExtData']['V'];
-			$properties['IsRunning'] = $rcv_message['ExtData']['R'];
-			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
-			$properties['Threshold'] = $rcv_message['ExtData']['T'];
+			$properties['Temperature']['value'] = $rcv_message['ExtData']['V'];
+			$properties['IsRunning']['value'] = $rcv_message['ExtData']['R'];
+			$properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
 
 			$heatStatus = false;
 			$coolStatus = false;
 			$fanStatus  = false;
 			if ($message['typeID'] == DEV_TYPE_THERMOSTAT_ARD_HEAT) {
-				$heatStatus = $properties['IsRunning'] == 1;
+				$heatStatus = $properties['IsRunning']['value'] == 1;
 			} else {
-				$coolStatus = $properties['IsRunning'] == 1;
+				$coolStatus = $properties['IsRunning']['value'] == 1;
 			}
 			updateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
 			updateDailyRuntime($message['deviceID']);
 		}
 		if ($message['typeID'] == DEV_TYPE_WATER_LEVEL) {
 			// Extended Data is there
-			$properties['Value'] = $rcv_message['ExtData']['V'];
-			$properties['Setpoint'] = $rcv_message['ExtData']['S'];
-			$properties['Threshold'] = $rcv_message['ExtData']['T'];
+			$properties['Value']['value'] = $rcv_message['ExtData']['V'];
+			$properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+			$properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
 		}
 		if ($message['typeID'] == DEV_TYPE_TEMP_HUMIDITY) {
-			$properties['Temperature'] = $rcv_message['ExtData']['T'];
-			$properties['Humidity'] = $rcv_message['ExtData']['H'];
+			$properties['Temperature']['value'] = $rcv_message['ExtData']['T'];
+			$properties['Humidity']['value'] = $rcv_message['ExtData']['H'];
 		}
 		}
-		$properties['Status'] = $rcv_message['Status'];
+		$properties['Status']['value'] = $rcv_message['Status'];
+		
+		$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $message['deviceID']));
+		$device['properties'] = $properties;
+		
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
-		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'properties' => $properties));
+		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
 		updateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }

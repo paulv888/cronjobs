@@ -5,7 +5,6 @@ if(!window.scriptRemoteHasRun) {
 	var COMMAND_GET_GROUP = 282;
 	var COMMAND_GET_VALUE = 136;
 	var MY_DEVICE_ID = 164;
-	var GROUP_SELECT_MODE = 100;
 	var GROUP_NO_SELECTED = 0;
 	var DIM_NO_SELECTED = 19;
 	var COMMAND_SET_VALUE = 145;
@@ -40,21 +39,17 @@ if(!window.scriptRemoteHasRun) {
 		$$('.click-up').removeEvents('click');
 		$$('.click-up').addEvent('click', function(event){
 			event.stop();
-			if ($$('#group').get('data-myvalue') !=  GROUP_SELECT_MODE) {
-				var commandvalue = 100;
-				
-				// check if in dim mode
-				commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
-				if (commandvalue ==  DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
-				var keys = [];
-				keys.push(this.get("data-remotekey"));
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
-				resetSelection();
-				this.addClass('group-select');
-				callAjax (params) ;
-			} else {
-				this.toggleClass('group-select');
-			}
+			var commandvalue = 100;
+			
+			// check if in dim mode
+			commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
+			if (commandvalue ==  DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
+			var keys = [];
+			keys.push(this.get("data-remotekey"));
+			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
+			resetSelection();
+			this.addClass('group-select');
+			callAjax (params) ;
 		});	
 
 		// Generic dropdown button
@@ -85,10 +80,7 @@ if(!window.scriptRemoteHasRun) {
 			mbut.firstChild.textContent = ' '+this.text;
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
-			if (selected == GROUP_SELECT_MODE)  {			// Select Mode 
-				mbut.addClass('btn-info');
-				mbut.removeClass('btn-success');
-			} else if (selected == GROUP_NO_SELECTED){
+			if (selected == GROUP_NO_SELECTED){
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-success');
 				resetSelection();

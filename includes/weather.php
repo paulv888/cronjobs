@@ -23,10 +23,12 @@ function loadWeather($station) {
             	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
             	if ($feedback) {
             		$xml = new SimpleXMLElement($get->getresponse());
-					$properties['Temperature'] = $xml->temp_c;
-					$properties['Humidity'] = $xml->relative_humidity;
-					$properties['Status'] = STATUS_ON;
-					updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'properties' => $properties));
+					$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $mydeviceID[$station]));
+					$properties['Temperature']['value'] = $xml->temp_c;
+					$properties['Humidity']['value'] = $xml->relative_humidity;
+					$properties['Status']['value'] = STATUS_ON;
+					$device['properties'] = $properties;
+					updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'device' => $device));
             		updateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
                 	$success = true; 
             	}
@@ -64,7 +66,7 @@ function getYahooWeather($station) {
 		$properties['Temperature'] = $result->{'item'}->{'condition'}->{'temp'};
 		$properties['Humidity'] =  $result->{'atmosphere'}->{'humidity'};
 		$properties['Status'] = STATUS_ON;
-		$feedback['updatestatus'] = updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'properties' => $properties));
+		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'properties' => $properties));
 		$array['deviceID'] = $mydeviceID[$station];
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
 		$array['temp'] = $result->{'item'}->{'condition'}->{'temp'};
