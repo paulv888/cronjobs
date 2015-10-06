@@ -262,7 +262,7 @@ function SendCommand($thiscommand) {
 			if (array_key_exists('Dimmable', $thiscommand['device']['previous_properties'])) $dimmable = strtoupper($thiscommand['device']['previous_properties']['Dimmable']['value']);
 		}
 		// Invert Status is set
-		if (isset($rowmonitor) && $rowmonitor['invertstatus']===0) {  
+		if (isset($rowmonitor) && $rowmonitor['invertstatus'] == "0") {  
 			if (DEBUG_DEVICES) echo "Status Invert: ".$status.CRLF;
 			if ($thiscommand['commandID'] == COMMAND_OFF) {
 				$thiscommand['commandID'] = COMMAND_ON;

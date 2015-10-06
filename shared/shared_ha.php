@@ -175,7 +175,7 @@ function updateStatus(&$params)
 
 		// Are we monitoring Status?
 		if ($params['device']['previous_properties']['Status']['active']) {
-			if ($params['device']['previous_properties']['Status']['invertstatus'] == 0) {
+			if ($params['device']['previous_properties']['Status']['invertstatus'] == "0") {
 				if (DEBUG_HA) echo "Status Invert".CRLF;
 				if ($params['commandID'] == COMMAND_ON) {
 					$params['device']['properties']['Status']['value'] = STATUS_OFF;
