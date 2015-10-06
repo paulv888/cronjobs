@@ -7,47 +7,13 @@ define('IMAGE_CACHE',"/images/yahoo/");
 define('FRONT_DIR',"/images/yahoo/");
 //if (!defined(MY_DEVICE_ID)) define( MY_DEVICE_ID, 97);
 
-function loadWeather($station) {
+function getYahooWeather($params) {
 
+	$station = $params['commandvalue'];
+	$deviceID = $params['deviceID'];
+	
 	ini_set('max_execution_time',30);
 
-	$mydeviceID = array("KBHM" => 65 , "KEET" => 66);
-	$retry = 5;
-        $success = False;
-
-        while ($retry > 0 && !$success) {
-            try {
-
-            	$url= WEATHER_URL.$station.".xml";
-            	$get = restClient::get($url);
-            	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
-            	if ($feedback) {
-            		$xml = new SimpleXMLElement($get->getresponse());
-					$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $mydeviceID[$station]));
-					$properties['Temperature']['value'] = $xml->temp_c;
-					$properties['Humidity']['value'] = $xml->relative_humidity;
-					$properties['Status']['value'] = STATUS_ON;
-					$device['properties'] = $properties;
-					updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'device' => $device));
-            		updateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
-                	$success = true; 
-            	}
-        	}
-            catch (Exception $e) {
-                //Error trapping
-                //My.Application.Log.WriteException(exc, TraceEventType.Error, "Error reading data from" & My.Settings.WeatherUrl & MyStation & ".xml", 301)
-                 echo 'Caught exception: ',  $e->getMessage(), "\n";
-			} 
-			$retry = $retry - 1;
-		}
-	return ($success ? true : false);
-}
-
-function getYahooWeather($station) {
-
-	ini_set('max_execution_time',30);
-
-	$mydeviceID = array("USAL0594" => 196);
 	//USAL0594
 
 	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
@@ -63,11 +29,15 @@ function getYahooWeather($station) {
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
-		$properties['Temperature'] = $result->{'item'}->{'condition'}->{'temp'};
-		$properties['Humidity'] =  $result->{'atmosphere'}->{'humidity'};
-		$properties['Status'] = STATUS_ON;
-		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'properties' => $properties));
-		$array['deviceID'] = $mydeviceID[$station];
+		
+		$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $deviceID));
+		$properties['Temperature']['value'] = $result->{'item'}->{'condition'}->{'temp'};
+		$properties['Humidity']['value'] =  $result->{'atmosphere'}->{'humidity'};
+		$properties['Status']['value'] = STATUS_ON;
+		$device['properties'] = $properties;
+		
+		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $deviceID, 'device' => $device));
+		$array['deviceID'] = $deviceID;
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
 		$array['temp'] = $result->{'item'}->{'condition'}->{'temp'};
 		$array['humidity'] = $result->{'atmosphere'}->{'humidity'};
@@ -120,13 +90,13 @@ function getYahooWeather($station) {
 		if ($row['severity'] == SEVERITY_WARNING) {
 			$array['class'] = SEVERITY_WARNING_CLASS;
 		}
-		PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $mydeviceID[$station]));
+		PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $deviceID));
 	
 		unset($array);
 		$i = 0;
 		foreach ($result->{'item'}->{'forecast'} as $forecast) {
 			//print_r($forecast);
-			$array['deviceID'] = $mydeviceID[$station];
+			$array['deviceID'] = $deviceID;
 			$array['mdate'] = date("Y-m-d H:i:s",strtotime($forecast->{'date'}));
 			$array['day'] = $forecast->{'day'};
 			//if ($i == 0) $array['day'] = $array['day'];
@@ -151,7 +121,7 @@ function getYahooWeather($station) {
 			$i++;
 		}
 
-   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
+   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $deviceID));
 	}
 
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
@@ -191,5 +161,41 @@ function get_url($url) {
 	$content = curl_exec($ch);
 	curl_close($ch);
 	return $content;
+}
+
+function loadWeather($station) {
+
+	ini_set('max_execution_time',30);
+
+	$mydeviceID = array("KBHM" => 65 , "KEET" => 66);
+	$retry = 5;
+        $success = False;
+
+        while ($retry > 0 && !$success) {
+            try {
+
+            	$url= WEATHER_URL.$station.".xml";
+            	$get = restClient::get($url);
+            	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
+            	if ($feedback) {
+            		$xml = new SimpleXMLElement($get->getresponse());
+					$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $mydeviceID[$station]));
+					$properties['Temperature']['value'] = $xml->temp_c;
+					$properties['Humidity']['value'] = $xml->relative_humidity;
+					$properties['Status']['value'] = STATUS_ON;
+					$device['properties'] = $properties;
+					updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'device' => $device));
+            		updateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
+                	$success = true; 
+            	}
+        	}
+            catch (Exception $e) {
+                //Error trapping
+                //My.Application.Log.WriteException(exc, TraceEventType.Error, "Error reading data from" & My.Settings.WeatherUrl & MyStation & ".xml", 301)
+                 echo 'Caught exception: ',  $e->getMessage(), "\n";
+			} 
+			$retry = $retry - 1;
+		}
+	return ($success ? true : false);
 }
 ?>

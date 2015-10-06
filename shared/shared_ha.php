@@ -1,7 +1,6 @@
 <?php
-
-// define( 'DEBUG_HA', TRUE );
-// define( 'DEBUG_PROPERTIES', TRUE );
+//define( 'DEBUG_HA', TRUE );
+//define( 'DEBUG_PROPERTIES', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
 
@@ -103,7 +102,7 @@ function updateLink($params)
 					  "`link` = '" . LINK_WARNING . "'" .
 					  " WHERE(`deviceID` ='" . $params['deviceID'] . "')";
 			if (!mysql_query($mysql)) mySqlError($mysql);
-			$params['device']['properties']['Link'] = LINK_WARNING;
+			$params['device']['properties']['Link']['value'] = LINK_WARNING;
 			setDevicePropertyValue($params, 'Link');
 			return true;			// Done exit
 		}
@@ -119,7 +118,7 @@ function updateLink($params)
 							  " `link` = '" . $params['link'] . "'" .
 							  " WHERE(`deviceID` ='" . $params['deviceID'] . "')";
 					if (!mysql_query($mysql)) mySqlError($mysql);
-					$params['device']['properties']['Link'] = $params['link'];
+					$params['device']['properties']['Link']['value'] = $params['link'];
 					setDevicePropertyValue($params, 'Link');
 					$result = HandleTriggers($params, '225', TRIGGER_AFTER_CHANGE);
 					if (!empty($result)) print_r ($result);
@@ -134,8 +133,7 @@ function updateLink($params)
 						  " `link` = '" . $params['link'] . "'" .
 						  " WHERE(`deviceID` ='" . $params['deviceID'] . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
-				
-				$params['device']['properties']['Link'] = $params['link'];
+				$params['device']['properties']['Link']['value'] = $params['link'];
 				setDevicePropertyValue($params, 'Link');
 				$result =  HandleTriggers($params, '225', TRIGGER_AFTER_CHANGE);
 				if (!empty($result)) print_r ($result);
@@ -150,7 +148,7 @@ function updateLink($params)
 					  " `mdate` = '" . date("Y-m-d H:i:s") . "'" .
 					  " WHERE(`deviceID` ='" . $params['deviceID'] . "')";
 				if (!mysql_query($mysql)) mySqlError($mysql);
-				$params['device']['properties']['Link'] = $params['link'];
+				$params['device']['properties']['Link']['value'] = $params['link'];
 				setDevicePropertyValue($params, 'Link');
 			} else {
 				if (DEBUG_HA) echo "Down and same as prev link, Do nothing.</br>\n";
@@ -302,7 +300,7 @@ function setDevicePropertyValue($params, $description) {
 		$oldvalue = Null;
 	}
 	$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
-	if ($oldvalue != $deviceproperty['value']) {
+	if ($oldvalue !== $deviceproperty['value']) {
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 
 		// Run on change on only binary
@@ -478,7 +476,7 @@ function getDeviceProperty($deviceproperty){
 		return $result;
 	} elseif (array_key_exists('deviceID', $deviceproperty))  {		// Only DeviceID
 		$result = Array();
-		if ($rowproperties = FetchRows(
+		if (!is_null($deviceproperty['deviceID']) && $rowproperties = FetchRows(
 			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, p.description FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
@@ -500,7 +498,7 @@ function getDeviceProperty($deviceproperty){
 function getStatusLink($deviceID) {
 	$feedback = Array();
 	if (($properties  = getDeviceProperty(Array( 'deviceID' => $deviceID)))) {
-		if (array_key_exists('Status', $properties)) $feedback['Status'] = $properties['Status']['value'];
+		if (array_key_exists('Status', $properties) && $properties['Status']['active']==1) $feedback['Status'] = $properties['Status']['value'];
 		if (array_key_exists('Link', $properties)) $feedback['Link'] = $properties['Link']['value'];
 		if (array_key_exists('Timer Remaining', $properties)) $feedback['Timer Remaining'] = $properties['Timer Remaining']['value'];
 		$feedback['deviceID'] = $deviceID;

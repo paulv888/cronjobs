@@ -223,7 +223,8 @@ if(!window.scriptRemoteHasRun) {
 
 		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
 			var keys = [];
-			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, .field, .link-warning, .link-down');
+//			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, .field, .link-warning, .link-down');
+			var elArray = $$('.rem-button, .display');
 			var arrayLength = elArray.length;
 			if (arrayLength > 0) {				// some selections
 				for (var i = 0; i < arrayLength; i++) {
@@ -331,6 +332,8 @@ if(!window.scriptRemoteHasRun) {
 				showMessage(item);
 			}
 			$$('[data-remotekey=' + item.remotekey + ']').each(function(index){
+				$(index).removeClass("link-warning");
+				$(index).removeClass("link-down");
 				if (typeof item.status !== 'undefined') {
 					$(index).removeClass("off");
 					$(index).removeClass("on");
@@ -344,8 +347,6 @@ if(!window.scriptRemoteHasRun) {
 				} else if (typeof item.groupselect !== 'undefined') {
 					$(index).addClass('group-select');
 				} 
-				$(index).removeClass("link-warning");
-				$(index).removeClass("link-down");
 				if (typeof item.link !== 'undefined') {
 					$(index).addClass(item.link);
 				} 
