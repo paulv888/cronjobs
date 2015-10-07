@@ -4,29 +4,29 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-// define( 'DEBUG_FLOW', TRUE );
+//define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 
+$ASYNC_THREAD = false;
+
 if (isset($argv)) {
 	var_dump($argv);
 	foreach ($argv as $arg) {
 		$e=explode("=",$arg);
         if(count($e)==2) {
-			$_POST[$e[0]]=$e[1];
+			$_POST[$e[0]]=urldecode($e[1]);
 		} else {
 			if ($e[0] == "ASYNC_THREAD") {
-				define( 'ASYNC_THREAD', TRUE );
-				echo "ASYNC_THREAD".CRLF;
+				$ASYNC_THREAD = true;
+				echo "ASYNC_THREAD ".($ASYNC_THREAD ? "true" : "false").CRLF;
 			}
 		}
 	}
 }
-
-if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
 
 if (isset($_GET['callerID'])) {
 	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
@@ -113,7 +113,7 @@ function executeCommand($callerparams) {
 					$devices[$rowkeys['deviceID']] = $rowkeys['deviceID'];
 				}
 				foreach ($devices as $deviceID) {
-					$feedback[]['updatestatus'] = getStatusLink($deviceID);
+					$feedback[]['updateStatus'] = getStatusLink($deviceID);
 				}
 			} else {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
@@ -140,11 +140,11 @@ function executeCommand($callerparams) {
 	if ($feedback['show_result']) {
 //		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1, 'error' => 1);
 		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
-		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
+		doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
 //		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1, 'error' => 1);
 		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
-		doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1), $filterkeep, $result);
+		doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1), $filterkeep, $result);
 	}
 	if (DEBUG_RETURN) echo "Filtered: >";
 	if (DEBUG_RETURN) print_r($result);
@@ -232,7 +232,7 @@ function SendCommand($thiscommand) {
 			// $feedback['error'] = 'Device '.$thiscommand['deviceID'].' not found or inactive';
 			// return false;
 		// }
-		$thiscommand['device']['previous_properties'] = getDeviceProperty(Array('deviceID' => $thiscommand['deviceID']));
+		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
 		$targettype = $thiscommand['device']['link']['targettype'];
 		$commandclassID = $thiscommand['device']['commandclassID'];
 		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
@@ -558,7 +558,8 @@ function SendCommand($thiscommand) {
 function RunScheme($params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
 
 // Check conditions
-	
+	global $ASYNC_THREAD;
+
 	$schemeID = $params['schemeID'];
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
@@ -581,7 +582,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		{
 		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
 			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
-			$testvalue[] = getDeviceProperty(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
+			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
 			break;
 		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
 		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
@@ -594,9 +595,9 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			$groups = getGroup($rowcond['groupID']);
 			foreach ($groups as $device) {
 				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
-					$test = $test & getDeviceProperty(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
+					$test = $test & getDeviceProperties(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
 				} else {
-					$test = $test | getDeviceProperty(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
+					$test = $test | getDeviceProperties(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
 				}
 			}
 			$testvalue[] = $test;
@@ -683,11 +684,9 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 	if ($resschemesteps = mysql_query($sqlstr)) {
 		// Trap any async SCHEMES here
 		$rowshemesteps = mysql_fetch_array($resschemesteps);
-		if (!ASYNC_THREAD && $rowshemesteps['runasync']) {
-			//$pid = shell_exec($cmd);
+		if (!$ASYNC_THREAD && $rowshemesteps['runasync']) {
 			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
 			$getparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
-			//$cmd = 'nohup nice -n 10 /usr/bin/php -f /home/www/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php '.$getparams;
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$getparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -717,10 +716,10 @@ function NOP() {return;}
 
 // Private
 // $filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1);
-// doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
+// doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 
 // $filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1);
-// doFilter($feedback, array( 'updatestatus' => 1,  'groupselect' => 1), $filterkeep, $result);
+// doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1), $filterkeep, $result);
 
 function doFilter(&$arr, $nodefilter, &$filter, &$result) {
 
@@ -769,7 +768,7 @@ function RemoteKeys($result) {
 				$feedback['message'] = $res['error'].' ';
 			}
 		} else {
-			if (array_key_exists('updatestatus', $res)) $node = 'updatestatus';
+			if (array_key_exists('updateStatus', $res)) $node = 'updateStatus';
 			if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 			if (array_key_exists('deviceID',$res[$node])) {
 				$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
@@ -778,31 +777,31 @@ function RemoteKeys($result) {
 						$feedback[][$node] = true;
 						$last_id=GetLastKey($feedback);
 						$feedback[$last_id]["remotekey"] = $rowkeys['id'];
-						if ($node == 'updatestatus') {
-							if (array_key_exists('Status', $res['updatestatus'])) {
-								if ($res['updatestatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
+						if ($node == 'updateStatus') {
+							if (array_key_exists('Status', $res['updateStatus'])) {
+								if ($res['updateStatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
 									$feedback[$last_id]["status"]="off";
-								} elseif ($res['updatestatus']['Status'] == STATUS_UNKNOWN) {
+								} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
 									$feedback[$last_id]["status"]="unknown";
-								} elseif ($res['updatestatus']['Status'] == STATUS_ON) {
+								} elseif ($res['updateStatus']['Status'] == STATUS_ON) {
 									$feedback[$last_id]["status"]="on";
-								} elseif ($res['updatestatus']['Status'] == STATUS_ERROR) {
+								} elseif ($res['updateStatus']['Status'] == STATUS_ERROR) {
 									$feedback[$last_id]["status"]="error";
 								} else { 										// else assume a value
 									$feedback[$last_id]["status"]="undefined";
 								}
 							}
 							
-							if (array_key_exists('Link',$res['updatestatus'])) {
-								$feedback[$last_id]['link'] = ($res['updatestatus']['Link'] == LINK_UP ? '' : ($res['updatestatus']['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
+							if (array_key_exists('Link',$res['updateStatus'])) {
+								$feedback[$last_id]['link'] = ($res['updateStatus']['Link'] == LINK_UP ? '' : ($res['updateStatus']['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
 							}
 							
 							$starttext = getDisplayText($rowkeys);
 							$text = $starttext;
 							if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
-								if (array_key_exists('Timer Remaining',$res['updatestatus'])) $text.=' ('.$res['updatestatus']['Timer Remaining'].'min)';
+								if (array_key_exists('Timer Remaining',$res['updateStatus'])) $text.=' ('.$res['updateStatus']['Timer Remaining'].'min)';
 							}
-							replacePlaceholder($text, Array('deviceID' => $res['updatestatus']['deviceID']));
+							replacePlaceholder($text, Array('deviceID' => $res['updateStatus']['deviceID']));
 							$feedback[$last_id]["text"] = $text; 	// Only if we have placeholders
 						}
 					}

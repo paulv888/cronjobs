@@ -1,8 +1,10 @@
 <?php
-//define( 'DEBUG_HA', TRUE );
-//define( 'DEBUG_PROPERTIES', TRUE );
+// define( 'DEBUG_HA', TRUE );
+// define( 'DEBUG_PROPERTIES', TRUE );
+//define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
+if (!defined('DEBUG_TRIGGERS')) define( 'DEBUG_TRIGGERS', FALSE );
 
 
 function updateLink($params)
@@ -160,47 +162,95 @@ function updateLink($params)
 	}
 }
 		
-function updateStatus(&$params)
-{
+function updateStatus(&$params, $propertyName) {
 
 	$feedback=Array();
 	if (DEBUG_HA) {
-		echo "<PRE>Update Status ";
+		echo "<PRE>Update $propertyName ";
 		print_r($params);
 	}
 	
-	if (array_key_exists('Status', $params['device']['properties'])) {
-		// Only retrieve if Monitor Type = Status Monitor
-		$oldstatus = $params['device']['previous_properties']['Status']['value'];
-
-		// Are we monitoring Status?
-		if ($params['device']['previous_properties']['Status']['active']) {
-			if ($params['device']['previous_properties']['Status']['invertstatus'] == "0") {
-				if (DEBUG_HA) echo "Status Invert".CRLF;
-				if ($params['commandID'] == COMMAND_ON) {
-					$params['device']['properties']['Status']['value'] = STATUS_OFF;
-				} elseif ($params['commandID'] == COMMAND_OFF) {
-					$params['device']['properties']['Status']['value'] = STATUS_ON;
-				}
-			}
-			if (DEBUG_HA) echo "Status Status2:".$params['device']['properties']['Status']['value'].CRLF;
-			$feedback['deviceID'] = $params['deviceID'];
-			$feedback['Status'] = $params['device']['properties']['Status']['value'];
-
-			if ($oldstatus != $params['device']['properties']['Status']['value']) {
-				if ($params['device']['properties']['Status']['value'] == STATUS_OFF) {
-					removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Date'));
-					removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Value'));
-					removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Remaining'));
-				}
-			} // if changed
-		} else {	// No Monitoring
-			$feedback['deviceID'] = $params['deviceID'];
+	if ($params['device']['previous_properties'][$propertyName]['invertstatus'] == "0") {
+		if (DEBUG_HA) echo "Status Invert".CRLF;
+		if ($params['commandID'] == COMMAND_ON) {
+			$params['device']['properties'][$propertyName]['value'] = STATUS_OFF;
+		} elseif ($params['commandID'] == COMMAND_OFF) {
+			$params['device']['properties'][$propertyName]['value'] = STATUS_ON;
 		}
 	}
+
+	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+	$newvalue = $params['device']['properties'][$propertyName]['value'];
+
+	if (DEBUG_HA) echo "Status Status2:".$newvalue.CRLF;
+	$feedback['deviceID'] = $params['deviceID'];
+	$feedback[$propertyName] = $newvalue;
+
+	if (array_key_exists('type', $params['device']) && $params['device']['type']['has_runtime']) {
+		$mysql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.$params['deviceID'].'
+				AND propertyID='.getProperty('Runtime')['id'].' order by updatedate desc limit 1';
+		if ($row = FetchRow($mysql)) {
+			$startdate = date("Y-m-d H:i:s", strtotime($row['updatedate']));
+			$enddate = date("Y-m-d H:i:s");
+			var_dump($startdate);
+			var_dump($enddate);
+			$system = $params['device']['type']['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
+			UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+			$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+							FROM `hvac_cycles`
+							WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
+							GROUP BY deviceID, system';
+			if (DEBUG_HA) echo $mysql;
+			if ($row = FetchRow($mysql)) {
+				$updateProperty = $params;
+				unset($updateProperty['device']['properties']);
+				$updateProperty['device']['properties']['Runtime']['value'] = $row['runtime'];
+				setDevicePropertyValue($updateProperty, 'Runtime');
+			}
+		}
+	}
+	
 	if (DEBUG_HA) echo "Exit Update Status</PRE>";
 	return $feedback;
 }	
+
+
+function updateIsRunning(&$params, $propertyName) {
+//
+//		This is the actual runtime, while status is on,
+//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
+//
+	$feedback=Array();
+	if (DEBUG_HA) {
+		echo "<PRE>Update $propertyName ";
+		print_r($params);
+	}
+	
+	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+	$newvalue = $params['device']['properties'][$propertyName]['value'];
+	
+	if ($oldvalue != $newvalue) {			// Value changed
+	//
+	//		Insert new cycle
+	//
+		$heatStatus = false;
+		$coolStatus = false;
+		$fanStatus  = false;
+		// Log generic under heat, we are only interested in runtime anyway
+		if (($params['device']['type']['internal_type'] == DEV_INTERNAL_TYPE_HEAT) || ($params['device']['type']['internal_type'] == DEV_INTERNAL_TYPE_GENERIC)) { 
+			$heatStatus = $newvalue == 1;
+		} else {		// DEV_INTERNAL_TYPE_COOL
+			$coolStatus = $newvalue == 1;
+		}
+		updateStatusCycle($params['deviceID'], $heatStatus, $coolStatus, $fanStatus);
+		updateDailyRuntime($params['deviceID']);
+	}	// Force create Runtime on status change
+	
+	$feedback['deviceID'] = $params['deviceID'];
+	if (DEBUG_HA) echo "Exit Update $propertyName</PRE>";
+	return $feedback;
+}			
+
 
 function updateDeviceProperties($params) {
 	// If inverted (from process.php, coming in with negated command
@@ -210,7 +260,7 @@ function updateDeviceProperties($params) {
 	$params['commandID'] = (array_key_exists('commandID', $params) ? $params['commandID'] : Null);
 
 	$feedback = Array();
-	if (DEBUG_PROPERTIES) {
+	if (DEBUG_HA) {
 		echo "<PRE>updateProperties ";
 		print_r($params);
 		echo "commandID:".$params['commandID'].CRLF;
@@ -224,11 +274,16 @@ function updateDeviceProperties($params) {
 	if (!array_key_exists('properties', $params['device']) || !array_key_exists('Status', $params['device']['properties'])) { 
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		if ($commandStatus !== false && $commandStatus != STATUS_NOT_DEFINED) {
-			$params['device']['properties']['Status']['value'] = $commandStatus;
+			if ($params['device']['previous_properties']['Status']['invertstatus'] == "0") {
+				$params['device']['properties']['Status']['value'] = ($commandStatus == STATUS_ON ? STATUS_OFF : STATUS_ON);
+			} else {
+				$params['device']['properties']['Status']['value'] = $commandStatus;
+			}
 		} 
 	}
 	
 	if (array_key_exists('properties', $params['device'])) {		// Do we have props to update?
+		$params['device']['properties'] = sortArrayByArray($params['device']['properties'], Array('Status'));
 		foreach ($params['device']['properties'] as $key=>$property) {
 			$feedback[] = setDevicePropertyValue($params, $key);
 		}
@@ -238,31 +293,28 @@ function updateDeviceProperties($params) {
 	return $feedback;
 }
 
-function setDevicePropertyValue($params, $description) {
+function setDevicePropertyValue($params, $propertyName) {
 //
 // $property = Array('deviceID' => $deviceID, 'description' => 'Status', 'value' => '1');
 //
 
 	$feedback = Array();
-	if ($description == "Status") {
-		if(!($feedback['updatestatus'] = updateStatus($params))) return;
-	}
 
 	// Could get these from previous+properties ??
-	
-	$property = getProperty($description);
+	$property = getProperty($propertyName);
 	$deviceproperty['propertyID'] = $property['id'];
 	$deviceproperty['deviceID'] = $params['deviceID'];
-	$deviceproperty['value'] = $params['device']['properties'][$description]['value'];
+	$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
 	$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 	
 	
-	if (DEBUG_PROPERTIES) {
-		echo "<pre>setDevicePropertyValue $description ";
+	if (DEBUG_HA) {
+		echo "<pre>setDevicePropertyValue $propertyName ";
 		print_r ($deviceproperty);
 	}
+	
 	if (is_null($deviceproperty['value'])) {
-		if (DEBUG_PROPERTIES) echo "</pre>";
+		if (DEBUG_HA) echo "</pre>";
 		return 'Null Value, exit';
 	}
 	
@@ -270,41 +322,66 @@ function setDevicePropertyValue($params, $description) {
 	if (strtoupper($deviceproperty['value']) == "TRUE" || strtoupper($deviceproperty['value']) == "ON") $deviceproperty['value'] = STATUS_ON;
 	if (strtoupper($deviceproperty['value']) == "FALSE" || strtoupper($deviceproperty['value']) == "OFF") $deviceproperty['value'] = STATUS_OFF;
 	
+
 	//
-	//	Update properties Log
-	// 		Check for age and value changed
+	// Get previous property info
+	// 
+	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($propertyName,$params['device']['previous_properties'])) {
+		$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+		$monitor = $params['device']['previous_properties'][$propertyName]['active'];
+	} else {
+		$oldvalue = Null;
+		$monitor = false;
+	}
+	$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
+
+	//
+	//	Always update properties Log (if Time > 60 or changed)
 	//
 	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $deviceproperty['deviceID'].' AND propertyID='.$deviceproperty['propertyID'].' order by updatedate desc limit 1';
 	if ($row = FetchRow($sql)) {
 		if (DEBUG_PROPERTIES) print_r($row);
-		$last = strtotime($row['updatedate']);
-		$lastvalue = $row['value'];
-		if (timeExpired($last, 59) || abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) {
-			if ($property['datatype']=="BINARY" && $deviceproperty['value'] != $row['value']) {		// relog old value with current time to make nice graph
-				PDOupsert('ha_properties_log', 	Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
-						'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))), Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
-						'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))));
+		//
+		//	Are we monitoring this property?
+		//
+		$params['lastlogdate'] = $row['updatedate'];
+		$lastLogDate = strtotime($row['updatedate']);
+		if ($monitor) {
+			if (timeExpired($lastLogDate, 60) || ($oldvalue !== $deviceproperty['value'])) {
+				if ($propertyName != "Link") {
+					$func = 'update'.str_replace(' ','',$propertyName);
+					if(!($feedback[$func] = $func($params, $propertyName))) return;
+				}
 			}
-			PDOupsert('ha_properties_log', $deviceproperty,Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	
-						'updatedate' => date("Y-m-d H:i:s")));
+		} 
+		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+		
+		unset($deviceproperty['trend']);
+		$lastLogDate = strtotime($row['updatedate']);
+		$lastvalue = $row['value'];
+		if (timeExpired($lastLogDate, 60) || (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 )) {
+				if ($property['datatype']=="BINARY" && $deviceproperty['value'] != $row['value']) {		// relog old value with current time to make nice graph
+					PDOupsert('ha_properties_log', 	Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
+							'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))), Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
+							'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))));
+				}
+				PDOupsert('ha_properties_log', $deviceproperty,Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	
+							'updatedate' => date("Y-m-d H:i:s")));
 		} else {
-			if (DEBUG_HA) echo "Not Logging: ".$description.CRLF;
+			if (DEBUG_HA) echo "Not Logging: ".$propertyName.CRLF;
 		}
 	} else {		// First one
+		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+		unset($deviceproperty['trend']);
 		PDOinsert('ha_properties_log', $deviceproperty);
 	}
 	
-	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($description,$params['device']['previous_properties'])) {
-		$oldvalue = $params['device']['previous_properties'][$description]['value'];
-	} else {
-		$oldvalue = Null;
-	}
-	$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
-	if ($oldvalue !== $deviceproperty['value']) {
-		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
-
-		// Run on change on only binary
-		if ($property['datatype']=="BINARY" && $description != "Link") { 		// Link still handled locally (Skip)
+	
+	//
+	// Execute triggers
+	// 
+	if ($monitor && $oldvalue !== $deviceproperty['value']) {
+		if ($property['datatype']=="BINARY" && $propertyName != "Link") { 		// Link still handled locally (Skip)
 			$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 			if (!empty($result)) $feedback['Triggers'] = $result;
 			if ($deviceproperty['value'] == STATUS_ON ) {
@@ -320,7 +397,7 @@ function setDevicePropertyValue($params, $description) {
 		}
 	}
 	
-	if (DEBUG_PROPERTIES) echo "</pre>";
+	if (DEBUG_HA) echo "</pre>";
 	
 	return $feedback;
 }
@@ -330,13 +407,13 @@ function HandleTriggers($params, $propertyID, $triggertype) {
 			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.')';
 	$feedback =  Null; 
 	
-	if (DEBUG_HA) echo "Handle Triggers Params: ";
-	if (DEBUG_HA) print_r($params);
+	if (DEBUG_TRIGGERS) echo "Handle Triggers Params: ";
+	if (DEBUG_TRIGGERS) print_r($params);
 	
 	if ($triggerrows = FetchRows($mysql)) {
 		foreach ($triggerrows as $trigger) {
-			if (DEBUG_HA) echo "trigger: ";
-			if (DEBUG_HA) print_r($trigger);
+			if (DEBUG_TRIGGERS) echo "trigger: ";
+			if (DEBUG_TRIGGERS) print_r($trigger);
 			$thiscommand['commandID'] = COMMAND_RUN_SCHEME;
 			$thiscommand['schemeID'] = $trigger['schemeID'];
 			$thiscommand['loglevel'] = LOGLEVEL_MACRO;
@@ -352,19 +429,23 @@ function HandleTriggers($params, $propertyID, $triggertype) {
 
 function getDevice($deviceID){
 
-	$mysql='SELECT * FROM ha_mf_devices where id ='.$deviceID.' AND inuse= 1';
+	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse= 1';
 	if ($rowdevice = FetchRow($mysql)) {
 		$mysql='SELECT * FROM ha_mf_device_links where id ='.$rowdevice['devicelinkID'];
 		if ($rowlink = FetchRow($mysql)) {
 			$rowdevice['link'] = $rowlink;
 		}
-		// if ($props = getDeviceProperty(Array('deviceID' => $deviceID))) {
+		$mysql = 'SELECT * FROM `ha_mf_device_types` WHERE id = '.$rowdevice['typeID'];
+		if ($rowtype = FetchRow($mysql)) {
+			$rowdevice['type'] = $rowtype;
+		}
+		// if ($props = getDeviceProperties(Array('deviceID' => $deviceID))) {
 			// $rowdevice['properties'] = $props;
 		// }
-		return $rowdevice ;
 // echo "<pre>getDevice ".$deviceID;
 // print_r($rowdevice);
 // echo "</pre>";		
+		return $rowdevice ;
 	}
 	return false ;
 }
@@ -385,9 +466,9 @@ function getDevicesWithProperties($params){
         // )
 
 	$comb = Array();
-	foreach ($params['properties'] as $description) {
-		$deviceproperty['description'] = $description;
-		$res = getDeviceProperty($deviceproperty);
+	foreach ($params['properties'] as $propertyName) {
+		$deviceproperty['description'] = $propertyName;
+		$res = getDeviceProperties($deviceproperty);
 		$comb = array_replace_recursive($comb, $res);
  // echo "<pre>comb";
  // print_r($comb);
@@ -396,7 +477,7 @@ function getDevicesWithProperties($params){
 	return $comb; // Format
 }
 
-function getDeviceProperty($deviceproperty){
+function getDeviceProperties($deviceproperty){
 //
 //  If given Description, then lookup by description
 //
@@ -442,10 +523,10 @@ function getDeviceProperty($deviceproperty){
 
 
 	if (array_key_exists('description', $deviceproperty)) {
-		$description = $deviceproperty['description'];
+		$propertyName = $deviceproperty['description'];
 		$deviceproperty['propertyID'] = getProperty($deviceproperty['description'])['id'];
 		unset($deviceproperty['description']);  //
-		//echo "Found id for $description ".$deviceproperty['propertyID'].CRLF;
+		//echo "Found id for $propertyName ".$deviceproperty['propertyID'].CRLF;
 	}
 
 	if (array_key_exists('deviceID', $deviceproperty) && array_key_exists('propertyID', $deviceproperty)) {		// DeviceID and PropertyID
@@ -465,7 +546,7 @@ function getDeviceProperty($deviceproperty){
 		$result = Array();
 		if ($rowproperties = FetchRows('SELECT dp.*, p.description FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.$deviceproperty['propertyID'])) {
 			foreach ($rowproperties AS $prop) {
-				$result[$prop['deviceID']][$description] = $prop;
+				$result[$prop['deviceID']][$propertyName] = $prop;
 			}
 			if (DEBUG_PROPERTIES) {
 				echo "<pre> Only Prop (All devs) ";
@@ -497,7 +578,7 @@ function getDeviceProperty($deviceproperty){
 
 function getStatusLink($deviceID) {
 	$feedback = Array();
-	if (($properties  = getDeviceProperty(Array( 'deviceID' => $deviceID)))) {
+	if (($properties  = getDeviceProperties(Array( 'deviceID' => $deviceID)))) {
 		if (array_key_exists('Status', $properties) && $properties['Status']['active']==1) $feedback['Status'] = $properties['Status']['value'];
 		if (array_key_exists('Link', $properties)) $feedback['Link'] = $properties['Link']['value'];
 		if (array_key_exists('Timer Remaining', $properties)) $feedback['Timer Remaining'] = $properties['Timer Remaining']['value'];
@@ -637,92 +718,11 @@ function getSchemeName($schemaID) {
         return $schemarow['name'];
 }
 
-
-//// Not in use, copy UpdateStatusCycle
-function updateStatusLog($params) {		// Remove this one... staging
-
-//$deviceID, $status, $commandvalue = 0, $humidity = NULL, $setpoint = NULL) {
-
-	$typeIDArr = getDevice($params['deviceID'])['typeID'];
-	
-	if (DEBUG_HA) {
-		echo "<pre>UpdateStatusLog ";
-		print_r ($params);
-		print_r ($typeIDArr);
-	}
-	
- 	if (array_key_exists('properties', $params)) {		
-		$properties = $params['properties'];
-		if (DEBUG_HA) print_r($properties);
-		unset($startdate);
-		foreach($properties as $key => $value) {
-			$p = Array();
-			$p['propertyID'] = getPropertyID($key)['id'];
-			$p['value'] = $value;
-			$p['deviceID'] = $params['deviceID'];
-			$description =  $key;
-			$properties[$key] = $p;
-			
-			if (strtoupper($properties[$key]['value']) == "TRUE" || strtoupper($properties[$key]['value']) == "ON") $properties[$key]['value'] = STATUS_ON;
-			if (strtoupper($properties[$key]['value']) == "FALSE" || strtoupper($properties[$key]['value']) == "OFF") $properties[$key]['value'] = STATUS_OFF;
-			
-			// Check for age and value changed
-			$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $params['deviceID'].' AND propertyID='.$properties[$key]['propertyID'].' order by updatedate desc limit 1';
-			if ($row = FetchRow($sql)) {
-				if (DEBUG_HA) print_r($row);
-				$last = strtotime($row['updatedate']);
-				if (timeExpired($last, 59) || abs(floatval($properties[$key]['value'])-floatval($row['value'])) >= 1 ) {
-				// echo "<pre>";
-				// print_r($properties[$key]);
-					PDOinsert('ha_properties_log', $properties[$key]);
-					if ($typeIDArr['has_runtime'] && ($description == "IsRunning" || $description == "Status")) $startdate= strtotime($row['updatedate']);
-				} else {
-					if (DEBUG_HA) echo "Not Logging: ".$description.CRLF;
-				}
-			} else {		// First one
-				PDOinsert('ha_properties_log', $properties[$key]);
-			}
-				// print_r($properties[$key]);
-				// echo "</pre>";
-			$properties[$key]['trend'] = setTrend($properties[$key]['value'], getDeviceProperty(Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID']))['value']);
-			//PDOupsert('ha_mf_device_properties', $properties[$key], Array('deviceID' => $params['deviceID'], 'propertyID' => $properties[$key]['propertyID'] ));
-	}
-		
-		// This does not belong here
-		$deviceproperty = Array();
-		if (isset($startdate)) {	
-				$startdate = date("Y-m-d H:i:s", $startdate);
-				$enddate = date("Y-m-d H:i:s");
-				// var_dump($startdate);
-				// var_dump($enddate);
-				$system = $typeIDArr['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
-				UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
-				$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-								FROM `hvac_cycles`
-								WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
-								GROUP BY deviceID, system';
-				if (DEBUG_HA) echo $mysql;
-			
-				if ($row = FetchRow($mysql)) {
-					$deviceproperty['deviceID']= $params['deviceID'];
-					$deviceproperty['propertyID'] = getdeviceproperty("Runtime")['id'];
-					$deviceproperty['value'] = $row['runtime'];
-					if (DEBUG_HA) print_r($deviceproperty);
-					PDOinsert('ha_properties_log', $deviceproperty);
-					setDevicedevicepropertyValueByID($deviceproperty);
-					//PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $params['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
-				}
-		}
-		
-		if (DEBUG_HA) echo "</pre>";
-	}
-}
-
 function listDeviceProperties($devices){
 //
 // Feed in property Array (Only used from highchart graphs
 //
-	//$id = getPropertyID($description);
+	//$id = getPropertyID($propertyName);
 	if ($rows = FetchRows('SELECT propertyID FROM ha_mf_device_properties  WHERE deviceID IN ('.$devices.')')) {
 		foreach ($rows AS $prop) {
 			$result[] = $prop['propertyID'];

@@ -34,7 +34,8 @@ $now = date( 'Y-m-d H:i:s' );
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
 	
-		$result['device']['previous_properties'] = getDeviceProperty(Array('deviceID' => $thermostatRec['deviceID']));
+		$result['device'] = getDevice($thermostatRec['deviceID']);
+		$result['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thermostatRec['deviceID']));
 
 		$result['deviceID'] = $thermostatRec['deviceID'];
 		$result['callerID'] = $callerID;
@@ -91,8 +92,9 @@ $now = date( 'Y-m-d H:i:s' );
 		$thermostatRec = $thermostats[$deviceID];
 		$stat = new Stat( $thermostatRec );
 		$stat->getStat();
-		
-		$result['device']['previous_properties'] = getDeviceProperty(Array('deviceID' => $thermostatRec['deviceID']));
+
+		$result['device'] = getDevice($thermostatRec['deviceID']);
+		$result['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thermostatRec['deviceID']));
 		$stat->TempAdd($addtemp);
 
 		$result['deviceID'] = $thermostatRec['deviceID'];

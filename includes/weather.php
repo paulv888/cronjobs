@@ -30,7 +30,7 @@ function getYahooWeather($params) {
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		
-		$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $deviceID));
+		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$properties['Temperature']['value'] = $result->{'item'}->{'condition'}->{'temp'};
 		$properties['Humidity']['value'] =  $result->{'atmosphere'}->{'humidity'};
 		$properties['Status']['value'] = STATUS_ON;
@@ -179,7 +179,7 @@ function loadWeather($station) {
             	$feedback = ($get->getresponsecode()==200 ? TRUE : FALSE);
             	if ($feedback) {
             		$xml = new SimpleXMLElement($get->getresponse());
-					$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $mydeviceID[$station]));
+					$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $mydeviceID[$station]));
 					$properties['Temperature']['value'] = $xml->temp_c;
 					$properties['Humidity']['value'] = $xml->relative_humidity;
 					$properties['Status']['value'] = STATUS_ON;

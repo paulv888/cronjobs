@@ -208,7 +208,7 @@ function timeExpired(&$lasttime, $minutes) {
 	}
 //	if ((int)(abs(time()-$lasttime) / 60) >= $minutes) {
 // 	Try to prevent drifting (really depends on the calling interval)
-	if  ($minutes > 10) $minutes--;
+	//if  ($minutes > 10) $minutes--;
 	if ((int)(abs(time()-$lasttime) / 60) >= $minutes) {
 		$lasttime = time();
 		return true;
@@ -387,5 +387,16 @@ function colorDuplicateProperty($rows0, $columnname, $lastcolor) {
 	}
 //	echo $propname.' '.$lastcolor.CRLF;
 	return $lastcolor;
+}
+
+function sortArrayByArray(Array $array, Array $orderArray) {
+    $ordered = array();
+    foreach($orderArray as $key) {
+        if(array_key_exists($key,$array)) {
+            $ordered[$key] = $array[$key];
+            unset($array[$key]);
+        }
+    }
+    return $ordered + $array;
 }
 ?>

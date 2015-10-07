@@ -101,13 +101,12 @@ function movePictures($camera) {
 			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {  // New Motion Group on; 1 minute gap OR max_files
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
 
-				//|| (substr($group_dir,0,2) != date("H",$filetime)) ) {	// not sure i need this?
 				$group_dir = date("H-i-s",$filetime);
-				//PDOupdate("ha_cam_recordings", array('count' => $numfiles), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 				$targetdir = $dir.$datedir.'/'.$group_dir;
 				$numfiles = 0;
 				$newgroupcreated = true;
-				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir, 'firstfiletime' =>  date ("H:i:s",$filetime)));
+				PDOinsert('ha_cam_recordings', array('mdate' => date ("Y-m-d").'_', 'cam' => $camera['deviceID'], 'event' => $group_dir, 
+						'folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir, 'firstfiletime' =>  date ("H:i:s",$filetime)));
 			} 
 
 			if (!file_exists($dir)) {
@@ -147,8 +146,9 @@ function movePictures($camera) {
 			// Flooding
 			// $properties['Pictures'] = $numfiles;
 			// $properties['Last File Time'] = date("H:i:s",$camera['lastfiletime']);
-			//updateDeviceProperties(array('callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'properties' => $properties));
-			PDOupdate("ha_cam_recordings", array('count' => $numfiles, 'lastfiletime' => date("H:i:s",$camera['lastfiletime']) ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
+			// updateDeviceProperties(array('callerID' => MY_DEVICE_ID, 'deviceID' => $camera['deviceID'], 'properties' => $properties));
+// get last motion, event (i.e. sensor, tour...)  check  time and store as well
+			PDOupdate("ha_cam_recordings", array('count' => $numfiles-1, 'lastfiletime' => date("H:i:s",$camera['lastfiletime']) ), array('folder' => $camera['properties']['DIRECTORY'].'/'.$datedir.'/'.$group_dir));
 		}
 		return $filetime;
 	}  

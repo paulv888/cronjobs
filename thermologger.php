@@ -90,7 +90,8 @@ function UpdateTemps() {
 				logIt( "Target $target" );
 				logit( "UUID $stat->uuid IT " . $stat->temp . "IH $stat->humidity TARGT $target" );
 				//$queryTemp->execute(array( $stat->uuid, $stat->temp, $outdoorTemp, $stat->humidity, $outdoorHumidity, $target ) );
-				$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $thermostatRec['deviceID']));
+				$device = getDevice($thermostatRec['deviceID']);
+				$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $thermostatRec['deviceID']));
 				$properties['Temperature']['value'] = to_celcius($stat->temp);
 				$properties['Setpoint']['value'] = to_celcius($target);
 				$properties['Status']['value'] = $stat->getTargetOnOff();

@@ -27,7 +27,7 @@ function getDuskDawn($station) {
 		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
 		$tss = date("H:i", strtotime($result->{'astronomy'}->{'sunset'}));
 
-		$device['previous_properties'] = getDeviceProperty(Array('deviceID' => DEVICE_DARK_OUTSIDE));
+		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE));
 
 		$properties['Astronomy Sunrise']['value'] = $tsr;
 		$properties['Astronomy Sunset']['value'] = $tss;
@@ -43,11 +43,11 @@ function getDuskDawn($station) {
 }
 
 function GetDawn() {
-	return getDeviceProperty(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"))['value'];
+	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"))['value'];
 }
 
 function GetDusk() {
-	return getDeviceProperty(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"))['value'];
+	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"))['value'];
 }
 
 ?>

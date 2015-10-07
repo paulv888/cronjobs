@@ -41,7 +41,8 @@ if (!($sdata=="")) { 					//import_event
 	} else {
 		$message['data'] = $rcv_message['Status'];
 	}
-	$message['typeID'] = getDevice($message['deviceID'])['typeID'];
+	$device = getDevice($message['deviceID']);
+	$message['typeID'] = $device['typeID'];
 	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
 	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
@@ -75,17 +76,6 @@ if (!($sdata=="")) { 					//import_event
 			$properties['IsRunning']['value'] = $rcv_message['ExtData']['R'];
 			$properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
 			$properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
-
-			$heatStatus = false;
-			$coolStatus = false;
-			$fanStatus  = false;
-			if ($message['typeID'] == DEV_TYPE_THERMOSTAT_ARD_HEAT) {
-				$heatStatus = $properties['IsRunning']['value'] == 1;
-			} else {
-				$coolStatus = $properties['IsRunning']['value'] == 1;
-			}
-			updateStatusCycle($message['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-			updateDailyRuntime($message['deviceID']);
 		}
 		if ($message['typeID'] == DEV_TYPE_WATER_LEVEL) {
 			// Extended Data is there
@@ -100,7 +90,7 @@ if (!($sdata=="")) { 					//import_event
 		}
 		$properties['Status']['value'] = $rcv_message['Status'];
 		
-		$device['previous_properties'] = getDeviceProperty(Array('deviceID' => $message['deviceID']));
+		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
 		$device['properties'] = $properties;
 		
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
