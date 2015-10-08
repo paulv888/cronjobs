@@ -32,11 +32,11 @@ define("COMMAND_IO_SEND", 2 );		// Send or Outgoing
 define("COMMAND_IO_BOTH", 3 );		// Can be send or received
 
 // Status Values, Retrieved from command
-define("STATUS_OFF", 0 );
-define("STATUS_ON", 1 );
-define("STATUS_UNKNOWN", 2 );
-define("STATUS_ERROR", -1 );
-define("STATUS_NOT_DEFINED", 10);		// Used for defining status on commands 
+define("STATUS_OFF", "0" );
+define("STATUS_ON", "1" );
+define("STATUS_UNKNOWN", "2" );
+define("STATUS_ERROR", "-1" );
+define("STATUS_NOT_DEFINED", "10");		// Used for defining status on commands 
 
 // Commands from Device   ??? obsolete ???
 //define("COMMAND_RESULT_OK", 1);
@@ -61,6 +61,7 @@ define("COMMAND_SET_TIMER", 287);
 define("COMMAND_PING", 151);
 define("COMMAND_SET_PROPERTY_VALUE", 314);
 define("COMMAND_GRAPH_CREATE", 315);
+define("COMMAND_RUN_TIMER_STEPS", 317);
 
 
 // Triggers

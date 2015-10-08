@@ -66,12 +66,11 @@ function RunTimers(){
 					var_dump($timer['priorityID']);
 					if (!DEBUG_TIMERS) ob_start();
 					if ($timer['priorityID'] != PRIORITY_HIDE) {
-						$message = runSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timerID' => $timer['id'], 'loglevel' => LOGLEVEL_MACRO)); 
+						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_MACRO)); 
 					} else {
-						$message = runSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timerID' => $timer['id'], 'loglevel' => LOGLEVEL_NONE));
+						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_NONE));
 					}
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
-					if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => MY_DEVICE_ID, 'deviceID' => MY_DEVICE_ID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $message ));
 					$mysql="UPDATE `ha_timers` ".
 						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": ".$mysql.CRLF;
@@ -85,34 +84,52 @@ function RunTimers(){
 }
 
 
-function runSteps($params) {
+function runTimerSteps($params) {
 
 	if (DEBUG_TIMERS) echo "<pre>".CRLF;
 	if (DEBUG_TIMERS) print_r($params);
 
+	if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
+		$timer['runasync'] = false;
+		$timer['priorityID'] = 1;
+		$timer['description'] = "";
+		$timerID = $params['commandvalue'];
+	} else {
+		$timer = $params['timer'];
+		$timerID = $params['timer']['id'];
+	}
+
+	$deviceID = $params['callerID'];
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT ha_timers.description, ha_remote_scheme_steps.deviceID,
 		ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value as commandvalue, ha_remote_scheme_steps.runschemeID as schemeID ,
 		ha_remote_scheme_steps.alert_textID 
 		FROM (ha_timers INNER JOIN ha_remote_scheme_steps ON ha_timers.id = ha_remote_scheme_steps.timerID) 
-		WHERE(((ha_timers.id) = '.$params['timerID'].')) ORDER BY ha_remote_scheme_steps.sort';
+		WHERE(((ha_timers.id) = '.$timerID.')) ORDER BY ha_remote_scheme_steps.sort';
 	
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
-			// All Async, no option
 			$description = $step['description'];
 			unset($step['description']);
 			$step['callerID'] = $params['callerID'];
 			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
 			$step['loglevel'] = $params['loglevel'];
-			$getparams = http_build_query($step, '',' ');
-			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
-			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
-			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
-			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-			$feedback['TimerName'] = $description;
-			$feedback['message'] = "Spawned: ".$feedback['TimerName']." ".$cmd." Log:".$outputfile;
-			if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
+			if ($timer['runasync']) {
+				$getparams = http_build_query($step, '',' ');
+				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
+				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+				$feedback['TimerName'] = $description;
+				$feedback['message'] = "Spawned: ".$feedback['TimerName']." ".$cmd." Log:".$outputfile;
+				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $feedback['message'] ));
+				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
+			} else {
+				$feedback['TimerName'] = $description;
+				$feedback['message'] = executeCommand($step);
+				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'message' => $feedback['message'] ));
+			}
+
 			return $feedback;		// GET OUT
 		}
 	} else {

@@ -341,10 +341,14 @@ if(!window.scriptRemoteHasRun) {
 					$(index).removeClass("undefined");
 					$(index).removeClass("unknown");
 					$(index).addClass(item.status);
-				} else if (typeof item.text !== 'undefined') {
+				} 
+				if (typeof item.text !== 'undefined') {
 					//$(index).set('html',item.text);
-					if (typeof (index).getElementsByClassName("buttontext")[0] !== 'undefined') (index).getElementsByClassName("buttontext")[0].set('html',item.text);
-				} else if (typeof item.groupselect !== 'undefined') {
+					if (typeof $(index).getElementsByClassName("buttontext")[0] !== 'undefined') {
+						$(index).getElementsByClassName("buttontext")[0].set('html',item.text);
+					}
+				} 
+				if (typeof item.groupselect !== 'undefined') {
 					$(index).addClass('group-select');
 				} 
 				if (typeof item.link !== 'undefined') {

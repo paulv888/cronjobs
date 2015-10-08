@@ -92,7 +92,7 @@ function loadRemoteDiv($divid) {
 							}
 						}
 						// Really should read all at once
-						$statuslink = getStatusLink($rowremotekeys['deviceID']);
+						$statuslink = getStatusLink(Array('deviceID' => $rowremotekeys['deviceID'], 'propertyID' => (empty($rowremotekeys['propertyID']) ? '123' : $rowremotekeys['propertyID'])));
 						if (array_key_exists('Status',$statuslink)) {
 							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
 									($statuslink['Status'] == STATUS_OFF ? 'off' : 

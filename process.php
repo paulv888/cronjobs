@@ -4,7 +4,7 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-//define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
@@ -110,10 +110,14 @@ function executeCommand($callerparams) {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
 					unset($callerparams['keys']);
 					$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-					$devices[$rowkeys['deviceID']] = $rowkeys['deviceID'];
+					if (!empty($rowkeys['deviceID'])) {
+						($propertyID = empty($rowkeys['propertyID']) ? '123' : $rowkeys['propertyID']);
+						$devices[$rowkeys['deviceID'].$propertyID]['deviceID'] = $rowkeys['deviceID'];
+						$devices[$rowkeys['deviceID'].$propertyID]['propertyID'] = $propertyID;
+					}
 				}
-				foreach ($devices as $deviceID) {
-					$feedback[]['updateStatus'] = getStatusLink($deviceID);
+				foreach ($devices as $device) {
+					$feedback[]['updateStatus'] = getStatusLink($device);
 				}
 			} else {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
@@ -139,11 +143,11 @@ function executeCommand($callerparams) {
 
 	if ($feedback['show_result']) {
 //		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'message' => 1, 'link' => 1, 'error' => 1);
-		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
+		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'propertyID' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
 //		$filterkeep = array( 'status' => 1, 'commandvalue' => 1, 'deviceID' => 1, 'link' => 1, 'error' => 1);
-		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
+		$filterkeep = array( 'Status' => 1, 'deviceID' => 1, 'propertyID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($feedback, array( 'updateStatus' => 1,  'groupselect' => 1), $filterkeep, $result);
 	}
 	if (DEBUG_RETURN) echo "Filtered: >";
@@ -453,23 +457,25 @@ function SendCommand($thiscommand) {
 			$feedback['message'] = $thiscommand['commandvalue'];
 			break;
 		case COMMAND_GET_WEATHER:
-			$func = $rowcommands['command'];
-			$feedback[$rowcommands['command']] = $func($thiscommand);
-			break;
 		case COMMAND_SET_TIMER:
+		case COMMAND_RUN_TIMER_STEPS:
+		case COMMAND_GRAPH_CREATE:
 			$func = $rowcommands['command'];
-			$feedback['StartTimer'] = $func($thiscommand);
+			$feedback[$func] = $func($thiscommand);
 			break;
 		case COMMAND_SET_PROPERTY_VALUE:
 			$tarr = explode("___",$thiscommand['commandvalue']);
 			$text = $tarr[1];
 			replacePlaceholder($text, Array('deviceID' => $thiscommand['deviceID']));
+			if (strtoupper($text) == "TOGGLE") { 		// Toggle
+				if ($thiscommand['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
+					$text = STATUS_OFF;
+				else
+					$text = STATUS_ON;
+			}
 			$thiscommand['device']['properties'][$tarr[0]]['value'] = $text;
 			$func = $rowcommands['command'];
 			$feedback[] = $func($thiscommand, $tarr[0]);
-			break;
-		case COMMAND_GRAPH_CREATE:
-			$feedback = graphCreate($thiscommand);
 			break;
 		default:
 			$func = $rowcommands['command'];
@@ -480,7 +486,6 @@ function SendCommand($thiscommand) {
 			break;
 		}
 		if ($rowcommands['need_device']) {
-			//$thiscommand['properties']['Value']= $thiscommand['commandvalue'];
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		}
 		break;
@@ -542,7 +547,7 @@ function SendCommand($thiscommand) {
 			if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
 			break;
 		}
-		$thiscommand['device']['properties']['Value']['value']= $thiscommand['commandvalue'];
+		if (!is_null($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') $thiscommand['device']['properties']['Value']['value']= $thiscommand['commandvalue'];
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		break;		
 	}
@@ -778,7 +783,7 @@ function RemoteKeys($result) {
 						$last_id=GetLastKey($feedback);
 						$feedback[$last_id]["remotekey"] = $rowkeys['id'];
 						if ($node == 'updateStatus') {
-							if (array_key_exists('Status', $res['updateStatus'])) {
+							if (array_key_exists('Status', $res['updateStatus']) && $rowkeys['propertyID'] == $res['updateStatus']['propertyID']) {
 								if ($res['updateStatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
 									$feedback[$last_id]["status"]="off";
 								} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {

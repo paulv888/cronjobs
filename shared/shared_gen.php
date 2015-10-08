@@ -30,7 +30,7 @@ function graphCreate($params) {
 	}
 	
 	if (empty($fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['2']['0'])) {
-		$startdate = date( 'Y-m-d 00:00:00', strtotime("-7 days"));
+		$startdate = date( 'Y-m-d 00:00:00', strtotime("-1 days"));
 		$enddate = date( 'Y-m-d 23:59:59', strtotime("tomorrow"));
 	} else {
 		$startdate = $fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['2']['0'];
@@ -151,32 +151,7 @@ function graphCreate($params) {
 	}
 
 	return;
-	
-	
-	// global $pdo;
-	
-	// $sql = "{:retval = CALL sp_properties (:deviceIDs, :propertyIDs, :startdate, :enddate, :debug)}";
 
-	// $stmt = $pdo->prepare($sql);
-
-	// $retval = null;
-
-	// $stmt->bindParam('retval', $retval, PDO::PARAM_INT|PDO::PARAM_INPUT_OUTPUT, 4);
-	// $stmt->bindValue(':deviceIDs', $devices, PDO::PARAM_STR);
-	// $stmt->bindValue(':propertyIDs', $properties, PDO::PARAM_STR);
-	// // $stmt->bindValue(':startdate', '2015-09-26 00:00:00', PDO::PARAM_STR);
-	// // $stmt->bindValue(':enddate', '2015-09-27 23:59:59', PDO::PARAM_STR);
-	// $stmt->bindValue(':startdate', $startdate, PDO::PARAM_STR);
-	// $stmt->bindValue(':enddate', $enddate, PDO::PARAM_STR);
-	// $stmt->bindValue(':debug', $debug, PDO::PARAM_INT);
-
-	// $stmt->execute();
-
-	// $results = array();
-	// do {
-		// $results []= $stmt->fetchAll(PDO::FETCH_ASSO);
-	// } while ($stmt->nextRowset());	
-	
 }
 
 function getPath(){
