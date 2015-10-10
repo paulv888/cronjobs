@@ -167,7 +167,7 @@ function checkTime ($setupstart,$setupend, $offset) {
 	
 }
 
-function updateTimers($dummy) {
+function updateTimers($params) {
 // PHP Command Dummy parm
 
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
@@ -178,17 +178,16 @@ function updateTimers($dummy) {
 		if (!array_key_exists('Timer Date', $device)) $devs[$key]['Timer Date']['value']="1970-01-01";
 		if (!array_key_exists('Timer Value', $device)) $devs[$key]['Timer Value']['value']=0;
 		if (!array_key_exists('Timer Remaining', $device)) $devs[$key]['Timer Remaining']['value']=0;
-		$timerStarted = $device['Timer Date']['value'];
-		if ($testvalue[] = $device['Timer Value']['value'] > 0 && timeExpired($timerStarted, $device['Timer Value']['value'])) {
+		$timerStarted = $devs[$key]['Timer Date']['value'];
+		if ($devs[$key]['Timer Value']['value'] > 0 && timeExpired($timerStarted, $devs[$key]['Timer Value']['value'])) {
 			removeDeviceProperty(Array('deviceID' => $key, 'description' => 'Timer Date'));
 			removeDeviceProperty(Array('deviceID' => $key, 'description' => 'Timer Value'));
 			removeDeviceProperty(Array('deviceID' => $key, 'description' => 'Timer Remaining'));
-
-			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
+			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
 			//echo 'ExecuteCommand:'.$key.'-----'.executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
 		} else {
-			if ($device['Timer Value']['value'] > 0) {
-				$minutes = (int)$device['Timer Value']['value']-(int)(abs(time() - strtotime($device['Timer Date']['value'])) / 60);
+			if ($devs[$key]['Timer Value']['value'] > 0) {
+				$minutes = (int)$devs[$key]['Timer Value']['value']-(int)(abs(time() - strtotime($devs[$key]['Timer Date']['value'])) / 60);
 				$deviceproperty['propertyID'] = getProperty('Timer Remaining')['id'];
 				$deviceproperty['deviceID'] = $key;
 				$deviceproperty['value'] = $minutes;

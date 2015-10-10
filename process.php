@@ -6,7 +6,7 @@ require_once 'includes.php';
 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
+//define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
@@ -110,14 +110,14 @@ function executeCommand($callerparams) {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
 					unset($callerparams['keys']);
 					$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
-					if (!empty($rowkeys['deviceID'])) {
-						($propertyID = empty($rowkeys['propertyID']) ? '123' : $rowkeys['propertyID']);
-						$devices[$rowkeys['deviceID'].$propertyID]['deviceID'] = $rowkeys['deviceID'];
-						$devices[$rowkeys['deviceID'].$propertyID]['propertyID'] = $propertyID;
+					if (!empty($rowkeys['deviceID']) && !empty($rowkeys['propertyID'])) {
+						$propertyID = $rowkeys['propertyID'];
+						$devicesprop[$rowkeys['deviceID'].$propertyID]['deviceID'] = $rowkeys['deviceID'];
+						$devicesprop[$rowkeys['deviceID'].$propertyID]['propertyID'] = $propertyID;
 					}
 				}
-				foreach ($devices as $device) {
-					$feedback[]['updateStatus'] = getStatusLink($device);
+				foreach ($devicesprop as $devprop) {
+					$feedback[]['updateStatus'] = getStatusLink($devprop);
 				}
 			} else {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
@@ -459,6 +459,7 @@ function SendCommand($thiscommand) {
 		case COMMAND_GET_WEATHER:
 		case COMMAND_SET_TIMER:
 		case COMMAND_RUN_TIMER_STEPS:
+		case COMMAND_UPDATE_TIMERS:
 		case COMMAND_GRAPH_CREATE:
 			$func = $rowcommands['command'];
 			$feedback[$func] = $func($thiscommand);
@@ -776,14 +777,15 @@ function RemoteKeys($result) {
 			if (array_key_exists('updateStatus', $res)) $node = 'updateStatus';
 			if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 			if (array_key_exists('deviceID',$res[$node])) {
-				$reskeys = mysql_query("SELECT * FROM ha_remote_keys where deviceID =".$res[$node]['deviceID']);
+				$reskeys = mysql_query('SELECT * FROM ha_remote_keys where deviceID ='.$res[$node]['deviceID']. ' AND propertyID ='.$res[$node]['propertyID']);
 				while ($rowkeys = mysql_fetch_array($reskeys)) {
 					if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 						$feedback[][$node] = true;
 						$last_id=GetLastKey($feedback);
 						$feedback[$last_id]["remotekey"] = $rowkeys['id'];
 						if ($node == 'updateStatus') {
-							if (array_key_exists('Status', $res['updateStatus']) && $rowkeys['propertyID'] == $res['updateStatus']['propertyID']) {
+							$propertyID = (empty($rowkeys['propertyID']) ? '123' : $rowkeys['propertyID']);
+							if (array_key_exists('Status', $res['updateStatus']) && $res['updateStatus']['propertyID'] == $propertyID) {
 								if ($res['updateStatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
 									$feedback[$last_id]["status"]="off";
 								} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
@@ -819,11 +821,5 @@ function RemoteKeys($result) {
 
 	//if (array_key_exists('message'.$feedback) && $feedback['message'] = preg_replace("/\s+/", " ", $$feedback['message'] );
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
-}
-
-// Private
-function GetLastKey($arr) {
-	end($arr);
-	return key($arr);
 }
 ?>

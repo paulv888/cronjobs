@@ -1,18 +1,18 @@
 
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
-	var COMMAND_TOGGLE = 19;
-	var COMMAND_GET_GROUP = 282;
-	var COMMAND_GET_VALUE = 136;
-	var MY_DEVICE_ID = 164;
-	var GROUP_NO_SELECTED = 0;
-	var DIM_NO_SELECTED = 19;
-	var COMMAND_SET_VALUE = 145;
-	
 
-	var myurl = '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php';
+       var VloRemote = {
+                'COMMAND_GET_GROUP' : 282,
+                'COMMAND_SET_VALUE' : 145,
+                'COMMAND_GET_VALUE' : 136,
+                'COMMAND_TOGGLE' : 19,
+                'MY_DEVICE_ID' : 164,
+                'GROUP_NO_SELECTED' : 0,
+                'DIM_NO_SELECTED' : 19,
+                'url' : '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php'
+        };
 
-	var lastKey = null;
 	window.addEvent('domready', function(){
 
 		// regular down when up as well (cam move...)
@@ -21,7 +21,7 @@ if(!window.scriptRemoteHasRun) {
 			event.stop();
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
-			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
 			callAjaxNoSpin (params) ;
 		});	
 
@@ -31,7 +31,7 @@ if(!window.scriptRemoteHasRun) {
 			event.stop();
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
-			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
 			callAjax (params) ;
 		});	
 
@@ -43,10 +43,10 @@ if(!window.scriptRemoteHasRun) {
 			
 			// check if in dim mode
 			commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
-			if (commandvalue ==  DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
+			if (commandvalue ==  VloRemote.DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
-			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
 			resetSelection();
 			this.addClass('group-select');
 			callAjax (params) ;
@@ -63,11 +63,11 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(this.parentNode.parentNode.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 			} else {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected};
 			}
 			callAjax (params) ;
 		});
@@ -80,7 +80,7 @@ if(!window.scriptRemoteHasRun) {
 			mbut.firstChild.textContent = ' '+this.text;
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
-			if (selected == GROUP_NO_SELECTED){
+			if (selected == VloRemote.GROUP_NO_SELECTED){
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-success');
 				resetSelection();
@@ -88,7 +88,7 @@ if(!window.scriptRemoteHasRun) {
 				mbut.removeClass('btn-info');
 				mbut.addClass('btn-success');
 				resetSelection();
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: VloRemote.COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
 				callAjax (params) ; 		// get group members here and set select
 			}
 		});
@@ -99,7 +99,6 @@ if(!window.scriptRemoteHasRun) {
 		$$('.dimmer li a').addEvent('click', function(event){
 //			event.stop();
 			var mbut = this.parentNode.parentNode.parentNode.firstChild;
-//			mbut.firstChild.textContent = ' '+this.text;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = this.getAttribute('data-value');
 			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
@@ -113,11 +112,11 @@ if(!window.scriptRemoteHasRun) {
 					keys.push(elArray[i].get('data-remotekey'));
 				}
 				if (selected.charAt(0) == 'S') {
-					var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
 				} else if (selected.charAt(0) == 'C') {
-					var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 				} else {
-					var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: COMMAND_SET_VALUE, commandvalue: parseInt(selected)};
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: VloRemote.COMMAND_SET_VALUE, commandvalue: parseInt(selected)};
 				}
 				callAjax (params) ;
 			}
@@ -144,11 +143,11 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected};
 			}
 			callAjax (params) ;
 		});	
@@ -162,11 +161,11 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(this.get("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C'){
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected};
 			}
 			callAjax (params) ;
 
@@ -174,7 +173,7 @@ if(!window.scriptRemoteHasRun) {
 		$$('.scheme-button').removeEvents('click');
 		$$('.scheme-button').addEvent('click', function(event){
 			event.stop();
-			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:this.get('value')};
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:this.get('value')};
 			callAjax (params) ;
 		});	
 
@@ -182,7 +181,7 @@ if(!window.scriptRemoteHasRun) {
 		$$('.command-button').removeEvents('click');
 		$$('.command-button').addEvent('click', function(event){
 			event.stop();
-			var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:this.get('value')};
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:this.get('value')};
 			callAjax (params) ;
 		});	
 
@@ -193,15 +192,15 @@ if(!window.scriptRemoteHasRun) {
 		$$('#myTab a').removeEvents('click');
 		$$('#myTab a').addEvent('click', function(event){
 			$$('#system-message-container').set('html', '');
-			$$('.dimmer li a[value='+DIM_NO_SELECTED+']').fireEvent('click');
-			$$('#group li a[value='+GROUP_NO_SELECTED+']').fireEvent('click');
+			$$('.dimmer li a[value='+VloRemote.DIM_NO_SELECTED+']').fireEvent('click');
+			$$('#group li a[value='+VloRemote.GROUP_NO_SELECTED+']').fireEvent('click');
 			resetSelection();
 			//window.scrollTo(0,document.body.scrollHeight);
 		})
 		
 		window.setInterval(function(){
 			refreshDiv();
-		}, 5000);
+		}, 3000);
 	});
 
 	function launchFullScreen(element) {
@@ -217,20 +216,17 @@ if(!window.scriptRemoteHasRun) {
 	}
 	
 	
-	var currentDiv;
-	
 	function refreshDiv () {
 
 		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
 			var keys = [];
-//			var elArray = $$('.rem-button.on, .rem-button.off, , .rem-button.error, .rem-button.undefined, .rem-button.unknown, .field, .link-warning, .link-down');
 			var elArray = $$('.rem-button, .display');
 			var arrayLength = elArray.length;
 			if (arrayLength > 0) {				// some selections
 				for (var i = 0; i < arrayLength; i++) {
 					keys.push(elArray[i].get('data-remotekey'));
 				}
-				var params = {callerID: MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: COMMAND_GET_VALUE};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
 				callAjaxNoSpin (params) ;
 			}
 		}
@@ -239,7 +235,7 @@ if(!window.scriptRemoteHasRun) {
 	function callAjax (params) {
 	
        var keysRequest = new Request.JSON({
-				url: 	myurl,
+				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
 				timeout: 10000,
@@ -269,7 +265,7 @@ if(!window.scriptRemoteHasRun) {
 	function callAjaxNoSpin (params) {
 	
        var keysRequest = new Request.JSON({
-				url: 	myurl,
+				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
 				timeout: 10000,
@@ -296,7 +292,7 @@ if(!window.scriptRemoteHasRun) {
 	function callAjaxSync (params) {
 	
        var keysRequest = new Request.JSON({
-				url: 	myurl,
+				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
 				async: false,

@@ -255,8 +255,8 @@ function PDOupdate($table, $fields, $where){
 		$i++;
 	}
 
-//	echo "sql sofar: ". $sql.CRLF;
-//	print_r($values);
+	// echo "sql sofar: ". $sql.CRLF;
+	// print_r($values);
 
 	$result = false;
 

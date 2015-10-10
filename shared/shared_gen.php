@@ -374,4 +374,9 @@ function sortArrayByArray(Array $array, Array $orderArray) {
     }
     return $ordered + $array;
 }
+
+function getLastKey($arr) {
+	end($arr);
+	return key($arr);
+}
 ?>

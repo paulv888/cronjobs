@@ -62,6 +62,7 @@ define("COMMAND_PING", 151);
 define("COMMAND_SET_PROPERTY_VALUE", 314);
 define("COMMAND_GRAPH_CREATE", 315);
 define("COMMAND_RUN_TIMER_STEPS", 317);
+define("COMMAND_UPDATE_TIMERS", 288);
 
 
 // Triggers
@@ -160,6 +161,14 @@ define("ALARM-2_TRIGGERED", 37);
 
 define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
 define("SOURCE_WEATHER_GOV", 7);
+
+define("RECORDING_TYPE_DOOR", 10);
+define("RECORDING_TYPE_MOTION_CAMERA", 20);
+define("RECORDING_TYPE_MOTION_SENSOR_FRONT", 30);
+define("RECORDING_TYPE_MOTION_SENSOR_GARAGE", 30);
+define("RECORDING_TYPE_TOUR", 40);
+define("RECORDING_TYPE_USER", 50);
+define("RECORDING_TYPE_CONTINUOUS", 99);
 
 // Insteon Decoder Errors
 define("ERROR_STX_MISSING", -1);

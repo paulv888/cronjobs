@@ -11,6 +11,7 @@ include_once 'shared/shared_db.php';
 include_once 'shared/shared_file.php';
 include_once 'shared/shared_ha.php';
 include_once 'shared/shared_gen.php';
+include_once 'includes/propfactory.php';
 include_once 'includes/sendmail.php';
 include_once 'includes/timers.php';
 include_once 'includes/alerts.php';

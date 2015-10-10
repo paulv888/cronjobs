@@ -27,7 +27,7 @@ function monitorDevicesTimeout() {
 		return false;
 	}
 	while ($rowlinks = mysql_fetch_assoc($reslinks)) {	
-		$feedback = UpdateLink(array('callerID' => MY_DEVICE_ID, 'deviceID' => $rowlinks['deviceID'], 'link' => LINK_TIMEDOUT));
+		$feedback = UpdateLink(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $rowlinks['deviceID'], 'link' => LINK_TIMEDOUT));
 	}
 }
 
