@@ -4,7 +4,7 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-// define( 'DEBUG_FLOW', TRUE );
+//define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );

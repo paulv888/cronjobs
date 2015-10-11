@@ -3,34 +3,59 @@
 require_once 'includes.php';
 
 define("MY_DEVICE_ID", 137);
-define("INSTEON_HUB_IP", "192.168.2.125");
-define("INSTEON_HUB_PORT", 9761);
+
+
+
+if (isset($argv)) {
+	var_dump($argv);
+	foreach ($argv as $arg) {
+		$e=explode("=",$arg);
+        if(count($e)==2) {
+			$_GET[$e[0]]=urldecode($e[1]);
+		} 
+	}
+}
+
+if (isset($_GET['DEBUG'])) {
+	echo date("Y-m-d H:i:s").": trying to connect to VLOSITE:3333".CRLF;
+	echo date("Y-m-d H:i:s").": send a command with nc -l 3333".CRLF;
+	define("INSTEON_HUB_IP", "vlosite");
+	define("INSTEON_HUB_PORT", 3333);
+	define("DEBUG_MODE", true);
+} else {
+	define("INSTEON_HUB_IP", "192.168.2.125");
+	define("INSTEON_HUB_PORT", 9761);
+	define("DEBUG_MODE", false);
+} 
+
 
 define( 'DEBUG_INSTEON', TRUE );
 if (!defined('DEBUG_INSTEON')) define( 'DEBUG_INSTEON', FALSE );
 
 
-class console{
-	public static function log($msg, $arr=array()){
-		$str = vsprintf($msg, $arr);
-		fprintf(STDERR, "$str\n");
+if (!DEBUG_MODE) {
+	class console{
+		public static function log($msg, $arr=array()){
+			$str = vsprintf($msg, $arr);
+			fprintf(STDERR, "$str\n");
+		}
 	}
+
+	if(version_compare(PHP_VERSION, "5.3.0", '<')){
+		// tick use required as of PHP 4.3.0
+		declare(ticks = 1);
+	}
+
+	pcntl_signal(SIGTERM, "signal_handler");
+	pcntl_signal(SIGHUP, "signal_handler");
+	pcntl_signal(SIGINT, "signal_handler");
+
+	if(version_compare(PHP_VERSION, "5.3.0", '>=')){
+		pcntl_signal_dispatch();
+		console::log("Signal dispatched");
+	}
+
 }
-
-if(version_compare(PHP_VERSION, "5.3.0", '<')){
-	// tick use required as of PHP 4.3.0
-	declare(ticks = 1);
-}
-
-pcntl_signal(SIGTERM, "signal_handler");
-pcntl_signal(SIGHUP, "signal_handler");
-pcntl_signal(SIGINT, "signal_handler");
-
-if(version_compare(PHP_VERSION, "5.3.0", '>=')){
-	pcntl_signal_dispatch();
-	console::log("Signal dispatched");
-}
-
 //  PVTODO: Restart TCP connection on lost.
 //  PVTODO: Receive multiple packets, get length and parse sepearately
 //  PVTODO: Handle Broken packets

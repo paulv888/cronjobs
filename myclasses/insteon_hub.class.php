@@ -46,7 +46,11 @@ protected $last;
 		$result = "";
 		while ($this->messages->count()<1) {
 	
-			$result.= bin2hex($this->transport->readAll());
+			if (!DEBUG_MODE) {
+				$result.= bin2hex($this->transport->readAll());
+			} else {
+				$result.= ($this->transport->readAll());
+			}
 			while ($result) {
 				$this->last = time();
 				$plm_decode_result = $this->inst_coder->plm_decode($result);
