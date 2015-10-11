@@ -477,6 +477,8 @@ function SendCommand($thiscommand) {
 			$thiscommand['device']['properties'][$tarr[0]]['value'] = $text;
 			$func = $rowcommands['command'];
 			$feedback[] = $func($thiscommand, $tarr[0]);
+			$thiscommand['device']['previous_properties'][$tarr[0]]['value'] = $thiscommand['device']['properties'][$tarr[0]]['value'];
+			$thiscommand['device']['previous_properties'][$tarr[0]]['updatedate'] = date("Y-m-d H:i:s");
 			break;
 		default:
 			$func = $rowcommands['command'];
@@ -777,7 +779,8 @@ function RemoteKeys($result) {
 			if (array_key_exists('updateStatus', $res)) $node = 'updateStatus';
 			if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 			if (array_key_exists('deviceID',$res[$node])) {
-				$reskeys = mysql_query('SELECT * FROM ha_remote_keys where deviceID ='.$res[$node]['deviceID']. ' AND propertyID ='.$res[$node]['propertyID']);
+				$wherestr = (array_key_exists('propertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['propertyID'] : ''); // Not getting propID for Link
+				$reskeys = mysql_query('SELECT * FROM ha_remote_keys where deviceID ='.$res[$node]['deviceID'].$wherestr);
 				while ($rowkeys = mysql_fetch_array($reskeys)) {
 					if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 						$feedback[][$node] = true;

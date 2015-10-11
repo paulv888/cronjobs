@@ -158,6 +158,11 @@ if (DEBUG_ALERT) {
 	echo "<pre>"; echo $message.CRLF; echo "</pre>";
 }	
 
+	foreach ($params as $key => $value) {
+		if (is_array($value)) unset($params[$key]);
+	}
+
+
 	if (isset($mysql)) {
 
 		if ($data = FetchRow($mysql)) {

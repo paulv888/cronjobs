@@ -17,9 +17,8 @@ $cameras = readCameras();
 while (1) {
 	foreach ($cameras AS $key => $camera) {
 //		echo "in".$cameras[$key]['lastfiletime'].CRLF;
-		if (!array_key_exists('Minimum Alert Files', $cameras[$key]['previous_properties'])) $cameras[$key]['previous_properties']['Minimum Alert Files']['value'] = 0;
 		if (!array_key_exists('lastfiletime', $camera)) $cameras[$key]['lastfiletime'] = 0;
-		$cameras[$key]['lastfiletime'] = movePictures($cameras[$key]);		// Make Prop?
+		$cameras[$key] = movePictures($cameras[$key]);		// Make Prop?
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(15);
@@ -60,22 +59,13 @@ function movePictures($camera) {
 
 		if (count($files) == 0) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Nothing to do.".CRLF;
-			return $lastfiletime;
+			return $camera;
 		}
 		
  // echo '<pre>';
  // print_r($files);
  // print_r($filetimes);
  // echo '</pre>';
-
-        //echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $camera['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => 'Recording___1'));
-
-		$params['callerID'] = MY_DEVICE_ID;
-		$params['device'] = $camera;
-		$params['deviceID'] = $camera['id'];
-		$params['device']['previous_properties']['Recording']['value'] = STATUS_OFF;
-		$params['device']['properties'] = array( 'Recording' => array ( 'value' => STATUS_ON));	// Make sure other props are empty
-		if (DEBUG_CAMERAS) print_r(setDevicePropertyValue($params, 'Recording'));
 
 		array_multisort($filetimes, $files); 
 		//echo '<pre>';
@@ -84,9 +74,6 @@ function movePictures($camera) {
 		$seq = 0;
 		$group_dir = null;
 		$numfiles = 0;
-		$newgroupcreated = false;
-		$smssend = false;
-		$emailsend = false;
 
 		// Sleep .5 second before moving...
 		usleep(500000);
@@ -98,10 +85,15 @@ function movePictures($camera) {
 			if (is_null($group_dir)) {					// Did we find a group dir? If not find the last one and the num files in it
 				if ($group_dir = findLastGroupDir($dir.$datedir)) {		
 					$targetdir = $dir.$datedir.'/'.$group_dir;
+					echo date("Y-m-d H:i:s").": Existing directory ".$targetdir.CRLF;
 					$numfiles  = iterator_count(new DirectoryIterator($targetdir)) - 2;
 					$mysql = 'SELECT * FROM `ha_cam_recordings` WHERE folder ="'.$camera['previous_properties']['Directory']['value'].'/'.$datedir.'/'.$group_dir.'"';
 					if (DEBUG_CAMERAS) echo $mysql.CRLF;
 					$recording = FetchRow($mysql);
+					if (DEBUG_CAMERAS) print_r($recording);
+					$camera['criticalalert'] = $recording['criticalalert'];
+					$camera['highalert'] = $recording['highalert'];
+					$camera['lastfiletime'] = strtotime($recording['lastfiletime']);
 				} 
 			}
 
@@ -111,25 +103,20 @@ function movePictures($camera) {
 				//$camera['newfilename'] = $newfilename;
 				$camera['datedir'] = $datedir;
 				$camera['group_dir'] = $group_dir;
-				$camera['smssend'] = $smssend;
-				$camera['emailsend'] = $emailsend;
 				$camera['numfiles'] = $numfiles;
 				$camera['updatetype'] = false;
-				closeGroup($camera);
+				$camera = closeGroup($camera);
 
 				// Open new group dir
-				echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
+				$camera['criticalalert'] = false;
+				$camera['highalert'] = false;
 				$group_dir = date("H-i-s",$filetime);
+				echo date("Y-m-d H:i:s").": New directory ".$datedir.'/'.$group_dir.CRLF;
+				$camera['group_dir'] = $group_dir;
+				$camera['filetime'] = $filetime;
+				$camera = openGroup($camera);
 				$targetdir = $dir.$datedir.'/'.$group_dir;
 				$numfiles = 0;
-				$newgroupcreated = true;
-				$recording['cam'] = $params['deviceID'];
-				$recording['mdate'] = date ("Y-m-d").'_';
-				$recording['event'] = $group_dir;
-				$recording['folder'] = $camera['previous_properties']['Directory']['value'].'/'.$datedir.'/'.$group_dir;
-				$recording['firstfiletime'] = date ("H:i:s",$filetime);
-				unset($recording['id']);
-				PDOinsert('ha_cam_recordings', $recording);
 			} 
 
 			if (!file_exists($dir)) {
@@ -161,63 +148,100 @@ function movePictures($camera) {
 		// Close group (for now)
 		$camera['datedir'] = $datedir;
 		$camera['group_dir'] = $group_dir;
-		$camera['smssend'] = $smssend;
-		$camera['emailsend'] = $emailsend;
 		$camera['numfiles'] = $numfiles-1;
 		$camera['updatetype'] = true;
-		closeGroup($camera);
+		$camera = closeGroup($camera);
 
-		return $filetime;
+		return $camera;
 	}  
-	return $lastfiletime;
+	return $camera;
 }
+function openGroup($camera) {
 
-function closeGroup($camera) {
+			echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
+			if (DEBUG_CAMERAS) print_r($camera);
 
-			echo 'numfiles: '.$camera['numfiles'].CRLF;
-			if (!empty($camera['previous_properties']['Minimum SMS Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum SMS Alert Files']['value'])  {
-				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating SMS Alert.".CRLF;
-				$html=MOTION_URL2.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
-				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'schemeID' => 116, 'message' => $html ));
-				$smssend = true;
-
-			}
-				
-			if (!empty($camera['previous_properties']['Minimum Email Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum Email Alert Files']['value'])  {
-				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating SMS Alert.".CRLF;
-				$html='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Motion Detected</a>';
-				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'schemeID' => 115, 'message' => $html ));
-				$emailsend = true;
-			}
+			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
 			// update device
 			$params['callerID'] = MY_DEVICE_ID;
 			$params['device'] = $camera;
 			$params['deviceID'] = $camera['id'];
-			$params['previous_properties']['Recording']['value'] = STATUS_ON;
-			$properties['Recording']['value'] = STATUS_OFF;
+			$params['caller'] = $params;
 			$properties['Pictures']['value'] = $camera['numfiles'];
-			$properties['Last Recording Folder']['value'] = $camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'];
-			$properties['Last File Time']['value'] = date("H:i:s",$camera['lastfiletime']); 
+			$properties['Last Recording']['value'] = $htmllong;
+			$properties['Status']['value'] = STATUS_ON; 
 			$params['device']['properties'] = $properties;			
+//			echo sendCommand($params); cannot with resend recording command
+			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
+			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
+			print_r($feedback);
 
-			if ($camera['updatetype']) {		// Previous old group closere, do no update type again
+			//updateDeviceProperties($params);
+			$recording['cam'] = $params['deviceID'];
+			$recording['mdate'] = date ("Y-m-d").'_';
+			$recording['event'] = $camera['group_dir'];
+			$recording['folder'] = $camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'];
+			$recording['firstfiletime'] = date ("H:i:s",$camera['filetime']);
+			unset($recording['id']);
+			PDOinsert('ha_cam_recordings', $recording);
+
+			
+	return $camera;
+}
+
+function closeGroup($camera) {
+
+			echo date("Y-m-d H:i:s").": ".$camera['description']." Closing directory.".($camera['updatetype'] ? "Update True" : "Update False").CRLF;
+			echo 'numfiles: '.$camera['numfiles'].CRLF;
+
+			if (DEBUG_CAMERAS) print_r($camera);
+			
+			// update device
+			$htmlshort=MOTION_URL2.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
+			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
+
+			$params['callerID'] = MY_DEVICE_ID;
+			$params['device'] = $camera;
+			$params['deviceID'] = $camera['id'];
+			$params['caller'] = $params;
+			$properties['Pictures']['value'] = $camera['numfiles'];
+			$properties['Last Recording']['value'] = $htmllong;
+			$properties['Last File Time']['value'] = date("H:i:s",$camera['lastfiletime']); 
+
+
+			if ($camera['updatetype']) {		// Previous old group closed, do no update type again
 				if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Last Recording Type'))['value'])) {
 					$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
 				}
-	
-				if ($recording['recording_typeID'] != RECORDING_TYPE_CONTINUOUS) updateDeviceProperties($params);
-
-				// Need to reset type after this to allwo for recognize MOTION i.e. emptpy
-				// Ok for now, only cam with multiple sources, (Deck) will tell us about  cam motion
-
 			}
-		
+
+			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Minimum Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum Critical Alert Files']['value'])  {
+				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
+				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
+						'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+				$camera['criticalalert'] = true;
+				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
+			} else 
+			
+			if (!$camera['highalert'] && !empty($camera['previous_properties']['Minimum High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum High Alert Files']['value'])  {
+				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
+				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
+						'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+				$camera['highalert'] = true;
+				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
+			}
+			
+			$params['device']['properties'] = $properties;			
+			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
+			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
+			print_r($feedback);
+
 			$recording['count'] = $camera['numfiles'];
 			$recording['lastfiletime'] = date("H:i:s",$camera['lastfiletime']);
-			$recording['smssend'] =  $camera['smssend'];
-			$recording['emailsend'] = $camera['emailsend'];
-			PDOupdate("ha_cam_recordings", $recording, array('folder' => $params['device']['properties']['Last Recording Folder']['value']));
+			$recording['criticalalert'] =  $camera['criticalalert'];
+			$recording['highalert'] = $camera['highalert'];
+			PDOupdate("ha_cam_recordings", $recording, array('folder' => $camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir']));
 			
 	return $camera;
 }

@@ -1,7 +1,7 @@
 <?php
 //define( 'DEBUG_HA', TRUE );
-//define( 'DEBUG_PROPERTIES', TRUE );
-//define( 'DEBUG_TRIGGERS', TRUE );
+// define( 'DEBUG_PROPERTIES', TRUE );
+// define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
 if (!defined('DEBUG_TRIGGERS')) define( 'DEBUG_TRIGGERS', FALSE );
