@@ -221,10 +221,9 @@ function closeGroup($camera) {
 				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
 						'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				$camera['criticalalert'] = true;
+				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
-			} else 
-			
-			if (!$camera['highalert'] && !empty($camera['previous_properties']['Minimum High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum High Alert Files']['value'])  {
+			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['Minimum High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum High Alert Files']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
 				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
 						'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));

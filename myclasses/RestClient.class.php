@@ -55,8 +55,8 @@ class RestClient {
              curl_setopt($this->curl,CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType));
          }
          if($this->timeOut != null) {
-         	 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT ,$this->timeOut); 
-			 curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeOut); //timeout in seconds
+         	 curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT ,$this->timeOut); 
+			 curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->timeOut); //timeout in seconds
          }
          curl_setopt($this->curl,CURLOPT_URL,$this->url);
          $r = curl_exec($this->curl);
@@ -270,7 +270,7 @@ class RestClient {
       * @return RestClient
       */
 //   public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
-     public static function post($url,$params=null,$user=null,$pwd=null,$contentType="application/x-www-form-urlencoded",$timeout=null) {
+     public static function post($url,$params=null,$user=null,$pwd=null,$contentType="application/x-www-form-urlencoded", $timeout=null) {
          return self::call("POST",$url,$params,$user,$pwd,$contentType,$timeout);
      }
 
@@ -296,7 +296,7 @@ class RestClient {
       * @return RestClient
       */
      public static function get($url,array $params=null,$user=null,$pwd=null, $timeout=null) {
-         return self::call("GET",$url,$params,$user,$pwd,$timeout);
+         return self::call("GET",$url,$params,$user,$pwd,"",$timeout);
      }
 
      /**
@@ -322,6 +322,7 @@ class RestClient {
       * @return RestClient
       */
      public static function call($method,$url,$body,$user=null,$pwd=null,$contentType=null,$timeout=null) {
+
          return self::createClient($url)
              ->setParameters($body)
              ->setMethod($method)

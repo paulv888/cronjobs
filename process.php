@@ -4,9 +4,9 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-//define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-//define( 'DEBUG_RETURN', TRUE );
+// define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
@@ -205,6 +205,8 @@ function SendCommand($thiscommand) {
 	$thiscommand['alert_textID'] = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 	$feedback = Array();
 	
+	$exectime = -microtime(true); 
+	
 	if ($thiscommand['commandID'] == null) {
 		$feedback['error'] = "No Command given";
 		return $feedback;			// error abort
@@ -337,11 +339,11 @@ function SendCommand($thiscommand) {
 		if (DEBUG_DEVICES) echo "Rest deviceID ".$thiscommand['deviceID']." commandID ".$thiscommand['commandID'].CRLF;
 		$url=$thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].$thiscommand['device']['link']['page'].$tcomm.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
-		$get = restClient::get($url);
-		if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) 
-			$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+		$curl = restClient::get($url,null, "", "", 2);
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
-			$feedback['message'] = $get->getresponse();
+			$feedback['message'] = $curl->getresponse();
 		usleep(INSTEON_SLEEP_MICRO);
 		if (!array_key_exists('error', $feedback)) {
 			$result[] = ($thiscommand['commandID'] == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
@@ -382,11 +384,11 @@ function SendCommand($thiscommand) {
 		foreach ($commands as $command) {
 			$url=$thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].$thiscommand['device']['link']['page'].$command.'=I=3';
 			if (DEBUG_DEVICES) echo $url.CRLF;
-			$get = restClient::get($url);
-			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204) 
-				$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			$curl = restClient::get($url);
+			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			else 
-				$feedback['message'] = $get->getresponse();
+				$feedback['message'] = $curl->getresponse();
 			usleep(INSTEON_SLEEP_MICRO);
 		}     
 		if (!array_key_exists('error', $feedback)){
@@ -515,20 +517,22 @@ function SendCommand($thiscommand) {
 			}
 			if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
 			if ($targettype == "POSTTEXT") { 
-				$post = restClient::post($url, $tcomm,"","","text/plain");
+				$curl = restClient::post($url, $tcomm, "", "", "text/plain", 2);
 			} elseif ($targettype == "POSTAPP") {
-				$post = restClient::post($url, $tcomm);
+				$curl = restClient::post($url, $tcomm, "", "", "", 2);
 			} elseif ($targettype == "JSON") {
 				parse_str($tcomm, $params);
 				if (DEBUG_DEVICES) echo $url." Params: ".json_encode($params).CRLF;
-				$post = restClient::post($url, json_encode($params),"","","application/json");
+				$curl = restClient::post($url, json_encode($params), "", "", "application/json" , 2);
 			} else { 
-				$post = restClient::post($url.$tcomm);
+			echo "*************";
+				$curl = restClient::post($url.$tcomm,"","","","",2);
 			}
-			if ($post->getresponsecode() != 200 && $post->getresponsecode() != 204) 
-				$feedback['error'] = $post->getresponsecode().": ".$post->getresponse();
+			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			else 
-				$feedback['message'] = $post->getresponse();
+				$feedback['message'] = $curl->getresponse();
+				if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 			break;
 		case "GET":          // Sony Cam at the moment
 			if (DEBUG_DEVICES) echo "GET</p>";
@@ -539,11 +543,11 @@ function SendCommand($thiscommand) {
 			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
 			$url= $thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].'/'.$thiscommand['device']['link']['page'];
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-			$get = restClient::get($url.$tcomm);
-			if ($get->getresponsecode() != 200 && $get->getresponsecode() != 204)
-				$feedback['error'] = $get->getresponsecode().": ".$get->getresponse();
+			$curl = restClient::get($url.$tcomm);
+			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			else 
-				$feedback['message'] = $get->getresponse();
+				$feedback['message'] = $curl->getresponse();
 			break;
 		case null:
 		case "NONE":          // Virtual Devices
@@ -554,6 +558,10 @@ function SendCommand($thiscommand) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		break;		
 	}
+	
+	$time_end = microtime_float();
+	// echo "Execution Time: ".$exectime += microtime(true).CRLF;
+
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message' => $feedback, 'loglevel' => $thiscommand['loglevel']));
 	if ($exittrap) exit($thiscommand['commandvalue']);
 	
@@ -656,7 +664,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] <= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
 				if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
 				return $feedback;
 			}
@@ -665,7 +673,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] >= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
 				if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
 				return $feedback;
 			}
@@ -674,7 +682,7 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			if ($testvalue[0] != $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['RunSchemeName'] = getSchemeName($schemeID);
-				$feedback['error'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['RunSchemeName'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
 				if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
 				return $feedback;
 			}
@@ -694,8 +702,8 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 		$rowshemesteps = mysql_fetch_array($resschemesteps);
 		if (!$ASYNC_THREAD && $rowshemesteps['runasync']) {
 			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-			$getparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
-			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$getparams;
+			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -712,9 +720,10 @@ function RunScheme($params) {      // its a scheme, process steps. Scheme setup 
 			} 
 		} while ($rowshemesteps = mysql_fetch_array($resschemesteps));
 	} else {
-		$feedback['message'] = 'No scheme steps found!';
+		$feedback['error'] = 'No scheme steps found!';
 	}
 	if (DEBUG_FLOW) echo "Exit RunScheme</pre>".CRLF;
+	if (empty($feedback['message'])) unset($feedback['message']);
 	return $feedback;
 
 }
@@ -824,5 +833,10 @@ function RemoteKeys($result) {
 
 	//if (array_key_exists('message'.$feedback) && $feedback['message'] = preg_replace("/\s+/", " ", $$feedback['message'] );
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
+}
+function microtime_float()
+{
+    list($usec, $sec) = explode(" ", microtime());
+    return ((float)$usec + (float)$sec);
 }
 ?>
