@@ -14,23 +14,6 @@ function monitorDevices($linkmonitor) {
 	}
 }
 
-function monitorDevicesTimeout() {
-	$mysql = 'SELECT d.`id` AS `deviceID`, l.`linkmonitor` AS `linkmonitor` , l.`pingport` AS `pingport` ' .
-			 ' FROM ha_mf_monitor_link l' .
-			 ' LEFT JOIN ha_mf_devices d ON l.deviceID = d.id ' .
-			' WHERE (l.`linkmonitor` = "INTERNAL" OR l.`linkmonitor` = "MONSTAT")' .
-			 ' AND d.`inuse` = 1 '.
-			 ' AND l.active = 1' ;
-	
-	if (!$reslinks = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	while ($rowlinks = mysql_fetch_assoc($reslinks)) {	
-		$feedback = UpdateLink(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $rowlinks['deviceID'], 'link' => LINK_TIMEDOUT));
-	}
-}
-
 function monitorDevice($deviceID, $pingport) {
 	$mysql = 'SELECT `ip`, `name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 	if (!$resip = mysql_query($mysql)) {

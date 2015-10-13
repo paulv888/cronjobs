@@ -1,8 +1,8 @@
 <?php
 
-function natSessions() {
-	$result=ImportSessions()." Nat Sessions Read <br/>\r\n";
-	$result.=MoveHistory()." Sessions moved to History <br/>\r\n";
+function natSessions($params = Null) {
+	$result['message']=ImportSessions()." Nat Sessions Read <br/>\r\n";
+	$result['message'].=MoveHistory()." Sessions moved to History <br/>\r\n";
 	return $result;
 }
 

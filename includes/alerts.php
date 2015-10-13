@@ -3,29 +3,6 @@
 //define('DEBUG_ALERT', TRUE);
 if (!defined('DEBUG_ALERT')) define( 'DEBUG_ALERT', FALSE );
 
-function Alerts($alert_textID , $params ) {
-
-	
-	$params['priorityID']  = (array_key_exists('priorityID', $params) ? $params['priorityID'] : 'NULL');
-	
-	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
-	$subject = $rowtext['description'];
-	$message  = $rowtext['message'];
-	
-if (DEBUG_ALERT) {
-	echo "<pre>Alerts Params123: "; print_r($params); echo "</pre>";
-}
-	
-	replaceText($subject, $message, $params);
-		
-	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
-
-	$inserts = PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID']));
-	
-	return $inserts;
-}
-
-
 function replacePlaceholder(&$subject, $params){
 
 	$message = Null;

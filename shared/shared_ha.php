@@ -46,7 +46,7 @@ function setDevicePropertyValue($params, $propertyName) {
 // $params, name
 //
 
-	$feedback = Array();
+	$feedback = Array('propertyName' => $propertyName);
 
 	// Could get these from previous+properties ??
 	$property = getProperty($propertyName);
@@ -99,12 +99,13 @@ function setDevicePropertyValue($params, $propertyName) {
 			$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
 			$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 		} else {
-			$feedback['!Monitor'] = json_encode($deviceproperty);
+			$feedback['!Monitor'] = $deviceproperty;
 		}
 		
 		if (is_null($deviceproperty['value']) || trim($deviceproperty['value'])==='') {
 			if (DEBUG_HA) echo "</pre>";
-			return 'Null or Empty String, exit';
+			$feedback['!Empty'] = 'Null or Empty String, exit';
+			return $feedback;
 		}
 		
 		
@@ -467,6 +468,8 @@ function logEvent($log) {
 	}
 	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
 	
+        if (!is_null($log['message']) && is_array($log['message'])) $log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
+
 	if (DEBUG_HA) echo "***log";
 	if (DEBUG_HA) print_r($log);
 		
@@ -499,14 +502,6 @@ function updateThermType($deviceID, $typeID){
 				  " WHERE(`id` ='" . $deviceID . "')";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return true;
-}
-
-function getGroup($groupID){
-
-	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
-					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
-					WHERE groupID = '.$groupID; 
-	return FetchRows($mysql);
 }
 
 function setTrend($new, $old) {

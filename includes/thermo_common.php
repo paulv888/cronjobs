@@ -133,10 +133,10 @@ function UpdateDailyRuntime($deviceID) {
 	// Clear/Heat/Cool (Yesterday/Today)
 	$sql = 'delete FROM `hvac_run_times` 
 			WHERE deviceID = '.$deviceID.' AND date = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
-	RunQuery($sql);		// Remove Yesterday
+	executeQuery(array( 'commandvalue' => $sql));		// Remove Yesterday
 	$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
 				SELECT "'.$deviceID.'", subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )';
-	RunQuery($sql);		// Insert Empty Yesterday
+	executeQuery(array( 'commandvalue' => $sql));		// Insert Empty Yesterday
 	$sql = 'UPDATE `hvac_run_times` h INNER JOIN
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
@@ -145,7 +145,7 @@ function UpdateDailyRuntime($deviceID) {
 				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `heat_runtime` = c.runtime';
-	RunQuery($sql);		// Update Yesterday heat runtime
+	executeQuery(array( 'commandvalue' => $sql));		// Update Yesterday heat runtime
 	$sql = 'UPDATE `hvac_run_times` h INNER JOIN
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
@@ -154,13 +154,13 @@ function UpdateDailyRuntime($deviceID) {
 				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `cool_runtime` = c.runtime';
-	RunQuery($sql);	// Update Yesterday Cool runtime
+	executeQuery(array( 'commandvalue' => $sql));	// Update Yesterday Cool runtime
 	$sql = 'delete FROM `hvac_run_times` 
 			WHERE deviceID = '.$deviceID.' AND date = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
-	RunQuery($sql);	// Delete Today
+	executeQuery(array( 'commandvalue' => $sql));	// Delete Today
 	$sql = 'INSERT INTO `hvac_run_times` (deviceID, date)
 				SELECT "'.$deviceID.'", DATE_FORMAT( NOW( ) , "%Y-%m-%d" )';
-	RunQuery($sql); // Insert Empty Today
+	executeQuery(array( 'commandvalue' => $sql)); // Insert Empty Today
 	$sql = 'UPDATE `hvac_run_times` h INNER JOIN
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
@@ -169,7 +169,7 @@ function UpdateDailyRuntime($deviceID) {
 				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `heat_runtime` = c.runtime';
-	RunQuery($sql);	// Update Heat runtime
+	executeQuery(array( 'commandvalue' => $sql));	// Update Heat runtime
 	$sql = 'UPDATE `hvac_run_times` h INNER JOIN
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
@@ -178,6 +178,6 @@ function UpdateDailyRuntime($deviceID) {
 				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `cool_runtime` = c.runtime';
-	RunQuery($sql); // Update Cool runtime
+	executeQuery(array( 'commandvalue' => $sql)); // Update Cool runtime
 }
 ?>

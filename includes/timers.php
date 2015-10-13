@@ -55,8 +55,9 @@ function RunTimers(){
 					}
 					break;
 				default:
-					if (timeExpired($last, $timer['repeat'])) {
+					if ((date('Y-m-d') != date('Y-m-d', $last)) || (timeExpired($last, $timer['repeat']))) {
 						$doit = true;
+						$last = time();
 					}
 					break;
 				}
@@ -72,9 +73,9 @@ function RunTimers(){
 					}
 					if (!DEBUG_TIMERS) $result = ob_get_clean();
 					$mysql="UPDATE `ha_timers` ".
-						" SET last_run_date = '". date("Y-m-d H:i:s")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
+						" SET last_run_date = '". date("Y-m-d H:i:00")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": ".$mysql.CRLF;
-					RunQuery($mysql);
+					executeQuery(array( 'commandvalue' => $mysql));
 				}
 				
 			}
@@ -120,12 +121,12 @@ function runTimerSteps($params) {
 				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-				$feedback['TimerName'] = $description;
+				$feedback['Name'] = $description;
 				$feedback['message'] = "Spawned: ".$feedback['TimerName']." ".$cmd." Log:".$outputfile;
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $feedback['message'] ));
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
-				$feedback['TimerName'] = $description;
+				$feedback['Name'] = $description;
 				$feedback['message'] = executeCommand($step);
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'message' => $feedback['message'] ));
 			}
@@ -133,7 +134,7 @@ function runTimerSteps($params) {
 			return $feedback;		// GET OUT
 		}
 	} else {
-		$feedback['message'] = 'No steps found!';
+		$feedback['error'] = 'No steps found!';
 	}
 }
 
@@ -184,7 +185,6 @@ function updateTimers($params) {
 			removeDeviceProperty(Array('deviceID' => $key, 'description' => 'Timer Value'));
 			removeDeviceProperty(Array('deviceID' => $key, 'description' => 'Timer Remaining'));
 			$feedback['ExecuteCommand:'.$key]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
-			//echo 'ExecuteCommand:'.$key.'-----'.executeCommand(array('callerID' => 'MY_DEVICE_ID', 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $key, 'commandID' => COMMAND_OFF));
 		} else {
 			if ($devs[$key]['Timer Value']['value'] > 0) {
 				$minutes = (int)$devs[$key]['Timer Value']['value']-(int)(abs(time() - strtotime($devs[$key]['Timer Date']['value'])) / 60);

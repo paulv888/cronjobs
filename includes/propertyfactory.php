@@ -17,8 +17,8 @@ function updateGeneric(&$params, $propertyName) {
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
 	
 	if ($oldvalue != $newvalue) {			// Value changed
-		$feedback['deviceID'] = $params['deviceID'];
-		$feedback['propertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
+		$feedback['DeviceID'] = $params['deviceID'];
+		$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 		$feedback['Status'] = $newvalue;
 	}
 	
@@ -54,8 +54,8 @@ function updateStatus(&$params, $propertyName) {
 
 
 	if (DEBUG_PROP) echo "Status NewValue:".$newvalue.CRLF;
-	$feedback['deviceID'] = $params['deviceID'];
-	$feedback['propertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
+	$feedback['DeviceID'] = $params['deviceID'];
+	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	$feedback[$propertyName] = $newvalue;
 
 	
@@ -119,7 +119,8 @@ function updateIsRunning(&$params, $propertyName) {
 		updateDailyRuntime($params['deviceID']);
 	}	// Force create Runtime on status change
 	
-	$feedback['deviceID'] = $params['deviceID'];
+	$feedback['DeviceID'] = $params['deviceID'];
+	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	if (DEBUG_PROP) echo "Exit Update $propertyName</PRE>";
 	return $feedback;
 }			

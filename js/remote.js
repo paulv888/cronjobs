@@ -194,13 +194,13 @@ if(!window.scriptRemoteHasRun) {
 			$$('#system-message-container').set('html', '');
 			$$('.dimmer li a[value='+VloRemote.DIM_NO_SELECTED+']').fireEvent('click');
 			$$('#group li a[value='+VloRemote.GROUP_NO_SELECTED+']').fireEvent('click');
-			resetSelection();
+			//resetSelection();
 			//window.scrollTo(0,document.body.scrollHeight);
 		})
 		
 		window.setInterval(function(){
 			refreshDiv();
-		}, 3000);
+		}, 13000);
 	});
 
 	function launchFullScreen(element) {

@@ -11,8 +11,8 @@ function graphCreate($params) {
 	if (DEBUG_GRAPH) print_r($fparams);
 
 	if (!array_key_exists('0', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
-		$result['error']="No Device selected";
-		return $result;
+		$feedback['error']="No Device selected";
+		return $feedback;
 	}
 	$devices = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0']);
 	foreach ($fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0'] as $deviceID) {
@@ -57,7 +57,7 @@ function graphCreate($params) {
 		openMySql();
 
 
-		$mysql='SELECT * FROM ha_mi_properties WHERE id IN ('.$properties.');';
+		$mysql='SELECT * FROM ha_mi_properties_graph WHERE propertyID IN ('.$properties.');';
 		$rowsprops = FetchRows($mysql);
 	
 		$tablename="graph_0";
@@ -65,7 +65,9 @@ function graphCreate($params) {
 		
 		if (count($rows)> MAX_DATAPOINTS) {
 			$rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
-			echo "Too much data, took last : ".MAX_DATAPOINTS;
+			$s = $rows[0]['Date'];
+			$e = $rows[count($rows)-1]['Date'];
+			echo '<p class="badge badge-info">Too much data; Showing: '.count($rows).' from '.$s.' through '.$e.'<p>';
 		}
 		$s = $rows[0]['Date'];
 		$e = $rows[count($rows)-1]['Date'];
@@ -95,7 +97,7 @@ function graphCreate($params) {
 					//print_r($rows[0]);
 					$t = explode('`',$header);
 					$propID = getProperty($t[0])['id'];
-					if (($prodIdx = findByKeyValue($rowsprops,'id',$propID)) !== false) {
+					if (($prodIdx = findByKeyValue($rowsprops,'propertyID',$propID)) !== false) {
 						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
 						if (!empty($rowsprops[$prodIdx]['color'])) {
 							if (strpos($rowsprops[$prodIdx]['color'],",")>0) { 	// First time  read RGB from DB
@@ -149,8 +151,8 @@ function graphCreate($params) {
 		echo '</tbody>';
 		echo '</table>';
 	}
-
-	return;
+	$feedback['message'] = "";
+	return $feedback;
 
 }
 
@@ -378,5 +380,61 @@ function sortArrayByArray(Array $array, Array $orderArray) {
 function getLastKey($arr) {
 	end($arr);
 	return key($arr);
+}
+
+function prettyPrint( $json ) {
+    $result = '';
+    $level = 0;
+    $in_quotes = false;
+    $in_escape = false;
+    $ends_line_level = NULL;
+    $json_length = strlen( $json );
+
+    for( $i = 0; $i < $json_length; $i++ ) {
+        $char = $json[$i];
+        $new_line_level = NULL;
+        $post = "";
+        if( $ends_line_level !== NULL ) {
+            $new_line_level = $ends_line_level;
+            $ends_line_level = NULL;
+        }
+        if ( $in_escape ) {
+            $in_escape = false;
+        } else if( $char === '"' ) {
+            $in_quotes = !$in_quotes;
+        } else if( ! $in_quotes ) {
+            switch( $char ) {
+                case '}': case ']':
+                    $level--;
+                    $ends_line_level = NULL;
+                    $new_line_level = $level;
+                    break;
+
+                case '{': case '[':
+                    $level++;
+                case ',':
+                    $ends_line_level = $level;
+                    break;
+
+                case ':':
+                    $post = " ";
+                    break;
+
+                case " ": case "\t": case "\n": case "\r":
+                    $char = "";
+                    $ends_line_level = $new_line_level;
+                    $new_line_level = NULL;
+                    break;
+            }
+        } else if ( $char === '\\' ) {
+            $in_escape = true;
+        }
+        if( $new_line_level !== NULL ) {
+            $result .= "\n".str_repeat( "\t", $new_line_level );
+        }
+        $result .= $char.$post;
+    }
+
+    return $result;
 }
 ?>

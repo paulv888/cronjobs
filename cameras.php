@@ -148,7 +148,7 @@ function movePictures($camera) {
 		// Close group (for now)
 		$camera['datedir'] = $datedir;
 		$camera['group_dir'] = $group_dir;
-		$camera['numfiles'] = $numfiles-1;
+		$camera['numfiles'] = $numfiles;
 		$camera['updatetype'] = true;
 		$camera = closeGroup($camera);
 
@@ -170,12 +170,15 @@ function openGroup($camera) {
 			$params['caller'] = $params;
 			$properties['Pictures']['value'] = $camera['numfiles'];
 			$properties['Last Recording']['value'] = $htmllong;
-			$properties['Status']['value'] = STATUS_ON; 
+			$properties['Recording']['value'] = STATUS_ON; 
 			$params['device']['properties'] = $properties;			
 //			echo sendCommand($params); cannot with resend recording command
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
 			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
 			print_r($feedback);
+			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Last Recording Type'))['value'])) {
+				$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
+			}
 
 			//updateDeviceProperties($params);
 			$recording['cam'] = $params['deviceID'];
@@ -196,7 +199,7 @@ function closeGroup($camera) {
 			echo 'numfiles: '.$camera['numfiles'].CRLF;
 
 			if (DEBUG_CAMERAS) print_r($camera);
-			
+
 			// update device
 			$htmlshort=MOTION_URL2.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
 			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
@@ -211,9 +214,7 @@ function closeGroup($camera) {
 
 
 			if ($camera['updatetype']) {		// Previous old group closed, do no update type again
-				if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Last Recording Type'))['value'])) {
-					$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
-				}
+				$properties['Recording']['value'] = STATUS_OFF;
 			}
 
 			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Minimum Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum Critical Alert Files']['value'])  {
@@ -230,9 +231,10 @@ function closeGroup($camera) {
 				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
 			}
-			
-			$params['device']['properties'] = $properties;			
-			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
+
+			$params['device']['properties'] = $properties;
+			// Be careful any triggers will be executed on changed properties
+			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
 			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
 			print_r($feedback);
 

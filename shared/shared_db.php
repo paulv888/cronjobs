@@ -124,7 +124,9 @@ function CopyRow($my_table,$where,$posid) {
 	}
 }
 
-function RunQuery($mysql) {
+function executeQuery($params) {
+
+	$mysql = $params['commandvalue'];
 	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
 	$mysql=str_replace("{DEVICE_ALARM_ZONE1}",DEVICE_ALARM_ZONE1,$mysql);
 	$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
@@ -133,9 +135,11 @@ function RunQuery($mysql) {
 	$res = mysql_query($mysql);
 	if (!$res) {
 		mySqlError($mysql); 
-		return false;
+		$feedback['error'] =  mysql_error($mysql_link);
+		return $feedback;
 	}
-	return true;
+	$feedback['message'] =  $res." Rows affected";
+	return $feedback;
 }
    
 function mySqlError($mysql) {
