@@ -173,7 +173,7 @@ function updateTimers($params) {
 
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
 	
-	$feedback = "";
+	$feedback = array();
 	foreach ($devs as $key => $device) {
 		//if (DEBUG_TIMERS) print_r($device);
 		if (!array_key_exists('Timer Date', $device)) $devs[$key]['Timer Date']['value']="1970-01-01";
