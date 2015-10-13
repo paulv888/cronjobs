@@ -108,8 +108,9 @@ function setDevicePropertyValue($params, $propertyName) {
 			return $feedback;
 		}
 		
-		
-		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+		if ($deviceproperty['value'] != $oldvalue) {
+			PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+		}
 		
 		unset($deviceproperty['trend']);
 		$lastLogDate = strtotime($row['updatedate']);
@@ -468,8 +469,13 @@ function logEvent($log) {
 	}
 	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
 	
-        if (!is_null($log['message']) && is_array($log['message'])) $log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
-
+        if (!is_null($log['message'])) {
+			if (is_array($log['message'])) 
+				$log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
+			else
+				$log['message'] = '<pre>'.str_replace('\n','</br>',$log['message']).'</pre>';
+		}
+		
 	if (DEBUG_HA) echo "***log";
 	if (DEBUG_HA) print_r($log);
 		

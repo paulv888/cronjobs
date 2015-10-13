@@ -53,7 +53,7 @@ function updateStatus(&$params, $propertyName) {
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
 
 
-	if (DEBUG_PROP) echo "Status NewValue:".$newvalue.CRLF;
+	if (DEBUG_PROP) echo "Status NewValue: ".$newvalue.CRLF;
 	$feedback['DeviceID'] = $params['deviceID'];
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	$feedback[$propertyName] = $newvalue;
