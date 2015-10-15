@@ -21,7 +21,7 @@ while (1) {
 		$cameras[$key] = movePictures($cameras[$key]);		// Make Prop?
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
-	sleep(15);
+	sleep(5);
         echo updateDLink(MY_DEVICE_ID);
 }
 
