@@ -122,7 +122,7 @@ function runTimerSteps($params) {
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
-				$feedback['message'] = "Spawned: ".$feedback['TimerName']." ".$cmd." Log:".$outputfile;
+				$feedback['message'] = "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile;
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $feedback['message'] ));
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {

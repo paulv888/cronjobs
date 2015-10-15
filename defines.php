@@ -12,10 +12,10 @@ define("SEVERITY_WARNING_CLASS", "alert");
 define("SEVERITY_INFO_CLASS", "alert-info");
 
 // Link Values
-define("LINK_DOWN", 0);
-define("LINK_UP", 1);
-define("LINK_WARNING", 2);
-define("LINK_TIMEDOUT",3);
+define("LINK_DOWN", "0");
+define("LINK_UP", "1");
+define("LINK_WARNING", "2");
+define("LINK_TIMEDOUT","3");
 
 // Event Log Levels
 define("LOGLEVEL_NONE", 1);

@@ -200,7 +200,7 @@ if(!window.scriptRemoteHasRun) {
 		
 		window.setInterval(function(){
 			refreshDiv();
-		}, 13000);
+		}, 3000);
 	});
 
 	function launchFullScreen(element) {

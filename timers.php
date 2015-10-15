@@ -33,7 +33,7 @@ if(version_compare(PHP_VERSION, "5.3.0", '>=')){
 
 while (true) {
 	echo date("Y-m-d H:i:s").": ".RunTimers()." Timers Executed".CRLF;
-	echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated".CRLF;
+	echo updateDLink(MY_DEVICE_ID);
 	sleep(10);
 }
 

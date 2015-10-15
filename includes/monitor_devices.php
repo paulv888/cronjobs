@@ -38,7 +38,13 @@ function monitorDevice($deviceID, $pingport) {
 	}
 
 	echo date("Y-m-d H:i:s").": ".$rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
-	UpdateLink (array('callerID' => MY_DEVICE_ID, 'deviceID' => $deviceID, 'link' => $curlink, 'commandID' => COMMAND_PING));
+	$params['callerID'] = MY_DEVICE_ID;
+	$params['deviceID'] = $deviceID;
+	$params['commandID'] = COMMAND_PING;
+    $params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
+	$properties['Link']['value'] = $curlink;
+	$params['device']['properties'] = $properties;
+	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
 }
 
 function pingip($host, $port, $timeout)

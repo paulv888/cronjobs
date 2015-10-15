@@ -74,8 +74,8 @@ while (true) {
 		if ($inst_hub) {
 
 			$last = strtotime(date("Y-m-d H:i:s"));
-			echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
-
+        		echo updateDLink(MY_DEVICE_ID);
+ 
 			// Inf loop till signal or error
 			while (true) {
 				$errors = 0;
@@ -90,24 +90,20 @@ while (true) {
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 				$properties = Array();
 				if (array_key_exists('commandvalue',$message)) {
-					$properties['Value'] = $message['commandvalue'];
+					$properties['Value']['value'] = $message['commandvalue'];
 					unset($message['commandvalue']);
 				}
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
-				
 					$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
+					$properties['Link']['value'] = LINK_UP;
 					$device['properties'] = $properties;
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
 							'commandID' => $message['commandID'], 'device' => $device, 'caller' => $message)))."</br>\n";
-					echo date("Y-m-d H:i:s").": ".'Update Link: '.updateLink (array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-							'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID'], 'caller' => $message))."</br>\n";
 				}
 				
 				// Update My Link 
-				if (timeExpired($last, 15)) {
-					echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
-				}
+				if (timeExpired($last, 15)) echo updateDLink(MY_DEVICE_ID);
 			}
 		}
 	}

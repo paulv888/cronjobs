@@ -239,7 +239,7 @@ function SendCommand($thiscommand) {
 			// return false;
 		// }
 		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
-		$targettype = $thiscommand['device']['link']['targettype'];
+		$targettype = $thiscommand['device']['connection']['targettype'];
 		$commandclassID = $thiscommand['device']['commandclassID'];
 		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
 
@@ -337,7 +337,7 @@ function SendCommand($thiscommand) {
 		if (DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
 		$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
 		if (DEBUG_DEVICES) echo "Rest deviceID ".$thiscommand['deviceID']." commandID ".$thiscommand['commandID'].CRLF;
-		$url=$thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].$thiscommand['device']['link']['page'].$tcomm.'=I=3';
+		$url=$thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].$thiscommand['device']['connection']['page'].$tcomm.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
 		$curl = restClient::get($url,null, "", "", 2);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -382,7 +382,7 @@ function SendCommand($thiscommand) {
 		// handle dimming, cannot give commandvalue so dimming lots of times
 		//
 		foreach ($commands as $command) {
-			$url=$thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].$thiscommand['device']['link']['page'].$command.'=I=3';
+			$url=$thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].$thiscommand['device']['connection']['page'].$command.'=I=3';
 			if (DEBUG_DEVICES) echo $url.CRLF;
 			$curl = restClient::get($url);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -403,7 +403,7 @@ function SendCommand($thiscommand) {
 	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
 		$xmlfile="X10Command.xml";
 		$x10 = simplexml_load_file($xmlfile);
-		OpenTCP($thiscommand['device']['link']['targetaddress'], $thiscommand['device']['link']['targetport'],"X10");
+		OpenTCP($thiscommand['device']['connection']['targetaddress'], $thiscommand['device']['connection']['targetport'],"X10");
 		$x10[0]->CallerID = "web";
 		$x10[0]->Operation = "send";
 		$x10[0]->Sender = "plc";
@@ -462,8 +462,12 @@ function SendCommand($thiscommand) {
 				$feedback[$func] = $func($thiscommand);
 				if  (array_key_exists('error', $feedback[$func])) {
 					$thiscommand['commandvalue'] = $feedback[$func]['error']; // Commandvalue so it will end up in data for log
-				} else {
-					if (array_key_exists('Name', $feedback[$func])) $thiscommand['commandvalue'] = $feedback[$func]['Name'];
+				} elseif (array_key_exists('Name', $feedback[$func])) {
+                                         $thiscommand['commandvalue'] = $feedback[$func]['Name'];
+                                } elseif (array_key_exists('error', $feedback[$func]) && is_string($feedback[$func]['error'])) {
+					 $thiscommand['commandvalue'] = $feedback[$func]['error'];
+                                } elseif (array_key_exists('message', $feedback[$func]) && is_string($feedback[$func]['message'])) {
+					 $thiscommand['commandvalue'] = $feedback[$func]['message'];
 				}
 			}
 			break;
@@ -488,10 +492,10 @@ function SendCommand($thiscommand) {
 			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
 			$tmp1 = explode('?', $tcomm);
 			if (array_key_exists('1', $tmp1)) { 	// found '?', take page from command string
-				$url= $thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].'/'.$tmp1[0];
+				$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$tmp1[0];
 				$tcomm = $tmp1[1];
 			} else {
-				$url= $thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].'/'.$thiscommand['device']['link']['page'];
+				$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
 			}
 			if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
 			if ($targettype == "POSTTEXT") { 
@@ -508,7 +512,7 @@ function SendCommand($thiscommand) {
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			else 
-				$feedback['message'] = $curl->getresponse();
+				$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\R~',' ',strip_tags($curl->getresponse())));
 				if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 			break;
 		case "GET":          // Sony Cam at the moment
@@ -518,7 +522,7 @@ function SendCommand($thiscommand) {
 			$tcomm = str_replace("{unit}",$thiscommand['device']['unit'],$tcomm);
 			$tcomm = str_replace("{commandvalue}",trim($thiscommand['commandvalue']),$tcomm);
 			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
-			$url= $thiscommand['device']['link']['targetaddress'].":".$thiscommand['device']['link']['targetport'].'/'.$thiscommand['device']['link']['page'];
+			$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 			$curl = restClient::get($url.$tcomm);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)

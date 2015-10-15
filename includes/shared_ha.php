@@ -1,10 +1,20 @@
 <?php
 //define( 'DEBUG_HA', TRUE );
-// define( 'DEBUG_PROPERTIES', TRUE );
+//define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
 if (!defined('DEBUG_TRIGGERS')) define( 'DEBUG_TRIGGERS', FALSE );
+
+function updateDLink($deviceID, $link = LINK_UP) {
+        $params['callerID'] = MY_DEVICE_ID;
+        $params['deviceID'] = MY_DEVICE_ID;
+        $params['device'] = getDevice(MY_DEVICE_ID);
+        $params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => MY_DEVICE_ID));
+        $properties['Link']['value'] = $link;
+        $params['device']['properties'] = $properties;
+        return date("Y-m-d H:i:s").": ".json_encode(updateDeviceProperties($params))." My Link Updated <br/>\r\n";
+}
 
 function updateDeviceProperties($params) {
 	// If inverted (from process.php, coming in with negated command
@@ -25,7 +35,7 @@ function updateDeviceProperties($params) {
 	// No status or other props are set, force a status (if we have commandID)
 	//
 	if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists('Status', $params['device']['properties']))) {
-		$params['device']['properties']['Status']['value'] = STATUS_NOT_DEFINED;
+		$params['device']['properties']['Status']['value'] = "";
 		if (DEBUG_HA) echo "status: ".$params['device']['properties']['Status']['value'].CRLF;
 	}
 	
@@ -36,7 +46,7 @@ function updateDeviceProperties($params) {
 		}
 	} 
 	
-	if (DEBUG_PROPERTIES) echo "Exit updateProperties </pre>";
+	if (DEBUG_HA) echo "Exit updateProperties </pre>";
 	
 	return $feedback;
 }
@@ -87,12 +97,16 @@ function setDevicePropertyValue($params, $propertyName) {
 		$params['lastlogdate'] = $row['updatedate'];
 		$lastLogDate = strtotime($row['updatedate']);
 		if ($monitor) {
-			if ($propertyName != "Link") {
-				$func = 'update'.str_replace(' ','',$propertyName);
-				if (function_exists ($func)) {
-					if(!($feedback['updateStatus'] = $func($params, $propertyName))) return;
-				} else {
-					if(!($feedback['updateStatus'] = updateGeneric($params, $propertyName))) return;
+			$func = 'update'.str_replace(' ','',$propertyName);
+			if (function_exists ($func)) {
+				if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
+					$feedback['!Fail'] = 'Factory returned false, exit';
+					return;
+				}
+			} else {
+				if(!($feedback['updateStatus'] = updateGeneric($params, $propertyName))) {
+					$feedback['!Fail'] = 'Factory returned false, exit';
+					return;
 				}
 			}
 			$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
@@ -108,15 +122,35 @@ function setDevicePropertyValue($params, $propertyName) {
 			return $feedback;
 		}
 		
-		if ($deviceproperty['value'] != $oldvalue) {
+		if ($deviceproperty['value'] != $oldvalue && $propertyName != 'Link') {		// Link special, handled in factory (How about not monitor?)
+			$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 			PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 		}
+
+	if (DEBUG_HA) {
+		echo "afterFactory $propertyName ";
+		print_r ($deviceproperty);
+	}
 		
 		unset($deviceproperty['trend']);
 		$lastLogDate = strtotime($row['updatedate']);
 		$lastvalue = $row['value'];
 		// Check for date string as well length  2015-10-06 23:33:01
-		if (timeExpired($lastLogDate, 60) || (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19) {
+		switch ($property['log']) {
+		case "NOT":
+			$logit = false;
+			break;
+		case "HOUR":
+			$logit = timeExpired($lastLogDate, 60) || (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+			break;
+		case "CHANGE":
+			$logit = (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+			break;
+		case "ALWAYS":
+			$logit = true;
+			break;
+		}
+		if ($logit) {
 				if ($property['datatype']=="BINARY" && $deviceproperty['value'] != $row['value']) {		// relog old value with current time to make nice graph
 					PDOupsert('ha_properties_log', 	Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
 							'updatedate' => date("Y-m-d H:i:s", strtotime("-1 second"))), Array('propertyID' => $deviceproperty['propertyID'], 'deviceID' => $deviceproperty['deviceID'],	'value' => $row['value'], 
@@ -128,7 +162,7 @@ function setDevicePropertyValue($params, $propertyName) {
 			if (DEBUG_HA) echo "Not Logging: ".$propertyName.CRLF;
 		}
 	} else {		// First one
-print_r(Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+// print_r(Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 		unset($deviceproperty['trend']);
 		PDOinsert('ha_properties_log', $deviceproperty);
@@ -138,18 +172,24 @@ print_r(Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $device
 	//
 	// Execute triggers
 	// 
-	if ($monitor && $oldvalue !== $deviceproperty['value']) {
-		if ($property['datatype']=="BINARY" && $propertyName != "Link") { 		// Link still handled locally (Skip)
-			$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
-			if (!empty($result)) $feedback['Triggers'] = $result;
+	// var_dump($oldvalue);
+	// var_dump($deviceproperty['value']);
+	if ($monitor && ($oldvalue !== $deviceproperty['value'])) {
+		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
 			if ($deviceproperty['value'] == STATUS_ON ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ON);
+				if (!empty($result)) $feedback['Triggers'] = $result;
+				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($deviceproperty['value'] == STATUS_OFF ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_OFF);
 				if (!empty($result)) $feedback['Triggers'] = $result;
+				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
+				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($deviceproperty['value'] == STATUS_ERROR ){
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ERROR);
+				if (!empty($result)) $feedback['Triggers'] = $result;
+				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 			}
 		}
@@ -189,9 +229,9 @@ function getDevice($deviceID){
 
 	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse= 1';
 	if ($rowdevice = FetchRow($mysql)) {
-		$mysql='SELECT * FROM ha_mf_device_links where id ='.$rowdevice['devicelinkID'];
-		if ($rowlink = FetchRow($mysql)) {
-			$rowdevice['link'] = $rowlink;
+		$mysql='SELECT * FROM ha_mi_connection where id ='.$rowdevice['connectionID'];
+		if ($rowconn = FetchRow($mysql)) {
+			$rowdevice['connection'] = $rowconn;
 		}
 		$mysql = 'SELECT * FROM `ha_mf_device_types` WHERE id = '.$rowdevice['typeID'];
 		if ($rowtype = FetchRow($mysql)) {
@@ -215,13 +255,22 @@ function getDevicesWithProperties($params){
 //	$devs = getDeviceProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
 //
 // OUT: combArray
+// Array
 // (
-    // [60] => Array
+    // [137] => Array
         // (
-            // [Timer Date] => 2015-09-29 17:57:43
-            // [Timer Value] => 
-            // [Timer Remaining] => 
-        // )
+            // [Link] => Array
+                // (
+                    // [id] => 14700
+                    // [deviceID] => 137
+                    // [propertyID] => 225
+                    // [value] => 1
+                    // [trend] => 0
+                    // [sort] => 1020
+                    // [updatedate] => 2015-10-13 21:49:36
+                    // [description] => Link
+                // )
+
 
 	$comb = Array();
 	foreach ($params['properties'] as $propertyName) {
@@ -298,13 +347,26 @@ function getDeviceProperties($deviceproperty){
 				print_r($rowproperty);
 				echo "</pre>";
 			}
+			if ($deviceproperty['propertyID'] == '225') {
+				if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
+						WHERE deviceID = '.$deviceproperty['deviceID'])) $rowproperty = array_merge($rowproperty, $link);
+			}
+			if (DEBUG_PROPERTIES) {
+				echo "<pre> Dev & Prop merged";
+				print_r($rowproperty);
+				echo "</pre>";
+			}
 			return $rowproperty;
 		}
-	} elseif (array_key_exists('propertyID', $deviceproperty)) {		// Only PropertyID Used from upateTimer to get all devices with timer set 
+	} elseif (array_key_exists('propertyID', $deviceproperty)) {		// Only PropertyID Used from upateTimer/Link to get all devices with timer set 
 		$result = Array();
 		if ($rowproperties = FetchRows('SELECT dp.*, p.description FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.$deviceproperty['propertyID'])) {
-			foreach ($rowproperties AS $prop) {
-				$result[$prop['deviceID']][$propertyName] = $prop;
+			foreach ($rowproperties AS $key => $prop) {
+				if ($propertyName == 'Link') {
+					if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
+						WHERE deviceID = '.$prop['deviceID'])) $rowproperties[$key] = array_merge($prop, $link);
+				}
+				$result[$prop['deviceID']][$propertyName] = $rowproperties[$key];
 			}
 			if (DEBUG_PROPERTIES) {
 				echo "<pre> Only Prop (All devs) ";
@@ -320,8 +382,12 @@ function getDeviceProperties($deviceproperty){
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
 			 WHERE dp.deviceID = '.$deviceproperty['deviceID'])) {
- 			foreach ($rowproperties AS $prop) {
-				$result[$prop['description']] = $prop;
+ 			foreach ($rowproperties AS $key => $prop) {
+				if ($prop['description'] == 'Link') {
+					if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
+						WHERE deviceID = '.$deviceproperty['deviceID'])) $rowproperties[$key] = array_merge($rowproperties[$key], $link);
+				}
+				$result[$prop['description']] = $rowproperties[$key];
 			}
 			if (DEBUG_PROPERTIES) {
 				echo "<pre> All props for device ".$deviceproperty['deviceID']." ";
@@ -340,11 +406,11 @@ function getStatusLink($devprop) {
 	if (!empty($devprop['propertyID'])) {
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'propertyID' => $devprop['propertyID'])))) {
 			$feedback['Status'] = $property['value'];
-			$feedback['propertyID'] =$devprop['propertyID'];
+			$feedback['PropertyID'] =$devprop['propertyID'];
 		}
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Link')))) $feedback['Link'] = $property['value'];
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
-		$feedback['deviceID'] = $devprop['deviceID'];
+		$feedback['DeviceID'] = $devprop['deviceID'];
 	}
 	return $feedback;
 }
@@ -428,6 +494,7 @@ function logEvent($log) {
 	if (!array_key_exists("data", $log)) $log['data'] = Null;
 	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
+	if (!array_key_exists("message", $log)) $log['message'] = Null;
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
 	
 	$repeatcount=1;
@@ -468,13 +535,13 @@ function logEvent($log) {
 		}
 	}
 	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
-	
-        if (!is_null($log['message'])) {
-			if (is_array($log['message'])) 
-				$log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
-			else
-				$log['message'] = '<pre>'.str_replace('\n','</br>',$log['message']).'</pre>';
-		}
+
+	if (!is_null($log['message'])) {
+		if (is_array($log['message'])) 
+			$log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
+		else
+			$log['message'] = '<pre>'.str_replace('\n','</br>',$log['message']).'</pre>';
+	}
 		
 	if (DEBUG_HA) echo "***log";
 	if (DEBUG_HA) print_r($log);

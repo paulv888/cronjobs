@@ -5,8 +5,10 @@ if (!defined('DEBUG_WBUG')) define( 'DEBUG_WBUG', FALSE );
 
 define('IMAGE_CACHE',"/images/yahoo/");
 define('FRONT_DIR',"/images/yahoo/");
-//if (!defined(MY_DEVICE_ID)) define( MY_DEVICE_ID, 97);
 
+// 
+//  Part of commandfactory
+//
 function getYahooWeather($params) {
 
 	$station = $params['commandvalue'];
@@ -23,20 +25,20 @@ function getYahooWeather($params) {
 	if (DEBUG_YAHOOWEATHER) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
 	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
-       	if (!$feedback['error']) {
+	$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
+	if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
 		$feedback['message'] =  json_encode(json_decode($get->getresponse(), true));
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 		
-		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$properties['Temperature']['value'] = $result->{'item'}->{'condition'}->{'temp'};
 		$properties['Humidity']['value'] =  $result->{'atmosphere'}->{'humidity'};
 		$properties['Status']['value'] = STATUS_ON;
 		$device['properties'] = $properties;
-		
-		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $deviceID, 'device' => $device));
+		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
+
 		$array['deviceID'] = $deviceID;
 		$array['mdate'] = date("Y-m-d H:i:s",strtotime( $result->{'item'}->{'pubDate'}));
 		$array['temp'] = $result->{'item'}->{'condition'}->{'temp'};
@@ -120,8 +122,10 @@ function getYahooWeather($params) {
 //			PDOinsert("ha_weather_forecast", $array);
 			$i++;
 		}
-
-   		UpdateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $deviceID));
+	} else {
+		$properties['Status']['value'] = STATUS_ERROR;
+		$device['properties'] = $properties;
+		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
 	}
 
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
@@ -185,7 +189,6 @@ function loadWeather($station) {
 					$properties['Status']['value'] = STATUS_ON;
 					$device['properties'] = $properties;
 					updateDeviceProperties(array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station], 'device' => $device));
-            		updateLink (array('callerID' => 'MY_DEVICE_ID', 'deviceID' => $mydeviceID[$station]));
                 	$success = true; 
             	}
         	}

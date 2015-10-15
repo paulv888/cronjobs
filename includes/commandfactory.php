@@ -1,22 +1,30 @@
 <?php
-//define( 'DEBUG_COMMANDS', TRUE );
+define( 'DEBUG_COMMANDS', TRUE );
 if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 function monitorDevicesTimeout($params) {
-	$mysql = 'SELECT d.`id` AS `deviceID`, l.`linkmonitor` AS `linkmonitor` , l.`pingport` AS `pingport` 
-			FROM ha_mf_monitor_link l 
-			LEFT JOIN ha_mf_devices d ON l.deviceID = d.id 
-			WHERE (l.`linkmonitor` = "INTERNAL" OR l.`linkmonitor` = "MONSTAT") 
-			AND d.`inuse` = 1
-			AND l.active = 1' ;
+
+	// Need to handle inuse and active
+	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
 	
-	echo $mysql.CRLF;
-	$feedback = Array('updateLink' => "");
-	if ($rowlinks = FetchRows($mysql)) {
-		foreach ($rowlinks as $link) {	
-			$feedback['updateLink'] .= updateLink(array('callerID' => $params['callerID'], 'deviceID' => $link['deviceID'], 'link' => LINK_TIMEDOUT));
+	// echo "<pre>";
+	// print_r($devs);
+	$feedback = array();
+	$params['callerID'] = $params['callerID'];
+	foreach ($devs as $key => $props) {
+		if (array_key_exists('linkmonitor', $props['Link'])) {
+			if($props['Link']['linkmonitor'] == "INTERNAL" || $props['Link']['linkmonitor'] == "MONSTAT") {
+				$params['deviceID'] = $key;
+				$params['device']['previous_properties'] = $props;
+				$properties['Link']['value'] = LINK_TIMEDOUT;
+				$params['device']['properties'] = $properties;
+		//		print_r($params);
+				$feedback[] = updateDeviceProperties($params);
+			}
 		}
 	}
+	// print_r($feedback);
+	// echo "</pre>";
 	return $feedback;
 }
 
@@ -51,9 +59,9 @@ if (DEBUG_ALERT) {
 		
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 
-	$inserts = PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID']));
+	$feedback['message'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID'])).' created';
 	
-	return $inserts;
+	return $feedback;
 }
 
 function executeMacro($params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
@@ -83,11 +91,13 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		{
 		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
 			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
+			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
 			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
 			break;
 		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
 		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
 			if (DEBUG_FLOW) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
+			$condtype = "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR";
 			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
 				$test = 1;
 			} else {
@@ -106,6 +116,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			break;
 		case SCHEME_CONDITION_CURRENT_TIME: 
 			if (DEBUG_FLOW) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
+			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
 			$testvalue[] = time();
 			break;
 		}
@@ -150,7 +161,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] <= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'" '.$condtype;
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -159,7 +170,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] >= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'" '.$condtype;
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -168,7 +179,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] != $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"';
+				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'" '.$condtype;
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -244,11 +255,14 @@ function getDuskDawn($params) {
 		$properties['Astronomy Sunrise']['value'] = $tsr;
 		$properties['Astronomy Sunset']['value'] = $tss;
 		$properties['Status']['value'] = $device['previous_properties']['Status']['value'];
+		$properties['Link']['value'] = LINK_UP;
 		$device['properties'] = $properties;
-
-		$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
-   		UpdateLink (array('callerID' => $params['callerID'], 'deviceID' => DEVICE_DARK_OUTSIDE));
+	} else {
+		$properties['Status']['value'] = STATUS_ERROR;
+		$properties['Link']['value'] = LINK_DOWN;
+		$device['properties'] = $properties;
 	}
+	$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
 
 	if (DEBUG_DUSKDAWN) echo "</pre>";
 	return $feedback;

@@ -5,8 +5,8 @@ require_once 'includes.php';
 define("MY_DEVICE_ID", 136);
 
 echo date("Y-m-d H:i:s").": ".UpdateTemps();
-echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated <br/>\r\n";
-
+echo updateDLink(MY_DEVICE_ID);
+ 
 function UpdateTemps() {
 	global $pdo;
 	global $dbConfig;
@@ -95,12 +95,13 @@ function UpdateTemps() {
 				$properties['Temperature']['value'] = to_celcius($stat->temp);
 				$properties['Setpoint']['value'] = to_celcius($target);
 				$properties['Status']['value'] = $stat->getTargetOnOff();
+				$properties['Link']['value'] = LINK_UP;
 				$device['properties'] = $properties;
 				updateDeviceProperties(array( 'callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID'], 'device' => $device));
 	
 				//$runTimeData = $stat->getDataLog();
 				$stat->getDataLog();
-				if ($thermostatRec['deviceID']<>999) {
+				if ($thermostatRec['deviceID']!=999) {
 					// Remove zero or one rows for today and then insert one row for today.
 					$queryRunDelete->execute( array($today, $thermostatRec['deviceID']) );
 					logIt( "Run Time Today - Inserting RTH {$stat->runTimeHeat} RTC {$stat->runTimeCool} U $stat->uuid T $today" );
@@ -113,9 +114,6 @@ function UpdateTemps() {
 				} else {	// 114 = broke so update from run-cylces
 					UpdateDailyRuntime(999);
 				}
-				
-				echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID, 'deviceID' => $thermostatRec['deviceID']))." My Link Updated <br/>\r\n";
-	
 			}
 			catch( Exception $e )
 			{

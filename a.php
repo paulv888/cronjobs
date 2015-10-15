@@ -91,11 +91,11 @@ if (!($sdata=="")) { 					//import_event
 		$properties['Status']['value'] = $rcv_message['Status'];
 		
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
+		$properties['Link']['value'] = LINK_UP;
 		$device['properties'] = $properties;
 		
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
 		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
-		updateLink(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'link' => LINK_TIMEDOUT, 'commandID' => $message['commandID']));
 	}
 }
 ?>

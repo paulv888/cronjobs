@@ -22,7 +22,7 @@ while (1) {
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(15);
-    echo date("Y-m-d H:i:s").": ".UpdateLink(array('callerID' => MY_DEVICE_ID))." My Link Updated".CRLF;
+        echo updateDLink(MY_DEVICE_ID);
 }
 
 function readCameras() {
@@ -169,14 +169,14 @@ function openGroup($camera) {
 			$params['deviceID'] = $camera['id'];
 			$params['caller'] = $params;
 			$properties['Pictures']['value'] = $camera['numfiles'];
-			$properties['Last Recording']['value'] = $htmllong;
+			$properties['Lastest Recording']['value'] = $htmllong;
 			$properties['Recording']['value'] = STATUS_ON; 
 			$params['device']['properties'] = $properties;			
 //			echo sendCommand($params); cannot with resend recording command
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
 			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
 			print_r($feedback);
-			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Last Recording Type'))['value'])) {
+			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value'])) {
 				$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
 			}
 
@@ -209,7 +209,7 @@ function closeGroup($camera) {
 			$params['deviceID'] = $camera['id'];
 			$params['caller'] = $params;
 			$properties['Pictures']['value'] = $camera['numfiles'];
-			$properties['Last Recording']['value'] = $htmllong;
+			$properties['Lastest Recording']['value'] = $htmllong;
 			$properties['Last File Time']['value'] = date("H:i:s",$camera['lastfiletime']); 
 
 
@@ -217,14 +217,14 @@ function closeGroup($camera) {
 				$properties['Recording']['value'] = STATUS_OFF;
 			}
 
-			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Minimum Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum Critical Alert Files']['value'])  {
+			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Critical Alert Files']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
 				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
 						'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				$camera['criticalalert'] = true;
 				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
-			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['Minimum High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Minimum High Alert Files']['value'])  {
+			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['High Alert Files']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
 				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
 						'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
