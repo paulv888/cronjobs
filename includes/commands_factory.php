@@ -1,5 +1,5 @@
 <?php
-define( 'DEBUG_COMMANDS', TRUE );
+//define( 'DEBUG_COMMANDS', TRUE );
 if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 function monitorDevicesTimeout($params) {
@@ -67,11 +67,11 @@ if (DEBUG_ALERT) {
 function executeMacro($params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
 
 // Check conditions
-	global $ASYNC_THREAD;
-
 	$schemeID = $params['schemeID'];
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
+	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
+
 
 	if (DEBUG_FLOW) echo "<pre>Enter executeMacro $schemeID".CRLF;
 	if (DEBUG_FLOW) print_r($params);
@@ -137,8 +137,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
 					$temp[0] = strtoupper($temp[0]);
 					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
-						if ($temp[0] == "DAWN") $temp[0] = GetDawn();
-						if ($temp[0] == "DUSK") $temp[0] = GetDusk();
+						if ($temp[0] == "DAWN") $temp[0] = getDawn();
+						if ($temp[0] == "DUSK") $temp[0] = getDusk();
 						if (isset($temp[1])) {
 							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
 						} else {
@@ -198,25 +198,28 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	ORDER BY ha_remote_scheme_steps.sort';
 	
 	// Trap any async SCHEMES here
-	$rowshemesteps = FetchRows($mysql);
-	if (!$ASYNC_THREAD && current($rowshemesteps)['runasync']) {
-		$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-		$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
-		$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
-		$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
-		$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
-		exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-		$feedback['Name'] = current($rowshemesteps)['name'];
-		$feedback['error'] = "Spawned: ".$feedback['Name']."  Log:".$outputfile;
-		if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
-		return $feedback;		// GET OUT
-	}
-	foreach ($rowshemesteps as $step) {
-		$feedback['Name'] = $step['name'];
-		$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']]=SendCommand(array( 'deviceID' => $step['deviceID'], 
-					'commandID' => $step['commandID'], 'commandvalue' => $step['value'], 'schemeID' => $step['runschemeID'], 
-					'alert_textID' => $step['alert_textID'], 'caller' => $callerparams));
-		
+	if ($rowshemesteps = FetchRows($mysql)) {
+		if (!$asyncthread && current($rowshemesteps)['runasync']) {
+			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
+			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
+			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+			$feedback['Name'] = current($rowshemesteps)['name'];
+			$feedback['error'] = "Spawned: ".$feedback['Name']."  Log:".$outputfile;
+			if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+			return $feedback;		// GET OUT
+		}
+		foreach ($rowshemesteps as $step) {
+			$feedback['Name'] = $step['name'];
+			$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']]=SendCommand(array( 'deviceID' => $step['deviceID'], 
+						'commandID' => $step['commandID'], 'commandvalue' => $step['value'], 'schemeID' => $step['runschemeID'], 
+						'alert_textID' => $step['alert_textID'], 'caller' => $callerparams));
+			
+		}
+	} else {
+		$feedback['error'] = 'No scheme steps found: '.$schemeID;
 	}
 	if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 	if (empty($feedback['message'])) unset($feedback['message']);
@@ -271,6 +274,22 @@ function getDuskDawn($params) {
 function setResult($params) {
 	$feedback['message'] = $params['commandvalue'];
 	break;
+}
+
+
+function setDevicePropertyCommand(&$params) {
+	$tarr = explode("___",$params['commandvalue']);
+	$text = $tarr[1];
+	replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
+	if (strtoupper($text) == "TOGGLE") { 		// Toggle
+		if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
+			$text = STATUS_OFF;
+		else
+			$text = STATUS_ON;
+	}
+	$params['device']['properties'][$tarr[0]]['value'] = $text;
+	$feedback['Name'] = $tarr[0];
+	return $feedback;
 }
 
 // Private

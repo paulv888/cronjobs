@@ -38,32 +38,13 @@ define("STATUS_UNKNOWN", "2" );
 define("STATUS_ERROR", "-1" );
 define("STATUS_NOT_DEFINED", "10");		// Used for defining status on commands 
 
-// Commands from Device   ??? obsolete ???
-//define("COMMAND_RESULT_OK", 1);
-//define("COMMAND_RESULT_ERROR", 2);
-define("COMMAND_STATUSON", 8);
-define("COMMAND_STATUSOFF", 6);
 define("COMMAND_TOGGLE", 19);
 define("COMMAND_ON", 17);
 define("COMMAND_OFF", 20);
-define("COMMAND_DIM", 13);
-define("COMMAND_STREAM_DATA", 91);			// ***** Review does not match command
-define("COMMAND_TOGGLE_HVAC", 132);
 define("COMMAND_UNKNOWN", 267);
-define("COMMAND_ADDRESS", 21);
 define("COMMAND_RUN_SCHEME", 154);
-// define("COMMAND_SET_RESULT", 285);
-// define("COMMAND_GET_GROUP", 282);
-// define("COMMAND_LOG_ALERT", 152);
 define("COMMAND_GET_VALUE", 136);
-// define("COMMAND_GET_WEATHER", 289);
-// define("COMMAND_SET_TIMER", 287);
 define("COMMAND_PING", 151);
-define("COMMAND_SET_PROPERTY_VALUE", 314);
-// define("COMMAND_GRAPH_CREATE", 315);
-// define("COMMAND_RUN_TIMER_STEPS", 317);
-// define("COMMAND_UPDATE_TIMERS", 288);
-
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);
@@ -147,17 +128,6 @@ define("DEV_TYPE_LOCK",35);
 define("DEV_INTERNAL_TYPE_GENERIC",0);
 define("DEV_INTERNAL_TYPE_HEAT",1);
 define("DEV_INTERNAL_TYPE_COOL",2);
-
-// Alerts
-define("ALERT_NETWORK_DEVICE_CHANGE", 21);
-define("ALERT_NEW_NETWORK_DEVICE", 9);
-define("ALERT_LEFT_HOME", 24);
-define("ALERT_CAME_HOME", 28);
-define("ALERT_OLIVIA_LEFT_HOME", 31);
-define("ALERT_OLIVIA_CAME_HOME", 32);
-define("ALERT_UNKNOWN_IP_FOUND", 35);
-define("WATER_ALARM_TRIGGERED", 36);
-define("ALARM-2_TRIGGERED", 37);
 
 define("WEATHER_URL","http://www.weather.gov/xml/current_obs/");
 define("SOURCE_WEATHER_GOV", 7);

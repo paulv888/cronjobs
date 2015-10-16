@@ -1,4 +1,6 @@
 <?php
+define("COMMAND_STATUSON", 8);
+define("COMMAND_STATUSOFF", 6);
 class InsteonHub
 {
 protected $socket;

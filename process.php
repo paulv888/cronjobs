@@ -4,8 +4,8 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-// define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_FLOW', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
@@ -21,8 +21,8 @@ if (isset($argv)) {
 			$_POST[$e[0]]=urldecode($e[1]);
 		} else {
 			if ($e[0] == "ASYNC_THREAD") {
-				$ASYNC_THREAD = true;
-				echo "ASYNC_THREAD ".($ASYNC_THREAD ? "true" : "false").CRLF;
+				$_POST[$e[0]]=true;
+				echo 'ASYNC_THREAD true'.CRLF;
 			}
 		}
 	}
@@ -204,6 +204,7 @@ function SendCommand($thiscommand) {
 	$thiscommand['schemeID'] = (array_key_exists('schemeID', $thiscommand) ? $thiscommand['schemeID'] : Null);
 	$thiscommand['alert_textID'] = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
 	$feedback = Array();
+	$commandstr = "";
 	
 	$exectime = -microtime(true); 
 	
@@ -303,11 +304,6 @@ function SendCommand($thiscommand) {
 
 	switch ($commandclassID)
 	{
-	case COMMAND_CLASS_3MFILTRETE:          
-		if (DEBUG_DEVICES) echo "COMMAND_CLASS_3MFILTRETE</p>";
-		$func = $rowcommands['command'];
-		$feedback['updateDeviceProperties'] = $func($callerparams['callerID'], $thiscommand['deviceID'], $thiscommand['commandvalue']);
-		break;
 	case COMMAND_CLASS_EMAIL:
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_EMAIL".CRLF;
 		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$thiscommand['alert_textID']);
@@ -337,9 +333,10 @@ function SendCommand($thiscommand) {
 		if (DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
 		$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
 		if (DEBUG_DEVICES) echo "Rest deviceID ".$thiscommand['deviceID']." commandID ".$thiscommand['commandID'].CRLF;
-		$url=$thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].$thiscommand['device']['connection']['page'].$tcomm.'=I=3';
+		$url=setURL($thiscommand, $commandstr);
+		$commandstr .= $tcomm.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
-		$curl = restClient::get($url,null, "", "", 2);
+		$curl = restClient::get($url.$tcomm.'=I=3',null, "", "", 2);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -382,9 +379,11 @@ function SendCommand($thiscommand) {
 		// handle dimming, cannot give commandvalue so dimming lots of times
 		//
 		foreach ($commands as $command) {
-			$url=$thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].$thiscommand['device']['connection']['page'].$command.'=I=3';
+			//$url=$thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].$thiscommand['device']['connection']['page'].$command.'=I=3';
+			$url=setURL($thiscommand, $commandstr);
+			$commandstr .= $command.'=I=3';
 			if (DEBUG_DEVICES) echo $url.CRLF;
-			$curl = restClient::get($url);
+			$curl = restClient::get($url.$command.'=I=3');
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			else 
@@ -400,77 +399,27 @@ function SendCommand($thiscommand) {
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		}
 		break;
-	case COMMAND_CLASS_X10:				// Obsolete TCP bridge gone, might use later for comm between VMs
-		$xmlfile="X10Command.xml";
-		$x10 = simplexml_load_file($xmlfile);
-		OpenTCP($thiscommand['device']['connection']['targetaddress'], $thiscommand['device']['connection']['targetport'],"X10");
-		$x10[0]->CallerID = "web";
-		$x10[0]->Operation = "send";
-		$x10[0]->Sender = "plc";
-		$x10[0]->HouseCode = $thiscommand['device']['code'];
-		$x10[0]->Unit = $thiscommand['device']['unit'];
-		if ($thiscommand['commandID'] ==  COMMAND_ON && $thiscommand['commandvalue']>0 && $thiscommand['commandvalue']<100) {
-			$x10[0]->Command = "On";
-			$x10[0]->CmdData = NULL;
-			$x10[0]->Date = date("Y-m-d H:i:s");
-			WriteTCP($x10[0]->asXML());
-			$x10[0]->Command = "Bright";
-			$x10[0]->CmdData = 100;
-			$x10[0]->Date = date("Y-m-d H:i:s");
-			WriteTCP($x10[0]->asXML());
-			$x10[0]->Command = "Dim";
-			$x10[0]->CmdData = 100-$thiscommand['commandvalue'];
-			$x10[0]->Date = date("Y-m-d H:i:s");
-			WriteTCP($x10[0]->asXML());
+	case COMMAND_CLASS_3MFILTRETE:          
+	case COMMAND_CLASS_GENERIC:	
+		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC/COMMAND_CLASS_3MFILTRETE</p>";
+		$func = $rowcommands['command'];
+		if ($func == "exit") 
+			$exittrap=true;
+		elseif ($func == "sleep") {
+			$commandstr = $func.' '.$thiscommand['commandvalue'];
+			$feedback[$func] = $func($thiscommand['commandvalue']);
 		} else {
-			$x10[0]->Command = $rowcommands['description'];
-			$x10[0]->CmdData = $thiscommand['commandvalue'];
-			$x10[0]->Date = date("Y-m-d H:i:s");
-			WriteTCP($x10[0]->asXML());
-		}
-		CloseTCP("X10");
-		$result[] = (commandID == COMMAND_OFF ? STATUS_OFF : STATUS_ON);
-		$result[] = $thiscommand['commandvalue'];
-		break;
-	case COMMAND_CLASS_GENERIC:								// No device 
-		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC</p>";
-		switch ($thiscommand['commandID'])
-		{
-		case COMMAND_SET_PROPERTY_VALUE:
-			$tarr = explode("___",$thiscommand['commandvalue']);
-			$text = $tarr[1];
-			replacePlaceholder($text, Array('deviceID' => $thiscommand['deviceID']));
-			if (strtoupper($text) == "TOGGLE") { 		// Toggle
-				if ($thiscommand['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
-					$text = STATUS_OFF;
-				else
-					$text = STATUS_ON;
+			$commandstr = $func.' '.json_encode($thiscommand);
+			$feedback[$func] = $func($thiscommand);
+			if  (array_key_exists('error', $feedback[$func])) {
+				$thiscommand['commandvalue'] = $feedback[$func]['error']; // Commandvalue so it will end up in data for log
+			} elseif (array_key_exists('Name', $feedback[$func])) {
+				$thiscommand['commandvalue'] = $feedback[$func]['Name'];
+			} elseif (array_key_exists('error', $feedback[$func]) && is_string($feedback[$func]['error'])) {
+				$thiscommand['commandvalue'] = $feedback[$func]['error'];
+			} elseif (array_key_exists('message', $feedback[$func]) && is_string($feedback[$func]['message'])) {
+				$thiscommand['commandvalue'] = $feedback[$func]['message'];
 			}
-			$thiscommand['device']['properties'][$tarr[0]]['value'] = $text;
-			$func = $rowcommands['command'];
-			$feedback[] = $func($thiscommand, $tarr[0]);
-			$thiscommand['device']['previous_properties'][$tarr[0]]['value'] = $thiscommand['device']['properties'][$tarr[0]]['value'];
-			$thiscommand['device']['previous_properties'][$tarr[0]]['updatedate'] = date("Y-m-d H:i:s");
-			break;
-		default:
-			$func = $rowcommands['command'];
-			if ($func == "exit") 
-				$exittrap=true;
-			elseif ($func == "sleep")
-				$feedback[$func] = $func($thiscommand['commandvalue']);
-			else {
-				$feedback[$func] = $func($thiscommand);
-				if  (array_key_exists('error', $feedback[$func])) {
-					$thiscommand['commandvalue'] = $feedback[$func]['error']; // Commandvalue so it will end up in data for log
-				} elseif (array_key_exists('Name', $feedback[$func])) {
-                                         $thiscommand['commandvalue'] = $feedback[$func]['Name'];
-                                } elseif (array_key_exists('error', $feedback[$func]) && is_string($feedback[$func]['error'])) {
-					 $thiscommand['commandvalue'] = $feedback[$func]['error'];
-                                } elseif (array_key_exists('message', $feedback[$func]) && is_string($feedback[$func]['message'])) {
-					 $thiscommand['commandvalue'] = $feedback[$func]['message'];
-				}
-			}
-			break;
 		}
 		if ($rowcommands['need_device']) {
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
@@ -483,7 +432,7 @@ function SendCommand($thiscommand) {
 		case "POSTAPP":          // PHP - vlosite
 		case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
 		case "POSTURL":          // Web Arduino
-		case "JSON":          // Wink
+		case "JSON":             // Wink
 			if (DEBUG_DEVICES) echo $targettype."</p>";
 			$tcomm = str_replace("{mycommandID}",trim($thiscommand['commandID']),$rowcommands['command']);
 			$tcomm = str_replace("{deviceID}",trim($thiscommand['deviceID']),$tcomm);
@@ -491,22 +440,26 @@ function SendCommand($thiscommand) {
 			$tcomm = str_replace("{commandvalue}",trim($thiscommand['commandvalue']),$tcomm);
 			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
 			$tmp1 = explode('?', $tcomm);
-			if (array_key_exists('1', $tmp1)) { 	// found '?', take page from command string
-				$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$tmp1[0];
+			if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
+				$thiscommand['device']['connection']['page'] .= $tmp1[0];
 				$tcomm = $tmp1[1];
-			} else {
-				$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
-			}
+			} 
+			$url=setURL($thiscommand, $commandstr);
+			
 			if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
 			if ($targettype == "POSTTEXT") { 
+				$commandstr .= ' '.$tcomm;
 				$curl = restClient::post($url, $tcomm, "", "", "text/plain", 2);
 			} elseif ($targettype == "POSTAPP") {
+				$commandstr .= ' '.$tcomm;
 				$curl = restClient::post($url, $tcomm, "", "", "", 2);
 			} elseif ($targettype == "JSON") {
 				parse_str($tcomm, $params);
 				if (DEBUG_DEVICES) echo $url." Params: ".json_encode($params).CRLF;
+				$commandstr .= ' '.json_encode($params);
 				$curl = restClient::post($url, json_encode($params), "", "", "application/json" , 2);
 			} else { 
+				$commandstr .= $tcomm;
 				$curl = restClient::post($url.$tcomm,"","","","",2);
 			}
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -522,8 +475,10 @@ function SendCommand($thiscommand) {
 			$tcomm = str_replace("{unit}",$thiscommand['device']['unit'],$tcomm);
 			$tcomm = str_replace("{commandvalue}",trim($thiscommand['commandvalue']),$tcomm);
 			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
-			$url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
+			// $url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
+			$url=setURL($thiscommand, $commandstr);
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
+			$commandstr .= $tcomm;
 			$curl = restClient::get($url.$tcomm);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -540,10 +495,9 @@ function SendCommand($thiscommand) {
 		break;		
 	}
 	
-	$time_end = microtime_float();
-	// echo "Execution Time: ".$exectime += microtime(true).CRLF;
+	$exectime += microtime(true);
 
-	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message' => $feedback, 'loglevel' => $thiscommand['loglevel']));
+	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $commandstr, 'exectime' => $exectime));
 	if ($exittrap) exit($thiscommand['commandvalue']);
 	
 	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;
@@ -650,10 +604,5 @@ function RemoteKeys($result) {
 
 	//if (array_key_exists('message'.$feedback) && $feedback['message'] = preg_replace("/\s+/", " ", $$feedback['message'] );
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
-}
-function microtime_float()
-{
-    list($usec, $sec) = explode(" ", microtime());
-    return ((float)$usec + (float)$sec);
 }
 ?>

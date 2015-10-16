@@ -559,16 +559,16 @@ $this->debug = false;
 	// Getting current status from device /tstat has to be called before
 	// verify current status with antoher call to /tstat
 	// if successfull return status (ttemp???)
-	public function Toggle($status = NULL)
+	public function Toggle($commandID)
 	{
 
 
-		if ($status === NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
+		//if ($status === NULL) $status = $this->getTargetOnOff();			// Read target from Thermostat
 		
 //		echo "stat:".$status."</br>";
 		if ($this->tmode == 0) return STATUS_OFF;
 
-		if ($status == STATUS_ON) { 									// Target is set for Here
+		if ($commandID == COMMAND_OFF) { 								// Target is set for Here
 			if ($this->tmode == 1) {									// Heating Mode
 				$ttemp = $this->away_heat;							 	// Toggle Off
 				$status = STATUS_OFF;
@@ -576,7 +576,7 @@ $this->debug = false;
 				$ttemp = $this->away_cool;								// Toggle Off
 				$status = STATUS_OFF;
 			}
-		} elseif ($status == STATUS_OFF) {	 							// Target is set for Away
+		} elseif ($commandID == COMMAND_ON) {	 						// Target is set for Away
 			if ($this->tmode == 1) {									// Heating Mode
 				$ttemp = $this->here_heat;								// Toggle On
 				$status = STATUS_ON;

@@ -1,4 +1,7 @@
 <?php
+define("ALERT_NETWORK_DEVICE_CHANGE", 21);
+define("ALERT_NEW_NETWORK_DEVICE", 9);
+define("ALERT_UNKNOWN_IP_FOUND", 35);
 
 function natSessions($params = Null) {
 	$result['message']=ImportSessions()." Nat Sessions Read <br/>\r\n";
@@ -137,7 +140,8 @@ function findLocalName($ip) {
 						'deviceID' => MY_DEVICE_ID, 
 						"ha_alerts___l1" => 'IP Address', 
 						"ha_alerts___v1" => $ip);
-		echo Alerts(ALERT_UNKNOWN_IP_FOUND,$params)." Alerts generated <br/>\r\n";
+		$params['alert_textID'] = ALERT_UNKNOWN_IP_FOUND;
+		echo createAlert($params)['message'].CRLF;
 		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 			`ip` ,
 			`mac` ,
@@ -380,7 +384,8 @@ if(networkmap_fullscan == 1) genClientList();
 								"ha_alerts___v2" => $name, 
 								"ha_alerts___v3" => $rowdevice['ip'],
 								"ha_alerts___v4" => $ip);
-				echo Alerts(ALERT_NETWORK_DEVICE_CHANGE,$params)." Alerts generated <br/>\r\n";
+				$params['alert_textID'] = ALERT_NETWORK_DEVICE_CHANGE;
+				echo createAlert($params)['message'].CRLF;
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", `last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				if (!mysql_query($mysql)) mySqlError($mysql);	
@@ -396,7 +401,8 @@ if(networkmap_fullscan == 1) genClientList();
 							"ha_alerts___v2" => $name, 
 							"ha_alerts___v3" => $ip, 
 							"ha_alerts___v4" => $connection);
-			echo Alerts(ALERT_NEW_NETWORK_DEVICE,$params)." Alerts generated <br/>\r\n";
+			$params['alert_textID'] = ALERT_NEW_NETWORK_DEVICE;
+			echo createAlert($params)['message'].CRLF;
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,
 						`mac` ,

@@ -1,5 +1,5 @@
 <?php
-//define( 'DEBUG_PROP', TRUE );
+// define( 'DEBUG_PROP', TRUE );
 if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {
@@ -33,16 +33,18 @@ function updateStatus(&$params, $propertyName) {
 		echo "<PRE>Update $propertyName ";
 		print_r($params);
 	}
-	
+
+	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+	$newvalue = $params['device']['properties'][$propertyName]['value'];
 	
 	if (array_key_exists('commandID', $params) && $params['device']['properties'][$propertyName]['value'] == "") {
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		// echo var_dump($commandStatus);
 		if ($commandStatus !== false && $commandStatus != STATUS_NOT_DEFINED) {
 			if ($params['device']['previous_properties'][$propertyName]['invertstatus'] == "0") {
-				$params['device']['properties'][$propertyName]['value'] = ($commandStatus == STATUS_ON ? STATUS_OFF : STATUS_ON);
+				$newvalue = ($commandStatus == STATUS_ON ? STATUS_OFF : STATUS_ON);
 			} else {
-				$params['device']['properties'][$propertyName]['value'] = $commandStatus;
+				$newvalue = $commandStatus;
 			}
 		} else {
 			unset($params['device']['properties'][$propertyName]);
@@ -50,10 +52,12 @@ function updateStatus(&$params, $propertyName) {
 		}
 	}
 	
-	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
-	$newvalue = $params['device']['properties'][$propertyName]['value'];
-
-
+	if ($oldvalue != $newvalue && $newvalue == STATUS_OFF) {
+		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Date'));
+		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Value'));
+		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Remaining'));
+	}
+	
 	if (DEBUG_PROP) echo "Status NewValue: ".$newvalue.CRLF;
 	$feedback['DeviceID'] = $params['deviceID'];
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
@@ -85,6 +89,7 @@ function updateStatus(&$params, $propertyName) {
 		}
 	}
 	
+	$params['device']['properties'][$propertyName]['value'] = $newvalue;
 	if (DEBUG_PROP) echo "Exit Update Status</PRE>";
 	return $feedback;
 }	

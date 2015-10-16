@@ -55,14 +55,14 @@ if (!($sdata=="")) { 					//import_event
 	}
 	//print_r($properties);
 	
-	$message['message'] = $sdata;
+	$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$error_message = (array_key_exists('errorMessage', $rcv_message) ? implode(" - ", $errorMessage) : null);
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
-		$properties['Status']['value'] = $rcv_message['Status'];
+		$properties['Status']['value'] = (string)$rcv_message['Status'];
 		$properties['Link']['value'] = LINK_UP;
 		$properties['Value']['value'] = $v;
 		$device['properties'] = $properties;

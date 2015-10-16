@@ -141,8 +141,8 @@ function runTimerSteps($params) {
 function checkTime ($setupstart,$setupend, $offset) {
 	// TODO:: implement dawn/dusk
 	$start= $setupstart;
-	if ($setupstart == TIME_DAWN) $start = GetDawn();
-	if ($setupstart == TIME_DUSK) $start = GetDusk();
+	if ($setupstart == TIME_DAWN) $start = getDawn();
+	if ($setupstart == TIME_DUSK) $start = getDusk();
 	if ($setupstart == '-') $start = "00:00:00";
 	if ($setupstart == TIME_DAWN || $setupstart == TIME_DUSK || $setupstart == '-' ) {
 		$start = strtotime("today $start");
@@ -152,8 +152,8 @@ function checkTime ($setupstart,$setupend, $offset) {
 	}
 
 	$end=$setupend;
-	if ($setupend == TIME_DAWN) $end = GetDawn();
-	if ($setupend == TIME_DAWN) $end = GetDusk();
+	if ($setupend == TIME_DAWN) $end = getDawn();
+	if ($setupend == TIME_DAWN) $end = getDusk();
 	if ($setupend == '-' or $setupend == '00') $end = "23:59:59";	
 	if ($setupend == TIME_DAWN || $setupend == TIME_DUSK || $setupend == '-' or $setupend == '00') {
 		$end = strtotime("today $end");

@@ -1,5 +1,5 @@
 <?php
-//define( 'DEBUG_HA', TRUE );
+// define( 'DEBUG_HA', TRUE );
 //define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
@@ -490,14 +490,12 @@ function logEvent($log) {
 	if (!array_key_exists("commandID", $log)) $log['commandID'] = COMMAND_UNKNOWN;
 	if (!array_key_exists("inout", $log)) $log['inout'] = COMMAND_IO_NOT;
 	if (!array_key_exists("callerID", $log)) $log['callerID'] = Null;
-	if (!array_key_exists("repeatcount", $log)) $log['repeatcount'] = 1;
 	if (!array_key_exists("data", $log)) $log['data'] = Null;
 	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
 	if (!array_key_exists("message", $log)) $log['message'] = Null;
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
 	
-	$repeatcount=1;
 	//
 	//	Get device type and monitorid
 	//

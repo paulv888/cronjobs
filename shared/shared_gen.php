@@ -437,4 +437,26 @@ function prettyPrint( $json ) {
 
     return $result;
 }
+
+function setURL($params, &$commandstr) {
+
+	$connect = $params['device']['connection'];
+	$url = $connect['targetaddress'];
+	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'].'/';
+	if (!empty($connect['page'])) $url .= $connect['page'];
+	$commandstr = $url;
+	if (!empty($connect['username']) && !empty($connect['password'])) {
+		$url = str_replace('//','//'.$connect['username'].':'.$connect['password'].'@', $url);
+		$commandstr = str_replace('//','//'.'***:***@', $commandstr);
+	}
+	return $url;
+}
+
+function getDawn() {
+	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunrise"))['value'];
+}
+
+function getDusk() {
+	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"))['value'];
+}
 ?>
