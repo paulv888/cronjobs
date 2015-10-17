@@ -87,8 +87,6 @@ function RunTimers(){
 
 function runTimerSteps($params) {
 
-	if (DEBUG_TIMERS) echo "<pre>".CRLF;
-	if (DEBUG_TIMERS) print_r($params);
 
 	if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
 		$timer['runasync'] = false;
@@ -96,6 +94,8 @@ function runTimerSteps($params) {
 		$timer['description'] = "";
 		$timerID = $params['commandvalue'];
 	} else {
+		if (DEBUG_TIMERS) echo "<pre>".CRLF;
+		if (DEBUG_TIMERS) print_r($params);
 		$timer = $params['timer'];
 		$timerID = $params['timer']['id'];
 	}
@@ -108,6 +108,7 @@ function runTimerSteps($params) {
 		FROM (ha_timers INNER JOIN ha_remote_scheme_steps ON ha_timers.id = ha_remote_scheme_steps.timerID) 
 		WHERE(((ha_timers.id) = '.$timerID.')) ORDER BY ha_remote_scheme_steps.sort';
 	
+	$feedback['message'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
 			$description = $step['description'];
@@ -122,17 +123,16 @@ function runTimerSteps($params) {
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
-				$feedback['message'] = "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile;
+				$feedback['message'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $feedback['message'] ));
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
 				$feedback['Name'] = $description;
-				$feedback['message'] = executeCommand($step);
+				$feedback['message'] .= executeCommand($step).'</br>';
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'message' => $feedback['message'] ));
 			}
-
-			return $feedback;		// GET OUT
 		}
+		return $feedback;		// GET OUT
 	} else {
 		$feedback['error'] = 'No steps found!';
 	}
