@@ -328,8 +328,10 @@ if(!window.scriptRemoteHasRun) {
 			jQuery('.rem-button, .display').each(function() {
 				keys.push(jQuery(jQuery(this)).attr('data-remotekey'));
 			}) ;
-			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
-			callAjax(params, false) ;
+			if (keys.length > 0) {
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
+				callAjax(params, false) ;
+			}
 		}
 	};
 
@@ -337,8 +339,10 @@ if(!window.scriptRemoteHasRun) {
 	
 		if (showSpin === undefined) showSpin = true;
 	
-		jQuery('#system-message-container').html ('');
-		if (showSpin) jQuery('#spinner').show();
+		if (showSpin) {
+				jQuery('#system-message-container').html ('');
+				jQuery('#spinner').show();
+		}
 		var keysRequest = jQuery.ajax({
 				dataType: "json",
 				url: 	VloRemote.url,

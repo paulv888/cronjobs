@@ -7,21 +7,21 @@ function loadremote($remoteID) {
     $mycount = 1;
 	if ($numrows > 1) {
 		echo '<div class="bs-example bs-example-tabs">';
-		echo '<ul id="myTab" class="nav nav-tabs nav-justified">';
+		echo '<ul id="myTab" class="nav nav-tabs nav-dark nav-remote">';
 		while ($rowdivs = mysql_fetch_array($resdivs)) {
 			echo '<li class="';
 			if ($mycount==1) echo 'active'; 
-			echo '"><a href="#divid_'.$rowdivs['id'].'"  data-toggle="tab"';
+			echo '" '.'style="width:20%;"><a href="#divid_'.$rowdivs['id'].'"  data-toggle="tab"';
 			echo '>';
 			$text = $rowdivs['name'];
 			$booticon = $rowdivs['booticon'];
 			if ($booticon != null) {								// if icon then do icon <i>
 				echo '<i class="btn-icon '.$booticon;
-				if ($text != null) echo ' '.'rem-icon-left';
+				if ($text != null) echo ' '.'';
 				echo '">';
 				echo '</i>';
 			} 
-			if ($text != null) echo ''.$text.'';
+			if ($text != null) echo '<div>'.$text.'</div>';
 			echo '</a>';
 			echo '</li>';
 			$mycount = 2;
