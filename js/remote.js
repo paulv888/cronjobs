@@ -81,8 +81,8 @@ if(!window.scriptRemoteHasRun) {
 		});
 
 		// regular down when up as well (cam move...)
-		// jQuery('.click-down').unbind('mousedown');
 		eventname = isMobile.any() ? "touchstart" : "mousedown";
+		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
 			event.stopImmediatePropagation()
 			var keys = [];
@@ -92,8 +92,7 @@ if(!window.scriptRemoteHasRun) {
 		});	
 
 		eventname = isMobile.any() ? "touchend" : "mouseup";
-		// regular up for mouse down class
-		// jQuery('.click-down').unbind('mouseup');
+		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
 			event.stopImmediatePropagation()
 			var keys = [];
@@ -105,6 +104,7 @@ if(!window.scriptRemoteHasRun) {
 		// regular up
 		//jQuery('.click-up').unbind('click');
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.click-up').unbind(eventname);
 		jQuery('.click-up').bind(eventname, function(event){
 			event.stopImmediatePropagation()
 			var commandvalue = 100;
@@ -121,6 +121,7 @@ if(!window.scriptRemoteHasRun) {
 
 		// Generic dropdown button
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.btndropdown li a').unbind(eventname);
 		jQuery('.btndropdown li a').bind(eventname, function(event){
 			// event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
@@ -141,6 +142,7 @@ if(!window.scriptRemoteHasRun) {
 
 		// Group drop downs
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('#group li a').unbind(eventname);
 		jQuery('#group li a').bind(eventname, function(event){
 			// event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
@@ -165,6 +167,7 @@ if(!window.scriptRemoteHasRun) {
 		
 		// Dimmer dropdowns
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.dimmer li a').unbind(eventname);
 		jQuery('.dimmer li a').bind(eventname, function(event){
 			// event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
@@ -197,6 +200,7 @@ if(!window.scriptRemoteHasRun) {
 		
 		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
 		// Update same as latest button dropdown, allow S C or Value
+		jQuery('.controlselect-button').unbind("change");
 		jQuery('.controlselect-button').change( function(event){
 			event.stopImmediatePropagation()
 			var selected = jQuery(this.selectedOptions).attr('value');
@@ -215,6 +219,7 @@ if(!window.scriptRemoteHasRun) {
 		//this is the function that dropdown's button either schemes or commands
 		// Update same as latest button dropdown, allow S C or Value
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.jump-button').unbind(eventname);
 		jQuery('.jump-button').bind(eventname, function(event){
 			event.stopImmediatePropagation()
 			var selected = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).attr('value');
@@ -230,7 +235,7 @@ if(!window.scriptRemoteHasRun) {
 			callAjax (params) ;
 
 			//Run scheme button (
-			// jQuery('.scheme-button').unbind('click');
+			jQuery('.scheme-button').unbind('click');
 			jQuery('.scheme-button').click( function(event){
 				event.stopImmediatePropagation()
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:jQuery(this).get('value')};
@@ -238,7 +243,7 @@ if(!window.scriptRemoteHasRun) {
 			});	
 
 			//Run command button (
-			// jQuery('.command-button').unbind('click');
+			jQuery('.command-button').unbind('click');
 			jQuery('.command-button').click( function(event){
 				event.stopImmediatePropagation()
 				// event.stop();
@@ -250,8 +255,8 @@ if(!window.scriptRemoteHasRun) {
 		
 
 		// switching tabs
-		// jQuery('#myTab a').unbind('click');
 		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('#myTab a').unbind(eventname);
 		jQuery('#myTab a').bind(eventname, function(event){
 			jQuery('#system-message-container').html('');
 			//resetSelection();
