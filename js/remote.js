@@ -2,66 +2,133 @@
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
 
-       var VloRemote = {
-                'COMMAND_GET_GROUP' : 282,
-                'COMMAND_SET_VALUE' : 145,
-                'COMMAND_GET_VALUE' : 136,
-                'COMMAND_TOGGLE' : 19,
-                'MY_DEVICE_ID' : 164,
-                'GROUP_NO_SELECTED' : 0,
-                'DIM_NO_SELECTED' : 19,
-                'url' : '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php'
-        };
+   var VloRemote = {
+			'COMMAND_GET_GROUP' : 282,
+			'COMMAND_SET_VALUE' : 145,
+			'COMMAND_GET_VALUE' : 136,
+			'COMMAND_TOGGLE' : 19,
+			'MY_DEVICE_ID' : 164,
+			'GROUP_NO_SELECTED' : 0,
+			'DIM_NO_SELECTED' : 19,
+			'url' : '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			'timer' : 0
+	};
 
-	window.addEvent('domready', function(){
+	var isMobile = {
+		Android: function() {
+			return /Android/i.test(navigator.userAgent);
+		},
+		BlackBerry: function() {
+			return /BlackBerry/i.test(navigator.userAgent);
+		},
+		iOS: function() {
+			return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+		},
+		Windows: function() {
+			return /IEMobile/i.test(navigator.userAgent);
+		},
+		any: function() {
+			return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Windows());
+		}
+	};
+
+	jQuery(document).ready(function(){
+
+		if (isMobile.Android() == true) {
+		
+
+		
+			console = {
+				"_log" : [],
+				"log" : function() {
+				  var arr = [];
+				  for ( var i = 0; i < arguments.length; i++ ) {
+					arr.push( arguments[ i ] );
+				  }
+				  this._log.push( arr.join( ", ") );
+				},
+				"trace" : function() {
+				  var stack;
+				  try {
+					throw new Error();
+				  } catch( ex ) {
+					stack = ex.stack;
+				  }
+				  console.log( "console.trace()\n" + stack.split( "\n" ).slice( 2 ).join( "  \n" ) );
+				},
+				"dir" : function( obj ) {
+				  console.log( "Content of " + obj );
+				  for ( var key in obj ) {
+					var value = typeof obj[ key ] === "function" ? "function" : obj[ key ];
+					console.log( " -\"" + key + "\" -> \"" + value + "\"" );
+				  }
+				},
+				"show" : function() {
+				  alert( this._log.join( "\n" ) );
+				  this._log = [];
+				}
+			};
+		}
+	
+		window.onerror = function( msg, url, line ) {
+			console.log("ERROR: \"" + msg + "\" at \"" + "\", line " + line);
+		}
+
+		window.addEventListener( "touchstart", function( e ) {
+			if( e.touches.length === 3 ) {
+			  console.show();
+			}
+		});
 
 		// regular down when up as well (cam move...)
-		$$('.click-down').removeEvents('mousedown');
-		$$('.click-down').addEvent('mousedown', function(event){
-			event.stop();
+		// jQuery('.click-down').unbind('mousedown');
+		eventname = isMobile.any() ? "touchstart" : "mousedown";
+		jQuery('.click-down').bind(eventname, function(event){
+			event.stopImmediatePropagation()
 			var keys = [];
-			keys.push(this.get("data-remotekey"));
+			keys.push(jQuery(this).attr("data-remotekey"));
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
-			callAjaxNoSpin (params) ;
+			callAjax(params, false) ;
 		});	
 
+		eventname = isMobile.any() ? "touchend" : "mouseup";
 		// regular up for mouse down class
-		$$('.click-down').removeEvents('mouseup');
-		$$('.click-down').addEvent('mouseup', function(event){
-			event.stop();
+		// jQuery('.click-down').unbind('mouseup');
+		jQuery('.click-down').bind(eventname, function(event){
+			event.stopImmediatePropagation()
 			var keys = [];
-			keys.push(this.get("data-remotekey"));
+			keys.push(jQuery(this).attr("data-remotekey"));
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
-			callAjax (params) ;
+			callAjax(params, false) ;
 		});	
 
 		// regular up
-		$$('.click-up').removeEvents('click');
-		$$('.click-up').addEvent('click', function(event){
-			event.stop();
+		//jQuery('.click-up').unbind('click');
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.click-up').bind(eventname, function(event){
+			event.stopImmediatePropagation()
 			var commandvalue = 100;
-			
 			// check if in dim mode
-			commandvalue = parseInt($$('.tab-pane.active .dimmer').get('data-myvalue'));
+			commandvalue = parseInt(jQuery('.tab-pane.active .dimmer').attr('data-myvalue'));
 			if (commandvalue ==  VloRemote.DIM_NO_SELECTED || isNaN(commandvalue)) commandvalue = null;
 			var keys = [];
-			keys.push(this.get("data-remotekey"));
+			keys.push(jQuery(this).attr("data-remotekey"));
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue: commandvalue};
 			resetSelection();
-			this.addClass('group-select');
+			jQuery(this).addClass('group-select');
 			callAjax (params) ;
 		});	
 
 		// Generic dropdown button
-		$$('.btndropdown li a').removeEvents('click');
-		$$('.btndropdown li a').addEvent('click', function(event){
-			//event.stop();
-			var mbut = this.parentNode.parentNode.parentNode.firstChild;
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.btndropdown li a').bind(eventname, function(event){
+			// event.stopImmediatePropagation()
+			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
-			var selected = this.getAttribute('data-value');
-			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
+			var selected = jQuery(this).attr('data-value');
+			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 			var keys = [];
-			keys.push(this.parentNode.parentNode.get("data-remotekey"));
+			keys.push(jQuery(this.parentNode.parentNode).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
@@ -73,44 +140,44 @@ if(!window.scriptRemoteHasRun) {
 		});
 
 		// Group drop downs
-		$$('#group li a').removeEvents('click');
-		$$('#group li a').addEvent('click', function(event){
-//			event.stop();
-			var mbut = this.parentNode.parentNode.parentNode.firstChild;
-			mbut.firstChild.textContent = ' '+this.text;
-			var selected = this.getAttribute('data-value');
-			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('#group li a').bind(eventname, function(event){
+			// event.stopImmediatePropagation()
+			var mbut = this.parentNode.parentNode.parentNode;
+			var textNode = mbut.getElementsByClassName("buttontext")[0];
+			textNode.textContent = this.text;
+			var selected = jQuery(this).attr('data-value');
+			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
+			
 			if (selected == VloRemote.GROUP_NO_SELECTED){
-				mbut.removeClass('btn-info');
-				mbut.addClass('btn-success');
+				jQuery(mbut).removeClass('btn-info');
+				jQuery(mbut).addClass('btn-success');
 				resetSelection();
 			} else {
-				mbut.removeClass('btn-info');
-				mbut.addClass('btn-success');
+				jQuery(mbut).addClass('btn-info');
+				jQuery(mbut).removeClass('btn-success');
 				resetSelection();
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: VloRemote.COMMAND_GET_GROUP, commandvalue: this.getAttribute('data-value').substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: VloRemote.COMMAND_GET_GROUP, commandvalue: jQuery(this).attr('data-value').substring(1)};
 				callAjax (params) ; 		// get group members here and set select
 			}
 		});
 
 		
 		// Dimmer dropdowns
-		$$('.dimmer li a').removeEvents('click');
-		$$('.dimmer li a').addEvent('click', function(event){
-//			event.stop();
-			var mbut = this.parentNode.parentNode.parentNode.firstChild;
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.dimmer li a').bind(eventname, function(event){
+			// event.stopImmediatePropagation()
+			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
-			var selected = this.getAttribute('data-value');
-			this.parentNode.parentNode.setAttribute('data-myvalue', selected);
+			var selected = jQuery(this).attr('data-value');
+			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 
 			// now find all selected button and send dim value (Either selected over click or over group)
 			var keys = [];
-			var elArray = $$('.group-select');
-			var arrayLength = elArray.length;
-			if (arrayLength > 0 && selected != "19") {				// some selections
-				for (var i = 0; i < arrayLength; i++) {
-					keys.push(elArray[i].get('data-remotekey'));
-				}
+			jQuery('.group-select').each(function() {
+				keys.push(jQuery(jQuery(this)).attr('data-remotekey'));
+			}) ;
+			if (keys.length > 0) {
 				if (selected.charAt(0) == 'S') {
 					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
 				} else if (selected.charAt(0) == 'C') {
@@ -121,27 +188,20 @@ if(!window.scriptRemoteHasRun) {
 				callAjax (params) ;
 			}
 			if (selected == "19") {					// On/Off toggle
-				mbut.removeClass('btn-info');
-				mbut.addClass('btn-warning');
+				jQuery(mbut).removeClass('btn-info');
+				jQuery(mbut).addClass('btn-warning');
 			} else {								// dim value
-				if (arrayLength = 0) alert ('Please select light you want to dim or on/off together');
-				mbut.addClass('btn-info');
-				mbut.removeClass('btn-warning');
+				if (keys.length == 0) showMessage('Please select lights you want to dim or on/off together');
 			}
-
-			
-			var d = this.getAttribute('data-value');
-			var t = this.get('data-value');
 		});
 		
 		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
 		// Update same as latest button dropdown, allow S C or Value
-		$$('.controlselect-button').removeEvents('change');
-		$$('.controlselect-button').addEvent('change', function(event){
-			event.stop();
-			var selected = this.get('value');
-			var keys = [];
-			keys.push(this.get("data-remotekey"));
+		jQuery('.controlselect-button').change( function(event){
+			event.stopImmediatePropagation()
+			var selected = jQuery(this.selectedOptions).attr('value');
+ 			var keys = [];
+			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C') {
@@ -154,12 +214,12 @@ if(!window.scriptRemoteHasRun) {
 
 		//this is the function that dropdown's button either schemes or commands
 		// Update same as latest button dropdown, allow S C or Value
-		$$('.jump-button').removeEvents('click');
-		$$('.jump-button').addEvent('click', function(event){
-			event.stop();
-			var selected = this.getPrevious('.controlselect-button').value;
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('.jump-button').bind(eventname, function(event){
+			event.stopImmediatePropagation()
+			var selected = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).attr('value');
 			var keys = [];
-			keys.push(this.get("data-remotekey"));
+			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'C'){
@@ -169,194 +229,205 @@ if(!window.scriptRemoteHasRun) {
 			}
 			callAjax (params) ;
 
-		//Run scheme button (
-		$$('.scheme-button').removeEvents('click');
-		$$('.scheme-button').addEvent('click', function(event){
-			event.stop();
-			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:this.get('value')};
-			callAjax (params) ;
-		});	
+			//Run scheme button (
+			// jQuery('.scheme-button').unbind('click');
+			jQuery('.scheme-button').click( function(event){
+				event.stopImmediatePropagation()
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:jQuery(this).get('value')};
+				callAjax (params) ;
+			});	
 
-		//Run command button (
-		$$('.command-button').removeEvents('click');
-		$$('.command-button').addEvent('click', function(event){
-			event.stop();
-			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:this.get('value')};
-			callAjax (params) ;
-		});	
+			//Run command button (
+			// jQuery('.command-button').unbind('click');
+			jQuery('.command-button').click( function(event){
+				event.stopImmediatePropagation()
+				// event.stop();
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:jQuery(this).get('value')};
+				callAjax (params) ;
+			});	
 
 		});	
 		
 
 		// switching tabs
-		$$('#myTab a').removeEvents('click');
-		$$('#myTab a').addEvent('click', function(event){
-			$$('#system-message-container').set('html', '');
-			$$('.dimmer li a[value='+VloRemote.DIM_NO_SELECTED+']').fireEvent('click');
-			$$('#group li a[value='+VloRemote.GROUP_NO_SELECTED+']').fireEvent('click');
+		// jQuery('#myTab a').unbind('click');
+		eventname = isMobile.any() ? "touchend" : "click";
+		jQuery('#myTab a').bind(eventname, function(event){
+			jQuery('#system-message-container').html('');
 			//resetSelection();
-			//window.scrollTo(0,document.body.scrollHeight);
-		})
+		});
 		
-		window.setInterval(function(){
-			refreshDiv();
-		}, 3000);
+		if (jQuery("#autorefresh").length > 0) {
+			eventname = isMobile.any() ? "touchend" : "click";
+			jQuery("#autorefresh").bind(eventname, function(event){
+				if (jQuery(this).hasClass('active')) {
+					clearInterval(VloRemote.timer);
+				} else {
+					VloRemote.timer = startTimer();
+				}
+			});
+		};
+	
+		(function() {
+		  var hidden = "hidden";
+
+		  // Standards:
+		  if (hidden in document)
+			document.addEventListener("visibilitychange", onchange);
+		  else if ((hidden = "mozHidden") in document)
+			document.addEventListener("mozvisibilitychange", onchange);
+		  else if ((hidden = "webkitHidden") in document)
+			document.addEventListener("webkitvisibilitychange", onchange);
+		  else if ((hidden = "msHidden") in document)
+			document.addEventListener("msvisibilitychange", onchange);
+		  // IE 9 and lower:
+		  else if ("onfocusin" in document)
+			document.onfocusin = document.onfocusout = onchange;
+		  // All others:
+		  else
+			window.onpageshow = window.onpagehide
+			= window.onfocus = window.onblur = onchange;
+
+		  function onchange (evt) {
+			var v = "visible", h = "hidden",
+				evtMap = {
+				  focus:v, focusin:v, pageshow:v, blur:h, focusout:h, pagehide:h
+				};
+
+			evt = evt || window.event;
+			if (evt.type in evtMap)
+			  document.body.className = evtMap[evt.type];
+			else {
+			  document.body.className = this[hidden] ? "hidden" : "visible";
+			  if (this[hidden]) {
+				clearInterval(VloRemote.timer);
+			} else {
+				VloRemote.timer = startTimer();
+			}
+			}
+		  }
+
+		  // set the initial state (but only if browser supports the Page Visibility API)
+		  if( document[hidden] !== undefined )
+			onchange({type: document[hidden] ? "blur" : "focus"});
+		})();
+		
+		VloRemote.timer = startTimer();
+		
 	});
 
-	function launchFullScreen(element) {
-		if(element.requestFullscreen) {
-			element.requestFullscreen();
-		} else if(element.mozRequestFullScreen) {
-			element.mozRequestFullScreen();
-		} else if(element.webkitRequestFullscreen) {
-			element.webkitRequestFullscreen();
-		} else if(element.msRequestFullscreen) {
-			element.msRequestFullscreen();
-		}
-	}
-	
-	
 	function refreshDiv () {
 
-		if ($('autorefresh') == null || $('autorefresh').hasClass('active')) {
+		if (jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
 			var keys = [];
-			var elArray = $$('.rem-button, .display');
-			var arrayLength = elArray.length;
-			if (arrayLength > 0) {				// some selections
-				for (var i = 0; i < arrayLength; i++) {
-					keys.push(elArray[i].get('data-remotekey'));
-				}
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
-				callAjaxNoSpin (params) ;
-			}
+			jQuery('.rem-button, .display').each(function() {
+				keys.push(jQuery(jQuery(this)).attr('data-remotekey'));
+			}) ;
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
+			callAjax(params, false) ;
 		}
 	};
 
-	function callAjax (params) {
+	function callAjax (params, showSpin) {
 	
-       var keysRequest = new Request.JSON({
+		if (showSpin === undefined) showSpin = true;
+	
+		jQuery('#system-message-container').html ('');
+		if (showSpin) jQuery('#spinner').show();
+		var keysRequest = jQuery.ajax({
+				dataType: "json",
 				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
 				timeout: 10000,
-				onRequest: function(){
-					$$('#system-message-container').set('html', '');
-					document.getElementById('spinner').style.display = 'block';
-				},
-				onSuccess: function(data)
+				success: function(data)
 				{
 					processData(data);
-					document.getElementById('spinner').style.display = 'none';
+					if (showSpin) jQuery('#spinner').hide();
 				},
-				onError: function(text, error)
+				error: function(xhr, textStatus, error)
 				{
-					$$('#system-message-container').set('html', text+'</br>'+error);
-					document.getElementById('spinner').style.display = 'none';
-				},
-				onTimeout: function(text, error)
-				{
-					$$('#system-message-container').set('html', 'Connection Timed Out'+'</br>');
-					document.getElementById('spinner').style.display = 'none';
+					jQuery('#system-message-container').html(textStatus+' '+error+'</br>'+xhr.responseText);
+					if (showSpin) jQuery('#spinner').hide();
 				},
 			}
-        ).send();
+        );
 	};
 
-	function callAjaxNoSpin (params) {
+	function callAjaxSync(params) {
 	
-       var keysRequest = new Request.JSON({
+		jQuery('#system-message-container').html ('');
+		jQuery('#spinner').show();
+       var keysRequest = jQuery.ajax({
+				dataType: "json",
 				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
 				timeout: 10000,
-				onRequest: function(){
-					//$$('#system-message-container').set('html', '');
-				},
-				onSuccess: function(data)
-				{
-					processData(data);
-				},
-				onError: function(text, error)
-				{
-					$$('#system-message-container').set('html', text+'</br>'+error);
-				},
-                                onTimeout: function(text, error)
-                                {
-                                        $$('#system-message-container').set('html', 'Connection Timed Out'+'</br>');
-                                },
-			}
-        ).send();
-	};
-	
-		
-	function callAjaxSync (params) {
-	
-       var keysRequest = new Request.JSON({
-				url: 	VloRemote.url,
-				method: 'post',
-				data: params,
 				async: false,
-				onRequest: function(){
-					$$('#system-message-container').set('html', '');
-					if (document.getElementById('spinner')) document.getElementById('spinner').style.display = 'block';
-				},
-				onSuccess: function(data)
+				success: function(data)
 				{
 					processData(data);
-					document.getElementById('spinner').style.display = 'none';
+					jQuery('#spinner').hide();
 				},
-				onError: function(text, error)
+				error: function(xhr, textStatus, error)
 				{
-					$$('#system-message-container').set('html', text);
-					if (document.getElementById('spinner')) document.getElementById('spinner').style.display = 'none';
+					jQuery('#system-message-container').html(textStatus+' '+error+'</br>'+xhr.responseText);
+					jQuery('#spinner').hide();
 				},
 			}
-        ).send();
+        );
 	};
 
 	function showMessage(message) {
 		if (message.length > 0) {
-			$$('#system-message-container').set('html','<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+			jQuery('#system-message-container').html('<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 		}
 	}
 
 	function processData(data) {
 				
-		Object.each(data, function(item, key){
-			// check for message
-			if (key == 'message') {
+		jQuery.each(data, function(index, item){
+			if (index == 'message') {
 				showMessage(item);
 			}
-			$$('[data-remotekey=' + item.remotekey + ']').each(function(index){
-				$(index).removeClass("link-warning");
-				$(index).removeClass("link-down");
+			jQuery('[data-remotekey=' + item.remotekey + ']').each(function(index){
+				jQuery(this).removeClass("link-warning");
+				jQuery(this).removeClass("link-down");
 				if (typeof item.status !== 'undefined') {
-					$(index).removeClass("off");
-					$(index).removeClass("on");
-					$(index).removeClass("error");
-					$(index).removeClass("undefined");
-					$(index).removeClass("unknown");
-					$(index).addClass(item.status);
+					jQuery(this).removeClass("off");
+					jQuery(this).removeClass("on");
+					jQuery(this).removeClass("error");
+					jQuery(this).removeClass("undefined");
+					jQuery(this).removeClass("unknown");
+					jQuery(this).addClass(item.status);
 				} 
 				if (typeof item.text !== 'undefined') {
-					//$(index).set('html',item.text);
-					if (typeof $(index).getElementsByClassName("buttontext")[0] !== 'undefined') {
-						$(index).getElementsByClassName("buttontext")[0].set('html',item.text);
+					//jQuery(index).set('html',item.text);
+					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
+						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
 					}
 				} 
 				if (typeof item.groupselect !== 'undefined') {
-					$(index).addClass('group-select');
+					jQuery(this).addClass('group-select');
 				} 
 				if (typeof item.link !== 'undefined') {
-					$(index).addClass(item.link);
+					jQuery(this).addClass(item.link);
 				} 
 			});
 		});
 	};
 	
 	function resetSelection() {
-		$$('.group-select').each(function(el) {
-			el.removeClass('group-select');
+		jQuery('.group-select').each(function() {
+			jQuery(this).removeClass('group-select');
 		});
+	}
+	
+	function startTimer() {
+		timer = window.setInterval(function(){
+			refreshDiv();
+		}, 3000);
+		return timer;
 	}
 }

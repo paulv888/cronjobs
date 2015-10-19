@@ -170,7 +170,7 @@ function loadRemoteDiv($divid) {
 							echo '</i>';
 						} 
 						$text = getDisplayText($rowremotekeys);
-						echo '<span class="buttontext">'.$text.'</span>'.'&nbsp;'.'<span class="caret"></span></button>';
+						echo '<span class="buttontext">'.$text.'</span><span> </span><span class="caret"></span></button>';
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);

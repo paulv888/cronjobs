@@ -48,7 +48,7 @@ function graphCreate($params) {
 	}
 	
 	//call sp_properties( '60,114,201', '138,126,123,127,124', "2015-09-25 00:00:00", "2015-09-27 23:59:59", 1) 
-	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'", 1);';
+	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(DEBUG_GRAPH ? 1 : 0).');';
 	if (DEBUG_GRAPH) echo $mysql.CRLF;
 	if ($rows = FetchRows($mysql)) {
 		//print_r($rows);

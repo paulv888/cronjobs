@@ -200,9 +200,9 @@ function setDevicePropertyValue($params, $propertyName) {
 	return $feedback;
 }
 
-function HandleTriggers($params, $propertyID, $triggertype) {
+function handleTriggers($params, $propertyID, $triggertype) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
-			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.')';
+			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.') ORDER BY sort';
 	$feedback =  Null; 
 	
 	if (DEBUG_TRIGGERS) echo "Handle Triggers Params: ";
