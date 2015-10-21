@@ -2,36 +2,35 @@
 function loadremote($remoteID) {
 
     $select = (substr  ($_SERVER['REMOTE_ADDR'],0,9) == '192.168.2' ? 3 : 2);
-    $resdivs = mysql_query('SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort');
-	$numrows = mysql_num_rows ($resdivs);
-    $mycount = 1;
-	if ($numrows > 1) {
-		echo '<div class="bs-example bs-example-tabs">';
-		echo '<ul id="myTab" class="nav nav-tabs nav-dark nav-remote">';
-		while ($rowdivs = mysql_fetch_array($resdivs)) {
-			echo '<li class="';
-			if ($mycount==1) echo 'active'; 
-			echo '" '.'style="width:20%;"><a href="#divid_'.$rowdivs['id'].'"  data-toggle="tab"';
-			echo '>';
-			$text = $rowdivs['name'];
-			$booticon = $rowdivs['booticon'];
-			if ($booticon != null) {								// if icon then do icon <i>
-				echo '<i class="btn-icon '.$booticon;
-				if ($text != null) echo ' '.'';
-				echo '">';
-				echo '</i>';
-			} 
-			if ($text != null) echo '<div>'.$text.'</div>';
-			echo '</a>';
-			echo '</li>';
-			$mycount = 2;
+    $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
+	if ($divs = FetchRows($mysql)) {
+		if (count($divs) > 1) {
+			echo '<div class="bs-example bs-example-tabs">';
+			echo '<ul id="myTab" class="nav nav-tabs nav-dark nav-remote">';
+			foreach ($divs as $key => $rowdivs) {
+				echo '<li class="';
+				if ($key==0) echo 'active'; 
+				echo '" '.'style="width:'.(100/count($divs)).'%;"><a href="#divid_'.$rowdivs['id'].'"  data-toggle="tab"';
+				echo '>';
+				$text = $rowdivs['name'];
+				$booticon = $rowdivs['booticon'];
+				if ($booticon != null) {								// if icon then do icon <i>
+					echo '<i class="btn-icon '.$booticon;
+					if ($text != null) echo ' '.'';
+					echo '">';
+					echo '</i>';
+				} 
+				if ($text != null) echo '<div>'.$text.'</div>';
+				echo '</a>';
+				echo '</li>';
+			}
+			echo '</ul>';
+			echo '<div id="myTabContent" class="tab-content">';
 		}
-		echo '</ul>';
-		echo '<div id="myTabContent" class="tab-content">';
+		loadRemotePaneContent($remoteID, $select);
+		if (count($divs) > 1) echo '</div></div>';
+		echo '<div id="spinner">Executing...</div>';
 	}
-	loadRemotePaneContent($remoteID, $select);
-	if ($numrows > 1) echo '</div></div>';
-	echo '<div id="spinner">Executing...</div>';
 }
 
 function loadRemotePaneContent($remoteID, $select) {
