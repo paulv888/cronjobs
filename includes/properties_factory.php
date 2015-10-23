@@ -1,5 +1,5 @@
 <?php
-//define( 'DEBUG_PROP', TRUE );
+// define( 'DEBUG_PROP', TRUE );
 if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {

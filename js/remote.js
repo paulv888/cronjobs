@@ -445,7 +445,7 @@ if(!window.scriptRemoteHasRun) {
 	function startTimer() {
 		timer = window.setInterval(function(){
 			refreshDiv();
-		}, 3000);
+		}, 5000);
 		return timer;
 	}
 }

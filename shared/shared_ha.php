@@ -491,7 +491,6 @@ function logEvent($log) {
 	if (!array_key_exists("inout", $log)) $log['inout'] = COMMAND_IO_NOT;
 	if (!array_key_exists("callerID", $log)) $log['callerID'] = Null;
 	if (!array_key_exists("data", $log)) $log['data'] = Null;
-	if (!array_key_exists("extdata", $log)) $log['extdata'] = Null;
 	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
 	if (!array_key_exists("message", $log)) $log['message'] = Null;
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
@@ -510,7 +509,7 @@ function logEvent($log) {
 		}
 		$rowdevice=FetchRow($mysql);
 		if ($rowdevice['invertstatus'] == "0") {
-			$log['extdata'] = "Inverted ".$log['extdata']; 
+			$log['data'] .= " Inverted"; 
 			if ($log['commandID'] == COMMAND_OFF) {
 				$log['commandID'] = COMMAND_ON;
 			} elseif ($log['commandID'] == COMMAND_ON) {

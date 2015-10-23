@@ -43,8 +43,6 @@ if (!($sdata=="")) { 					//import_event
 	}
 	$device = getDevice($message['deviceID']);
 	$message['typeID'] = $device['typeID'];
-	$extdata = (array_key_exists('ExtData', $rcv_message) ? $rcv_message['ExtData'] : $extdata = null);
-	$message['extdata'] = $extdata;
 	$message['message'] = $sdata;
 	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
@@ -94,7 +92,7 @@ if (!($sdata=="")) { 					//import_event
 		$properties['Link']['value'] = LINK_UP;
 		$device['properties'] = $properties;
 		
-		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $extdata) : null);
+		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $rcv_message['ExtData'] ) : null);
 		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
 	}
 }
