@@ -1,6 +1,6 @@
 <?php
 // define( 'DEBUG_HA', TRUE );
-//define( 'DEBUG_PROPERTIES', TRUE );
+// define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
@@ -69,6 +69,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	if (DEBUG_HA) {
 		echo "<pre>setDevicePropertyValue $propertyName ";
 		print_r ($deviceproperty);
+		print_r ($params);
 	}
 	
 	if (strtoupper($deviceproperty['value']) == "TRUE" || strtoupper($deviceproperty['value']) == "ON") $deviceproperty['value'] = STATUS_ON;
@@ -83,55 +84,57 @@ function setDevicePropertyValue($params, $propertyName) {
 	$deviceproperty['trend'] = "0";
 	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($propertyName,$params['device']['previous_properties'])) {
 		$monitor = $params['device']['previous_properties'][$propertyName]['active'];
+		$lastUpdateDate = $params['device']['previous_properties'][$propertyName]['updatedate'];
 	} 
 
+	
 	//
-	//	Always update properties Log (if Time > 60 or changed)
+	//	Always goto property factory 
 	//
-	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $deviceproperty['deviceID'].' AND propertyID='.$deviceproperty['propertyID'].' order by updatedate desc limit 1';
-	if ($row = FetchRow($sql)) {
-		if (DEBUG_PROPERTIES) print_r($row);
-		//
-		//	Are we monitoring this property?
-		//
-		$params['lastlogdate'] = $row['updatedate'];
-		$lastLogDate = strtotime($row['updatedate']);
-		if ($monitor) {
-			$func = 'update'.str_replace(' ','',$propertyName);
-			if (function_exists ($func)) {
-				if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
-					$feedback['!Fail'] = 'Factory returned false, exit';
-					return;
-				}
-			} else {
-				if(!($feedback['updateStatus'] = updateGeneric($params, $propertyName))) {
-					$feedback['!Fail'] = 'Factory returned false, exit';
-					return;
-				}
+	if (DEBUG_PROPERTIES) print_r($row);
+	//
+	//	Are we monitoring this property?
+	//
+	$params['lastUpdateDate'] = $lastUpdateDate;
+	if ($monitor) {
+		$func = 'update'.str_replace(' ','',$propertyName);
+		if (function_exists ($func)) {
+			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
+				$feedback['!Fail'] = 'Factory returned false, exit';
+				return;
 			}
-			$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
-			$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
-			$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 		} else {
-			$feedback['!Monitor'] = $deviceproperty;
+			if(!($feedback['updateStatus'] = updateGeneric($params, $propertyName))) {
+				$feedback['!Fail'] = 'Factory returned false, exit';
+				return;
+			}
 		}
-		
-		if (is_null($deviceproperty['value']) || trim($deviceproperty['value'])==='') {
-			if (DEBUG_HA) echo "</pre>";
-			$feedback['!Empty'] = 'Null or Empty String, exit';
-			return $feedback;
-		}
-		
-		if ($deviceproperty['value'] != $oldvalue && $propertyName != 'Link') {		// Link special, handled in factory (How about not monitor?)
-			$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
-			PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
-		}
+		$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+		$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
+		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
+	} else {
+		$feedback['!Monitor'] = $deviceproperty;
+	}
+	
+	if (is_null($deviceproperty['value']) || trim($deviceproperty['value'])==='') {
+		if (DEBUG_HA) echo "</pre>";
+		$feedback['!Empty'] = 'Null or Empty String, exit';
+		return $feedback;
+	}
+	
+	if ($deviceproperty['value'] != $oldvalue && $propertyName != 'Link') {		// Link special, updated in factory (How about not monitor?)
+		$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
+		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
+	}
 
 	if (DEBUG_HA) {
 		echo "afterFactory $propertyName ";
 		print_r ($deviceproperty);
 	}
 		
+	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $deviceproperty['deviceID'].' AND propertyID='.$deviceproperty['propertyID'].' order by updatedate desc limit 1';
+	if ($row = FetchRow($sql)) {
+
 		unset($deviceproperty['trend']);
 		$lastLogDate = strtotime($row['updatedate']);
 		$lastvalue = $row['value'];

@@ -68,23 +68,25 @@ function updateStatus(&$params, $propertyName) {
 	// Handle HVAC cycles
 	//
 	if (array_key_exists('type', $params['device']) && $params['device']['type']['has_runtime']) {
-		$mysql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.$params['deviceID'].'
-				AND propertyID='.getProperty('Runtime')['id'].' order by updatedate desc limit 1';
-		if ($row = FetchRow($mysql)) {
-			$startdate = date("Y-m-d H:i:s", strtotime($row['updatedate']));
-			$enddate = date("Y-m-d H:i:s");
-			$system = $params['device']['type']['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
-			UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
-			$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-							FROM `hvac_cycles`
-							WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
-							GROUP BY deviceID, system';
-			if (DEBUG_PROP) echo $mysql;
+		if (timeExpired($params['lastUpdateDate'],60) || $oldvalue != $newvalue) {
+			$mysql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.$params['deviceID'].'
+					AND propertyID='.getProperty('Runtime')['id'].' order by updatedate desc limit 1';
 			if ($row = FetchRow($mysql)) {
-				$updateProperty = $params;
-				unset($updateProperty['device']['properties']);
-				$updateProperty['device']['properties']['Runtime']['value'] = $row['runtime'];
-				setDevicePropertyValue($updateProperty, 'Runtime');
+				$startdate = date("Y-m-d H:i:s", strtotime($row['updatedate']));
+				$enddate = date("Y-m-d H:i:s");
+				$system = $params['device']['type']['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
+				UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+				$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+								FROM `hvac_cycles`
+								WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
+								GROUP BY deviceID, system';
+				if (DEBUG_PROP) echo $mysql;
+				if ($row = FetchRow($mysql)) {
+					$updateProperty = $params;
+					unset($updateProperty['device']['properties']);
+					$updateProperty['device']['properties']['Runtime']['value'] = $row['runtime'];
+					setDevicePropertyValue($updateProperty, 'Runtime');
+				}
 			}
 		}
 	}
