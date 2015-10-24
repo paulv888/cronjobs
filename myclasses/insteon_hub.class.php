@@ -57,7 +57,7 @@ protected $last;
 				$this->last = time();
 				$plm_decode_result = $this->inst_coder->plm_decode($result);
 				// check for to short for PLM message, if so save result for rest
-				if (!array_key_exists("extdata", $plm_decode_result)) unset($plm_decode_result['extdata']);
+				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
 				switch ($plm_decode_result['extdata'])
 				{
 					case ERROR_MESSAGE_TO_SHORT:  		// leave result and wait for more
