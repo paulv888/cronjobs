@@ -44,6 +44,7 @@ define("COMMAND_OFF", 20);
 define("COMMAND_UNKNOWN", 267);
 define("COMMAND_RUN_SCHEME", 154);
 define("COMMAND_GET_VALUE", 136);
+define("COMMAND_SET_RESULT", 285);
 define("COMMAND_PING", 151);
 
 // Triggers

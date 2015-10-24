@@ -93,7 +93,9 @@ if (!($sdata=="")) { 					//import_event
 		$device['properties'] = $properties;
 		
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $rcv_message['ExtData'] ) : null);
-		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
+		$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
+		// logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'commandID' => $message['commandID'], 'message' => $feedback));
+
 	}
 }
 ?>
