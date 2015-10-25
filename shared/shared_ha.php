@@ -84,7 +84,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	$deviceproperty['trend'] = "0";
 	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($propertyName,$params['device']['previous_properties'])) {
 		$monitor = $params['device']['previous_properties'][$propertyName]['active'];
-		$lastUpdateDate = $params['device']['previous_properties'][$propertyName]['updatedate'];
+		$params['lastUpdateDate'] = $params['device']['previous_properties'][$propertyName]['updatedate'];
 	} 
 
 	
@@ -95,7 +95,6 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	//	Are we monitoring this property?
 	//
-	$params['lastUpdateDate'] = $lastUpdateDate;
 	if ($monitor) {
 		$func = 'update'.str_replace(' ','',$propertyName);
 		if (function_exists ($func)) {
