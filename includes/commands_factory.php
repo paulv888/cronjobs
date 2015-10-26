@@ -58,7 +58,8 @@ if (DEBUG_ALERT) {
 	replaceText($subject, $message, $params);
 		
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
-
+	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
+	
 	$feedback['message'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID'])).' created';
 	
 	return $feedback;
