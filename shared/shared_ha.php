@@ -138,6 +138,7 @@ function setDevicePropertyValue($params, $propertyName) {
 		$lastLogDate = strtotime($row['updatedate']);
 		$lastvalue = $row['value'];
 		// Check for date string as well length  2015-10-06 23:33:01
+		$logit = true;
 		switch ($property['log']) {
 		case "NOT":
 			$logit = false;
