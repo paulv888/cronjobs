@@ -90,7 +90,7 @@ while (true) {
 				if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 				$properties = Array();
 				if (array_key_exists('commandvalue',$message)) {
-					$properties['Value']['value'] = $message['commandvalue'];
+					$properties['Level']['value'] = round(100/255*$message['commandvalue']);
 					unset($message['commandvalue']);
 				}
 				logEvent($message);

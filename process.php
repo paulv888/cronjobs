@@ -4,14 +4,32 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
+//define( 'DEBUG_INPUT', TRUE );
 //define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
+if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 
 $ASYNC_THREAD = false;
+
+if (DEBUG_INPUT) {
+	$input = file_get_contents('php://input');
+	ob_start();
+	var_dump($input);
+	$result = ob_get_clean();
+	$file = 'process.log';
+	$current = file_get_contents($file);
+	$headers = apache_request_headers();
+	foreach ($headers as $header => $value) {
+		$current .= "$header: $value <br />\n";
+	}
+	$current .= date("Y-m-d H:i:s").": ".$result."\n";
+	$current .= date("Y-m-d H:i:s").": ".print_r($_POST,true)."\n";
+	file_put_contents($file, $current);
+}
 
 if (isset($argv)) {
 	var_dump($argv);

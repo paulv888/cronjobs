@@ -39,6 +39,8 @@ define("STATUS_ERROR", "-1" );
 define("STATUS_NOT_DEFINED", "10");		// Used for defining status on commands 
 
 define("COMMAND_TOGGLE", 19);
+define("COMMAND_DIM", 13);
+define("COMMAND_BRIGHTEN", 15);
 define("COMMAND_ON", 17);
 define("COMMAND_OFF", 20);
 define("COMMAND_UNKNOWN", 267);
@@ -46,7 +48,12 @@ define("COMMAND_RUN_SCHEME", 154);
 define("COMMAND_GET_VALUE", 136);
 define("COMMAND_SET_RESULT", 285);
 define("COMMAND_PING", 151);
+define("COMMAND_PLAY", 60);
+define("COMMAND_STOP", 58);
+define("COMMAND_PAUSE", 59);
 define("COMMAND_SET_PROPERTY_VALUE", 314);
+define("COMMAND_VOICE", 324);
+
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);
@@ -60,6 +67,7 @@ define ("MESS_TYPE_SCHEME", 'MESS_TYPE_SCHEME');
 define ("MESS_TYPE_COMMAND",  'MESS_TYPE_COMMAND');
 define ("MESS_TYPE_MULTI_KEY",  'MESS_TYPE_MULTI_KEY');
 define ("MESS_TYPE_REMOTE_DIV",  'MESS_TYPE_REMOTE_DIV');
+define ("MESS_TYPE_VOICE",  'MESS_TYPE_VOICE');
 
 // Command Classes
 define ("COMMAND_CLASS_GENERIC", 1);
@@ -153,6 +161,8 @@ define("DEVICE_ALARM_ZONE2", 159);
 define("DEVICE_DARK_OUTSIDE", 170);
 define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
+define("DEVICE_PAUL_VOICE", 122);
+define("DEVICE_AYNUR_VOICE", 116);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);

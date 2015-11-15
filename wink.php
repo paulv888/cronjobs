@@ -24,7 +24,7 @@ if (isset($_GET["Message"])) {
 
 // $file = 'wink.log';
 // $current = file_get_contents($file);
-// $current .= $sdata."\n";
+// $current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 // file_put_contents($file, $current);
 
 

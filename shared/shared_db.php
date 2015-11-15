@@ -110,7 +110,30 @@ function FetchRows($mysql) {
 	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
 	return $result;
 }
-   
+ 
+function FetchRowsIdDescription($mysql) {
+	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
+	$result = array();
+	if (!$res_row = mysql_query($mysql)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	if (!$numrows = mysql_num_rows($res_row)) {
+//		echo "0 Rows returned".CRLF; 
+		return false;
+	}
+	if (!$rows = mysql_fetch_row($res_row)) {
+		mySqlError($mysql); 
+		return false;
+	}
+	$result[$rows[0]] = trim(strtolower($rows[1]));
+	while ($rows = mysql_fetch_row($res_row)) {
+			$result[$rows[0]] = trim(strtolower($rows[1]));
+	}
+	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
+	return $result;
+} 
+ 
 function CopyRow($my_table,$where,$posid) {
 	$mysql="SELECT * FROM  ".$my_table.
 			" WHERE ".$where;
