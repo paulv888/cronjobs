@@ -55,7 +55,7 @@ $now = date( 'Y-m-d H:i:s' );
 // var_dump($properties['Status']['value'] );
 // print_r($params);
 // echo "</pre>";
-		$feedback['message'] = 'Setting temp to: '.$properties['Setpoint']['value'];
+		$feedback['message'] = 'Temperature set to '.$properties['Setpoint']['value'];
 
 		return $feedback;
 	}
