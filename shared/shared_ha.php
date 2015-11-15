@@ -32,11 +32,15 @@ function updateDeviceProperties($params) {
 	}
 
 	//
-	// No status or other props are set, force a status (if we have commandID)
+	// No status or other props are set, force a lowest sort (if we have commandID)
 	//
-	if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists('Status', $params['device']['properties']))) {
-		$params['device']['properties']['Status']['value'] = "";
-		if (DEBUG_HA) echo "status: ".$params['device']['properties']['Status']['value'].CRLF;
+	foreach ($params['device']['previous_properties'] as $property) {
+		if ($property['sort'] == 0) {
+			if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties']))) {
+				$params['device']['properties'][$property['description']]['value'] = "";
+				if (DEBUG_HA) echo $property['description'].": ".$params['device']['properties'][$property['description']]['value'].CRLF;
+			}
+		}
 	}
 	
 	if (array_key_exists('properties', $params['device'])) {		// Do we have props to update?
@@ -91,7 +95,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	//	Always goto property factory 
 	//
-	if (DEBUG_PROPERTIES) print_r($row);
+	//if (DEBUG_PROPERTIES) print_r($row);
 	//
 	//	Are we monitoring this property?
 	//
@@ -113,6 +117,9 @@ function setDevicePropertyValue($params, $propertyName) {
 		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 	} else {
 		$feedback['!Monitor'] = $deviceproperty;
+		if ($deviceproperty['propertyID'] == "243") {
+			$feedback['!Monitor']['message'] = 'Level set to '.$deviceproperty['value']."%";
+		}
 	}
 	
 	if (is_null($deviceproperty['value']) || trim($deviceproperty['value'])==='') {
@@ -597,5 +604,67 @@ function getCommand($commandID) {
 		return $rowcommand;
 	}
 	return false;
+}
+
+function runSteps($params) {
+
+		// Not in use!!!
+		// Called from executeCommand
+		// $timer['runasync'] = false;
+		// $timer['priorityID'] = 1;
+		// $timer['description'] = "";
+		// $timerID = $params['commandvalue'];
+
+	if ($params['type']=='timer')	{ // Called from Voice Commands
+		$parent   = $params['parent'];
+		$parentID = $params['parent']['id'];
+		$mysql = 'SELECT ha_timers.description, ha_remote_scheme_steps.deviceID,
+			ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value as commandvalue, ha_remote_scheme_steps.runschemeID as schemeID ,
+			ha_remote_scheme_steps.alert_textID 
+			FROM (ha_timers INNER JOIN ha_remote_scheme_steps ON ha_timers.id = ha_remote_scheme_steps.timerID) 
+			WHERE(((ha_timers.id) = '.$parentID.')) ORDER BY ha_remote_scheme_steps.sort';
+	} elseif ($params['type']=='voice') {
+		if (DEBUG_HA) echo "<pre>".CRLF;
+		if (DEBUG_HA) print_r($params);
+		$parent = $params['parent'];
+		$parentID = $params['parent']['id'];
+		$mysql = 'SELECT ha_voice_commands.description, ha_remote_scheme_steps.deviceID,
+			ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value as commandvalue, ha_remote_scheme_steps.runschemeID as schemeID ,
+			ha_remote_scheme_steps.alert_textID 
+			FROM (ha_voice_commands INNER JOIN ha_remote_scheme_steps ON ha_voice_commands.id = ha_remote_scheme_steps.vcID) 
+			WHERE(((ha_voice_commands.id) = '.$parentID.')) ORDER BY ha_remote_scheme_steps.sort';
+	}
+
+	$deviceID = $params['callerID'];
+	$feedback['message']="";
+	if (($steps = FetchRows($mysql)) && count($steps) > 0) {
+		foreach ($steps as $step) {
+			$description = $step['description'];
+			unset($step['description']);
+			$step['callerID'] = $params['callerID'];
+			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
+			$step['loglevel'] = $params['loglevel'];
+			if ($parent['runasync']) {
+				$getparams = http_build_query($step, '',' ');
+				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
+				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+				$feedback['Name'] = $description;
+				$feedback['message'] .= "Initiating: ".$feedback['Name'];
+				//$feedback['message'] .= "Initiating: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
+				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $parent['description'], 'message' => $feedback['message'] ));
+				if (DEBUG_FLOW) echo "Exit Spawn Parent</pre>".CRLF;
+			} else {
+				$feedback['Name'] = $description;
+				$feedback['message'] .= executeCommand($step);
+				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $parent['description'], 'message' => $feedback['message'] ));
+			}
+		}
+		return $feedback;		// GET OUT
+	} else {
+		$feedback['error'] = 'Unable to comply, secondary command processors cannot be located';
+	}
+	return $feedback;		// GET OUT
 }
 ?>

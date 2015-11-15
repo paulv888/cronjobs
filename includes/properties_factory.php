@@ -1,5 +1,5 @@
 <?php
-// define( 'DEBUG_PROP', TRUE );
+//define( 'DEBUG_PROP', TRUE );
 if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {
@@ -26,6 +26,9 @@ function updateGeneric(&$params, $propertyName) {
 	return $feedback;
 }
 
+function updateLocked(&$params, $propertyName) {
+	return updateStatus($params, $propertyName);
+}
 function updateStatus(&$params, $propertyName) {
 
 	$feedback=Array();
@@ -61,7 +64,7 @@ function updateStatus(&$params, $propertyName) {
 	if (DEBUG_PROP) echo "Status NewValue: ".$newvalue.CRLF;
 	$feedback['DeviceID'] = $params['deviceID'];
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
-	$feedback[$propertyName] = $newvalue;
+	$feedback['Status'] = $newvalue;
 
 	
 	// 
