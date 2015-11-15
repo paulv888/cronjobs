@@ -349,8 +349,9 @@ function getDeviceProperties($deviceproperty){
 	if (array_key_exists('deviceID', $deviceproperty) && array_key_exists('propertyID', $deviceproperty)) {		// DeviceID and PropertyID
 		$result = False;
 		if ($rowproperty = FetchRow(
-			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore FROM ha_mf_device_properties dp 
+			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype` FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
+			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
 			 WHERE dp.deviceID = '.$deviceproperty['deviceID'].' AND dp.propertyID = '.$deviceproperty['propertyID'])) {
 			if (DEBUG_PROPERTIES) {
 				echo "<pre> Dev & Prop ";
@@ -388,7 +389,7 @@ function getDeviceProperties($deviceproperty){
 	} elseif (array_key_exists('deviceID', $deviceproperty))  {		// Only DeviceID
 		$result = Array();
 		if (!is_null($deviceproperty['deviceID']) && $rowproperties = FetchRows(
-			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, p.description FROM ha_mf_device_properties dp 
+			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype` FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
 			 WHERE dp.deviceID = '.$deviceproperty['deviceID'])) {
@@ -666,5 +667,31 @@ function runSteps($params) {
 		$feedback['error'] = 'Unable to comply, secondary command processors cannot be located';
 	}
 	return $feedback;		// GET OUT
+}
+
+function doFilter(&$arr, $nodefilter, &$filter, &$result) {
+
+    foreach ($arr as $key => $value) {
+        if (array_key_exists($key, $nodefilter)) {
+			if (is_array($value)) {
+				$result[][$key] = array_intersect_key($arr[$key], $filter);
+				//$arr[$key] = doFilter($value, $nodefilter, $filter,  $result);
+				 // echo "Key1: $key".CRLF;
+			} else {
+				if ($arr[$key] != Null) {
+					if (trim($arr[$key]) != '') $result[][$key] =$arr[$key];
+				}
+				// echo "Key2: $key".CRLF;
+			}
+        } else if (is_array($value)) {
+            $arr[$key] = doFilter($value, $nodefilter, $filter,  $result);
+			// echo "Key3: $key".CRLF;
+        } else if (array_key_exists($key, $filter)) {
+			$result[][$key] =$arr[$key];
+			// echo "Key4: $key".CRLF;
+		}
+    }
+	// print_r($result);
+    return;
 }
 ?>

@@ -65,6 +65,7 @@ function updateStatus(&$params, $propertyName) {
 	$feedback['DeviceID'] = $params['deviceID'];
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	$feedback['Status'] = $newvalue;
+	$feedback['Datatype'] = $params['device']['previous_properties'][$propertyName]['datatype'];
 
 	
 	// 

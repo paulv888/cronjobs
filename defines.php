@@ -53,6 +53,8 @@ define("COMMAND_STOP", 58);
 define("COMMAND_PAUSE", 59);
 define("COMMAND_SET_PROPERTY_VALUE", 314);
 define("COMMAND_VOICE", 324);
+define("COMMAND_GET_PROPERTIES", 325);
+
 
 
 // Triggers

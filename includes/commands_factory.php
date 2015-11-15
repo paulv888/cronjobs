@@ -208,7 +208,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['Name'] = current($rowshemesteps)['name'];
-			$feedback['error'] = "Spawned: ".$feedback['Name']."  Log:".$outputfile;
+			$feedback['message'] = "Initiated ".$feedback['Name']; //."  Log:".$outputfile;
 			if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
@@ -293,9 +293,39 @@ function setDevicePropertyCommand(&$params) {
 	return $feedback;
 }
 
+function getDevicePropertiesCommand($params) {
+//getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value']
+//getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value']
+//getDeviceProperties(Array('deviceID' => $deviceID))
+
+	if (array_key_exists('propertyID', $params)) $devprop['propertyID'] = $params['propertyID'];
+	$devprop['deviceID'] = $params['deviceID'];
+	$feedback = Array();
+	if (!empty($devprop['deviceID'])) {
+		if ($properties  = getDeviceProperties($devprop)) {
+			if (array_key_exists('propertyID', $params)) { // Returning different format
+				$feedback[$properties['propertyID']]['updateStatus']['Status'] = $properties['value'];
+				$feedback[$properties['propertyID']]['updateStatus']['PropertyID'] =$properties['propertyID'];
+				$feedback[$properties['propertyID']]['updateStatus']['DeviceID'] = $properties['deviceID'];
+				$feedback[$properties['propertyID']]['updateStatus']['Datatype'] = $properties['datatype'];
+			} else {
+				foreach ($properties as $property) {
+					$feedback[$property['propertyID']]['updateStatus']['Status'] = $property['value'];
+					$feedback[$property['propertyID']]['updateStatus']['PropertyID'] =$property['propertyID'];
+					$feedback[$property['propertyID']]['updateStatus']['DeviceID'] = $property['deviceID'];
+					$feedback[$property['propertyID']]['updateStatus']['Datatype'] = $property['datatype'];
+				}
+			}
+		}
+		// if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Link')))) $feedback['Link'] = $property['value'];
+		// if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
+	}
+	return $feedback;
+}
+
 // Private
 function NOP() {
-	$feedback['message'] = "Nothing done";
+	$feedback['message'] = "{Nothing done}";
 	return $feedback;
 }
 ?>

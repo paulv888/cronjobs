@@ -13,6 +13,7 @@ include_once 'shared/shared_ha.php';
 include_once 'shared/shared_gen.php';
 include_once 'includes/properties_factory.php';
 include_once 'includes/commands_factory.php';
+include_once 'includes/processor.php';
 include_once 'includes/sendmail.php';
 include_once 'includes/timers.php';
 include_once 'includes/commands_weather.php';
