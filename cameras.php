@@ -174,7 +174,7 @@ function openGroup($camera) {
 			$params['device']['properties'] = $properties;			
 //			echo sendCommand($params); cannot with resend recording command
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params);
-			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
+			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'result' => $feedback));
 			print_r($feedback);
 			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value'])) {
 				$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
@@ -235,7 +235,7 @@ function closeGroup($camera) {
 			$params['device']['properties'] = $properties;
 			// Be careful any triggers will be executed on changed properties
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
-			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'message' => $feedback));
+			if (DEBUG_CAMERAS) logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'result' => $feedback));
 			print_r($feedback);
 
 			$recording['count'] = $camera['numfiles'];

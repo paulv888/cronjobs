@@ -55,7 +55,7 @@ if (!($sdata=="")) { 					//import_event
 	}
 	//print_r($properties);
 	
-	$message['message'] = prettyPrint($sdata);
+	//$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
 //print_r($message);

@@ -4,20 +4,14 @@ require_once 'includes.php';
 // TODO:: clean up feedback , status and return JSON
 
 //define( 'DEBUG_INPUT', TRUE );
-//define( 'DEBUG_FLOW', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
-//define( 'DEBUG_RETURN', TRUE );
 //define( 'DEBUG_VOICE', TRUE );
+//define( 'DEBUG_RET', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
-if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
-if (isset($_POST['DEBUG_DEVICES'])) define( 'DEBUG_DEVICES', TRUE );
-if (isset($_POST['DEBUG_RETURN'])) define( 'DEBUG_RETURN', TRUE );
 if (isset($_POST['DEBUG_VOICE'])) define( 'DEBUG_VOICE', TRUE );
+if (isset($_POST['DEBUG_RET'])) define( 'DEBUG_RET', TRUE );
 if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
-if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
-if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
-if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
 if (!defined('DEBUG_VOICE')) define( 'DEBUG_VOICE', FALSE );
+if (!defined('DEBUG_RET')) define( 'DEBUG_RET', FALSE );
 
 
 // session_start();
@@ -67,12 +61,12 @@ if (isset($_GET['callerID'])) {
 	$_POST=$_GET;
 }
 
-if (DEBUG_FLOW) echo json_encode($_POST);
-if (DEBUG_FLOW) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
+if (DEBUG_INPUT) echo json_encode($_POST);
+if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
 if (isset($_POST["callerID"])) {						// All have to tell where they are from.
 
-	if (DEBUG_FLOW) echo "callerID ".$_POST['callerID'].CRLF;
+	if (DEBUG_INPUT) echo "callerID ".$_POST['callerID'].CRLF;
 	
 	echo executeVoiceCommand($_POST);
 	
@@ -88,22 +82,19 @@ function executeVoiceCommand($callerparams) {
 	$callerparams['selection'] = (array_key_exists('selection', $callerparams) ? $callerparams['selection'] : Null);
 	$callerparams['mouse'] = (array_key_exists('mouse', $callerparams) ? $callerparams['mouse'] : Null);
 	
-	$feedback['messagetypeID'] = $callerparams['messagetypeID'];
-
-	if (DEBUG_FLOW) echo '<pre>Entry executeCommand - Callerparams: ';
-	if (DEBUG_FLOW) echo print_r($callerparams);
+	if (DEBUG_RET) echo '<pre>Entry executeCommand - Callerparams: ';
+	if (DEBUG_RET) echo print_r($callerparams);
 			
 
-	if (DEBUG_FLOW) echo "MESS_TYPE_SCHEME voice: ".$callerparams['words'].CRLF;
+	if (DEBUG_RET) echo "MESS_TYPE_SCHEME voice: ".$callerparams['words'].CRLF;
 	//$callerparams['commandID'] = COMMAND_RUN_SCHEME;
 	//$callerparams['caller'] = $callerparams;
 	//$words = explode(",", $callerparams['words']);
 	$feedback['Sentence']=interpretSentence($callerparams);
-	break;
 
-	if (DEBUG_RETURN) echo "<pre>Feedback: >";
-	if (DEBUG_RETURN) print_r($feedback);
-	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
+	if (DEBUG_RET) echo "<pre>Feedback: >";
+	if (DEBUG_RET) print_r($feedback);
+	if (DEBUG_RET) echo "executeCommand Exit".CRLF;
 
 	$result = translateHuman($feedback);
 	
@@ -131,57 +122,57 @@ function translateHuman($in) {
 )*/
 	$filterkeep = array('Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'Datatype' => 1, 'error' => 1);
 	doFilter($in, array( 'updateStatus' => 1, 'message' => 1), $filterkeep, $result);
-	if (DEBUG_RETURN) echo "Filtered: >";
-	if (DEBUG_RETURN) print_r($result);
+	if (DEBUG_RET) echo "Filtered: >";
+	if (DEBUG_RET) print_r($result);
 
-	$feedback = "";
-	foreach ($result as $key => $res) {
-		if (array_key_exists('message', $res)) {
-			$res['message'] = preg_replace( '/\r|\n/', '', $res['message']);
-			$res['message'] = trim(preg_replace( '/\{(.*?)\}/', '', $res['message']));
-			if (strlen($res['message']) > 0) {
+	if ($result != null) {		
+		$feedback = "";
+		foreach ($result as $key => $res) {
+			if (array_key_exists('message', $res)) {
+				$res['message'] = preg_replace( '/\r|\n/', '', $res['message']);
+				$res['message'] = trim(preg_replace( '/\{(.*?)\}/', '', $res['message']));
+				if (strlen($res['message']) > 0) {
+					if ($feedback != '') $feedback .= ' and ';
+					$feedback .= $res['message'].' ';
+				}
+			} else if (array_key_exists('error', $res)) {
 				if ($feedback != '') $feedback .= ' and ';
-				$feedback .= $res['message'].' ';
-			}
-		} else if (array_key_exists('error', $res)) {
-			if ($feedback != '') $feedback .= ' and ';
-			if (is_array($feedback) && array_key_exists('error', $feedback)) {
-				$feedback .= ' and '.$res['error'];
-			} else {
-				$feedback = 'Unable to comply, '.$res['error'].' ';
-			}
-		} else if (array_key_exists('updateStatus', $res)) {
-			if ($feedback != '') $feedback .= ' and ';
-			if (array_key_exists('DeviceID',$res['updateStatus'])) $feedback .= getDevice($res['updateStatus']['DeviceID'])['description'].' ';
-			if (array_key_exists('PropertyID',$res['updateStatus'])) 
-				$feedback .= getProperty($res['updateStatus']['PropertyID'])['description'].' equals '; 
-			if (array_key_exists('Status', $res['updateStatus'])) {
-				switch ($res['updateStatus']['Datatype'])
-				{
-				case 'BINARY':
-					if ($res['updateStatus']['Status'] == STATUS_OFF) {   
-						$feedback .= "off ";
-					} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
-						$feedback .= "unknown ";
-					} elseif ($res['updateStatus']['Status'] == STATUS_ON) {
-						$feedback .= "on ";
-					} elseif ($res['updateStatus']['Status'] == STATUS_ERROR) {
-						$feedback .= "error ";
-					} else { 										// else assume a value
-						$feedback .= "undefined ";
+				if (is_array($feedback) && array_key_exists('error', $feedback)) {
+					$feedback .= ' and '.$res['error'];
+				} else {
+					$feedback = 'Unable to comply, '.$res['error'].' ';
+				}
+			} else if (array_key_exists('updateStatus', $res)) {
+				if ($feedback != '') $feedback .= ' and ';
+				if (array_key_exists('DeviceID',$res['updateStatus'])) $feedback .= getDevice($res['updateStatus']['DeviceID'])['description'].' ';
+				if (array_key_exists('PropertyID',$res['updateStatus'])) 
+					$feedback .= getProperty($res['updateStatus']['PropertyID'])['description'].' equals '; 
+				if (array_key_exists('Status', $res['updateStatus'])) {
+					switch ($res['updateStatus']['Datatype'])
+					{
+					case 'BINARY':
+						if ($res['updateStatus']['Status'] == STATUS_OFF) {   
+							$feedback .= "off ";
+						} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
+							$feedback .= "unknown ";
+						} elseif ($res['updateStatus']['Status'] == STATUS_ON) {
+							$feedback .= "on ";
+						} elseif ($res['updateStatus']['Status'] == STATUS_ERROR) {
+							$feedback .= "error ";
+						} else { 										// else assume a value
+							$feedback .= "undefined ";
+						}
+						break;
+					case 'DECIMAL':
+						$feedback .= $res['updateStatus']['Status'];
+						break;
 					}
-					break;
-				case 'DECIMAL':
-					$feedback .= $res['updateStatus']['Status'];
-					break;
 				}
 			}
 		}
+	} else { 
+		$feedback = '';
 	}
-	
-	// if (array_key_exists('message', $feedback) && trim($feedback['message']) == '') unset($feedback['message']);
-	// if (array_key_exists('error', $feedback) && trim($feedback['error']) == '') unset($feedback['error']);
-	// print_r($feedback);
 	return $feedback;
 }
 
@@ -209,19 +200,28 @@ function interpretSentence($params) {
 		'computer,' => '', 
 		'lights' => 'light', 
 		'want' => 'execute', 
-		'initiate' => 'execute', 
 		'initiates' => 'execute', 
+		'initiate' => 'execute', 
+		'executed' => 'execute', 
 		'tell,me' => 'report',
 		'which' => 'report',
-		'status' => 'report,status',
 		'what,is' => 'report',
+		'is,the' => 'report',
 		'at,what,is' => 'report',
 		'how,high' => 'report,high',
 		'turn' => 'switch',
 		'set' => 'open',
+		'current' => '',
+		'yesterdays' => '',
+		'tomorrow' => '',
+		'forecast' => '',
+
+
+		'sweet' => 'sweep',
 		'switzerland' => 'switch', 
 		'life' => 'light', 
 		'lite' => 'light', 
+		'sounds' => 'sound', 
 		'race' => 'raise', 
 		'recessed' => 'recess', 
 		'air,conditioner' => 'hvac', 
@@ -245,19 +245,19 @@ function interpretSentence($params) {
 	
 	$words = explode(',', $words);
 	
-	//if (strpos($words, "all ") === false) $words.= " -all";
 	$actions         = array('switch', 'start'     ,'stop'      ,'open'    , 'close'    , 'dim',      'brighten'      , 
 							 'lock',     'unlock',     'raise',         'lower',      'pause',       'play',         'show',  'execute'       ,'report');
-	$actioncommands = array(0       , COMMAND_PLAY,COMMAND_STOP,COMMAND_ON, COMMAND_OFF, COMMAND_DIM, COMMAND_BRIGHTEN, 
+
+	 $actioncommands = array(0       , COMMAND_PLAY,COMMAND_STOP,COMMAND_ON, COMMAND_OFF, COMMAND_DIM, COMMAND_BRIGHTEN, 
 	                         COMMAND_ON,  COMMAND_OFF, COMMAND_BRIGHTEN, COMMAND_DIM, COMMAND_PAUSE, COMMAND_PLAY,  'show', COMMAND_RUN_SCHEME, COMMAND_GET_PROPERTIES);
-	$actiondetails   =      array('on'      , 'off');
+
+    $actiondetails   =      array('on'      , 'off');
 	$actiondetailcommands = array(COMMAND_ON,  COMMAND_OFF);
 	$types         = array('light' => '1, 3', 'hvac' => '17, 18, 19, 31, 32', 'door' => '30, 35');
 
 	$groups        = array('all' => '*' );
 
-	$locationadjectives = array('on', 'in');
-//	$locationadjectives = array('on', 'in');
+	$locationprepositions  = array('on', 'in');
 
 	$defaultdim = 15;
 	
@@ -319,8 +319,51 @@ function interpretSentence($params) {
 
 	$wherestr = '';
 	if (!array_key_exists('error', $feedback)) {
-		if ($commandID == COMMAND_ON || $commandID == COMMAND_OFF || $commandID == COMMAND_BRIGHTEN || $commandID == COMMAND_DIM || $commandID == COMMAND_GET_PROPERTIES) {
+		if ($commandID == COMMAND_RUN_SCHEME || $commandID == COMMAND_ON || $commandID == COMMAND_OFF ||
+			$commandID == COMMAND_BRIGHTEN || $commandID == COMMAND_DIM || $commandID == COMMAND_GET_PROPERTIES) {
 		
+			// First check to Find scheme, if so skip rest
+			//$schemes = FetchRowsIdDescription('SELECT id as schemeID, name as description FROM ha_remote_schemes');
+			if (!array_key_exists('error', $feedback)) {
+				$wherestr = '';
+				$schemename = '';
+				foreach ($words as $key => $word) { 
+					$schemename .=  ' LOWER(name) LIKE "%'.$word.'%" AND';
+				}
+				if ($schemename != '') {
+					$schemename =  substr($schemename, 0, -4);	// remove extra AND
+					if ($wherestr != '') $wherestr .= ' AND ';
+					$wherestr .= $schemename;
+				}
+				// Now find a scheme and send
+				if ($wherestr != '') {
+					$mysql = 'SELECT id, name as description FROM ha_remote_schemes WHERE allow_voice = 1 AND '.$wherestr;
+					if (DEBUG_VOICE) var_dump($mysql);
+					if ($schemes = FetchRows($mysql)) {
+						if (DEBUG_VOICE) {echo 'Schemes '; print_r($schemes); echo 'Count: '.count($schemes).CRLF;}
+						if (count($schemes) == 1) {
+							if (!array_key_exists('caller', $params)) $params['caller'] = $params;
+							$params['schemeID'] = $schemes[0]['id'];
+							$params['commandID'] = COMMAND_RUN_SCHEME;
+							$feedback['interpretSentence'][] = sendCommand($params);
+							if (!array_key_exists('error', $feedback)) {
+								logEvent(array('inout' => COMMAND_IO_RECV, 'callerID' => $params['callerID'], 'commandID' => COMMAND_VOICE, 'data' => $params['words'], 'message' => $feedback, 'commandstr' => $params['words']));
+							}
+							return $feedback;
+						} else {
+							$feedback['error'] = 'Please restate a single programme';
+						}
+					} else {
+						// Not found then carry on
+						// $feedback['error'] = 'no programme qualifies the given profile';
+					}
+				} else {
+					$feedback['error'] = 'no programme specified';
+				}
+			}
+	
+		
+			$wherestr = '';
 			if ($commandID == COMMAND_GET_PROPERTIES) {
 				// Find property (not required)
 				$properties = FetchRowsIdDescription('SELECT id as propertyID, description FROM ha_mi_properties');
@@ -353,9 +396,10 @@ function interpretSentence($params) {
 									WHERE `connectionID` <> 1 AND `inuse` = 1 AND ';
 			}
 		
+		
 			// Find location (group or location required)
 			$locations = FetchRowsIdDescription('SELECT id as locationID, description FROM ha_mf_locations');
-			$locationadj = array_intersect($words, $locationadjectives);
+			$locationadj = array_intersect($words, $locationprepositions);
 			if (DEBUG_VOICE) {echo 'Loc Adj '; print_r($locationadj);}
 
 			// Assume end of sentence
@@ -478,45 +522,7 @@ function interpretSentence($params) {
 			if (!array_key_exists('error', $feedback)) {
 				logEvent(array('inout' => COMMAND_IO_RECV, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_VOICE, 'data' => $params['words'], 'message' => $feedback, 'commandstr' => $params['words']));
 			}
-		} else if ($commandID == COMMAND_RUN_SCHEME) {
-			// Find scheme (required)
-			//$schemes = FetchRowsIdDescription('SELECT id as schemeID, name as description FROM ha_remote_schemes');
-			if (!array_key_exists('error', $feedback)) {
-				$wherestr = '';
-				$schemename = '';
-				foreach ($words as $key => $word) { 
-					$schemename .=  ' LOWER(name) LIKE "%'.$word.'%" AND';
-				}
-				if ($schemename != '') {
-					$schemename =  substr($schemename, 0, -4);	// remove extra AND
-					if ($wherestr != '') $wherestr .= ' AND ';
-					$wherestr .= $schemename;
-				}
-				// Now find a scheme and send
-				if ($wherestr != '') {
-					$mysql = 'SELECT id, name as description FROM ha_remote_schemes WHERE '.$wherestr;
-					if (DEBUG_VOICE) var_dump($mysql);
-					if ($schemes = FetchRows($mysql)) {
-						if (DEBUG_VOICE) {echo 'Schemes '; print_r($schemes); echo 'Count: '.count($schemes).CRLF;}
-						if (count($schemes) == 1) {
-							if (!array_key_exists('caller', $params)) $params['caller'] = $params;
-							$params['schemeID'] = $schemes[0]['id'];
-							$params['commandID'] = $commandID;
-							$feedback['interpretSentence'][] = sendCommand($params);
-						} else {
-							$feedback['error'] = 'Please restate a single programme';
-						}
-					} else {
-						$feedback['error'] = 'no programme qualifies the given profile';
-					}
-				} else {
-					$feedback['error'] = 'no programme specified';
-				}
-			}
-			if (!array_key_exists('error', $feedback)) {
-				logEvent(array('inout' => COMMAND_IO_RECV, 'callerID' => $params['callerID'], 'commandID' => COMMAND_VOICE, 'data' => $params['words'], 'message' => $feedback, 'commandstr' => $params['words']));
-			}
-		}
+		} 
 	}
 		
 	if (array_key_exists('error', $feedback)) {

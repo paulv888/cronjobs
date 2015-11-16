@@ -43,7 +43,7 @@ if (!($sdata=="")) { 					//import_event
 	}
 	$device = getDevice($message['deviceID']);
 	$message['typeID'] = $device['typeID'];
-	$message['message'] = $sdata;
+	//$message['message'] = $sdata;
 	$message['callerID'] = MY_DEVICE_ID;
 	logEvent($message);
 //print_r($message);

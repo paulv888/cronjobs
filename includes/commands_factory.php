@@ -60,7 +60,7 @@ if (DEBUG_ALERT) {
 	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	
-	$feedback['message'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID'])).' created';
+	$feedback['result'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID'])).' created';
 	
 	return $feedback;
 }
@@ -162,7 +162,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] <= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'" '.$condtype;
+				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted, startup test failed '.$testvalue[0].' > '.$testvalue[1];
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -171,7 +171,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] >= $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'" '.$condtype;
+				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' < '.$testvalue[1];
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -180,7 +180,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if ($testvalue[0] != $testvalue[1]) {
 				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
-				$feedback['message'] = $feedback['Name'].': Condition '.getProperty($rowcond['propertyID'])['description'].' Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'" '.$condtype;
+				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' == '.$testvalue[1];
 				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
@@ -208,7 +208,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['Name'] = current($rowshemesteps)['name'];
-			$feedback['message'] = "Initiated ".$feedback['Name']; //."  Log:".$outputfile;
+			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence.'; //."  Log:".$outputfile;
 			if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
@@ -246,7 +246,7 @@ function getDuskDawn($params) {
 	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
     if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
-		$feedback['message'] =  json_encode(json_decode($get->getresponse(), true));
+		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_DUSKDAWN) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
@@ -325,7 +325,7 @@ function getDevicePropertiesCommand($params) {
 
 // Private
 function NOP() {
-	$feedback['message'] = "{Nothing done}";
+	$feedback['result'] = "Nothing done";
 	return $feedback;
 }
 ?>

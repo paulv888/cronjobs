@@ -101,7 +101,7 @@ $now = date( 'Y-m-d H:i:s' );
 		$properties['Temperature']['value'] = to_celcius($stat->temp);
 		$properties['Setpoint']['value'] =  to_celcius($stat->ttemp);
 		$params['device']['properties'] = $properties;
-		$feedback['message'] = 'Setting temp to: '.$properties['Setpoint']['value'];
+		$feedback['message'] = 'Temperature set to '.$properties['Setpoint']['value'];
 
 		return $feedback;
 	}

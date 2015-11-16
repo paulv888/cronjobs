@@ -28,7 +28,7 @@ function getYahooWeather($params) {
 	$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 	if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
-		$feedback['message'] =  json_encode(json_decode($get->getresponse(), true));
+		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};

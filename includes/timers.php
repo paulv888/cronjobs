@@ -108,7 +108,7 @@ function runTimerSteps($params) {
 		FROM (ha_timers INNER JOIN ha_remote_scheme_steps ON ha_timers.id = ha_remote_scheme_steps.timerID) 
 		WHERE(((ha_timers.id) = '.$timerID.')) ORDER BY ha_remote_scheme_steps.sort';
 	
-	$feedback['message'] = "";
+	$feedback['result'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
 			$description = $step['description'];
@@ -123,13 +123,13 @@ function runTimerSteps($params) {
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
-				$feedback['message'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
-				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'message' => $feedback['message'] ));
+				$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
+				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'result' => $feedback['result'] ));
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
 				$feedback['Name'] = $description;
-				$feedback['message'] .= executeCommand($step).'</br>';
-				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'message' => $feedback['message'] ));
+				$feedback['result'] .= executeCommand($step).'</br>';
+				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'result' => $feedback['result'] ));
 			}
 		}
 		return $feedback;		// GET OUT

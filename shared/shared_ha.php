@@ -229,7 +229,7 @@ function handleTriggers($params, $propertyID, $triggertype) {
 			$thiscommand['caller'] = $params['caller'];
 			$result = sendCommand($thiscommand); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($trigger['schemeID']), 'message' => $result ));
+			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($trigger['schemeID']), 'result' => $result ));
 		}
 	}
 	return $feedback;
@@ -497,13 +497,14 @@ function logEvent($log) {
         	$log['ip'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
 	elseif (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != '')
         	$log['ip'] = $_SERVER['REMOTE_ADDR'];
- 	if (!array_key_exists("deviceID", $log)) $log['deviceID'] = Null;
-	if (!array_key_exists("commandID", $log)) $log['commandID'] = COMMAND_UNKNOWN;
-	if (!array_key_exists("inout", $log)) $log['inout'] = COMMAND_IO_NOT;
-	if (!array_key_exists("callerID", $log)) $log['callerID'] = Null;
-	if (!array_key_exists("data", $log)) $log['data'] = Null;
-	if (!array_key_exists("loglevel", $log)) $log['loglevel'] = Null;
-	if (!array_key_exists("message", $log)) $log['message'] = Null;
+ 	if (!array_key_exists('deviceID', $log)) $log['deviceID'] = Null;
+	if (!array_key_exists('commandID', $log)) $log['commandID'] = COMMAND_UNKNOWN;
+	if (!array_key_exists('inout', $log)) $log['inout'] = COMMAND_IO_NOT;
+	if (!array_key_exists('callerID', $log)) $log['callerID'] = Null;
+	if (!array_key_exists('data', $log)) $log['data'] = Null;
+	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = Null;
+	if (!array_key_exists('message', $log)) $log['message'] = Null;
+	if (!array_key_exists('result', $log)) $log['result'] = Null;
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
 	
 	//
@@ -512,15 +513,15 @@ function logEvent($log) {
 	$log['typeID'] = NULL;
 	if ($log['deviceID'] != Null) {
 		$log['typeID'] = getDevice($log['deviceID'])['typeID'];
-		$mysql = "SELECT invertstatus FROM `ha_mf_monitor_property` " .
-					" WHERE propertyID = 123 AND deviceID = ".$log['deviceID']; 
+		$mysql = 'SELECT invertstatus FROM `ha_mf_monitor_property` ' .
+					' WHERE propertyID = 123 AND deviceID = '.$log['deviceID']; 
 		if (!$resdevice=mysql_query($mysql)) {
 			mySqlError($mysql); 
 			return false;
 		}
 		$rowdevice=FetchRow($mysql);
-		if ($rowdevice['invertstatus'] == "0") {
-			$log['data'] .= " Inverted"; 
+		if ($rowdevice['invertstatus'] == '0') {
+			$log['data'] .= ' Inverted'; 
 			if ($log['commandID'] == COMMAND_OFF) {
 				$log['commandID'] = COMMAND_ON;
 			} elseif ($log['commandID'] == COMMAND_ON) {
@@ -529,7 +530,7 @@ function logEvent($log) {
 		}
 	}
 	
-	$log['mdate'] = date("Y-m-d H:i:s");
+	$log['mdate'] = date('Y-m-d H:i:s');
 
 	if (is_null($log['loglevel']))	{
 		if (!is_null($log['commandID'])) {
@@ -544,11 +545,11 @@ function logEvent($log) {
 	}
 	if (is_null($log['loglevel'])) $log['loglevel'] = LOGLEVEL_COMMAND;
 
-	if (!is_null($log['message'])) {
-		if (is_array($log['message'])) 
-			$log['message'] = '<pre>'.prettyPrint(json_encode($log['message'])).'</pre>';
+	if (!is_null($log['result'])) {
+		if (is_array($log['result'])) 
+			$log['result'] = '<pre>'.prettyPrint(json_encode($log['result'])).'</pre>';
 		else
-			$log['message'] = '<pre>'.str_replace('\n','</br>',$log['message']).'</pre>';
+			$log['result'] = '<pre>'.str_replace('\n','</br>',$log['result']).'</pre>';
 	}
 		
 	if (DEBUG_HA) echo "***log";
@@ -637,13 +638,14 @@ function runSteps($params) {
 	}
 
 	$deviceID = $params['callerID'];
-	$feedback['message']="";
+	$feedback['message']='';
+	$feedback['result']='';
 	if (($steps = FetchRows($mysql)) && count($steps) > 0) {
 		foreach ($steps as $step) {
 			$description = $step['description'];
 			unset($step['description']);
 			$step['callerID'] = $params['callerID'];
-			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
+			$step['messagetypeID'] = 'MESS_TYPE_COMMAND';
 			$step['loglevel'] = $params['loglevel'];
 			if ($parent['runasync']) {
 				$getparams = http_build_query($step, '',' ');
@@ -652,14 +654,14 @@ function runSteps($params) {
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
-				$feedback['message'] .= "Initiating: ".$feedback['Name'];
-				//$feedback['message'] .= "Initiating: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
-				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $parent['description'], 'message' => $feedback['message'] ));
-				if (DEBUG_FLOW) echo "Exit Spawn Parent</pre>".CRLF;
+				$feedback['message'] .= "Initiating: ".$feedback['Name'].' sequence';
+				$feedback['result'] .= $cmd." Log:".$outputfile.'</br>';
+				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $parent['description'], 'message' => $feedback['message'], 'result' => $feedback['result'] ));
+				if (DEBUG_FLOW) echo 'Exit Spawn Parent</pre>'.CRLF;
 			} else {
 				$feedback['Name'] = $description;
-				$feedback['message'] .= executeCommand($step);
-				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $parent['description'], 'message' => $feedback['message'] ));
+				$feedback['result'] .= executeCommand($step);
+				if ($parent['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $parent['description'], 'message' => $feedback['message'], 'result' => $feedback['result']));
 			}
 		}
 		return $feedback;		// GET OUT

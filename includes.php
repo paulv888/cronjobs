@@ -3,9 +3,6 @@ include_once 'logins.php' ;
 include_once 'connect-db.php';
 include_once 'defines.php';
 
-
-include_once 'process.php';
-
 include_once 'includes/remote.php';
 include_once 'shared/shared_db.php';
 include_once 'shared/shared_file.php';
@@ -30,7 +27,6 @@ include_once 'myclasses/TCPClient.php';
 include_once 'myclasses/insteon_hub.class.php';
 include_once 'myclasses/insteon_decoder.class.php';
 include_once 'myclasses/sockettransport.class.php';
-include_once 'myclasses/class.phpmailer.php' ;
 
 include_once 'myclasses/Orders.class.php';
 include_once 'myclasses/Position.class.php';
