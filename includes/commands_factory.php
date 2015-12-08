@@ -52,7 +52,7 @@ function createAlert($params) {
 	$message  = $rowtext['message'];
 	
 if (DEBUG_ALERT) {
-	echo "<pre>Alerts Params123: "; print_r($params); echo "</pre>";
+	echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
 }
 	
 	replaceText($subject, $message, $params);

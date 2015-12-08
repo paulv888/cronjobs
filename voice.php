@@ -3,7 +3,7 @@ require_once 'includes.php';
 // TODO:: callerparms needed?
 // TODO:: clean up feedback , status and return JSON
 
-define( 'DEBUG_SESSION', TRUE );
+//define( 'DEBUG_SESSION', TRUE );
 //define( 'DEBUG_VOICE', TRUE );
 //define( 'DEBUG_RET', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );

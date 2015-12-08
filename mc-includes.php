@@ -13,5 +13,4 @@ include_once 'shared/shared_gen.php';
 include_once 'shared/simple_html_dom.php';
 
 include_once 'myclasses/RestClient.class.php';
-include_once 'myclasses/class.phpmailer.php' ;
 ?>
