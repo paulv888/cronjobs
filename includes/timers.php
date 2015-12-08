@@ -128,7 +128,7 @@ function runTimerSteps($params) {
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
 				$feedback['Name'] = $description;
-				$feedback['result'] .= executeCommand($step).'</br>';
+				$feedback['result'] .= json_encode(executeCommand($step)).'</br>';
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'result' => $feedback['result'] ));
 			}
 		}

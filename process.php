@@ -58,6 +58,10 @@ if (isset($_POST["messagetypeID"]) && isset($_POST["callerID"])) {						// All h
 
 	if (DEBUG_INPUT) echo "callerID ".$_POST['callerID']." ".$_POST['messagetypeID'].CRLF;
 	
-	echo executeCommand($_POST);
+	$result = executeCommand($_POST);
+	if (is_array($result)) 
+		print_r($result);
+	else
+		echo $result;
 }
 ?>
