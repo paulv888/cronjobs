@@ -274,12 +274,15 @@ function sendCommand($thiscommand) {
 		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
 		$targettype = $thiscommand['device']['connection']['targettype'];
 		$commandclassID = $thiscommand['device']['commandclassID'];
-		if (DEBUG_DEVICES) echo "targettype ".$targettype.CRLF;
-
+		if (DEBUG_DEVICES) print_r($thiscommand);
+		
 		if (array_key_exists('previous_properties', $thiscommand['device'])) {
-			if (array_key_exists('Status', $thiscommand['device']['previous_properties'])) {
-				$status = $thiscommand['device']['previous_properties']['Status']['value'];
-				$rowmonitor = $thiscommand['device']['previous_properties']['Status'];
+			$statusarr = search($thiscommand['device']['previous_properties'], 'primary_status', 1);
+			// Just take the first one 
+			if (array_key_exists(0, $statusarr)) {
+				$status_key = $statusarr[0]['description'];
+				$status = $thiscommand['device']['previous_properties'][$status_key]['value'];
+				$rowmonitor = $thiscommand['device']['previous_properties'][$status_key];
 				// Special handling for toggle
 				if ($thiscommand['commandID']==COMMAND_TOGGLE) {   
 					if ($thiscommand['commandvalue'] > 0 && $thiscommand['commandvalue'] < 100) { // if dimvalue given then update dim, else toggle
@@ -546,7 +549,7 @@ function sendCommand($thiscommand) {
 			if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
 			break;
 		}
-		if (!preg_match('/[\[\]$&*}{@#~><>,|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
+		if (array_key_exists('result', $feedback)) if (!preg_match('/[\[\]$*}{@#~><>,|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
 		if (!is_null($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') $thiscommand['device']['properties']['Value']['value']= $thiscommand['commandvalue'];
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		break;		

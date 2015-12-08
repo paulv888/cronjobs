@@ -35,7 +35,7 @@ function updateDeviceProperties($params) {
 	// No status or other props are set, force a lowest sort (if we have commandID)
 	//
 	foreach ($params['device']['previous_properties'] as $property) {
-		if ($property['sort'] == 0) {
+		if ($property['primary_status'] == 1) {
 			if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties']))) {
 				$params['device']['properties'][$property['description']]['value'] = "";
 				if (DEBUG_HA) echo $property['description'].": ".$params['device']['properties'][$property['description']]['value'].CRLF;
@@ -349,7 +349,7 @@ function getDeviceProperties($deviceproperty){
 	if (array_key_exists('deviceID', $deviceproperty) && array_key_exists('propertyID', $deviceproperty)) {		// DeviceID and PropertyID
 		$result = False;
 		if ($rowproperty = FetchRow(
-			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype` FROM ha_mf_device_properties dp 
+			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype`,  `p`.`primary_status`  FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
 			 WHERE dp.deviceID = '.$deviceproperty['deviceID'].' AND dp.propertyID = '.$deviceproperty['propertyID'])) {
@@ -371,7 +371,7 @@ function getDeviceProperties($deviceproperty){
 		}
 	} elseif (array_key_exists('propertyID', $deviceproperty)) {		// Only PropertyID Used from upateTimer/Link to get all devices with timer set 
 		$result = Array();
-		if ($rowproperties = FetchRows('SELECT dp.*, p.description FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.$deviceproperty['propertyID'])) {
+		if ($rowproperties = FetchRows('SELECT dp.*, p.description, `p`.`datatype`,  `p`.`primary_status` FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.$deviceproperty['propertyID'])) {
 			foreach ($rowproperties AS $key => $prop) {
 				if ($propertyName == 'Link') {
 					if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
@@ -389,7 +389,7 @@ function getDeviceProperties($deviceproperty){
 	} elseif (array_key_exists('deviceID', $deviceproperty))  {		// Only DeviceID
 		$result = Array();
 		if (!is_null($deviceproperty['deviceID']) && $rowproperties = FetchRows(
-			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype` FROM ha_mf_device_properties dp 
+			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype`, `p`.`primary_status` FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
 			 WHERE dp.deviceID = '.$deviceproperty['deviceID'])) {

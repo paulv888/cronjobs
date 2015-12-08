@@ -39,11 +39,15 @@ if (!($sdata=="")) { 					//import_event
 	$message['commandID'] = $rcv_message['Command'];
 	if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = COMMAND_IO_RECV;
 	$message['inout'] = $rcv_message['InOut'];
-	if (!array_key_exists('Status', $rcv_message)) $rcv_message['Status'] = null;
+	// Should read primary_status 
+	if (array_key_exists('Status', $rcv_message)) $status_key = 'Status';
+	if (array_key_exists('Locked', $rcv_message)) $status_key = 'Locked';
+	
+	if (!array_key_exists($status_key, $rcv_message)) $rcv_message[$status_key] = null;
 	if (array_key_exists('Value', $rcv_message)) {
 		$message['data'] = $rcv_message['Value'];
 	} else {
-		$message['data'] = $rcv_message['Status'];
+		$message['data'] = $rcv_message[$status_key];
 	}
 	$message['typeID'] = getDevice($message['deviceID'])['typeID'];
 	
@@ -57,12 +61,13 @@ if (!($sdata=="")) { 					//import_event
 	
 	//$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
+	$message['result'] = $sdata;
 	logEvent($message);
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$error_message = (array_key_exists('errorMessage', $rcv_message) ? implode(" - ", $errorMessage) : null);
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
-		$properties['Status']['value'] = (string)$rcv_message['Status'];
+		$properties[$status_key]['value'] = (string)$rcv_message[$status_key];
 		$properties['Link']['value'] = LINK_UP;
 		$properties['Value']['value'] = $v;
 		$device['properties'] = $properties;

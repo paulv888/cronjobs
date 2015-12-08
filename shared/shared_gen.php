@@ -459,4 +459,26 @@ function getDawn() {
 function getDusk() {
 	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"))['value'];
 }
+
+function search($array, $key, $value)
+{
+    $results = array();
+    search_r($array, $key, $value, $results);
+    return $results;
+}
+
+function search_r($array, $key, $value, &$results)
+{
+    if (!is_array($array)) {
+        return;
+    }
+
+    if (isset($array[$key]) && $array[$key] == $value) {
+        $results[] = $array;
+    }
+
+    foreach ($array as $subarray) {
+        search_r($subarray, $key, $value, $results);
+    }
+}
 ?>
