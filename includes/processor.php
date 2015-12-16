@@ -513,10 +513,11 @@ function sendCommand($thiscommand) {
 				$commandstr .= ' '.$tcomm;
 				$curl = restClient::post($url, $tcomm, "", "", "", 2);
 			} elseif ($targettype == "JSON") {
-				parse_str($tcomm, $params);
-				if (DEBUG_DEVICES) echo $url." Params: ".json_encode($params).CRLF;
-				$commandstr .= ' '.json_encode($params);
-				$curl = restClient::post($url, json_encode($params), "", "", "application/json" , 2);
+				//parse_str($tcomm, $params);
+				$params = $tcomm;
+				if (DEBUG_DEVICES) echo $url." Params: ".$params.CRLF;
+				$commandstr .= ' '.$params;
+				$curl = restClient::post($url, $params, "", "", "application/json" , 2);
 			} else { 
 				$commandstr .= $tcomm;
 				$curl = restClient::post($url.$tcomm,"","","","",2);
@@ -544,12 +545,26 @@ function sendCommand($thiscommand) {
 			else 
 				$feedback['result'] = $curl->getresponse();
 			break;
+		case "TCP":              // iTach
+			if (DEBUG_DEVICES) echo "TCP_IR</p>";
+			$ircode = $thiscommand['device']['connection']['page'].$rowcommands['command'];
+			if (DEBUG_DEVICES) echo $thiscommand['device']['connection']['targetaddress'].':'.$thiscommand['device']['connection']['targetport'].' - '.$ircode.CRLF;
+			$feedback['result'] = sendIR($thiscommand['device']['connection']['targetaddress'], $thiscommand['device']['connection']['targetport'], $ircode);
+			//echo $feedback['result'].CRLF;
+			//if ($feedback['result'] != "ERR" && $curl->getresponsecode() != 204)
+				// $feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+			// else 
+				// $feedback['result'] = $curl->getresponse();
+			break;
 		case null:
 		case "NONE":          // Virtual Devices
 			if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
 			break;
 		}
-		if (array_key_exists('result', $feedback)) if (!preg_match('/[\[\]$*}{@#~><>,|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
+		if (array_key_exists('result', $feedback)) {
+			// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
+			$feedback['message'] = $feedback['result'];
+		}
 		if (!is_null($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') $thiscommand['device']['properties']['Value']['value']= $thiscommand['commandvalue'];
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 		break;		
@@ -563,4 +578,20 @@ function sendCommand($thiscommand) {
 	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;
 	return $feedback;
 } 
+
+function sendIR($host, $port, $message)
+{
+	// open a client connection
+	$client = stream_socket_client("tcp://$host:$port", $errno, $errorMessage);
+	if ($client === false) {
+		echo $errno.' '.$errorMessage;
+		$result = "Failed to connect: $errorMessage";
+	} else {
+		stream_set_timeout($client, 20);
+		fwrite($client, "$message\r");
+		$result = stream_get_line ( $client , 1024 , "\r" );
+		fclose($client);
+	}
+	return $result;
+}
 ?>

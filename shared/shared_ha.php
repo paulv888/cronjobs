@@ -32,7 +32,7 @@ function updateDeviceProperties($params) {
 	}
 
 	//
-	// No status or other props are set, force a lowest sort (if we have commandID)
+	// No status or other props are set, force a primary prop (if we have commandID)
 	//
 	foreach ($params['device']['previous_properties'] as $property) {
 		if ($property['primary_status'] == 1) {
@@ -101,7 +101,12 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	if ($monitor) {
 		$func = 'update'.str_replace(' ','',$propertyName);
-		if (function_exists ($func)) {
+		if ($params['device']['previous_properties'][$propertyName]['primary_status'] == 1) {
+			if(!($feedback['updateStatus'] = updateStatus($params, $propertyName))) {
+				$feedback['!Fail'] = 'Factory returned false, exit';
+				return;
+			}
+		} elseif (function_exists ($func)) {
 			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
 				$feedback['!Fail'] = 'Factory returned false, exit';
 				return;
