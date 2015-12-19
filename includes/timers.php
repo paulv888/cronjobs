@@ -48,12 +48,6 @@ function RunTimers(){
 						$last = time();
 					}
 					break;
-				case REPEAT_ONCE_HOUR: 					// If not run today then run, else check hour expired 
-					if ((date('Y-m-d') != date('Y-m-d', $last)) || (timeExpired($last, $timer['repeat']))) {
-						$doit = true;
-						$last = time();
-					}
-					break;
 				default:
 					if ((date('Y-m-d') != date('Y-m-d', $last)) || (timeExpired($last, $timer['repeat']))) {
 						$doit = true;

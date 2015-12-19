@@ -166,6 +166,7 @@ define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
 define("DEVICE_PAUL_VOICE", 122);
 define("DEVICE_AYNUR_VOICE", 116);
+define("DEVICE_KODI", 233);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);
@@ -181,7 +182,6 @@ define("PRIORITY_HIDE", 99);
 
 define("REPEAT_EVERY_RUN", -1);
 define("REPEAT_ONCE_DAY", 0);
-define("REPEAT_ONCE_HOUR", 60);
 
 define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");

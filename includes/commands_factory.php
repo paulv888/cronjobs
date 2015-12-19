@@ -51,7 +51,7 @@ function createAlert($params) {
 	$subject = $rowtext['description'];
 	$message  = $rowtext['message'];
 	
-if (DEBUG_ALERT) {
+if (DEBUG_COMMANDS) {
 	echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
 }
 	
@@ -74,15 +74,15 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
 
 
-	if (DEBUG_FLOW) echo "<pre>Enter executeMacro $schemeID".CRLF;
-	if (DEBUG_FLOW) print_r($params);
+	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
+	if (DEBUG_COMMANDS) print_r($params);
 	
 	
 	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
 	
 	if (!$rescond = mysql_query($mysql)) {
 		mySqlError($mysql); 
-		if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+		if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 		return false;
 	}
 	
@@ -91,13 +91,13 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		switch ($rowcond['type'])
 		{
 		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
+			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
 			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
 			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
 			break;
 		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
 		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
+			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
 			$condtype = "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR";
 			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
 				$test = 1;
@@ -116,7 +116,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$testvalue[] = $test;
 			break;
 		case SCHEME_CONDITION_CURRENT_TIME: 
-			if (DEBUG_FLOW) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
+			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
 			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
 			$testvalue[] = time();
 			break;
@@ -160,33 +160,33 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		{
 		case CONDITION_GREATER:
 			if ($testvalue[0] <= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted, startup test failed '.$testvalue[0].' > '.$testvalue[1];
-				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
 			break;
 		case CONDITION_LESS:
 			if ($testvalue[0] >= $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' < '.$testvalue[1];
-				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
 			break;
 		case CONDITION_EQUAL:
 			if ($testvalue[0] != $testvalue[1]) {
-				if (DEBUG_FLOW) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
+				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
 				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' == '.$testvalue[1];
-				if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
 			}
 			break;
 		}
-		if (DEBUG_FLOW) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
+		if (DEBUG_COMMANDS) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
 	}
 	
 		
@@ -209,7 +209,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['Name'] = current($rowshemesteps)['name'];
 			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence.'; //."  Log:".$outputfile;
-			if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
 		foreach ($rowshemesteps as $step) {
@@ -222,7 +222,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
 	}
-	if (DEBUG_FLOW) echo "Exit executeMacro</pre>".CRLF;
+	if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 	if (empty($feedback['message'])) unset($feedback['message']);
 	return $feedback;
 }
@@ -241,14 +241,14 @@ function getDuskDawn($params) {
 	"%22%20and%20u%3D%22c%22&format=json&diagnostics=true&callback=";
 	$get = restClient::get($url);
 //	$response = file_get_contents($url);
-	if (DEBUG_DUSKDAWN) echo "<pre>";
+	if (DEBUG_COMMANDS) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
 	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
     if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
 		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
 		//if (DEBUG_YAHOOWEATHER) print_r($result);
-		if (DEBUG_DUSKDAWN) print_r($result);
+		if (DEBUG_COMMANDS) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 
 		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
@@ -268,7 +268,7 @@ function getDuskDawn($params) {
 	}
 	$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
 
-	if (DEBUG_DUSKDAWN) echo "</pre>";
+	if (DEBUG_COMMANDS) echo "</pre>";
 	return $feedback;
 }
 
@@ -322,6 +322,28 @@ function getDevicePropertiesCommand($params) {
 	}
 	return $feedback;
 }
+
+function getNowPlaying($params) {
+
+	// echo "<pre>";
+
+	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = DEVICE_KODI; // KODI
+	$command['commandID'] = COMMAND_GET_VALUE;
+	$result=sendCommand($command); 
+	
+	if (array_key_exists('error', $result)) {
+		echo "Handle Transport Error";
+	} else {
+		$result = json_decode($result['result'],true);
+	// print_r($result);
+		// Handle KODI error
+		$feedback['message'] = $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
+	}	
+	return $feedback;
+	// echo "</pre>";	
+} 
 
 // Private
 function NOP() {
