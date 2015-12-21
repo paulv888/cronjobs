@@ -35,9 +35,7 @@ if(!window.scriptRemoteHasRun) {
 	jQuery(document).ready(function(){
 
 		if (isMobile.Android() == true) {
-		
 
-		
 			console = {
 				"_log" : [],
 				"log" : function() {
@@ -74,13 +72,15 @@ if(!window.scriptRemoteHasRun) {
 			console.log("ERROR: \"" + msg + "\" at \"" + "\", line " + line);
 		}
 
+		// Android 3 fingers
 		window.addEventListener( "touchstart", function( e ) {
 			if( e.touches.length === 3 ) {
 			  console.show();
 			}
 		});
 
-		// regular down when up as well (cam move...)
+		
+		// regular down when up as well (cam move)
 		eventname = isMobile.any() ? "touchstart" : "mousedown";
 		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
@@ -92,6 +92,7 @@ if(!window.scriptRemoteHasRun) {
 			callAjax(params, false) ;
 		});	
 
+		// regular up from down (cam move)
 		eventname = isMobile.any() ? "touchend" : "mouseup";
 		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
@@ -102,6 +103,34 @@ if(!window.scriptRemoteHasRun) {
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
 			callAjax(params, false) ;
 		});	
+
+		// repeat down when up as well (volume)
+		eventname = isMobile.any() ? "touchstart" : "mousedown";
+		jQuery('.repeat-click-down').unbind(eventname);
+		jQuery('.repeat-click-down').bind(eventname, function(event){
+			event.preventDefault()
+			event.stopImmediatePropagation()
+			// handle repeat sending for volume and cursor up/down
+			var keys = [];
+			keys.push(jQuery(this).attr("data-remotekey"));
+			var repeattime = jQuery(this).attr("data-repeat-time")
+			VloRemote.repeattimer = setInterval( function() { repeatSend(keys); }, repeattime );
+		});	
+
+		function repeatSend(keys) {
+			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
+			callAjax(params, false);
+		};
+		
+		// repeat down form up (stop repeating)
+		eventname = isMobile.any() ? "touchend" : "mouseup";
+		jQuery('.repeat-click-down').unbind(eventname);
+		jQuery('.repeat-click-down').bind(eventname, function(event){
+			event.preventDefault()
+			event.stopImmediatePropagation()
+			// handle repeat stop
+			clearInterval(VloRemote.repeattimer);
+		});
 
 		// regular up
 		//jQuery('.click-up').unbind('click');
@@ -281,6 +310,7 @@ if(!window.scriptRemoteHasRun) {
 			});
 		};
 	
+		// Loosing focus stop 
 		(function() {
 		  var hidden = "hidden";
 
@@ -315,7 +345,8 @@ if(!window.scriptRemoteHasRun) {
 			  if (this[hidden]) {
 				clearInterval(VloRemote.timer);
 			} else {
-				refreshDiv();
+				// Show user we are refreshing
+				refreshDiv(true);
 				VloRemote.timer = startTimer();
 			}
 			}
@@ -330,7 +361,7 @@ if(!window.scriptRemoteHasRun) {
 		
 	});
 
-	function refreshDiv () {
+	function refreshDiv (showSpin) {
 
 		if (jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
 			var keys = [];
@@ -339,7 +370,7 @@ if(!window.scriptRemoteHasRun) {
 			}) ;
 			if (keys.length > 0) {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', keys: keys, commandID: VloRemote.COMMAND_GET_VALUE};
-				callAjax(params, false) ;
+				callAjax(params, showSpin) ;
 			}
 		}
 	};
@@ -441,10 +472,10 @@ if(!window.scriptRemoteHasRun) {
 			jQuery(this).removeClass('group-select');
 		});
 	}
-	
+
 	function startTimer() {
 		timer = window.setInterval(function(){
-			refreshDiv();
+			refreshDiv(false);
 		}, 5000);
 		return timer;
 	}

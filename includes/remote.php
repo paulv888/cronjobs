@@ -118,7 +118,11 @@ function loadRemoteDiv($divid) {
 					if ($myymax < $myycell + $rowremotekeys['vspan']) $myymax = $myycell + $rowremotekeys['vspan'];
 				}
 				echo ">";
-				$clicks = (is_null($rowremotekeys['commandIDdown']) ? "click-up rem-button" : "click-down rem-button");
+				if ($rowremotekeys['repeat_time'] == 0) {
+					$clicks = (is_null($rowremotekeys['commandIDdown'])  ? "click-up rem-button" : "click-down rem-button");
+				} else {
+					$clicks = "repeat-click-down rem-button";
+				}
 				if ($rowremotekeys['inputtype']=="display") {
 						$fieldtype = "div";
 							$fieldclass = $rowremotekeys['inputtype'];
@@ -140,7 +144,9 @@ function loadRemoteDiv($divid) {
 					if (strlen($class)>1) echo ' '.$class;
 					echo '"';
 					if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
-					echo ' data-remotekey="'.$rowremotekeys['id'].'">';
+					echo ' data-remotekey="'.$rowremotekeys['id'].'"';
+					if ($rowremotekeys['repeat_time'] != 0) echo ' data-repeat-time="'.$rowremotekeys['repeat_time'].'"';
+					echo '>';
 					if ($booticon != null) {								// if icon then do icon <i>
 						echo '<i class="btn-icon '.$booticon;
 						if ($text != null) echo ' '.'rem-icon-left';
