@@ -239,6 +239,8 @@ function sendCommand($thiscommand) {
 	$thiscommand['timervalue'] = (array_key_exists('timervalue', $thiscommand) ? $thiscommand['timervalue'] : 0);
 	$thiscommand['schemeID'] = (array_key_exists('schemeID', $thiscommand) ? $thiscommand['schemeID'] : Null);
 	$thiscommand['alert_textID'] = (array_key_exists('alert_textID', $thiscommand) ? $thiscommand['alert_textID'] : Null);
+	$thiscommand['priorityID']  = (array_key_exists('priorityID', $thiscommand) ? $thiscommand['priorityID'] : 'NULL');
+
 	$feedback = Array();
 	$commandstr = "";
 	
@@ -266,14 +268,15 @@ function sendCommand($thiscommand) {
 	if ($thiscommand['deviceID'] != NULL) {
 		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
 		$thiscommand['device'] = (array_key_exists('device',$thiscommand) ? array_merge($thiscommand['device'], $device) : $device);
-// print_r($thiscommand['device']);
+		// print_r($thiscommand['device']);
 		// if ($thiscommand['device'] = $device) {
-			// $feedback['error'] = 'Device '.$thiscommand['deviceID'].' not found or inactive';
-			// return false;
+		// $feedback['error'] = 'Device '.$thiscommand['deviceID'].' not found or inactive';
+		// return false;
 		// }
 		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
 		$targettype = $thiscommand['device']['connection']['targettype'];
 		$commandclassID = $thiscommand['device']['commandclassID'];
+		if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
 		if (DEBUG_DEVICES) print_r($thiscommand);
 		
 		if (array_key_exists('previous_properties', $thiscommand['device'])) {
@@ -351,19 +354,29 @@ function sendCommand($thiscommand) {
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandvalue ".$thiscommand['commandvalue'].CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "command ". $rowcommands['command'].CRLF;
 
+	if (!empty($thiscommand['alert_textID'])) {
+		if (DEBUG_DEVICES) echo "COMMAND_PREP_ALERT".CRLF;
+		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$thiscommand['alert_textID']);
+		$thiscommand['mess_subject'] = $rowtext['description'];
+		$thiscommand['mess_text'] = $rowtext['message'];
+		if ($rowtext['priorityID'] != Null) $thiscommand['priorityID']= $rowtext['priorityID'];
+		if (strlen($thiscommand['mess_text']) == 0) $thiscommand['mess_text'] = " ";
+
+		// echo "thiscommand - 1".CRLF.CRLF;
+		// print_r($thiscommand);
+		replaceText($thiscommand);
+		// echo "thiscommand -2".CRLF.CRLF;
+		// print_r($thiscommand);
+	}
+	
 	switch ($commandclassID)
 	{
 	case COMMAND_CLASS_EMAIL:
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_EMAIL".CRLF;
-		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$thiscommand['alert_textID']);
-		$subject= $rowtext['description'];
-		$message= $rowtext['message'];
-		if (strlen($message) == 0) $message = " ";
-		// echo "thiscommand".CRLF.CRLF;
-		// print_r($thiscommand);
-		replaceText($subject, $message, $thiscommand);
-		//echo $message.CRLF.CRLF;
-		if (!($error = sendmail($rowcommands['command'], $subject, $message, 'VloHome'))) $feedback['error'] = $error;
+		// $thiscommand['alert_subject'];
+		// $thiscommand['mess_text'];
+		$result = sendmail($thiscommand['device']['previous_properties']['Address']['value'], $thiscommand['mess_subject'], $thiscommand['mess_text'], 'VloHome'); 
+		if (array_key_exists('error', $result)) $feedback['error'] = $result['error'];
 		break;
 	case COMMAND_CLASS_INSTEON:
 		global $inst_coder;
@@ -372,9 +385,6 @@ function sendCommand($thiscommand) {
 			$inst_coder = new InsteonCoder();
 		}
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_INSTEON".CRLF;
-		$tcomm = str_replace("{mycommandID}",$thiscommand['commandID'],$rowcommands['command']);
-		$tcomm = str_replace("{deviceID}",$thiscommand['deviceID'],$tcomm);
-		$tcomm = str_replace("{unit}",$thiscommand['device']['unit'],$tcomm);
 		if (DEBUG_DEVICES) echo "commandvalue a".$thiscommand['commandvalue'].CRLF;
 		if ($thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']= $onlevel;
 		if (DEBUG_DEVICES) echo "commandvalue b".$thiscommand['commandvalue'].CRLF;
@@ -384,9 +394,14 @@ function sendCommand($thiscommand) {
 		if ($thiscommand['commandvalue']>0) $thiscommand['commandvalue']=255/100*$thiscommand['commandvalue'];
 		if (DEBUG_DEVICES) echo "commandvalue d".$thiscommand['commandvalue'].CRLF;
 		if ($thiscommand['commandvalue'] == NULL && $thiscommand['commandID'] == COMMAND_ON) $thiscommand['commandvalue']=255;		// Special case so satify the replace in on command
-		$commandvalue = dec2hex($thiscommand['commandvalue'],2);
-		if (DEBUG_DEVICES) echo "commandvalue ".$commandvalue.CRLF;
-		$tcomm = str_replace("{commandvalue}",$commandvalue,$tcomm);
+		$cv_save = $thiscommand['commandvalue'];
+		$thiscommand['commandvalue'] = dec2hex($thiscommand['commandvalue'],2);
+		if (DEBUG_DEVICES) echo "commandvalue ".$thiscommand['commandvalue'].CRLF;
+
+		$thiscommand['command'] = $rowcommands['command'];
+		$tcomm = replaceCommandPlaceholders($thiscommand);
+		$thiscommand['commandvalue'] = $cv_save;
+		
 		if (DEBUG_DEVICES) echo "Rest deviceID ".$thiscommand['deviceID']." commandID ".$thiscommand['commandID'].CRLF;
 		$url=setURL($thiscommand, $commandstr);
 		$commandstr .= $tcomm.'=I=3';
@@ -494,11 +509,8 @@ function sendCommand($thiscommand) {
 		case "POSTURL":          // Web Arduino
 		case "JSON":             // Wink
 			if (DEBUG_DEVICES) echo $targettype."</p>";
-			$tcomm = str_replace("{mycommandID}",trim($thiscommand['commandID']),$rowcommands['command']);
-			$tcomm = str_replace("{deviceID}",trim($thiscommand['deviceID']),$tcomm);
-			$tcomm = str_replace("{unit}",trim($thiscommand['device']['unit']),$tcomm);
-			$tcomm = str_replace("{commandvalue}",trim($thiscommand['commandvalue']),$tcomm);
-			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
+			$thiscommand['command'] = $rowcommands['command'];
+			$tcomm = replaceCommandPlaceholders($thiscommand);
 			$tmp1 = explode('?', $tcomm);
 			if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
 				$thiscommand['device']['connection']['page'] .= $tmp1[0];
@@ -530,12 +542,8 @@ function sendCommand($thiscommand) {
 			break;
 		case "GET":          // Sony Cam at the moment
 			if (DEBUG_DEVICES) echo "GET</p>";
-			$tcomm = str_replace("{mycommandID}",$thiscommand['commandID'],$rowcommands['command']);
-			$tcomm = str_replace("{deviceID}",$thiscommand['deviceID'],$tcomm);
-			$tcomm = str_replace("{unit}",$thiscommand['device']['unit'],$tcomm);
-			$tcomm = str_replace("{commandvalue}",trim($thiscommand['commandvalue']),$tcomm);
-			$tcomm = str_replace("{timervalue}",trim($thiscommand['timervalue']),$tcomm);
-			// $url= $thiscommand['device']['connection']['targetaddress'].":".$thiscommand['device']['connection']['targetport'].'/'.$thiscommand['device']['connection']['page'];
+			$thiscommand['command'] = $rowcommands['command'];
+			$tcomm = replaceCommandPlaceholders($thiscommand);
 			$url=setURL($thiscommand, $commandstr);
 			if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 			$commandstr .= $tcomm;
@@ -578,6 +586,17 @@ function sendCommand($thiscommand) {
 	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;
 	return $feedback;
 } 
+
+function replaceCommandPlaceholders($params) {
+	$result = str_replace("{mycommandID}",trim($params['commandID']),$params['command']);
+	$result = str_replace("{deviceID}",trim($params['deviceID']),$result);
+	$result = str_replace("{unit}",trim($params['device']['unit']),$result);
+	$result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
+	$result = str_replace("{timervalue}",trim($params['timervalue']),$result);
+	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);
+	if (array_key_exists('mess_text',$params)) $result = str_replace("{mess_text}",trim($params['mess_text']),$result);
+	return $result;
+}
 
 function sendIR($host, $port, $message)
 {

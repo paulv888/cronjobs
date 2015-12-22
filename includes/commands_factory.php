@@ -43,25 +43,12 @@ function getGroup($params) {
 
 function createAlert($params) {
 
-	$alert_textID = $params['alert_textID'];
 	
-	$params['priorityID']  = (array_key_exists('priorityID', $params) ? $params['priorityID'] : 'NULL');
-	
-	$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$alert_textID);
-	$subject = $rowtext['description'];
-	$message  = $rowtext['message'];
-	
-if (DEBUG_COMMANDS) {
-	echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
-}
-	
-	replaceText($subject, $message, $params);
-		
-	if ($params['priorityID'] != Null) $params['priorityID']= $rowtext['priorityID'];
+	if (DEBUG_COMMANDS) {
+		echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
+	}
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
-	
-	$feedback['result'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $subject, 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $message, 'priorityID' => $params['priorityID'])).' created';
-	
+	$feedback['result'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	return $feedback;
 }
 
@@ -214,8 +201,10 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		foreach ($rowshemesteps as $step) {
 			$feedback['Name'] = $step['name'];
+			$text =  $step['value'];
+			replacePlaceholder($text, array( 'deviceID' => $step['deviceID']));
 			$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']]=SendCommand(array( 'deviceID' => $step['deviceID'], 
-						'commandID' => $step['commandID'], 'commandvalue' => $step['value'], 'schemeID' => $step['runschemeID'], 
+						'commandID' => $step['commandID'], 'commandvalue' => $text, 'schemeID' => $step['runschemeID'], 
 						'alert_textID' => $step['alert_textID'], 'caller' => $callerparams));
 			
 		}
@@ -323,26 +312,49 @@ function getDevicePropertiesCommand($params) {
 	return $feedback;
 }
 
-function getNowPlaying($params) {
+function getNowPlaying(&$params) {
 
-	// echo "<pre>";
+// echo "<pre>";
 
 	$command['caller'] = $params['caller'];
 	$command['callerparams'] = $params;
-	$command['deviceID'] = DEVICE_KODI; // KODI
+	$command['deviceID'] = $params['deviceID']; 
 	$command['commandID'] = COMMAND_GET_VALUE;
 	$result=sendCommand($command); 
 	
 	if (array_key_exists('error', $result)) {
 		echo "Handle Transport Error";
+		print_r($result);
 	} else {
 		$result = json_decode($result['result'],true);
-	// print_r($result);
+		// print_r($result);
+		if (array_key_exists('0', $result['result']['item']['artist'])) {
+			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$properties['Title']['value'] = $result['result']['item']['title'];
+		} else {
+			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
+		}
+		$properties['File']['value'] = $result['result']['item']['file'];
+		$params['device']['properties'] = $properties;
 		// Handle KODI error
-		$feedback['message'] = $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
+		$feedback['message'] = $properties['Playing']['value'];
 	}	
 	return $feedback;
 	// echo "</pre>";	
+} 
+
+function rebootFireTV($params) {
+
+	// echo "<pre>";
+	// $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+	// $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+	$cmd = 'nohup nice -n 10 '.getPath().'rebootFireTV.sh';
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['Name'] = 'rebootFireTV';
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+	return $feedback;		// GET OUT
+
 } 
 
 // Private
