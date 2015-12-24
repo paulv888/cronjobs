@@ -42,7 +42,7 @@ function readCameras() {
 function movePictures($camera) {
 
 	echo date("Y-m-d H:i:s").": ".$camera['description'].CRLF;
-
+ 
 	$files = array();
 	$filetimes = array();
 	$dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$camera['previous_properties']['Directory']['value'].'/';

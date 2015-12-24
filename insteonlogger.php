@@ -23,7 +23,7 @@ if (isset($_GET['DEBUG'])) {
 	define("INSTEON_HUB_PORT", 3333);
 	define("DEBUG_MODE", true);
 } else {
-	define("INSTEON_HUB_IP", "192.168.2.125");
+	define("INSTEON_HUB_IP", "192.168.2.25");
 	define("INSTEON_HUB_PORT", 9761);
 	define("DEBUG_MODE", false);
 } 

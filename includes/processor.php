@@ -1,7 +1,7 @@
 <?php 
 // define( 'DEBUG_INPUT', TRUE );
 // define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
@@ -255,7 +255,7 @@ function sendCommand($thiscommand) {
 		echo "<pre>Enter SendCommand ".CRLF;
 		echo "This Command: ";
 		if ($ct = FetchRow("SELECT description FROM ha_mf_commands  WHERE ha_mf_commands.id =".$thiscommand['commandID']))  {
-			echo $ct['description'].CRLF;			// error abort
+			echo '<b>'.$ct['description'].'</b>'.CRLF;			// error abort
 		} 
 		print_r($thiscommand);
 	}
@@ -357,7 +357,7 @@ function sendCommand($thiscommand) {
 	if (!empty($thiscommand['alert_textID'])) {
 		if (DEBUG_DEVICES) echo "COMMAND_PREP_ALERT".CRLF;
 		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$thiscommand['alert_textID']);
-		$thiscommand['mess_subject'] = $rowtext['description'];
+		$thiscommand['mess_subject'] = $rowtext['subject'];
 		$thiscommand['mess_text'] = $rowtext['message'];
 		if ($rowtext['priorityID'] != Null) $thiscommand['priorityID']= $rowtext['priorityID'];
 		if (strlen($thiscommand['mess_text']) == 0) $thiscommand['mess_text'] = " ";
@@ -591,6 +591,13 @@ function replaceCommandPlaceholders($params) {
 	$result = str_replace("{mycommandID}",trim($params['commandID']),$params['command']);
 	$result = str_replace("{deviceID}",trim($params['deviceID']),$result);
 	$result = str_replace("{unit}",trim($params['device']['unit']),$result);
+	// Not tested
+	if (strpos($params['commandvalue'],'|') !== false) {
+		$cvs = explode('|', $params['commandvalue']);
+		foreach ($cvs as $key => $value) {
+			 $params['commandvalue'] = str_replace('{commandvalue'.$key.'}', $value, $params['commandvalue']);
+		}
+	}
 	$result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
 	$result = str_replace("{timervalue}",trim($params['timervalue']),$result);
 	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);

@@ -1,4 +1,5 @@
 <?php
+define("ALERT_KODI", 224);
 //define( 'DEBUG_COMMANDS', TRUE );
 if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
@@ -59,7 +60,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
-
+	
+	// Check if a commandvalue was given, if so save this for later uses
+	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
+		$params['macro_commandvalue'] = $params['commandvalue'];
+	}
 
 	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
 	if (DEBUG_COMMANDS) print_r($params);
@@ -201,12 +206,18 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		foreach ($rowshemesteps as $step) {
 			$feedback['Name'] = $step['name'];
+			//Deleting|{property___DeleteFile}
 			$text =  $step['value'];
-			replacePlaceholder($text, array( 'deviceID' => $step['deviceID']));
-			$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']]=SendCommand(array( 'deviceID' => $step['deviceID'], 
-						'commandID' => $step['commandID'], 'commandvalue' => $text, 'schemeID' => $step['runschemeID'], 
-						'alert_textID' => $step['alert_textID'], 'caller' => $callerparams));
-			
+			replacePlaceholder($text, $params);		// Replace placeholders in commandvalue
+			$params['commandvalue'] = $text;
+			// Not sure why i needed this here, should be captured in replaceCommandPlaceholders
+			//replacePlaceholder($text, array( 'deviceID' => $step['deviceID']));
+			replaceText($params, true);
+			$params['deviceID'] =  $step['deviceID'];
+			$params['commandID'] = $step['commandID'];
+			$params['schemeID'] = $step['runschemeID'];
+			$params['alert_textID'] = $step['alert_textID'];
+			$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']] = SendCommand($params);
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
@@ -329,7 +340,7 @@ function getNowPlaying(&$params) {
 		$result = json_decode($result['result'],true);
 		// print_r($result);
 		if (array_key_exists('0', $result['result']['item']['artist'])) {
-			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$properties['Title']['value'] = $result['result']['item']['title'];
+			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
 		} else {
 			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
 		}
@@ -340,6 +351,61 @@ function getNowPlaying(&$params) {
 	}	
 	return $feedback;
 	// echo "</pre>";	
+} 
+
+function moveToRecycle(&$params) {
+
+// echo "<pre>";
+// eg.globals.currentpath\n
+// file = eg.globals.currentfile\n
+// eg.plugins.XBMC2.SkipNext()\n
+// time.sleep(5)\n
+// print \'move to Recylce: \' + path + \'\\\\\' + file\nos.rename(path + \'\\\\\' + file,eg.globals.MyRecycle + \'\\\\\' + file)\n
+// eg.globals.message=["Deleted",eg.globals.currentfile]\neg.TriggerEvent("SendNotification")')
+	// echo "<pre>";
+	// print_r($params);
+	$feedback = array();
+	
+	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
+	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
+	
+	$infile = str_replace('smb://SRVMEDIA/media/My Music Videos/','/home/www/vlohome/data/musicvideos/',$params['commandvalue']);
+	//$result = stat($infile);
+	$fparsed = pathinfo($infile);
+	$filename = $fparsed['filename'].'.'.$fparsed['extension'];
+	// echo $filename.CRLF;
+	$tofile = getcwd().'/MusicVideosGarbageBin/'.$filename;
+	$sendCommand = array('callerID' => $params['caller']['callerID'], 
+				'deviceID' => $params['deviceID'], 
+				'messagetypeID' => 'MESS_TYPE_SCHEME',
+				'schemeID' => ALERT_KODI);
+	//if (true) {
+	if (copy($infile, $tofile) && unlink($infile)) {
+		$feedback['message'] = 'Moved '.$filename.' to recycle bin.';
+		$sendCommand['macro_commandvalue'] = 'Deleted File|'.$filename;
+	} else {
+		$feedback['error'] = 'Error moving '.$filename.' to recycle bin.';
+		$sendCommand['macro_commandvalue'] = 'Error deleting File|'.$filename;
+	}
+	executeCommand($sendCommand).CRLF;
+
+	return $feedback;
+	// echo "</pre>";	
+} 
+
+function addToPlaylist(&$params) {
+
+ echo "<pre>";
+
+print_r($params);
+ 
+	// $file = $params['macro_commandvalue'];
+	// $current = file_get_contents($file);
+	// $current .= $params['Playing']."\n";
+	// file_put_contents($file, $current);
+	
+	return $feedback;
+echo "</pre>";	
 } 
 
 function rebootFireTV($params) {

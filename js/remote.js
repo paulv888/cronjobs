@@ -164,7 +164,7 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(jQuery(this.parentNode.parentNode).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selected};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 			} else {
@@ -217,7 +217,7 @@ if(!window.scriptRemoteHasRun) {
 			}) ;
 			if (keys.length > 0) {
 				if (selected.charAt(0) == 'S') {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1)};
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selected};
 				} else if (selected.charAt(0) == 'C') {
 					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 				} else {
@@ -243,7 +243,7 @@ if(!window.scriptRemoteHasRun) {
  			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selected};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
@@ -263,7 +263,7 @@ if(!window.scriptRemoteHasRun) {
 			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selected};
 			} else if (selected.charAt(0) == 'C'){
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
