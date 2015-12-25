@@ -156,10 +156,19 @@ function setDevicePropertyValue($params, $propertyName) {
 			$logit = false;
 			break;
 		case "HOUR":
-			$logit = timeExpired($lastLogDate, 60) || (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+			$logit = timeExpired($lastLogDate, 60);
+			if (is_numeric($deviceproperty['value'])) {
+				$logit = $logit || ((abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19);
+			} else {
+				$logit = $logit || ($deviceproperty['value'] != $row['value']);
+			}
 			break;
 		case "CHANGE":
-			$logit = (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+			if (is_numeric($deviceproperty['value'])) {
+				$logit = (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+			} else {
+				$logit = $deviceproperty['value'] != $row['value'];
+			}
 			break;
 		case "ALWAYS":
 			$logit = true;
@@ -194,20 +203,17 @@ function setDevicePropertyValue($params, $propertyName) {
 			if ($deviceproperty['value'] == STATUS_ON ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ON);
 				if (!empty($result)) $feedback['Triggers'] = $result;
-				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
-				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($deviceproperty['value'] == STATUS_OFF ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_OFF);
-				if (!empty($result)) $feedback['Triggers'] = $result;
-				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 				if (!empty($result)) $feedback['Triggers'] = $result;
 			} elseif ($deviceproperty['value'] == STATUS_ERROR ){
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ERROR);
 				if (!empty($result)) $feedback['Triggers'] = $result;
-				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
-				if (!empty($result)) $feedback['Triggers'] = $result;
 			}
 		}
+		$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
+		if (!empty($result)) $feedback['Triggers'] = $result;
+
 	}
 	
 	if (DEBUG_HA) echo "</pre>";

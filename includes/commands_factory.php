@@ -46,16 +46,16 @@ function monitorDevicesTimeout($params) {
 	return $feedback;
 }
 
-function getGroup__delete($params) {
+function getGroup($params) {
+	$feedback['Name'] = 'getGroup';
 	$feedback['result'] = array();
 	$groupID = $params['commandvalue'];
 	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
 					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
 					WHERE groupID = '.$groupID; 
 	$groups = FetchRows($mysql);
-	$feedback = array();
 	foreach($groups as $device) {
-		$feedback[]['groupselect']['DeviceID'] = $device['deviceID'];
+		$feedback['result'][]['groupselect']['DeviceID'] = $device['deviceID'];
 	}
 	return $feedback;
 }
@@ -117,8 +117,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			} else {
 				$test = 0;
 			}
-			$groups = getGroup(array('commandvalue' => $rowcond['groupID']));
-			// [getGroup] => Array ([0] => Array ([groupselect] => Array ([DeviceID] => 1))
+			$groups = getGroup(array('commandvalue' => $rowcond['groupID']))['result'];
+			// [getGroup] => Array (['result'][0] => Array ([groupselect] => Array ([DeviceID] => 1))
 			foreach ($groups as $device) {
 				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
 					$test = $test & getDeviceProperties(Array('deviceID' => $device['groupselect']['DeviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
