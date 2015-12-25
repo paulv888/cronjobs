@@ -160,11 +160,12 @@ if(!window.scriptRemoteHasRun) {
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = jQuery(this).attr('data-value');
+			var selectedtext = jQuery(this).text();
 			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 			var keys = [];
 			keys.push(jQuery(this.parentNode.parentNode).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 			} else {
@@ -183,6 +184,7 @@ if(!window.scriptRemoteHasRun) {
 			var textNode = mbut.getElementsByClassName("buttontext")[0];
 			textNode.textContent = this.text;
 			var selected = jQuery(this).attr('data-value');
+			var selectedtext = jQuery(this).text();
 			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 			
 			if (selected == VloRemote.GROUP_NO_SELECTED){
@@ -208,6 +210,7 @@ if(!window.scriptRemoteHasRun) {
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = jQuery(this).attr('data-value');
+			var selectedtext = jQuery(this).text();
 			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 
 			// now find all selected button and send dim value (Either selected over click or over group)
@@ -217,7 +220,7 @@ if(!window.scriptRemoteHasRun) {
 			}) ;
 			if (keys.length > 0) {
 				if (selected.charAt(0) == 'S') {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selected};
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
 				} else if (selected.charAt(0) == 'C') {
 					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
 				} else {
@@ -240,10 +243,11 @@ if(!window.scriptRemoteHasRun) {
 			event.preventDefault()
 			event.stopImmediatePropagation()
 			var selected = jQuery(this.selectedOptions).attr('value');
+			var selectedtext = jQuery(this.selectedOptions).text();
  			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {
@@ -260,10 +264,11 @@ if(!window.scriptRemoteHasRun) {
 			event.preventDefault()
 			event.stopImmediatePropagation()
 			var selected = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).attr('value');
+			var selectedtext = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).text();
 			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			if (selected.charAt(0) == 'S') {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selected};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C'){
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else {

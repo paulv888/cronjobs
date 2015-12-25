@@ -186,5 +186,12 @@ define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
 
+define("LOCAL_MYDOCS", "/home/www/vlohome/data/mydocs/");
+define("LOCAL_MUSIC_VIDEOS", "/home/www/vlohome/data/musicvideos/");
+define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
+define("LOCAL_RECYCLE", "/MusicVideosGarbageBin/");
+
+
+
 define("CRLF", "</br>\n");
 ?>

@@ -153,7 +153,7 @@ function loadRemoteDiv($divid) {
 						echo '">';
 						echo '</i>';
 					} 
-					replacePlaceholder($text, Array('deviceID' => $rowremotekeys['deviceID']));
+					$text = replacePlaceholder($text, Array('deviceID' => $rowremotekeys['deviceID']));
 					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
 					echo "</td>\n\r";

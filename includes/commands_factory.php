@@ -1,16 +1,33 @@
 <?php
 define("ALERT_KODI", 224);
-//define( 'DEBUG_COMMANDS', TRUE );
+// define( 'DEBUG_COMMANDS', TRUE );
+//define( 'DEBUG_PARAMS', TRUE );
 if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
+if (!defined('DEBUG_PARAMS')) define( 'DEBUG_PARAMS', FALSE );
+
+//	Command in:
+// 		$params
+//
+//  Command out:
+//		$feedback type Array
+//			with keys: 
+//						'Name'   	(String)	-> Name of executed command						REQUIRED
+//						'result'	(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
+//						'message' 	(String)	-> To display on remote
+//      if error then	'error'		(String)	-> Error description
+//						Nothing else allowed 
+
 
 function monitorDevicesTimeout($params) {
-
+	// No Error checking
+	
 	// Need to handle inuse and active
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
 	
 	// echo "<pre>";
 	// print_r($devs);
-	$feedback = array();
+	$feedback['Name'] = 'monitorDevicesTimeout';
+	$feedback['result'] = array();
 	$params['callerID'] = $params['callerID'];
 	foreach ($devs as $key => $props) {
 		if (array_key_exists('linkmonitor', $props['Link'])) {
@@ -20,7 +37,7 @@ function monitorDevicesTimeout($params) {
 				$properties['Link']['value'] = LINK_TIMEDOUT;
 				$params['device']['properties'] = $properties;
 		//		print_r($params);
-				$feedback[] = updateDeviceProperties($params);
+				$feedback['result'][] = updateDeviceProperties($params);
 			}
 		}
 	}
@@ -29,7 +46,8 @@ function monitorDevicesTimeout($params) {
 	return $feedback;
 }
 
-function getGroup($params) {
+function getGroup__delete($params) {
+	$feedback['result'] = array();
 	$groupID = $params['commandvalue'];
 	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
 					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
@@ -44,18 +62,20 @@ function getGroup($params) {
 
 function createAlert($params) {
 
-	
+	$feedback['Name'] = 'createAlert';
+	$feedback['result'] = array();
 	if (DEBUG_COMMANDS) {
 		echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
 	}
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
-	$feedback['result'] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
+	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	return $feedback;
 }
 
 function executeMacro($params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
 
 // Check conditions
+	$feedback['result'] = array();
 	$schemeID = $params['schemeID'];
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
@@ -69,6 +89,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
 	if (DEBUG_COMMANDS) print_r($params);
 	
+	$feedback['Name'] = getSchemeName($schemeID);
 	
 	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
 	
@@ -153,7 +174,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		case CONDITION_GREATER:
 			if ($testvalue[0] <= $testvalue[1]) {
 				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
-				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted, startup test failed '.$testvalue[0].' > '.$testvalue[1];
 				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
@@ -162,7 +182,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		case CONDITION_LESS:
 			if ($testvalue[0] >= $testvalue[1]) {
 				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
-				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' < '.$testvalue[1];
 				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
@@ -171,7 +190,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		case CONDITION_EQUAL:
 			if ($testvalue[0] != $testvalue[1]) {
 				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
-				$feedback['Name'] = getSchemeName($schemeID);
 				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' == '.$testvalue[1];
 				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 				return $feedback;
@@ -199,25 +217,29 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-			$feedback['Name'] = current($rowshemesteps)['name'];
 			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence.'; //."  Log:".$outputfile;
 			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
 		foreach ($rowshemesteps as $step) {
-			$feedback['Name'] = $step['name'];
 			//Deleting|{property___DeleteFile}
 			$text =  $step['value'];
-			replacePlaceholder($text, $params);		// Replace placeholders in commandvalue
-			$params['commandvalue'] = $text;
-			// Not sure why i needed this here, should be captured in replaceCommandPlaceholders
-			//replacePlaceholder($text, array( 'deviceID' => $step['deviceID']));
-			replaceText($params, true);
+			if (DEBUG_PARAMS) echo 'StepValue: '.$text.CRLF;
+			if (DEBUG_PARAMS) echo 'last_message: '.(array_key_exists('last_message', $params) ? $params['last_message'] : 'Non-existent').CRLF;
 			$params['deviceID'] =  $step['deviceID'];
 			$params['commandID'] = $step['commandID'];
 			$params['schemeID'] = $step['runschemeID'];
 			$params['alert_textID'] = $step['alert_textID'];
-			$feedback['executeMacro:'.$step['id'].'_'.$step['commandName']] = SendCommand($params);
+			$params['commandvalue'] = replacePlaceholder($text, $params);		// Replace placeholders in commandvalue
+			if (DEBUG_PARAMS) echo 'StepValue after replacePlaceholder: '.$params['commandvalue'].CRLF;
+			//replaceText($params, true);
+			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = SendCommand($params);
+			// TODO:: check for 'error'
+			// TODO:: bubble up message?
+			// print_r($feedback['result']);
+			if (array_key_exists('message',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last_message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['message'];
+			if (array_key_exists('error',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last_message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['error'];
+			if (DEBUG_PARAMS) echo 'Loaded last_message: '.(array_key_exists('last_message', $params) ? $params['last_message'] : 'Non-existent').CRLF;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
@@ -229,8 +251,10 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 function getDuskDawn($params) {
 
+	$feedback['Name'] = 'getDuskDawn';
+	$feedback['result'] = array();
+
 	$station = $params['commandvalue'];
-	
 	$mydeviceID = DEVICE_DARK_OUTSIDE;
 	ini_set('max_execution_time',30);
 
@@ -266,22 +290,25 @@ function getDuskDawn($params) {
 		$properties['Link']['value'] = LINK_DOWN;
 		$device['properties'] = $properties;
 	}
-	$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
+	//$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
 
 	if (DEBUG_COMMANDS) echo "</pre>";
 	return $feedback;
 }
 
 function setResult($params) {
+	$feedback['Name'] = 'setResult';
+	$feedback['result'] = array();
 	$feedback['message'] = $params['commandvalue'];
 	break;
 }
 
 
 function setDevicePropertyCommand(&$params) {
+	$feedback['result'] = array();
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
-	replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
+	$text = replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
 	if (strtoupper($text) == "TOGGLE") { 		// Toggle
 		if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
 			$text = STATUS_OFF;
@@ -293,27 +320,28 @@ function setDevicePropertyCommand(&$params) {
 	return $feedback;
 }
 
-function getDevicePropertiesCommand($params) {
+function getDevicePropertiesCommand___delete($params) {
 //getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value']
 //getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value']
 //getDeviceProperties(Array('deviceID' => $deviceID))
+	$feedback['result'] = array();
 
 	if (array_key_exists('propertyID', $params)) $devprop['propertyID'] = $params['propertyID'];
 	$devprop['deviceID'] = $params['deviceID'];
-	$feedback = Array();
+	$feedback['result'] = Array();
 	if (!empty($devprop['deviceID'])) {
 		if ($properties  = getDeviceProperties($devprop)) {
 			if (array_key_exists('propertyID', $params)) { // Returning different format
-				$feedback[$properties['propertyID']]['updateStatus']['Status'] = $properties['value'];
-				$feedback[$properties['propertyID']]['updateStatus']['PropertyID'] =$properties['propertyID'];
-				$feedback[$properties['propertyID']]['updateStatus']['DeviceID'] = $properties['deviceID'];
-				$feedback[$properties['propertyID']]['updateStatus']['Datatype'] = $properties['datatype'];
+				$feedback['result'][$properties['propertyID']]['updateStatus']['Status'] = $properties['value'];
+				$feedback['result'][$properties['propertyID']]['updateStatus']['PropertyID'] =$properties['propertyID'];
+				$feedback['result'][$properties['propertyID']]['updateStatus']['DeviceID'] = $properties['deviceID'];
+				$feedback['result'][$properties['propertyID']]['updateStatus']['Datatype'] = $properties['datatype'];
 			} else {
 				foreach ($properties as $property) {
-					$feedback[$property['propertyID']]['updateStatus']['Status'] = $property['value'];
-					$feedback[$property['propertyID']]['updateStatus']['PropertyID'] =$property['propertyID'];
-					$feedback[$property['propertyID']]['updateStatus']['DeviceID'] = $property['deviceID'];
-					$feedback[$property['propertyID']]['updateStatus']['Datatype'] = $property['datatype'];
+					$feedback['result'][$property['propertyID']]['updateStatus']['Status'] = $property['value'];
+					$feedback['result'][$property['propertyID']]['updateStatus']['PropertyID'] =$property['propertyID'];
+					$feedback['result'][$property['propertyID']]['updateStatus']['DeviceID'] = $property['deviceID'];
+					$feedback['result'][$property['propertyID']]['updateStatus']['Datatype'] = $property['datatype'];
 				}
 			}
 		}
@@ -325,29 +353,36 @@ function getDevicePropertiesCommand($params) {
 
 function getNowPlaying(&$params) {
 
-// echo "<pre>";
+	$feedback['Name'] = 'getNowPlaying';
+	$feedback['result'] = array();
 
-	$command['caller'] = $params['caller'];
+ 	$command['caller'] = $params['caller'];
 	$command['callerparams'] = $params;
 	$command['deviceID'] = $params['deviceID']; 
 	$command['commandID'] = COMMAND_GET_VALUE;
-	$result=sendCommand($command); 
+	$result = sendCommand($command); 
+	
+
 	
 	if (array_key_exists('error', $result)) {
 		echo "Handle Transport Error";
 		print_r($result);
 	} else {
-		$result = json_decode($result['result'],true);
-		// print_r($result);
-		if (array_key_exists('0', $result['result']['item']['artist'])) {
+		$result = json_decode($result['result'][0],true);
+		//print_r($result);
+		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
 		} else {
 			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
 		}
-		$properties['File']['value'] = $result['result']['item']['file'];
-		$params['device']['properties'] = $properties;
+		if (!empty(trim($result['result']['item']['file']))) {
+			$properties['File']['value'] = $result['result']['item']['file'];
+			$params['device']['properties'] = $properties;
+			$feedback['message'] = $properties['Playing']['value'];
+		} else {
+			$feedback['error']='Error - Nothing playing';
+		}
 		// Handle KODI error
-		$feedback['message'] = $properties['Playing']['value'];
 	}	
 	return $feedback;
 	// echo "</pre>";	
@@ -355,6 +390,8 @@ function getNowPlaying(&$params) {
 
 function moveToRecycle(&$params) {
 
+	$feedback['Name'] = 'getNowPlaying';
+	$feedback['result'] = array();
 // echo "<pre>";
 // eg.globals.currentpath\n
 // file = eg.globals.currentfile\n
@@ -364,20 +401,20 @@ function moveToRecycle(&$params) {
 // eg.globals.message=["Deleted",eg.globals.currentfile]\neg.TriggerEvent("SendNotification")')
 	// echo "<pre>";
 	// print_r($params);
-	$feedback = array();
-	
+
 	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
 	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
 	
-	$infile = str_replace('smb://SRVMEDIA/media/My Music Videos/','/home/www/vlohome/data/musicvideos/',$params['commandvalue']);
+	$infile = str_replace('smb://SRVMEDIA/media/My Music Videos/',LOCAL_MUSIC_VIDEOS,$params['commandvalue']);
 	//$result = stat($infile);
 	$fparsed = pathinfo($infile);
 	$filename = $fparsed['filename'].'.'.$fparsed['extension'];
 	// echo $filename.CRLF;
-	$tofile = getcwd().'/MusicVideosGarbageBin/'.$filename;
+	$tofile = getcwd().LOCAL_RECYCLE.$filename;
 	$sendCommand = array('callerID' => $params['caller']['callerID'], 
+				'caller'  => $params['caller'],
 				'deviceID' => $params['deviceID'], 
-				'messagetypeID' => 'MESS_TYPE_SCHEME',
+				'commandID' => COMMAND_RUN_SCHEME,
 				'schemeID' => ALERT_KODI);
 	//if (true) {
 	if (copy($infile, $tofile) && unlink($infile)) {
@@ -387,7 +424,7 @@ function moveToRecycle(&$params) {
 		$feedback['error'] = 'Error moving '.$filename.' to recycle bin.';
 		$sendCommand['macro_commandvalue'] = 'Error deleting File|'.$filename;
 	}
-	executeCommand($sendCommand).CRLF;
+	$feedback = sendCommand($sendCommand);
 
 	return $feedback;
 	// echo "</pre>";	
@@ -395,21 +432,35 @@ function moveToRecycle(&$params) {
 
 function addToPlaylist(&$params) {
 
- echo "<pre>";
-
-print_r($params);
+//echo "<pre>";
+//print_r($params);
+	$feedback['Name'] = 'addToPlaylist';
+	$feedback['result'] = array();
  
-	// $file = $params['macro_commandvalue'];
-	// $current = file_get_contents($file);
-	// $current .= $params['Playing']."\n";
-	// file_put_contents($file, $current);
-	
+	$file = LOCAL_PLAYLISTS.$params['macro_commandvalue'].'.m3u';
+	$error = "";
+	if (($playlist = file_get_contents($file)) !== false) {
+		$playingfile = $params['device']['previous_properties']['File']['value'];
+		$playing = $params['device']['previous_properties']['Playing']['value'];
+		if (strpos($playlist, $playingfile) === false) {
+			$playlist .= $playingfile."\n";
+			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
+		}
+		$feedback['message'] = $playing.'|Added to - '.$params['macro_commandvalue'];
+	} else {
+		$error = 'Could not open playlist: '.$params['macro_commandvalue'].'|';
+	}
+	if (!empty($error)) {
+		$feedback['error'] = 'Could not open playlist - '.$params['macro_commandvalue'].'|';
+	}
 	return $feedback;
-echo "</pre>";	
+//echo "</pre>";	
 } 
 
 function rebootFireTV($params) {
 
+	$feedback['Name'] = 'rebootFireTV';
+	$feedback['result'] = array();
 	// echo "<pre>";
 	// $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
 	// $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
@@ -417,15 +468,257 @@ function rebootFireTV($params) {
 	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['Name'] = 'rebootFireTV';
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
 	return $feedback;		// GET OUT
 
 } 
 
+function sendmail(&$params) {
+
+	$feedback['Name'] = 'sendmail';
+	$feedback['result'] = array();
+	$to = $params['device']['previous_properties']['Address']['value'];
+	$fromname = 'VloHome'; 
+
+	$headers = 'MIME-Version: 1.0' . "\r\n".
+    'From: '.$fromname. "\r\n" .
+    'Reply-To: '.$fromname. "\r\n" .
+    'X-Mailer: PHP/' . phpversion();
+	
+	if(!mail($to, $params['mess_subject'],  $params['mess_text'], $headers)) {
+	    $feedback['error'] = "Mailer - error";
+	    return $feedback;
+	}
+	else {
+		return array();
+	}
+}
+
+function sendInsteonCommand(&$params) {
+
+	$feedback['Name'] = 'sendInsteonCommand';
+	$feedback['result'] = array();
+
+	global $inst_coder;
+	if ($inst_coder instanceof InsteonCoder) {
+	} else {
+		$inst_coder = new InsteonCoder();
+	}
+	if (DEBUG_DEVICES) echo "commandvalue a".$params['commandvalue'].CRLF;
+	if ($params['commandID'] == COMMAND_ON && $params['commandvalue'] == NULL) $params['commandvalue']= $params['onlevel'];
+	if (DEBUG_DEVICES) echo "commandvalue b".$params['commandvalue'].CRLF;
+	if ($params['commandvalue']>100) $params['commandvalue']=100;
+	if (DEBUG_DEVICES) echo "commandvalue c".$params['commandvalue'].CRLF;
+	if ($params['commandvalue']>0) $params['commandvalue']=255/100*$params['commandvalue'];
+	if (DEBUG_DEVICES) echo "commandvalue d".$params['commandvalue'].CRLF;
+	if ($params['commandvalue'] == NULL && $params['commandID'] == COMMAND_ON) $params['commandvalue']=255;		// Special case so satify the replace in on command
+	$cv_save = $params['commandvalue'];
+	$params['commandvalue'] = dec2hex($params['commandvalue'],2);
+	if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
+
+	$tcomm = replaceCommandPlaceholders($params);
+	$params['commandvalue'] = $cv_save;
+	
+	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
+	$url=setURL($params, $params['commandstr']);
+	$params['commandstr'] .= $tcomm.'=I=3';
+	if (DEBUG_DEVICES) echo $url.CRLF;
+	$curl = restClient::get($url.$tcomm.'=I=3',null, "", "", 2);
+	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+	else 
+		$feedback['result'][] = $curl->getresponse();
+	usleep(INSTEON_SLEEP_MICRO);
+	
+	if (array_key_exists('error', $feedback)) {
+		if ($params['dimmable'] == "YES") {
+			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
+		}
+	}
+	return $feedback;
+}
+
+function sendX10Command(&$params) {
+
+	$feedback['Name'] = 'sendX10Command';
+	$feedback['result'] = array();
+	
+	global $inst_coder;
+	if ($inst_coder instanceof InsteonCoder) {
+	} else {
+		$inst_coder = new InsteonCoder();
+	}
+	$tcomm = str_replace("{mycommandID}",$params['commandID'],$params['command']);
+	if ($params['dimmable'] == "YES") {
+		$dims = 0;
+		if ($params['commandvalue']>0 && $params['commandvalue'] < 100) $dims=(integer)round(10-10/100*$params['commandvalue']);
+		if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
+		if (DEBUG_DEVICES) echo "dims ".$dims.CRLF;
+		while($dims > 0) {
+			$tcomm .= COMMAND_DIM_CLASS_X10_INSTEON_DIMM;
+			$dims--;
+		}
+		$tcomm = COMMAND_DIM_CLASS_X10_INSTEON_OFF.$tcomm; 	// Add off in front
+	} else {
+		$params['commandvalue'] = 100;
+	}
+	if ($params['commandvalue']>100) $params['commandvalue']=100;
+	if ($params['commandvalue']!=100 && $params['commandID'] == COMMAND_ON) $params['commandvalue'] = $params['onlevel'];
+	if ($params['commandvalue'] == NULL && $params['commandID'] == COMMAND_ON) $params['commandvalue']=100;		// Special case so satify the replace in on command
+//		$tcomm .={code}a80=I=3;	$tcomm .={code}b80=I=3 $tcomm .= "|{code}{unit}00=I=3"; $tcomm .= "|{code}a80=I=3";	$tcomm .= "|0b80=I=3";
+//		$tcomm .= "|{code}480=I=3";			// dim 480  $tcomm .= "|a780=I=3";	$tcomm .= "|0b80=I=3";
+	$tcomm = str_replace("{code}",$inst_coder->x10_code_encode($params['device']['code']),$tcomm);
+	$tcomm = str_replace("{unit}",$inst_coder->x10_unit_encode($params['device']['unit']),$tcomm);
+	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
+	$commands=explode("|", $tcomm);
+	//
+	// handle dimming, cannot give commandvalue so dimming lots of times
+	//
+	foreach ($commands as $command) {
+		//$url=$params['device']['connection']['targetaddress'].":".$params['device']['connection']['targetport'].$params['device']['connection']['page'].$command.'=I=3';
+		$url=setURL($params, $params['commandstr']);
+		$params['commandstr'] .= $command.'=I=3';
+		if (DEBUG_DEVICES) echo $url.CRLF;
+		$curl = restClient::get($url.$command.'=I=3');
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+		else 
+			$feedback['result'][] = $curl->getresponse();
+		usleep(INSTEON_SLEEP_MICRO);
+	}     
+	if (!array_key_exists('error', $feedback)){
+		if ($params['dimmable'] == "YES") {
+			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
+		}
+	}
+	return $feedback;
+}
+
+function sendGenericPHP(&$params) {
+// TODO: Result not arrays?
+	$feedback['Name'] = 'sendGenericPHP';
+	$feedback['result'] = array();
+
+	$func = $params['command'];
+	if ($func == "sleep") {
+		$params['commandstr'] = $func.' '.$params['commandvalue'];
+		$feedback['result'][] = $func($params['commandvalue']);
+	} else {
+		$params['commandstr'] = $func.' '.json_encode($params);
+		$feedback['result'] = $func($params);
+		if  (array_key_exists('error', $feedback)) {
+			$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
+		} elseif (array_key_exists('message', $feedback)) {
+			$params['commandvalue'] = $feedback['message'];
+		} elseif (array_key_exists('Name', $feedback)) {
+			$params['commandvalue'] = $feedback['Name'];
+		}
+	}
+	return $feedback;
+}
+
+
+function sendGenericHTTP(&$params) {
+
+	$feedback['Name'] = 'sendGenericHTTP';
+	$feedback['result'] = array();
+
+	$targettype = $params['device']['connection']['targettype'];
+	switch ($targettype)
+	{
+	case "POSTAPP":          // PHP - vlosite
+	case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
+	case "POSTURL":          // Web Arduino
+	case "JSON":             // Wink
+		if (DEBUG_DEVICES) echo $targettype."</p>";
+		$tcomm = replaceCommandPlaceholders($params);
+		$tmp1 = explode('?', $tcomm);
+		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
+			$params['device']['connection']['page'] .= $tmp1[0];
+			$tcomm = $tmp1[1];
+		} 
+		$url=setURL($params, $params['commandstr']);
+		if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
+		if ($targettype == "POSTTEXT") { 
+			$params['commandstr'] .= ' '.$tcomm;
+			$curl = restClient::post($url, $tcomm, "", "", "text/plain", 2);
+		} elseif ($targettype == "POSTAPP") {
+			$params['commandstr'] .= ' '.$tcomm;
+			$curl = restClient::post($url, $tcomm, "", "", "", 2);
+		} elseif ($targettype == "JSON") {
+			//parse_str($tcomm, $params);
+			$postparams = $tcomm;
+			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			$params['commandstr'] = $params['commandstr'].' '.$postparams;
+			$curl = restClient::post($url, $postparams, "", "", "application/json" , 2);
+		} else { 
+			$params['commandstr'] .= $tcomm;
+			$curl = restClient::post($url.$tcomm,"","","","",2);
+		}
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+		else 
+			$feedback['result'][] = $curl->getresponse();
+			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
+		break;
+	case "GET":          // Sony Cam at the moment
+		if (DEBUG_DEVICES) echo "GET</p>";
+		$tcomm = replaceCommandPlaceholders($params);
+		$url=setURL($params, $params['commandstr']);
+		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
+		$params['commandstr'] .= $tcomm;
+		$curl = restClient::get($url.$tcomm);
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
+			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+		else 
+			$feedback['result'][] = $curl->getresponse();
+		break;
+	case "TCP":              // iTach
+		if (DEBUG_DEVICES) echo "TCP_IR</p>";
+		$url=setURL($params, $params['commandstr']);
+		$params['commandstr'] .= $params['command'];
+		if (DEBUG_DEVICES) echo $params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'].' - '.$params['commandstr'].CRLF;
+		$feedback['result'][] = sendIR($params['device']['connection']['targetaddress'], $params['device']['connection']['targetport'], $params['commandstr']);
+		//echo $feedback['result'].CRLF;
+		//if ($feedback['result'] != "ERR" && $curl->getresponsecode() != 204)
+			// $feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+		// else 
+			// $feedback['result'] = $curl->getresponse();
+		break;
+	case null:
+	case "NONE":          // Virtual Devices
+		if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
+		break;
+	}
+	if (array_key_exists('result', $feedback)) {
+		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
+//			$feedback['message'] = $feedback['result'];
+//			$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\R~',' ',strip_tags($feedback['result'])));
+
+	}
+	if (!is_null($params['commandvalue']) && trim($params['commandvalue'])!=='') $params['device']['properties']['Value']['value']= $params['commandvalue'];
+	return $feedback;
+}
+
 // Private
 function NOP() {
 	$feedback['result'] = "Nothing done";
 	return $feedback;
+}
+
+function sendIR($host, $port, $message)
+{
+	// open a client connection
+	$client = stream_socket_client("tcp://$host:$port", $errno, $errorMessage);
+	if ($client === false) {
+		echo $errno.' '.$errorMessage;
+		$result['error'] = "Failed to connect: $errorMessage";
+	} else {
+		stream_set_timeout($client, 20);
+		fwrite($client, "$message\r");
+		$result = stream_get_line ( $client , 1024 , "\r" );
+		fclose($client);
+	}
+	return $result;
 }
 ?>
