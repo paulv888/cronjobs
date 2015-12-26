@@ -4,6 +4,9 @@
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($params) {
+
+	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; print_r ($params); echo "</pre>";}
+
 	$result = str_replace("{mycommandID}",trim($params['commandID']),$params['command']);
 	$result = str_replace("{deviceID}",trim($params['deviceID']),$result);
 	$result = str_replace("{unit}",trim($params['device']['unit']),$result);
@@ -11,15 +14,59 @@ function replaceCommandPlaceholders($params) {
 	if (strpos($params['commandvalue'],'|') !== false) {
 		$cvs = explode('|', $params['commandvalue']);
 		foreach ($cvs as $key => $value) {
-			 $params['commandvalue'] = str_replace('{commandvalue'.$key.'}', $value, $params['commandvalue']);
+			 $result = str_replace('{commandvalue'.$key.'}', $value, $result);
 		}
 	}
 	$result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
+	$result = str_replace("{value}",trim($params['value']),$result);
 	$result = str_replace("{timervalue}",trim($params['timervalue']),$result);
 	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);
 	if (array_key_exists('mess_text',$params)) $result = str_replace("{mess_text}",trim($params['mess_text']),$result);
+	
+
+	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders result"; echo($result); echo "</pre>";}
 	return $result;
 }
+
+function replaceResultPlaceholders($mess_subject, &$params, $resultin){
+
+		if (DEBUG_PHOLDERS) {
+			echo "<pre> replaceResultPlaceholders "; print_r ($resultin); echo "</pre>";
+			echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
+		}	
+	// Do an array search for the value to replace {postion}
+	// execute before clobbering input
+	$resultin['deviceID'] = $params['deviceID'];
+
+	preg_match('/\{result___(.*?)\}/', $mess_subject, $output);
+	if (!empty($output)) {	// Found me some
+		if (DEBUG_PHOLDERS) {
+			echo "<pre>Search Array for Key "; echo "DATA0:"; print_r ($params); echo "</pre>";
+			echo "<pre>Search Array for Key "; echo "PATTERN0:"; print_r ($output); echo "</pre>";
+		}
+
+		$filterkeep = array( $output[1] => 1);
+		doFilter($resultin, array(), $filterkeep, $result);
+		// echo "Filtered: >";
+		// print_r($result);
+
+		if (is_array($result)) {
+			//echo $result[0][$output[1]].CRLF;	
+			$mess_subject = str_replace($output[0], trim($result[0][$output[1]]), $mess_subject);
+			$propname = str_replace('result___', '', $output[1]);
+			$params['device']['properties'][$propname]['value']= $result[0][$output[1]];
+			//if ($mess_text != Null) $mess_text=preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
+		}
+		
+		if (DEBUG_PHOLDERS) {
+			echo "<pre>"; echo $mess_subject.CRLF; echo "</pre>";
+		}	
+	}
+	
+	// echo "return replacePlaceholder in: ".$mess_subject.CRLF;
+	return $mess_subject;
+}
+
 
 function replacePlaceholder($mess_subject, $params){
 
@@ -118,6 +165,8 @@ function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 			}
 		}
 	}
+	
+
 	// This is for all other values in the params i.e. Message
 	// Do this twice (placeholders in placeholders, ie {message} => {commandvalue0}|{commandvalue1}
 	if ($params['deviceID'] != Null) {
@@ -149,7 +198,7 @@ function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 				echo "<pre>Param Values "; echo "PATTERN3:"; print_r ($pattern); echo "</pre>";
 			}
 
-			// Why whole array, lest just do on base
+			// Why whole array, lest just do on base, be
 			// $mess_subject = preg_replace_array($pattern, $params, $mess_subject);
 			// if ($mess_text != Null) $mess_text = preg_replace_array($pattern, $params, $mess_text); 
 			$mess_subject = preg_replace($pattern, $params, $mess_subject);
@@ -157,11 +206,6 @@ function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 			
 		}
 	}
-	
-	if (DEBUG_PHOLDERS) {
-		echo "<pre>"; echo $mess_subject.CRLF; echo "</pre>";
-		echo "<pre>"; echo $mess_text.CRLF; echo "</pre>";
-	}	
 
 	return true;
 }

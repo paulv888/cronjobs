@@ -1,8 +1,10 @@
 <?php 
 // define( 'DEBUG_INPUT', TRUE );
-//define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
+// define( 'DEBUG_PARAMS', TRUE );
+// define( 'DEBUG_COMMANDS', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
 if (isset($_POST['DEBUG_DEVICES'])) define( 'DEBUG_DEVICES', TRUE );
@@ -11,6 +13,8 @@ if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
+if (!defined('DEBUG_PARAMS')) define( 'DEBUG_PARAMS', FALSE );
+if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 // Private
 function sendCommand($thiscommand) { 
@@ -29,7 +33,7 @@ function sendCommand($thiscommand) {
 
 	$feedback = Array();
 	$feedback['result'] = '';
-	$params['commandstr'] = "";
+	$feedback['commandstr'] = "";
 	
 	$exectime = -microtime(true); 
 	
@@ -61,8 +65,8 @@ function sendCommand($thiscommand) {
 		// }
 		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
 		$commandclassID = $thiscommand['device']['commandclassID'];
-		// if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
-		// if (DEBUG_DEVICES) print_r($thiscommand);
+		if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
+		if (DEBUG_DEVICES) print_r($thiscommand);
 		
 		if (array_key_exists('previous_properties', $thiscommand['device'])) {
 			$statusarr = search($thiscommand['device']['previous_properties'], 'primary_status', 1);
@@ -133,6 +137,7 @@ function sendCommand($thiscommand) {
 		}
 	}
 	$thiscommand['command'] = $rowcommands['command'];
+	$thiscommand['value'] = $rowcommands['value'];
 
 	// Load Message Template
 	if (!empty($thiscommand['alert_textID'])) {
@@ -177,23 +182,38 @@ function sendCommand($thiscommand) {
 		break;		
 	}
 
+	if (DEBUG_RETURN) echo "<pre>End sendCommandd: >";
+	if (DEBUG_RETURN) print_r($feedback);
+	if (DEBUG_RETURN) print_r($thiscommand);
+	if (DEBUG_RETURN) echo "</pre>".CRLF;
+
+	if (!is_null($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') {
+		$text =  $thiscommand['commandvalue'];
+		if (DEBUG_PARAMS) echo 'Text: '.$text.CRLF;
+		$thiscommand['commandvalue'] = replaceResultPlaceholders($text, $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
+//		$thiscommand['device']['properties']['Value']['value']= $thiscommand['commandvalue'];
+		if (DEBUG_PARAMS) echo 'Text: '.$thiscommand['commandvalue'].CRLF;
+	}
+
+	
 	// Check for errors first?
+	if  (array_key_exists('error', $feedback)) {
+		$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
+	} elseif (array_key_exists('message', $feedback)) {
+		$params['commandvalue'] = $feedback['message'];
+	} elseif (array_key_exists('Name', $feedback)) {
+		$params['commandvalue'] = $feedback['Name'];
+	}
+	
 	if ($rowcommands['need_device']) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
 	
 	$exectime += microtime(true);
 	
-	// Generic error parsing
-	//sendmail
-//	if (array_key_exists('error', $result)) $feedback['result']['error'] = $result['error'];
-	
-	if (DEBUG_RETURN) echo "<pre>End sendCommandd: >";
-	if (DEBUG_RETURN) print_r($feedback);
-	if (DEBUG_RETURN) echo "</pre>".CRLF;
 	
 	if (!array_key_exists('message', $feedback)) $feedback['message']='';
-	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $params['commandstr'], 'exectime' => $exectime));
+	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $feedback['commandstr'], 'exectime' => $exectime));
 	if ($exittrap) exit($thiscommand['commandvalue']);
 	
 	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;

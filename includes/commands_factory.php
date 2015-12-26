@@ -1,21 +1,31 @@
 <?php
 define("ALERT_KODI", 224);
-// define( 'DEBUG_COMMANDS', TRUE );
-//define( 'DEBUG_PARAMS', TRUE );
-if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
-if (!defined('DEBUG_PARAMS')) define( 'DEBUG_PARAMS', FALSE );
-
 //	Command in:
 // 		$params
 //
 //  Command out:
 //		$feedback type Array
 //			with keys: 
-//						'Name'   	(String)	-> Name of executed command						REQUIRED
-//						'result'	(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
-//						'message' 	(String)	-> To display on remote
-//      if error then	'error'		(String)	-> Error description
+//						'Name'   		(String)	-> Name of executed command						REQUIRED
+//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
+//						'message' 		(String)	-> To display on remote
+//						'commandstr' 	(String)	-> for eventlog, actual command send
+//      if error then	'error'			(String)	-> Error description
 //						Nothing else allowed 
+
+// function templateFunction(&$params) {
+
+	// $feedback['Name'] = 'templateFunction';
+	// $feedback['commandstr'] = "I send this";
+	// $feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+	
+	// if (DEBUG_COMMANDS) {
+		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	// }
+	// return $feedback;
+// }
 
 
 function monitorDevicesTimeout($params) {
@@ -81,9 +91,9 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
 	
-	// Check if a commandvalue was given, if so save this for later uses
+	// Check if a commandvalue was given, if so save this for later use
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
-		$params['macro_commandvalue'] = $params['commandvalue'];
+		$params['macro___commandvalue'] = $params['commandvalue'];
 	}
 
 	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
@@ -225,7 +235,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			//Deleting|{property___DeleteFile}
 			$text =  $step['value'];
 			if (DEBUG_PARAMS) echo 'StepValue: '.$text.CRLF;
-			if (DEBUG_PARAMS) echo 'last_message: '.(array_key_exists('last_message', $params) ? $params['last_message'] : 'Non-existent').CRLF;
+			if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
 			$params['deviceID'] =  $step['deviceID'];
 			$params['commandID'] = $step['commandID'];
 			$params['schemeID'] = $step['runschemeID'];
@@ -237,9 +247,9 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			// TODO:: check for 'error'
 			// TODO:: bubble up message?
 			// print_r($feedback['result']);
-			if (array_key_exists('message',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last_message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['message'];
-			if (array_key_exists('error',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last_message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['error'];
-			if (DEBUG_PARAMS) echo 'Loaded last_message: '.(array_key_exists('last_message', $params) ? $params['last_message'] : 'Non-existent').CRLF;
+			if (array_key_exists('message',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last___message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['message'];
+			if (array_key_exists('error',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last___message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['error'];
+			if (DEBUG_PARAMS) echo 'Loaded last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
@@ -261,6 +271,7 @@ function getDuskDawn($params) {
 	$mydeviceID = array("USAL0594" => 196);
 	//USAL0594
 
+	// TODO:: should be a command, device, connection
 	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
 	"%22%20and%20u%3D%22c%22&format=json&diagnostics=true&callback=";
 	$get = restClient::get($url);
@@ -306,6 +317,9 @@ function setResult($params) {
 
 function setDevicePropertyCommand(&$params) {
 	$feedback['result'] = array();
+	
+	calculateProperty($params) ;
+	
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
 	$text = replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
@@ -363,17 +377,21 @@ function getNowPlaying(&$params) {
 	$result = sendCommand($command); 
 	
 
+	// echo "<pre>";	
 	
 	if (array_key_exists('error', $result)) {
 		echo "Handle Transport Error";
 		print_r($result);
 	} else {
-		$result = json_decode($result['result'][0],true);
-		//print_r($result);
+		//$result = json_decode($result['result'][0],true);
+		// print_r($result['result']);
+		$result = $result['result'];
 		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
+			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 		} else {
 			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
+			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 		}
 		if (!empty(trim($result['result']['item']['file']))) {
 			$properties['File']['value'] = $result['result']['item']['file'];
@@ -416,13 +434,13 @@ function moveToRecycle(&$params) {
 				'deviceID' => $params['deviceID'], 
 				'commandID' => COMMAND_RUN_SCHEME,
 				'schemeID' => ALERT_KODI);
-	//if (true) {
+	// echo "cp ".$infile.' '.$tofile.CRLF;
 	if (copy($infile, $tofile) && unlink($infile)) {
 		$feedback['message'] = 'Moved '.$filename.' to recycle bin.';
-		$sendCommand['macro_commandvalue'] = 'Deleted File|'.$filename;
+		$sendCommand['macro___commandvalue'] = 'Deleted File|'.$filename;
 	} else {
 		$feedback['error'] = 'Error moving '.$filename.' to recycle bin.';
-		$sendCommand['macro_commandvalue'] = 'Error deleting File|'.$filename;
+		$sendCommand['macro___commandvalue'] = 'Error deleting File|'.$filename;
 	}
 	$feedback = sendCommand($sendCommand);
 
@@ -437,7 +455,7 @@ function addToPlaylist(&$params) {
 	$feedback['Name'] = 'addToPlaylist';
 	$feedback['result'] = array();
  
-	$file = LOCAL_PLAYLISTS.$params['macro_commandvalue'].'.m3u';
+	$file = LOCAL_PLAYLISTS.$params['macro___commandvalue'].'.m3u';
 	$error = "";
 	if (($playlist = file_get_contents($file)) !== false) {
 		$playingfile = $params['device']['previous_properties']['File']['value'];
@@ -446,12 +464,12 @@ function addToPlaylist(&$params) {
 			$playlist .= $playingfile."\n";
 			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
 		}
-		$feedback['message'] = $playing.'|Added to - '.$params['macro_commandvalue'];
+		$feedback['message'] = $playing.'|Added to - '.$params['macro___commandvalue'];
 	} else {
-		$error = 'Could not open playlist: '.$params['macro_commandvalue'].'|';
+		$error = 'Could not open playlist: '.$params['macro___commandvalue'].'|';
 	}
 	if (!empty($error)) {
-		$feedback['error'] = 'Could not open playlist - '.$params['macro_commandvalue'].'|';
+		$feedback['error'] = 'Could not open playlist - '.$params['macro___commandvalue'].'|';
 	}
 	return $feedback;
 //echo "</pre>";	
@@ -520,10 +538,10 @@ function sendInsteonCommand(&$params) {
 	$params['commandvalue'] = $cv_save;
 	
 	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
-	$url=setURL($params, $params['commandstr']);
-	$params['commandstr'] .= $tcomm.'=I=3';
+	$url=setURL($params, $feedback['commandstr']);
+	$feedback['commandstr'] .= $tcomm.'=I=3';
 	if (DEBUG_DEVICES) echo $url.CRLF;
-	$curl = restClient::get($url.$tcomm.'=I=3',null, "", "", 2);
+	$curl = restClient::get($url.$tcomm.'=I=3',null, "", "", $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 	else 
@@ -576,8 +594,8 @@ function sendX10Command(&$params) {
 	//
 	foreach ($commands as $command) {
 		//$url=$params['device']['connection']['targetaddress'].":".$params['device']['connection']['targetport'].$params['device']['connection']['page'].$command.'=I=3';
-		$url=setURL($params, $params['commandstr']);
-		$params['commandstr'] .= $command.'=I=3';
+		$url=setURL($params, $feedback['commandstr']);
+		$feedback['commandstr'] .= $command.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
 		$curl = restClient::get($url.$command.'=I=3');
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -601,18 +619,11 @@ function sendGenericPHP(&$params) {
 
 	$func = $params['command'];
 	if ($func == "sleep") {
-		$params['commandstr'] = $func.' '.$params['commandvalue'];
+		$feedback['commandstr'] = $func.' '.$params['commandvalue'];
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
-		$params['commandstr'] = $func.' '.json_encode($params);
+		$feedback['commandstr'] = $func.' '.json_encode($params);
 		$feedback['result'] = $func($params);
-		if  (array_key_exists('error', $feedback)) {
-			$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
-		} elseif (array_key_exists('message', $feedback)) {
-			$params['commandvalue'] = $feedback['message'];
-		} elseif (array_key_exists('Name', $feedback)) {
-			$params['commandvalue'] = $feedback['Name'];
-		}
 	}
 	return $feedback;
 }
@@ -637,37 +648,43 @@ function sendGenericHTTP(&$params) {
 			$params['device']['connection']['page'] .= $tmp1[0];
 			$tcomm = $tmp1[1];
 		} 
-		$url=setURL($params, $params['commandstr']);
+		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
 		if ($targettype == "POSTTEXT") { 
-			$params['commandstr'] .= ' '.$tcomm;
-			$curl = restClient::post($url, $tcomm, "", "", "text/plain", 2);
+			$feedback['commandstr'] .= ' '.$tcomm;
+			$curl = restClient::post($url, $tcomm, "", "", "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
-			$params['commandstr'] .= ' '.$tcomm;
-			$curl = restClient::post($url, $tcomm, "", "", "", 2);
+			$feedback['commandstr'] .= ' '.$tcomm;
+			$curl = restClient::post($url, $tcomm, "", "", "", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
 			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
-			$params['commandstr'] = $params['commandstr'].' '.$postparams;
-			$curl = restClient::post($url, $postparams, "", "", "application/json" , 2);
+			$feedback['commandstr'] .= ' '.$postparams;
+			$curl = restClient::post($url, $postparams, "", "", "application/json" , $params['device']['connection']['timeout']);
 		} else { 
-			$params['commandstr'] .= $tcomm;
-			$curl = restClient::post($url.$tcomm,"","","","",2);
+			$feedback['commandstr'] .= $tcomm;
+			$curl = restClient::post($url.$tcomm,"","","","",$params['device']['connection']['timeout']);
 		}
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
-			$feedback['result'][] = $curl->getresponse();
+			if ($targettype == "JSON") {
+				$feedback['result'] = json_decode($curl->getresponse(), true);
+			} else {
+				$feedback['result'] = $curl->getresponse();
+			}
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
+			// echo "***";
+			// print_r($feedback);
 		break;
 	case "GET":          // Sony Cam at the moment
 		if (DEBUG_DEVICES) echo "GET</p>";
 		$tcomm = replaceCommandPlaceholders($params);
-		$url=setURL($params, $params['commandstr']);
+		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-		$params['commandstr'] .= $tcomm;
-		$curl = restClient::get($url.$tcomm);
+		$feedback['commandstr'] .= $tcomm;
+		$curl = restClient::get($url.$tcomm, array(), null, null, $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -675,15 +692,22 @@ function sendGenericHTTP(&$params) {
 		break;
 	case "TCP":              // iTach
 		if (DEBUG_DEVICES) echo "TCP_IR</p>";
-		$url=setURL($params, $params['commandstr']);
-		$params['commandstr'] .= $params['command'];
-		if (DEBUG_DEVICES) echo $params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'].' - '.$params['commandstr'].CRLF;
-		$feedback['result'][] = sendIR($params['device']['connection']['targetaddress'], $params['device']['connection']['targetport'], $params['commandstr']);
-		//echo $feedback['result'].CRLF;
-		//if ($feedback['result'] != "ERR" && $curl->getresponsecode() != 204)
-			// $feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-		// else 
-			// $feedback['result'] = $curl->getresponse();
+		$url = setURL($params, $feedback['commandstr']);
+		$feedback['commandstr'] .= $params['command']."\r";
+		if (DEBUG_DEVICES) echo $params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		// open a client connection
+		$client = stream_socket_client('tcp://'.$params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
+		if ($client === false) {
+			echo $errno.' '.$errorMessage;
+			$result['error'] = "Failed to connect: $errorMessage";
+		} else {
+			stream_set_timeout($client, $params['device']['connection']['timeout']);
+			fwrite($client, $feedback['commandstr']);
+			$feedback['result'] = stream_get_line ( $client , 1024 , "\r" );
+			fclose($client);
+		}
+		// TODO:: Error handling (GCache errors)
+		//if ($feedback['result'] != "ERR", or busy...
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
@@ -696,7 +720,29 @@ function sendGenericHTTP(&$params) {
 //			$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\R~',' ',strip_tags($feedback['result'])));
 
 	}
-	if (!is_null($params['commandvalue']) && trim($params['commandvalue'])!=='') $params['device']['properties']['Value']['value']= $params['commandvalue'];
+	return $feedback;
+}
+
+function calculateProperty(&$params) {
+
+	$feedback['Name'] = 'calculateProperty';
+	//$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+
+	if (DEBUG_COMMANDS) {
+		echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	}
+
+	// 	{calculate___{property_position}+1
+	if (preg_match("/\{calculate___(.*?)\}/", $params['commandvalue'], $matches)) {
+		if (DEBUG_COMMANDS) {echo "<pre> calculate "; print_r ($matches); echo "</pre>";}
+		$calcvalue = eval('return '.$matches[1].';');
+		$params['commandvalue'] = str_replace($matches[0], $calcvalue, $params['commandvalue']);
+	}
+
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+	
 	return $feedback;
 }
 
@@ -704,21 +750,5 @@ function sendGenericHTTP(&$params) {
 function NOP() {
 	$feedback['result'] = "Nothing done";
 	return $feedback;
-}
-
-function sendIR($host, $port, $message)
-{
-	// open a client connection
-	$client = stream_socket_client("tcp://$host:$port", $errno, $errorMessage);
-	if ($client === false) {
-		echo $errno.' '.$errorMessage;
-		$result['error'] = "Failed to connect: $errorMessage";
-	} else {
-		stream_set_timeout($client, 20);
-		fwrite($client, "$message\r");
-		$result = stream_get_line ( $client , 1024 , "\r" );
-		fclose($client);
-	}
-	return $result;
 }
 ?>
