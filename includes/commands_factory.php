@@ -394,6 +394,11 @@ function getNowPlaying(&$params) {
 			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 		}
 		if (!empty(trim($result['result']['item']['file']))) {
+			$br = strpos( $properties['Playing']['value'] , ' - ');
+			if ($br !== false) {
+				$properties['Artist']['value'] = substr($properties['Playing']['value'], 0, $br);
+				$properties['Title']['value'] =  substr($properties['Playing']['value'], $br + 3);
+			}
 			$properties['File']['value'] = $result['result']['item']['file'];
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
@@ -428,13 +433,13 @@ function moveToRecycle(&$params) {
 	$fparsed = pathinfo($infile);
 	$filename = $fparsed['filename'].'.'.$fparsed['extension'];
 	// echo $filename.CRLF;
-	$tofile = getcwd().LOCAL_RECYCLE.$filename;
+	$tofile = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE.$filename;
 	$sendCommand = array('callerID' => $params['caller']['callerID'], 
 				'caller'  => $params['caller'],
 				'deviceID' => $params['deviceID'], 
 				'commandID' => COMMAND_RUN_SCHEME,
 				'schemeID' => ALERT_KODI);
-	// echo "cp ".$infile.' '.$tofile.CRLF;
+	//echo "cp ".$infile.' '.$tofile.CRLF;
 	if (copy($infile, $tofile) && unlink($infile)) {
 		$feedback['message'] = 'Moved '.$filename.' to recycle bin.';
 		$sendCommand['macro___commandvalue'] = 'Deleted File|'.$filename;
@@ -460,11 +465,13 @@ function addToPlaylist(&$params) {
 	if (($playlist = file_get_contents($file)) !== false) {
 		$playingfile = $params['device']['previous_properties']['File']['value'];
 		$playing = $params['device']['previous_properties']['Playing']['value'];
-		if (strpos($playlist, $playingfile) === false) {
+		if (strpos($playlist, $playing) === false) {
 			$playlist .= $playingfile."\n";
 			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
+			$feedback['message'] = $playing.'|Added to - '.$params['macro___commandvalue'];
+		} else {
+			$feedback['message'] = $playing.'|Already part of - '.$params['macro___commandvalue'];
 		}
-		$feedback['message'] = $playing.'|Added to - '.$params['macro___commandvalue'];
 	} else {
 		$error = 'Could not open playlist: '.$params['macro___commandvalue'].'|';
 	}
@@ -491,7 +498,7 @@ function rebootFireTV($params) {
 
 } 
 
-function sendmail(&$params) {
+function sendEmail(&$params) {
 
 	$feedback['Name'] = 'sendmail';
 	$feedback['result'] = array();
@@ -703,10 +710,11 @@ function sendGenericHTTP(&$params) {
 		} else {
 			stream_set_timeout($client, $params['device']['connection']['timeout']);
 			fwrite($client, $feedback['commandstr']);
-			$feedback['result'] = stream_get_line ( $client , 1024 , "\r" );
+			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
 		}
 		// TODO:: Error handling (GCache errors)
+		// completeir,1:1,2
 		//if ($feedback['result'] != "ERR", or busy...
 		break;
 	case null:

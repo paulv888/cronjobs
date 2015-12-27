@@ -189,7 +189,8 @@ define("WINK_CODE", "U");
 define("LOCAL_MYDOCS", "/home/www/vlohome/data/mydocs/");
 define("LOCAL_MUSIC_VIDEOS", "/home/www/vlohome/data/musicvideos/");
 define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
-define("LOCAL_RECYCLE", "/MusicVideosGarbageBin/");
+define("LOCAL_RECYCLE", "recyclebin_XXX_/");
+define("LOCAL_IMPORT", "import_XXX_/");
 
 
 
