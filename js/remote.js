@@ -401,7 +401,7 @@ if(!window.scriptRemoteHasRun) {
 				},
 				error: function(xhr, textStatus, error)
 				{
-					jQuery('#system-message-container').html(textStatus+' '+error+'</br>'+xhr.responseText);
+					showError(textStatus+' '+error+'</br>'+xhr.responseText);
 					if (showSpin) jQuery('#spinner').hide();
 				},
 			}
@@ -426,7 +426,7 @@ if(!window.scriptRemoteHasRun) {
 				},
 				error: function(xhr, textStatus, error)
 				{
-					jQuery('#system-message-container').html(textStatus+' '+error+'</br>'+xhr.responseText);
+					showError(textStatus+' '+error+'</br>'+xhr.responseText);
 					jQuery('#spinner').hide();
 				},
 			}
@@ -435,7 +435,13 @@ if(!window.scriptRemoteHasRun) {
 
 	function showMessage(message) {
 		if (message.length > 0) {
-			jQuery('#system-message-container').html('<div class="alert alert-message"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+			jQuery('#system-message-container').html('<div class="alert alert-success"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+		}
+	}
+
+	function showError(message) {
+		if (message.length > 0) {
+			jQuery('#system-message-container').html('<div class="alert alert-error"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 		}
 	}
 
@@ -444,6 +450,9 @@ if(!window.scriptRemoteHasRun) {
 		jQuery.each(data, function(index, item){
 			if (index == 'message') {
 				showMessage(item);
+			}
+			if (index == 'error') {
+				showError(item);
 			}
 			jQuery('[data-remotekey=' + item.remotekey + ']').each(function(index){
 				jQuery(this).removeClass("link-warning");

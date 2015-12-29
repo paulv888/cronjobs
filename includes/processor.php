@@ -69,7 +69,7 @@ function sendCommand($thiscommand) {
 		if (DEBUG_DEVICES) print_r($thiscommand);
 		
 		if (array_key_exists('previous_properties', $thiscommand['device'])) {
-			$statusarr = search($thiscommand['device']['previous_properties'], 'primary_status', 1);
+			$statusarr = search_array_key_value($thiscommand['device']['previous_properties'], 'primary_status', 1);
 			// Just take the first one 
 			if (array_key_exists(0, $statusarr)) {
 				$status_key = $statusarr[0]['description'];
@@ -376,10 +376,10 @@ function RemoteKeys($in) {
 					if (strlen(str_replace(' ', '', preg_replace( "/\r|\n/", "", $res['message']))) > 0) $feedback['message'] = $res['message'].' ';
 				}
 			} else if (array_key_exists('error', $res)) {
-				if (is_array($feedback) && array_key_exists('error', $feedback)) {
-					$feedback['message'].= $res['error'].' ';
+				if (is_array($feedback) && array_key_exists('error', $feedback) && !empty(trim($res['error']))) {
+					$feedback['error'].= trim($res['error']).' ';
 				} else {
-					$feedback['message'] = $res['error'].' ';
+					$feedback['error'] = trim($res['error']).' ';
 				}
 			} else {
 				if (array_key_exists('updateStatus', $res)) $node = 'updateStatus';

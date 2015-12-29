@@ -460,7 +460,7 @@ function getDusk() {
 	return getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE, 'description' => "Astronomy Sunset"))['value'];
 }
 
-function search($array, $key, $value)
+function search_array_key_value($array, $key, $value)
 {
     $results = array();
     search_r($array, $key, $value, $results);

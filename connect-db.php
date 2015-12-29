@@ -2,7 +2,7 @@
 $dbConfig = array(
 	'server'       => 'vlosite',
 	'database'     => 'homeautomation',
-	'dsn'          => 'mysql:host=vlosite;dbname=homeautomation',
+	'dsn'          => 'mysql:host=vlosite;dbname=homeautomation;charset=utf8',
 	'username'     => HA_USER,
 	'password'     => HA_PASSWORD,
 	'table_prefix' => ''             // Prefix to attach to all table/procedure names to make unique in unknown environment.
@@ -21,6 +21,9 @@ while (!$mysql_link and $retries) {
 }
 if (!$mysql_link) die(mysql_error());
 mysql_select_db($dbConfig['database'],$mysql_link) or die(mysql_error());
+mysql_set_charset("utf8",$mysql_link);
+mysql_query("SET NAMES 'UTF8'");
+
 $pdo = new PDO( $dbConfig['dsn'], $dbConfig['username'], $dbConfig['password'] );
 $pdo->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 
@@ -47,5 +50,6 @@ while (!$mysql_link and $retries) {
 }
 if (!$mysql_link) die(mysql_error());
 mysql_select_db($dbConfig['database'],$mysql_link) or die(mysql_error());
+mysql_query("SET character_set_results = 'utf8', character_set_client = 'utf8', character_set_connection = 'utf8', character_set_database = 'utf8', character_set_server = 'utf8'", $mysql_link);
 }
 ?>

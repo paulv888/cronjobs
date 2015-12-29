@@ -1,5 +1,4 @@
 <?php
-define("ALERT_KODI", 224);
 //	Command in:
 // 		$params
 //
@@ -12,7 +11,6 @@ define("ALERT_KODI", 224);
 //						'commandstr' 	(String)	-> for eventlog, actual command send
 //      if error then	'error'			(String)	-> Error description
 //						Nothing else allowed 
-
 // function templateFunction(&$params) {
 
 	// $feedback['Name'] = 'templateFunction';
@@ -26,8 +24,6 @@ define("ALERT_KODI", 224);
 	// }
 	// return $feedback;
 // }
-
-
 function monitorDevicesTimeout($params) {
 	// No Error checking
 	
@@ -428,13 +424,13 @@ function moveToRecycle(&$params) {
 	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
 	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
 	
-	$infile = str_replace('smb://SRVMEDIA/media/My Music Videos/',LOCAL_MUSIC_VIDEOS,$params['commandvalue']);
+	$infile = mv_toLocal($params['commandvalue']);
 	//$result = stat($infile);
 	$fparsed = pathinfo($infile);
 	$filename = $fparsed['filename'].'.'.$fparsed['extension'];
 	// echo $filename.CRLF;
-	$tofile = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE.$filename;
-	$sendCommand = array('callerID' => $params['caller']['callerID'], 
+	$tofile = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE.$fparsed['filename'].' - '.rand(1000,9999).'.'.$fparsed['extension'];;
+	$command = array('callerID' => $params['caller']['callerID'], 
 				'caller'  => $params['caller'],
 				'deviceID' => $params['deviceID'], 
 				'commandID' => COMMAND_RUN_SCHEME,
@@ -442,12 +438,12 @@ function moveToRecycle(&$params) {
 	//echo "cp ".$infile.' '.$tofile.CRLF;
 	if (copy($infile, $tofile) && unlink($infile)) {
 		$feedback['message'] = 'Moved '.$filename.' to recycle bin.';
-		$sendCommand['macro___commandvalue'] = 'Deleted File|'.$filename;
+		if (!array_key_exists('silent',$params)) $command['macro___commandvalue'] = 'Deleted File|'.$filename;
 	} else {
 		$feedback['error'] = 'Error moving '.$filename.' to recycle bin.';
-		$sendCommand['macro___commandvalue'] = 'Error deleting File|'.$filename;
+		if (!array_key_exists('silent',$params)) $command['macro___commandvalue'] = 'Error deleting File|'.$filename;
 	}
-	$feedback = sendCommand($sendCommand);
+	$feedback['result'] = sendCommand($command);
 
 	return $feedback;
 	// echo "</pre>";	

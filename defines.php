@@ -186,13 +186,14 @@ define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
 
+define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos/");
 define("LOCAL_MYDOCS", "/home/www/vlohome/data/mydocs/");
 define("LOCAL_MUSIC_VIDEOS", "/home/www/vlohome/data/musicvideos/");
+define("ADD_MOVE_TO", "/home/www/vlohome/data");
 define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
-define("LOCAL_RECYCLE", "recyclebin_XXX_/");
-define("LOCAL_IMPORT", "import_XXX_/");
-
-
+define("LOCAL_RECYCLE", "_XXX_recyclebin/");
+define("LOCAL_IMPORT", "_XXX_import/");
+define("ALERT_KODI", 224);
 
 define("CRLF", "</br>\n");
 ?>
