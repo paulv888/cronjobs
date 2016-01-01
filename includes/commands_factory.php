@@ -409,42 +409,115 @@ function getNowPlaying(&$params) {
 
 function moveToRecycle(&$params) {
 
-	$feedback['Name'] = 'getNowPlaying';
+	$feedback['Name'] = 'moveToRecycle';
 	$feedback['result'] = array();
-// echo "<pre>";
-// eg.globals.currentpath\n
-// file = eg.globals.currentfile\n
-// eg.plugins.XBMC2.SkipNext()\n
-// time.sleep(5)\n
-// print \'move to Recylce: \' + path + \'\\\\\' + file\nos.rename(path + \'\\\\\' + file,eg.globals.MyRecycle + \'\\\\\' + file)\n
-// eg.globals.message=["Deleted",eg.globals.currentfile]\neg.TriggerEvent("SendNotification")')
-	// echo "<pre>";
+	// echo "<pre>".$feedback['Name'].CRLF;
 	// print_r($params);
 
 	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
 	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
 	
-	$infile = mv_toLocal($params['commandvalue']);
-	//$result = stat($infile);
-	$fparsed = pathinfo($infile);
-	$filename = $fparsed['filename'].'.'.$fparsed['extension'];
-	// echo $filename.CRLF;
-	$tofile = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE.$fparsed['filename'].' - '.rand(1000,9999).'.'.$fparsed['extension'];;
-	$command = array('callerID' => $params['caller']['callerID'], 
-				'caller'  => $params['caller'],
-				'deviceID' => $params['deviceID'], 
-				'commandID' => COMMAND_RUN_SCHEME,
-				'schemeID' => ALERT_KODI);
-	//echo "cp ".$infile.' '.$tofile.CRLF;
-	if (copy($infile, $tofile) && unlink($infile)) {
-		$feedback['message'] = 'Moved '.$filename.' to recycle bin.';
-		if (!array_key_exists('silent',$params)) $command['macro___commandvalue'] = 'Deleted File|'.$filename;
-	} else {
-		$feedback['error'] = 'Error moving '.$filename.' to recycle bin.';
-		if (!array_key_exists('silent',$params)) $command['macro___commandvalue'] = 'Error deleting File|'.$filename;
-	}
-	$feedback['result'] = sendCommand($command);
+	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
+	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
 
+	$cmvfile = mv_toLocal($params['commandvalue']);
+	//$result = stat($infile);
+	$fparsed = mb_pathinfo($cmvfile);
+	$fparsed['dirname'] = rtrim($fparsed['dirname'], '/') . '/';
+	$params['file'] = $fparsed ;
+	$params['createbatchfile'] = 0;
+	$params['movetorecycle'] = 1;
+	$feedback = moveMusicVideo($params);
+	$command = array('callerID' => $params['caller']['callerID'], 
+		'caller'  => $params['caller'],
+		'deviceID' => $params['deviceID'], 
+		'commandID' => COMMAND_RUN_SCHEME,
+		'schemeID' => ALERT_KODI);
+		
+	if (!array_key_exists('error',$feedback)) {
+		$command['macro___commandvalue'] = $feedback['message'];
+	} else {
+		$command['macro___commandvalue'] = $feedback['error'];
+	}
+	if (!array_key_exists('createbatchfile',$params)) $feedback['result'][] = sendCommand($command);
+	return $feedback;
+}
+	
+function moveMusicVideo(&$params) {
+
+	$feedback['Name'] = 'moveMusicVideo';
+	$feedback['result'] = array();
+	// echo "<pre>".$feedback['Name'].CRLF;
+	// print_r($params);
+
+	$file = $params['file'];
+	if ($params['movetorecycle']) {
+		$rand = rand(100000,999999);
+		$file['moveto'] = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE;
+		$file['newname'] = $file['filename'].' ('.$rand.')';
+	}
+	if ($params['createbatchfile']) {
+		if ($params['movetorecycle']) $params['file']['batchfile'] .= '#Recycle'."\n";
+		$params['file']['batchfile'] .= '#From: '.$file['dirname'].$file['filename']."\n";
+		$params['file']['batchfile'] .= '#__To: '.$file['moveto'].$file['newname']."\n";
+	}
+	
+	foreach (Array ($file['extension'], "tbn", "nfo") as $ext) {
+		$filename = $file['filename'].'.'.$ext;
+		$infile = $file['dirname'].$file['filename'].'.'.$ext;
+		$tofile = $file['moveto'].$file['newname'].'.'.$ext;
+		
+		if (strtolower($infile) != strtolower($tofile) & file_exists($tofile)) {
+			echo "Found identical file in new location, abort: ".$tofile.CRLF;
+			exit;
+		}
+
+		// echo "cp ".$infile.' '.$tofile.CRLF;
+		if (!$params['createbatchfile']) {
+// $cp=1;
+			$copy = copy($infile, $tofile) ;
+			// echo "$copy".CRLF;
+			if ($copy) $unlink = unlink($infile);
+			// echo "$unlink".CRLF;
+			touch ($tofile);
+			if (!in_array($ext, Array("tbn", "nfo"))) {
+				if ($copy && $unlink) {
+					$feedback['message'] = $filename.'| moved.|';
+					$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
+					// Remove from Kodi Lib
+					if ($mvid = FetchRow($mysql)['id']) {
+						$command['caller'] = $params['caller'];
+						$command['callerparams'] = $params;
+						$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
+						$command['commandID'] = 374;					// removeMusicVideo
+						$command['commandvalue'] = $mvid;
+						$feedback[]['result'] = sendCommand($command);
+					}
+					// Refresh to directory
+					if (!$params['movetorecycle']) {
+						$command['caller'] = $params['caller'];
+						$command['callerparams'] = $params;
+						$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
+						$command['commandID'] = 	373;	// Scan Directory
+						$command['commandvalue'] = mv_toPublic($file['moveto']);
+						$result = sendCommand($command); 
+						$feedback[]['result'] = $result;
+					}
+				} else {
+					$feedback['error'] = 'Error moving |'.$filename.'.';
+				}
+			}
+		} else {
+			if (strtolower($infile) != strtolower($tofile)) {
+				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'"'."\n");
+			} else {
+				// Trick to allow rename case (seems to be related to CIFS and duplicate inodes
+				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'.1"'."\n");
+				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'touch "'.$tofile.'.1"'."\n");
+				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'.1" "'.$tofile.'"'."\n");
+			}
+		}
+	}
 	return $feedback;
 	// echo "</pre>";	
 } 
@@ -501,9 +574,9 @@ function sendEmail(&$params) {
 	$to = $params['device']['previous_properties']['Address']['value'];
 	$fromname = 'VloHome'; 
 
-	$headers = 'MIME-Version: 1.0' . "\r\n".
-    'From: '.$fromname. "\r\n" .
-    'Reply-To: '.$fromname. "\r\n" .
+	$headers = 'MIME-Version: 1.0' . "\n\n".
+    'From: '.$fromname. "\n\n" .
+    'Reply-To: '.$fromname. "\n\n" .
     'X-Mailer: PHP/' . phpversion();
 	
 	if(!mail($to, $params['mess_subject'],  $params['mess_text'], $headers)) {
@@ -721,7 +794,7 @@ function sendGenericHTTP(&$params) {
 	if (array_key_exists('result', $feedback)) {
 		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
 //			$feedback['message'] = $feedback['result'];
-//			$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\R~',' ',strip_tags($feedback['result'])));
+//			$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\n~',' ',strip_tags($feedback['result'])));
 
 	}
 	return $feedback;
@@ -733,9 +806,7 @@ function calculateProperty(&$params) {
 	//$feedback['commandstr'] = "I send this";
 	$feedback['result'] = array();
 
-	if (DEBUG_COMMANDS) {
-		echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	}
+	if (DEBUG_COMMANDS) {echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";}
 
 	// 	{calculate___{property_position}+1
 	if (preg_match("/\{calculate___(.*?)\}/", $params['commandvalue'], $matches)) {
