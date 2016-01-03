@@ -165,6 +165,8 @@ define("DEVICE_REMOTE", 164);
 define("DEVICE_PAUL_VOICE", 122);
 define("DEVICE_AYNUR_VOICE", 116);
 define("DEVICE_KODI", 233);
+define("DEVICE_CURRENT_SESSION", 260);
+define("DEVICE_DEFAULT_PLAYER", DEVICE_KODI);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);

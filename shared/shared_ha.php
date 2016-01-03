@@ -516,6 +516,8 @@ function logEvent($log) {
 	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = Null;
 	if (!array_key_exists('message', $log)) $log['message'] = Null;
 	if (!array_key_exists('result', $log)) $log['result'] = Null;
+	if (!array_key_exists('commandstr', $log)) $log['commandstr']=Null;
+
 	if ($log['loglevel'] == LOGLEVEL_NONE) return true;
 	
 	//

@@ -109,17 +109,22 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.repeat-click-down').unbind(eventname);
 		jQuery('.repeat-click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			event.stopPropagation()
+			//event.stopImmediatePropagation()
 			// handle repeat sending for volume and cursor up/down
 			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			var repeattime = jQuery(this).attr("data-repeat-time")
-			VloRemote.repeattimer = setInterval( function() { repeatSend(keys); }, repeattime );
+			jQuery(this).addClass('sending');
+			VloRemote.repeattimer = setInterval( function() { repeatSend(keys) }, repeattime );
+			console.log(VloRemote.repeattimer + " time: " + repeattime + "\n");
 		});	
 
 		function repeatSend(keys) {
+			console.log ("Sending " + keys);
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
 			callAjax(params, false);
+			//jQuery(control).removeClass('sending');
 		};
 		
 		// repeat down form up (stop repeating)
@@ -127,8 +132,9 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.repeat-click-down').unbind(eventname);
 		jQuery('.repeat-click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			event.stopPropagation()
 			// handle repeat stop
+			jQuery(this).removeClass('sending');
 			clearInterval(VloRemote.repeattimer);
 		});
 

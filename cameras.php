@@ -49,7 +49,7 @@ function movePictures($camera) {
 	$lastfiletime = $camera['lastfiletime'];
 	if ($handle = opendir($dir)) {
 		while (false !== ($file = readdir($handle))) {
-			$file_parts = pathinfo($file);
+			$file_parts = mb_pathinfo($file);
 			if ($file != "." && $file != ".." && !is_dir($dir.$file) && $file_parts['extension']=='jpg') {
 				$files[] = $file;
 				$filetimes[] = filemtime($dir.$file);

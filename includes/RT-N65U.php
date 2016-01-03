@@ -361,7 +361,7 @@ if(networkmap_fullscan == 1) genClientList();
 		$mac = strtoupper($device[3]);
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
-				" WHERE UCASE(mac)='".$mac."'";  
+				" WHERE mac='".$mac."'";  
 		$resdevices = mysql_query($mysql);
 		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
                         if ($showlist) {

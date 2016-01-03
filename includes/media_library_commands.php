@@ -122,8 +122,8 @@ function importVideos(&$params) {
 	$params['importprocess'] = true;
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	$feedback = refreshVideos($params);
-	echo $params['file']['moveto'].$params['file']['newname'];
-	print_r($feedback);
+	// echo $params['file']['moveto'].$params['file']['newname'];
+	// print_r($feedback);
 	return $feedback;
 }
 
@@ -159,7 +159,8 @@ function import1Video(&$params) {
 		echo "Not found: ".$params['commandvalue'].CRLF;
 		print_r($files);
 	}
-	print_r($feedback);
+	echo "Moved to: >".$params['file']['moveto'].$params['file']['newname']."<".CRLF;
+	// print_r($feedback);
 	return $feedback;
 }
 
@@ -274,6 +275,8 @@ function refreshVideo(&$params) {
 	$result = getArtistTitle($params['file']['newname']);
 	if (array_key_exists('error',$result)) {
 		echo "<pre>Error on: ".$result['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+		$feedback[] = $result;
+		return $feedback;
 	}
 	$params['file']['artist'] = $result['result']['artist'];
 	$params['file']['title'] = $result['result']['title'];
@@ -372,10 +375,12 @@ function refreshVideo(&$params) {
 			$params['createbatchfile'] = 1;
 			$params['movetorecycle'] = 0;
 			$params['CAMEFROM'] = "REFRESH BATCH";
-			$feedback[] = moveMusicVideo($params);
+			$result = moveMusicVideo($params);
+			$batchfile = $result['batchfile'];
+			$feedback[] = $result;
 			$file = 'mv_vids.sh';
-			$batchfile = file_get_contents($file);
-			file_put_contents($file, $batchfile . $params['file']['batchfile']);
+			$batch = file_get_contents($file);
+			file_put_contents($file, $batch . $batchfile);
 		}
 	}
 	if (DEBUG_MEDIA) { echo "After Moving",CRLF; print_r($params['file']); }
@@ -547,8 +552,7 @@ function cleanName($fname) {
 	$pattern[] = '/high definition/'; 			$replace[] = '';
 	$pattern[] = '/hq/'; 						$replace[] = '';
 	$pattern[] = '/\(hd\)/'; 					$replace[] = '';
-	$pattern[] = '/\(hd/'; 						$replace[] = '';
-	$pattern[] = '/hd\)/'; 						$replace[] = '';
+	$pattern[] = '/ hd /'; 						$replace[] = '';
 	$pattern[] = '/-/'; 						$replace[] = ' - ';
 	$pattern[] = '/\(\s+\)/';					$replace[] = '';
 	$pattern[] = '/\[\s+\]/';					$replace[] = '';
@@ -566,6 +570,7 @@ function cleanName($fname) {
 	$pattern[] = '/original$/';					$replace[] = '';
 	$pattern[] = '/^(.*?) Y (.*? -)/';			$replace[] = '$1 & $2';
 	$pattern[] = '/^(.*?) with (.*? -)/';			$replace[] = '$1 & $2';
+	$pattern[] = '/^(.*?) ve (.*? -)/';			$replace[] = '$1 & $2';
 	$pattern[] = '/,/';							$replace[] = ' & ';
 
 	$m=0;

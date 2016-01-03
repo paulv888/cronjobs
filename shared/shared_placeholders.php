@@ -1,6 +1,6 @@
 <?php
 
-//define('DEBUG_PHOLDERS', TRUE);
+// define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($params) {
@@ -107,10 +107,6 @@ function replaceText(&$params, $skip_fields = false){
 
 function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 
-		$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
-					JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
-					WHERE ha_mf_device_properties.deviceID ='.$params['deviceID'];
-
 		if (DEBUG_PHOLDERS) {
 			echo "<pre> Replace Fields Params "; print_r ($params); echo "</pre>";
 			echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
@@ -144,18 +140,54 @@ function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 		}
 	}
 	
+	// echo "****".$params['deviceID'].CRLF;
+	// This is for the session devices
+	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_CURRENT_SESSION) {
+	// echo "1****".$params['deviceID'].CRLF;
+	
+		if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties'])   ) {
+			$params['deviceID'] = $_SESSION['properties']['SelectedPlayer']['value'];
+			// echo "Replaced deviceID ".$_SESSION['properties']['SelectedPlayer']['value'].CRLF;
+		} else {
+			// echo "NOT ****".$_SESSION.CRLF;
+			$_SESSION['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+			$params['deviceID'] = DEVICE_DEFAULT_PLAYER;
+		}
+		unset ($pattern);
+		unset ($newprops);
+		foreach ($_SESSION['properties'] as $key => $value) {
+			$pattern[$key]="/\{".$key."\}/";
+			$newprops[$key]=$value['value'];
+		}
+		if (DEBUG_PHOLDERS) {
+			echo "<pre>Session Properties "; echo "DATA-1:"; print_r ($newprops); echo "</pre>";
+			echo "<pre>Session Properties "; echo "PATTERN-1:"; print_r ($pattern); echo "</pre>";
+		}
+		$mess_subject = str_replace("{session___", "{", $mess_subject);
+		$mess_subject = preg_replace($pattern, $newprops, $mess_subject);
+		if ($mess_text != Null) {
+			$mess_text = str_replace("{session___", "{", $mess_text);
+			$mess_text = preg_replace($pattern, $newprops, $mess_text); 
+		}
+	}
+	// echo "2****".$params['deviceID'].CRLF;
+
 	// This is for the device properties
 	if ($params['deviceID'] != null) {
+		$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
+					JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
+					WHERE ha_mf_device_properties.deviceID ='.$params['deviceID'];
 		if ($props = FetchRows($mysqlp)) {
-		
+		// print_r($props);
 			unset ($pattern);
+			unset ($newprops);
 			foreach ($props as $key => $value) {
 				$pattern[$value['description']]="/\{".$value['description']."\}/";
 				$newprops[$value['description']]=$value['value'];
 			}
 			if (DEBUG_PHOLDERS) {
-				echo "<pre>Device Properties "; echo "DATA2:"; print_r ($newprops); echo "</pre>";
-				echo "<pre>Device Properties "; echo "PATTERN2:"; print_r ($pattern); echo "</pre>";
+				echo "<pre>Device Properties "; echo "DATA-2:"; print_r ($newprops); echo "</pre>";
+				echo "<pre>Device Properties "; echo "PATTERN-2:"; print_r ($pattern); echo "</pre>";
 			}
 			$mess_subject = str_replace("{property___", "{", $mess_subject);
 			$mess_subject = preg_replace($pattern, $newprops, $mess_subject);
@@ -194,8 +226,8 @@ function replaceFields(&$mess_subject, &$mess_text, $params, $skip_fields){
 			}
 
 			if (DEBUG_PHOLDERS) {
-				echo "<pre>Param Values "; echo "DATA3:"; print_r ($params); echo "</pre>";
-				echo "<pre>Param Values "; echo "PATTERN3:"; print_r ($pattern); echo "</pre>";
+				echo "<pre>Param Values "; echo "DATA-3:"; print_r ($params); echo "</pre>";
+				echo "<pre>Param Values "; echo "PATTERN-3:"; print_r ($pattern); echo "</pre>";
 			}
 
 			// Why whole array, lest just do on base, be

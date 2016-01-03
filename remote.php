@@ -27,10 +27,10 @@ if (isset($_GET['name'])) {
 <!--script type="text/javascript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js?v=<?php echo rand(10000000,99999999);?>"></script-->
 </head>
 <body style="padding:0px">
+   <div id='system-message-container'></div>
 <?php
    require_once 'includes.php'; 
    loadRemote($remoteID);?>
-   <div id='system-message-container'></div>
    <div class=" row-fluid">
    <div class="pull-left" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div>
    <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 

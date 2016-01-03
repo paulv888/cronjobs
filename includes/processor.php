@@ -1,15 +1,12 @@
 <?php 
-// define( 'DEBUG_INPUT', TRUE );
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
+//define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_PARAMS', TRUE );
 // define( 'DEBUG_COMMANDS', TRUE );
-if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
 if (isset($_POST['DEBUG_DEVICES'])) define( 'DEBUG_DEVICES', TRUE );
 if (isset($_POST['DEBUG_RETURN'])) define( 'DEBUG_RETURN', TRUE );
-if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 if (!defined('DEBUG_FLOW')) define( 'DEBUG_FLOW', FALSE );
 if (!defined('DEBUG_DEVICES')) define( 'DEBUG_DEVICES', FALSE );
 if (!defined('DEBUG_RETURN')) define( 'DEBUG_RETURN', FALSE );
@@ -17,8 +14,9 @@ if (!defined('DEBUG_PARAMS')) define( 'DEBUG_PARAMS', FALSE );
 if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 // Private
-function sendCommand($thiscommand) { 
+function sendCommand(&$thiscommand) { 
 
+// print_r($thiscommand);
 	$exittrap=false;
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
@@ -56,6 +54,16 @@ function sendCommand($thiscommand) {
 //	
 
 	if ($thiscommand['deviceID'] != NULL) {
+		if ($thiscommand['deviceID'] == DEVICE_CURRENT_SESSION) {
+			if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties'])   ) {
+				$thiscommand['deviceID'] = $_SESSION['properties']['SelectedPlayer']['value'];
+				// echo "Replaced deviceID ".$_SESSION['properties']['SelectedPlayer']['value'].CRLF;
+			} else {
+				// echo "NOT ****".$_SESSION.CRLF;
+				$_SESSION['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+				$thiscommand['deviceID'] = DEVICE_DEFAULT_PLAYER;
+			}
+		}
 		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
 		$thiscommand['device'] = (array_key_exists('device',$thiscommand) ? array_merge($thiscommand['device'], $device) : $device);
 		// print_r($thiscommand['device']);
@@ -417,7 +425,8 @@ function RemoteKeys($in) {
 								if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
 									if (array_key_exists('Timer Remaining',$res['updateStatus'])) $text.=' ('.$res['updateStatus']['Timer Remaining'].'min)';
 								}
-								$feedback[$last_id]["text"] = replacePlaceholder($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
+								$text = replacePlaceholder($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
+								if (!empty($text)) $feedback[$last_id]["text"] = $text;
 							}
 						}
 					}

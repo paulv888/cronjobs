@@ -330,6 +330,27 @@ function setDevicePropertyCommand(&$params) {
 	return $feedback;
 }
 
+function setSessionVar(&$params) {
+	$feedback['result'] = array();
+	
+	// calculateProperty($params) ;
+	
+	$tarr = explode("___",$params['commandvalue']);
+	$text = $tarr[1];
+	$text = replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
+	if (strtoupper($text) == "TOGGLE") { 		// Toggle
+		if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
+			$text = STATUS_OFF;
+		else
+			$text = STATUS_ON;
+	}
+	$_SESSION['properties'][$tarr[0]]['value'] = $text;
+	$feedback['Name'] = $tarr[0];
+	$feedback['result'] = $_SESSION['properties'];
+	// print_r($_SESSION);
+	return $feedback;
+}
+
 function getDevicePropertiesCommand___delete($params) {
 //getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value']
 //getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value']
@@ -384,10 +405,8 @@ function getNowPlaying(&$params) {
 		$result = $result['result'];
 		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
-			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 		} else {
 			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
-			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 		}
 		if (!empty(trim($result['result']['item']['file']))) {
 			$br = strpos( $properties['Playing']['value'] , ' - ');
@@ -395,10 +414,17 @@ function getNowPlaying(&$params) {
 				$properties['Artist']['value'] = substr($properties['Playing']['value'], 0, $br);
 				$properties['Title']['value'] =  substr($properties['Playing']['value'], $br + 3);
 			}
+			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 			$properties['File']['value'] = $result['result']['item']['file'];
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
 		} else {
+			$properties['Playing']['value'] =  'Nothing';
+			$properties['PlayingID']['value'] =  '0';
+			$properties['File']['value'] = '*';
+			$properties['Artist']['value'] = '*';
+			$properties['Title']['value'] =  '*';
+			$params['device']['properties'] = $properties;
 			$feedback['error']='Error - Nothing playing';
 		}
 		// Handle KODI error
@@ -407,7 +433,7 @@ function getNowPlaying(&$params) {
 	// echo "</pre>";	
 } 
 
-function moveToRecycle(&$params) {
+function moveToRecycle($params) {
 
 	$feedback['Name'] = 'moveToRecycle';
 	$feedback['result'] = array();
@@ -425,28 +451,30 @@ function moveToRecycle(&$params) {
 	$fparsed = mb_pathinfo($cmvfile);
 	$fparsed['dirname'] = rtrim($fparsed['dirname'], '/') . '/';
 	$params['file'] = $fparsed ;
-	$params['createbatchfile'] = 0;
+	$params['createbatchfile'] = 0;		// have to stay online, not returning $batchfile
 	$params['movetorecycle'] = 1;
-	$feedback = moveMusicVideo($params);
+	$result = moveMusicVideo($params);
+	$feedback['result'][] = $result;
 	$command = array('callerID' => $params['caller']['callerID'], 
 		'caller'  => $params['caller'],
 		'deviceID' => $params['deviceID'], 
 		'commandID' => COMMAND_RUN_SCHEME,
 		'schemeID' => ALERT_KODI);
 		
-	if (!array_key_exists('error',$feedback)) {
-		$command['macro___commandvalue'] = $feedback['message'];
+	if (!array_key_exists('error',$result)) {
+		$command['macro___commandvalue'] = $result['message'];
 	} else {
-		$command['macro___commandvalue'] = $feedback['error'];
+		$command['macro___commandvalue'] = $result['error'];
 	}
 	if (!array_key_exists('createbatchfile',$params)) $feedback['result'][] = sendCommand($command);
 	return $feedback;
 }
 	
-function moveMusicVideo(&$params) {
+function moveMusicVideo($params) {
 
 	$feedback['Name'] = 'moveMusicVideo';
 	$feedback['result'] = array();
+	$feedback['message'] = '';
 	// echo "<pre>".$feedback['Name'].CRLF;
 	// print_r($params);
 
@@ -457,67 +485,92 @@ function moveMusicVideo(&$params) {
 		$file['newname'] = $file['filename'].' ('.$rand.')';
 	}
 	if ($params['createbatchfile']) {
-		if ($params['movetorecycle']) $params['file']['batchfile'] .= '#Recycle'."\n";
-		$params['file']['batchfile'] .= '#From: '.$file['dirname'].$file['filename']."\n";
-		$params['file']['batchfile'] .= '#__To: '.$file['moveto'].$file['newname']."\n";
+		$batchfile = $params['file']['batchfile'];
+		if ($params['movetorecycle']) $batchfile .= '#Recycle'."\n";
+		$batchfile .= '#From: '.$file['dirname'].$file['filename']."\n";
+		$batchfile .= '#__To: '.$file['moveto'].$file['newname']."\n";
 	}
 	
+	$matches = glob($file['moveto'].$file['newname'].'.*');
+	if (strtolower($file['dirname'].$file['filename']) != strtolower($file['moveto'].$file['newname'])) {
+		// echo "<pre>Matches ".$feedback['Name'].CRLF;
+		// print_r($matches);
+		if (!empty($matches)) {			// Assume we found an upgrade and move to recycle
+			// Find vid match
+			// echo "<pre>Found old one ".$feedback['Name'].' '.$dirname.$fparsed['basename'].CRLF;
+			foreach ($matches as $match) {
+				$fparsed = mb_pathinfo($match);
+				if (!in_array($fparsed['extension'], Array("tbn", "nfo"))) {
+					$feedback['message'] .= "***";
+					$dirname = rtrim($fparsed['dirname'], '/') . '/';
+					$params['commandvalue'] = mv_toPublic($dirname.$fparsed['basename']);
+					$feedback[]['result'] = moveToRecycle($params);
+				}
+			}
+		}
+	}
+
 	foreach (Array ($file['extension'], "tbn", "nfo") as $ext) {
 		$filename = $file['filename'].'.'.$ext;
 		$infile = $file['dirname'].$file['filename'].'.'.$ext;
 		$tofile = $file['moveto'].$file['newname'].'.'.$ext;
 		
-		if (strtolower($infile) != strtolower($tofile) & file_exists($tofile)) {
-			echo "Found identical file in new location, abort: ".$tofile.CRLF;
-			exit;
-		}
-
 		// echo "cp ".$infile.' '.$tofile.CRLF;
-		if (!$params['createbatchfile']) {
-// $cp=1;
-			$copy = copy($infile, $tofile) ;
-			// echo "$copy".CRLF;
-			if ($copy) $unlink = unlink($infile);
-			// echo "$unlink".CRLF;
-			touch ($tofile);
-			if (!in_array($ext, Array("tbn", "nfo"))) {
-				if ($copy && $unlink) {
-					$feedback['message'] = $filename.'| moved.|';
-					$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
-					// Remove from Kodi Lib
-					if ($mvid = FetchRow($mysql)['id']) {
-						$command['caller'] = $params['caller'];
-						$command['callerparams'] = $params;
-						$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
-						$command['commandID'] = 374;					// removeMusicVideo
-						$command['commandvalue'] = $mvid;
-						$feedback[]['result'] = sendCommand($command);
+		if (!array_key_exists('error', $feedback)) {
+			if (!$params['createbatchfile']) {
+	// $cp=1;
+				$copy = copy($infile, $tofile) ;
+				// echo "$copy".CRLF;
+				if ($copy) $unlink = unlink($infile);
+				// echo "$unlink".CRLF;
+				touch ($tofile);
+				if (!in_array($ext, Array("tbn", "nfo"))) {
+					if ($copy && $unlink) {
+						$feedback['message'] .= $filename.'| moved to '.$tofile."\n";
+						$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
+						// Remove from Kodi Lib
+						if ($mvid = FetchRow($mysql)['id']) {
+							$command['caller'] = $params['caller'];
+							$command['callerparams'] = $params['caller'];
+							$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
+							$command['commandID'] = 374;					// removeMusicVideo
+							$command['commandvalue'] = $mvid;
+							$feedback[]['result'] = sendCommand($command);
+						}
+						// Refresh to directory
+						if (!$params['movetorecycle']) {
+							$command['caller'] = $params['caller'];
+							$command['callerparams'] = $params;
+							$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
+							$command['commandID'] = 	373;	// Scan Directory
+							$command['commandvalue'] = mv_toPublic($file['moveto']);
+							$result = sendCommand($command); 
+							$feedback[]['result'] = $result;
+						}
+					} else {
+						$feedback['error'] = 'Error moving '.$infile.' | to '.$tofile."\n";
 					}
-					// Refresh to directory
-					if (!$params['movetorecycle']) {
-						$command['caller'] = $params['caller'];
-						$command['callerparams'] = $params;
-						$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
-						$command['commandID'] = 	373;	// Scan Directory
-						$command['commandvalue'] = mv_toPublic($file['moveto']);
-						$result = sendCommand($command); 
-						$feedback[]['result'] = $result;
-					}
-				} else {
-					$feedback['error'] = 'Error moving |'.$filename.'.';
 				}
-			}
-		} else {
-			if (strtolower($infile) != strtolower($tofile)) {
-				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'"'."\n");
 			} else {
-				// Trick to allow rename case (seems to be related to CIFS and duplicate inodes
-				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'.1"'."\n");
-				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'touch "'.$tofile.'.1"'."\n");
-				$params['file']['batchfile'] .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'.1" "'.$tofile.'"'."\n");
+				if (strtolower($infile) != strtolower($tofile)) {
+					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'"'."\n");
+				} else {
+					// Trick to allow rename case (seems to be related to CIFS and duplicate inodes
+					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'.1"'."\n");
+					$batchfile .= str_replace('`' ,"\`", 'touch "'.$tofile.'.1"'."\n");
+					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'.1" "'.$tofile.'"'."\n");
+				}
+				$feedback['batchfile'] = $batchfile;
 			}
 		}
 	}
+	$file = 'mv_videos.log';
+	$log = file_get_contents($file);
+	if (array_key_exists('error', $feedback)) 
+		$log .= $feedback['error'];
+	else 
+		$log .= $feedback['message'];
+	file_put_contents($file, $log);
 	return $feedback;
 	// echo "</pre>";	
 } 

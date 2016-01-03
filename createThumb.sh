@@ -28,23 +28,23 @@ function checkthumb
 
     if [ "$curfile" -nt "$thumbfile" ] ;then
       keeptrying=-1
-      ss=5
-      tnsize=7000
+      itsoffset=5
+      step=5
+
+      tnsize=10000
       tmpfile=$(mktemp /tmp/ffmpeg.XXXXXX)
       while [ "$keeptrying" -eq "-1" ]
       do
-        ffmpeg  -itsoffset -$ss  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile" > "$tmpfile" 2>&1
+        ffmpeg  -itsoffset -$itsoffset  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile" > "$tmpfile" 2>&1
         keeptrying=$(checkthumb "$thumbfile" "$tnsize")
-        ss=$(( ss +5))
-        if [ "$keeptrying" -eq "-1" ] ;then echo "$keeptrying File: $thumbfile Size: $thumbsize Retry: $ss $keeptrying" ; fi
-        if [ $ss -gt 30 ] ; then
-           ss=10
+        itsoffset=$(( itsoffset + step ))
+        if [ "$keeptrying" -eq "-1" ] ;then echo "$keeptrying File: $thumbfile Size: $thumbsize Retry: $itsoffset $keeptrying" ; fi
+        if [ $itsoffset -gt 60 ] ; then
+           itsoffset=5
+           step=1
            tnsize=5000
-        fi 
+        fi
       done
-      chown media "$thumbfile"
-      chgrp vloon "$thumbfile"
-      chmod 665 "$thumbfile"
       echo "`date` Created thumbnail: $thumbfile"
     fi
   fi

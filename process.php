@@ -1,18 +1,22 @@
 <?php 
 require_once 'includes.php';
-//define( 'DEBUG_INPUT', TRUE );
+ // define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 
-// session_start();
-// print_r($_SESSION);
-// if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 1800)) {
-    // // last request was more than 30 minutes ago
-    // session_unset();     // unset $_SESSION variable for the run-time 
-    // session_destroy();   // destroy session data in storage
-// }
-// print_r($_SESSION);
-// $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+session_start();
+// unset($_SESSION['PARAMS']);
+if (DEBUG_INPUT) {echo '<pre>Prev Session Params '; print_r($_SESSION);echo '</pre>';}
+if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
+    // last request was more than 30 minutes ago
+    session_unset();     // unset $_SESSION variable for the run-time 
+    session_destroy();   // destroy session data in storage
+	//
+	// Set default value for SelectedPlayer
+	//
+}
+$_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+
 
 
 if (DEBUG_INPUT) {
@@ -54,11 +58,24 @@ if (isset($_GET['callerID'])) {
 if (DEBUG_INPUT) echo json_encode($_POST);
 if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
-if (isset($_POST["messagetypeID"]) && isset($_POST["callerID"])) {						// All have to tell where they are from.
+if (isset($_SESSION['PARAMS'])){ 
+	if (DEBUG_INPUT) {echo '<pre>$post '; print_r($_POST);}
+	//
+	//	TODO: if saving commandvalue MESS_TYPE_REMOTE_KEY will not load commandID from remotekey
+	//
+	//$params = array_merge($_POST, $_SESSION['PARAMS']);
+	//if (DEBUG_INPUT) {echo 'Merged Params '; print_r($params);//echo '</pre>';}
+} else {
+	$params = $_POST;
+	//$_SESSION['PARAMS'] = $params;
+}
 
-	if (DEBUG_INPUT) echo "callerID ".$_POST['callerID']." ".$_POST['messagetypeID'].CRLF;
+
+if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
+
+	if (DEBUG_INPUT) echo "callerID ".$params['callerID']." ".$params['messagetypeID'].CRLF;
 	
-	$result = executeCommand($_POST);
+	$result = executeCommand($params);
 	if (is_array($result)) 
 		print_r($result);
 	else
