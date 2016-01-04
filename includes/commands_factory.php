@@ -255,16 +255,16 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	return $feedback;
 }
 
-function getDuskDawn($params) {
+function getDuskDawn(&$params) {
 
 	$feedback['Name'] = 'getDuskDawn';
 	$feedback['result'] = array();
 
 	$station = $params['commandvalue'];
-	$mydeviceID = DEVICE_DARK_OUTSIDE;
 	ini_set('max_execution_time',30);
+// echo "<pre>";
+// print_r($params);
 
-	$mydeviceID = array("USAL0594" => 196);
 	//USAL0594
 
 	// TODO:: should be a command, device, connection
@@ -285,20 +285,18 @@ function getDuskDawn($params) {
 		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
 		$tss = date("H:i", strtotime($result->{'astronomy'}->{'sunset'}));
 
-		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE));
+		//$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $params['deviceID']));
 
 		$properties['Astronomy Sunrise']['value'] = $tsr;
 		$properties['Astronomy Sunset']['value'] = $tss;
-		$properties['Status']['value'] = $device['previous_properties']['Status']['value'];
 		$properties['Link']['value'] = LINK_UP;
-		$device['properties'] = $properties;
+		$params['device']['properties'] = $properties;
 	} else {
 		$properties['Status']['value'] = STATUS_ERROR;
 		$properties['Link']['value'] = LINK_DOWN;
-		$device['properties'] = $properties;
+		$params['device']['properties'] = $properties;
 	}
 	//$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
-
 	if (DEBUG_COMMANDS) echo "</pre>";
 	return $feedback;
 }
@@ -575,11 +573,11 @@ function moveMusicVideo($params) {
 	// echo "</pre>";	
 } 
 
-function addToPlaylist(&$params) {
+function addToFavorites(&$params) {
 
 //echo "<pre>";
 //print_r($params);
-	$feedback['Name'] = 'addToPlaylist';
+	$feedback['Name'] = 'addToFavorites';
 	$feedback['result'] = array();
  
 	$file = LOCAL_PLAYLISTS.$params['macro___commandvalue'].'.m3u';

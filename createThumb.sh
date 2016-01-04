@@ -29,7 +29,7 @@ function checkthumb
     if [ "$curfile" -nt "$thumbfile" ] ;then
       keeptrying=-1
       itsoffset=5
-      step=5
+      step=12
 
       tnsize=10000
       tmpfile=$(mktemp /tmp/ffmpeg.XXXXXX)

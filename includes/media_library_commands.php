@@ -159,7 +159,6 @@ function import1Video(&$params) {
 		echo "Not found: ".$params['commandvalue'].CRLF;
 		print_r($files);
 	}
-	echo "Moved to: >".$params['file']['moveto'].$params['file']['newname']."<".CRLF;
 	// print_r($feedback);
 	return $feedback;
 }
@@ -619,7 +618,8 @@ function cleanName($fname) {
 	$fname = preg_replace_callback('/\b[a-z]/u',function ($matches) {return strtoupper($matches[0]);},$fname); // Uppercase on all word breaks
 	$fname = preg_replace_callback('/\'[a-z]/ui',function ($matches) {return strtolower($matches[0]);},$fname); // Lowercase after ' I'm Don't
 	$fname = preg_replace('/Dj /','DJ ',$fname); // Lowercase after ' I'm Don't
-	
+	$fname = preg_replace('/\$/u', 'S', $fname); // $-sign t- S
+
 	if ($m==1)	$feedback['message'] .= "Info - Multiple \"-\": >$fname"."<</br>";
 
 	$savname = trim($fname);
@@ -810,8 +810,9 @@ function getArtistTitle($fname) {
 		if (!array_key_exists('0',$m)) {
 			$feedback['error'] = "No artist found: >$fname<".CRLF;
 			// echo "No title found: >$fname<".CRLF;
+		} else {
+			$feedback['result']['artist'] =  substr($m[0], 0, -2);
 		}
-		$feedback['result']['artist'] =  substr($m[0], 0, -2);
 	}
 	
 	$result = preg_match(  '/ - .*? Ft /', $fname, $m);
@@ -825,8 +826,9 @@ function getArtistTitle($fname) {
 		$result = preg_match(  '/ - .*?$/', $fname, $m);
 		if (!array_key_exists('0',$m)) {
 			$feedback['error'] = "No title found: >$fname<".CRLF;
+		} else {
+			$feedback['result']['title'] =  substr($m[0], 3);
 		}
-		$feedback['result']['title'] =  substr($m[0], 3);
 	}
 	
 	// $feedback['message'] = "";
