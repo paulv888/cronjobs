@@ -518,7 +518,9 @@ function cleanName($fname) {
 
 	$feedback['message'] = '';
 //	$feedback['error'] = '';
-	$fname = strtolower($fname);
+//	$fname = strtolower($fname);
+	$fname = mb_convert_case($fname, MB_CASE_LOWER, 'UTF-8');
+	
 //	$fname = clearUTF($fname);
 	// Html Decode?
 	// fname = str_replace(, , fname);%A_Space%amp%A_Space%,%A_Space%&%A_Space%,All 
@@ -532,6 +534,8 @@ function cleanName($fname) {
 	$pattern[] = '/new video/'; 				$replace[] = '';
 	$pattern[] = '/gull original song/'; 		$replace[] = '';
 	$pattern[] = '/yeni orijinal/'; 			$replace[] = '';
+	$pattern[] = '/orjinal/'; 					$replace[] = '';
+	$pattern[] = '/yeni$/'; 					$replace[] = '';
 	$pattern[] = '/ klip/'; 					$replace[] = '';
 	$pattern[] = '/klip /'; 					$replace[] = '';
 	$pattern[] = '/clip /'; 					$replace[] = '';
@@ -564,6 +568,7 @@ function cleanName($fname) {
 	$pattern[] = '/\(.*?\)/';					$replace[] = '';
 	$pattern[] = '/-\s+$/';						$replace[] = '';
 	$pattern[] = '/-$/';						$replace[] = '';
+	$pattern[] = '/[\x{2013}}]/u';			 	$replace[] = '-';
 	$pattern[] = '/remix$/';					$replace[] = '';
 	$pattern[] = '/mix$/';						$replace[] = '';
 	$pattern[] = '/original$/';					$replace[] = '';

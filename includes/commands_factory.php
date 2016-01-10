@@ -239,13 +239,14 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$params['commandvalue'] = replacePlaceholder($text, $params);		// Replace placeholders in commandvalue
 			if (DEBUG_PARAMS) echo 'StepValue after replacePlaceholder: '.$params['commandvalue'].CRLF;
 			//replaceText($params, true);
-			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = SendCommand($params);
+			$result = SendCommand($params);
 			// TODO:: check for 'error'
 			// TODO:: bubble up message?
 			// print_r($feedback['result']);
-			if (array_key_exists('message',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last___message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['message'];
-			if (array_key_exists('error',$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result'])) $params['last___message'] = $feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']]['result']['error'];
+			if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
+			if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
 			if (DEBUG_PARAMS) echo 'Loaded last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
+			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
@@ -329,6 +330,8 @@ function setDevicePropertyCommand(&$params) {
 }
 
 function setSessionVar(&$params) {
+
+
 	$feedback['result'] = array();
 	
 	// calculateProperty($params) ;
@@ -342,9 +345,17 @@ function setSessionVar(&$params) {
 		else
 			$text = STATUS_ON;
 	}
+
+	ini_set('session.use_only_cookies', false);
+	ini_set('session.use_cookies', false);
+	ini_set('session.use_trans_sid', false);
+	ini_set('session.cache_limiter', null);	
+	session_start();
 	$_SESSION['properties'][$tarr[0]]['value'] = $text;
-	$feedback['Name'] = $tarr[0];
 	$feedback['result'] = $_SESSION['properties'];
+	session_write_close();
+
+	$feedback['Name'] = $tarr[0];
 	// print_r($_SESSION);
 	return $feedback;
 }

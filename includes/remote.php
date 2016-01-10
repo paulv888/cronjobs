@@ -1,6 +1,12 @@
 <?php
 function loadremote($remoteID) {
 
+	if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
+		$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
+	} else {
+		$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+	}
+
     $select = (substr  ($_SERVER['REMOTE_ADDR'],0,9) == '192.168.2' ? 3 : 2);
     $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
 	if ($divs = FetchRows($mysql)) {
@@ -27,13 +33,13 @@ function loadremote($remoteID) {
 			echo '</ul>';
 			echo '<div id="myTabContent" class="tab-content">';
 		}
-		loadRemotePaneContent($remoteID, $select);
+		loadRemotePaneContent($remoteID, $select, $params);
 		if (count($divs) > 1) echo '</div></div>';
 		echo '<div id="spinner">Executing...</div>';
 	}
 }
 
-function loadRemotePaneContent($remoteID, $select) {
+function loadRemotePaneContent($remoteID, $select, $params) {
 
     
     $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
@@ -46,12 +52,12 @@ function loadRemotePaneContent($remoteID, $select) {
 			echo '<div class="tab-pane" id="divid_'.$rowdivs['id'].'">';
 		}
 		$mycount=2;
-		loadRemoteDiv($rowdivs['divID']);
+		loadRemoteDiv($rowdivs['divID'], $params);
 		echo "</div>";
     }
 }
 
-function loadRemoteDiv($divid) {
+function loadRemoteDiv($divid, $params) {
 
 	$resremotekeys = mysql_query("SELECT MAX(xpos) as maxx, MAX(ypos) as maxy FROM ha_remote_keys WHERE remotediv =".$divid );
 	$rowremotekeys = mysql_fetch_array($resremotekeys);
@@ -71,8 +77,9 @@ function loadRemoteDiv($divid) {
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (strlen($rowremotekeys['deviceID'])>0) {
+					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_CURRENT_SESSION ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
 					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, booticon FROM ha_mf_devices ' .
-							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$rowremotekeys['deviceID'].
+							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$deviceID.
 							' AND inuse = 1' ;
 					$resdevices = mysql_query($mysql);
 					if  (!$resdevices) {
@@ -91,7 +98,7 @@ function loadRemoteDiv($divid) {
 							}
 						}
 						// Really should read all at once
-						$statuslink = getStatusLink(Array('deviceID' => $rowremotekeys['deviceID'], 'propertyID' => $rowremotekeys['propertyID']));
+						$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
 						if (array_key_exists('Status',$statuslink)) {
 							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
 									($statuslink['Status'] == STATUS_OFF ? 'off' : 
@@ -153,7 +160,7 @@ function loadRemoteDiv($divid) {
 						echo '">';
 						echo '</i>';
 					} 
-					$text = replacePlaceholder($text, Array('deviceID' => $rowremotekeys['deviceID']));
+					if (isset($deviceID))$text = replacePlaceholder($text, Array('deviceID' => $deviceID));
 					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
 					echo "</td>\n\r";

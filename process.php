@@ -1,23 +1,8 @@
 <?php 
 require_once 'includes.php';
- // define( 'DEBUG_INPUT', TRUE );
+// define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
-
-session_start();
-// unset($_SESSION['PARAMS']);
-if (DEBUG_INPUT) {echo '<pre>Prev Session Params '; print_r($_SESSION);echo '</pre>';}
-if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
-    // last request was more than 30 minutes ago
-    session_unset();     // unset $_SESSION variable for the run-time 
-    session_destroy();   // destroy session data in storage
-	//
-	// Set default value for SelectedPlayer
-	//
-}
-$_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
-
-
 
 if (DEBUG_INPUT) {
 	$input = file_get_contents('php://input');
@@ -58,18 +43,28 @@ if (isset($_GET['callerID'])) {
 if (DEBUG_INPUT) echo json_encode($_POST);
 if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
 
-if (isset($_SESSION['PARAMS'])){ 
-	if (DEBUG_INPUT) {echo '<pre>$post '; print_r($_POST);}
-	//
-	//	TODO: if saving commandvalue MESS_TYPE_REMOTE_KEY will not load commandID from remotekey
-	//
-	//$params = array_merge($_POST, $_SESSION['PARAMS']);
-	//if (DEBUG_INPUT) {echo 'Merged Params '; print_r($params);//echo '</pre>';}
-} else {
-	$params = $_POST;
-	//$_SESSION['PARAMS'] = $params;
-}
+$params = $_POST;
 
+if (!headers_sent()) {
+	session_start();
+	// unset($_SESSION['PARAMS']);
+	if (DEBUG_INPUT) {echo '<pre>Prev Session Params '; print_r($_SESSION);echo '</pre>';}
+	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
+		// last request was more than 30 minutes ago
+		session_unset();     // unset $_SESSION variable for the run-time 
+		session_destroy();   // destroy session data in storage
+	}
+}
+//
+// Set default value for SelectedPlayer
+//
+if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
+	$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
+} else {
+	$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+}
+$_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+session_write_close();
 
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
 

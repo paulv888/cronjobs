@@ -15,8 +15,8 @@ if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 // Private
 function sendCommand(&$thiscommand) { 
-
-// print_r($thiscommand);
+//   "<pre>";
+ // print_r($thiscommand);
 	$exittrap=false;
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
@@ -55,14 +55,7 @@ function sendCommand(&$thiscommand) {
 
 	if ($thiscommand['deviceID'] != NULL) {
 		if ($thiscommand['deviceID'] == DEVICE_CURRENT_SESSION) {
-			if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties'])   ) {
-				$thiscommand['deviceID'] = $_SESSION['properties']['SelectedPlayer']['value'];
-				// echo "Replaced deviceID ".$_SESSION['properties']['SelectedPlayer']['value'].CRLF;
-			} else {
-				// echo "NOT ****".$_SESSION.CRLF;
-				$_SESSION['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
-				$thiscommand['deviceID'] = DEVICE_DEFAULT_PLAYER;
-			}
+			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
 		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
 		$thiscommand['device'] = (array_key_exists('device',$thiscommand) ? array_merge($thiscommand['device'], $device) : $device);
@@ -294,9 +287,14 @@ function executeCommand($callerparams) {
 					unset($callerparams['keys']);
 					$rowkeys = FetchRow("SELECT * FROM ha_remote_keys where id =".$remotekeyID);
 					if (!empty($rowkeys['deviceID']) && !empty($rowkeys['propertyID'])) {
+						// $deviceID = $rowkeys['deviceID'] ;
+						// Not going trough sendCommand, replace device here
+						// echo $rowkeys['deviceID'].' -> ';
+						$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? $callerparams['SESSION']['properties']['SelectedPlayer']['value'] : $rowkeys['deviceID']);
+						// echo $deviceID.CRLF;
 						$propertyID = $rowkeys['propertyID'];
-						$devicesprop[$rowkeys['deviceID'].$propertyID]['deviceID'] = $rowkeys['deviceID'];
-						$devicesprop[$rowkeys['deviceID'].$propertyID]['propertyID'] = $propertyID;
+						$devicesprop[$deviceID.$propertyID]['deviceID'] = $deviceID;
+						$devicesprop[$deviceID.$propertyID]['propertyID'] = $propertyID;
 					}
 				}
 				foreach ($devicesprop as $devprop) {
@@ -325,7 +323,7 @@ function executeCommand($callerparams) {
 	if (DEBUG_RETURN) echo "executeCommand Exit".CRLF;
 
 	if ($callerparams['callerID'] == DEVICE_REMOTE) {
-		$result = RemoteKeys($feedback);
+		$result = RemoteKeys($feedback, $callerparams);
 		$encode = true;
 	} else {
 		$result = $feedback;
@@ -364,7 +362,11 @@ function executeCommand($callerparams) {
 			
 }
 
-function RemoteKeys($in) {
+function RemoteKeys($in, $params) {
+
+// echo "<pre>";
+ // print_r($params);
+ // print_r($in);
 	if ($in['show_result']) {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
@@ -394,7 +396,11 @@ function RemoteKeys($in) {
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 				if (array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
-					$reskeys = mysql_query('SELECT * FROM ha_remote_keys where deviceID ='.$res[$node]['DeviceID'].$wherestr);
+					$deviceStr = ($res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
+							$res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
+					$mysql = 'SELECT * FROM ha_remote_keys where deviceID IN ('.$deviceStr.') '.$wherestr;
+					$reskeys = mysql_query($mysql);
+					// echo $mysql.CRLF;
 					while ($rowkeys = mysql_fetch_array($reskeys)) {
 						if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 							$feedback[][$node] = true;
@@ -425,6 +431,10 @@ function RemoteKeys($in) {
 								if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
 									if (array_key_exists('Timer Remaining',$res['updateStatus'])) $text.=' ('.$res['updateStatus']['Timer Remaining'].'min)';
 								}
+								// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
+								$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 
+										$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
+								// echo $deviceID.CRLF;
 								$text = replacePlaceholder($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
 								if (!empty($text)) $feedback[$last_id]["text"] = $text;
 							}
