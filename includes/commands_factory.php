@@ -576,9 +576,9 @@ function moveMusicVideo($params) {
 	$file = 'mv_videos.log';
 	$log = file_get_contents($file);
 	if (array_key_exists('error', $feedback)) 
-		$log .= $feedback['error'];
+		$log .= date("Y-m-d H:i:s").": Error: ".$feedback['error'];
 	else 
-		$log .= $feedback['message'];
+		$log .= date("Y-m-d H:i:s").": Moved: ".$feedback['message'];
 	file_put_contents($file, $log);
 	return $feedback;
 	// echo "</pre>";	
