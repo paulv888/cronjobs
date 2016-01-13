@@ -61,8 +61,7 @@ if (!($sdata=="")) { 					//import_event
 	
 	//$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
-	$message['result'] = $sdata;
-	logEvent($message);
+	$message['message'] = $sdata;
 //print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$error_message = (array_key_exists('errorMessage', $rcv_message) ? implode(" - ", $errorMessage) : null);
@@ -71,7 +70,8 @@ if (!($sdata=="")) { 					//import_event
 		$properties['Link']['value'] = LINK_UP;
 		$properties['Value']['value'] = $v;
 		$device['properties'] = $properties;
-		updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'device' => $device, 'message' => $error_message));
+		$message['result'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'device' => $device, 'message' => $error_message));
 	}
+	logEvent($message);
 }
 ?>

@@ -636,10 +636,14 @@ function sendEmail(&$params) {
 	$to = $params['device']['previous_properties']['Address']['value'];
 	$fromname = 'VloHome'; 
 
-	$headers = 'MIME-Version: 1.0' . "\n\n".
-    'From: '.$fromname. "\n\n" .
-    'Reply-To: '.$fromname. "\n\n" .
-    'X-Mailer: PHP/' . phpversion();
+	$headers = 'MIME-Version: 1.0' . "\r\n".
+    'From: '.$fromname. "\r\n" .
+    'Reply-To: '.'vlohome@inbox.com'. "\r\n" .
+    'X-Mailer: PHP/' . phpversion() . "\r\n" ;
+	
+	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
+		$headers.= "Content-Type: text/html; \r\n"; 
+	}
 	
 	if(!mail($to, $params['mess_subject'],  $params['mess_text'], $headers)) {
 	    $feedback['error'] = "Mailer - error";

@@ -45,8 +45,8 @@ if (!($sdata=="")) { 					//import_event
 	$message['typeID'] = $device['typeID'];
 	//$message['message'] = $sdata;
 	$message['callerID'] = MY_DEVICE_ID;
-	logEvent($message);
-//print_r($message);
+	$message['message'] = $rcv_message;
+
 	$properties = array();
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		if ($message['commandID'] == COMMAND_PING || $message['commandID'] == COMMAND_SET_RESULT) {
@@ -93,9 +93,8 @@ if (!($sdata=="")) { 					//import_event
 		$device['properties'] = $properties;
 		
 		$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $rcv_message['ExtData'] ) : null);
-		$feedback['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
-		// logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'commandID' => $message['commandID'], 'message' => $feedback));
-
+		$message['result'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'message' => $error_message, 'device' => $device));
 	}
+	logEvent($message);
 }
 ?>

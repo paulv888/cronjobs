@@ -55,6 +55,7 @@ define("COMMAND_PAUSE", 59);
 define("COMMAND_SET_PROPERTY_VALUE", 314);
 define("COMMAND_VOICE", 324);
 define("COMMAND_GET_PROPERTIES", 325);
+define("COMMAND_LOG_EVENT", 378);
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);

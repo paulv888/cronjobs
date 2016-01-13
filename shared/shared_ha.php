@@ -156,16 +156,16 @@ function setDevicePropertyValue($params, $propertyName) {
 			$logit = false;
 			break;
 		case "HOUR":
-			$logit = timeExpired($lastLogDate, 60);
+			$logit = timeExpired($lastLogDate, 59);
 			if (is_numeric($deviceproperty['value'])) {
-				$logit = $logit || ((abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19);
+				$logit = $logit || ((abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 0.5 ) || strlen($deviceproperty['value']) == 19);
 			} else {
 				$logit = $logit || ($deviceproperty['value'] != $row['value']);
 			}
 			break;
 		case "CHANGE":
 			if (is_numeric($deviceproperty['value'])) {
-				$logit = (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 1 ) || strlen($deviceproperty['value']) == 19;
+				$logit = (abs(floatval($deviceproperty['value'])-floatval($row['value'])) >= 0.5 ) || strlen($deviceproperty['value']) == 19;
 			} else {
 				$logit = $deviceproperty['value'] != $row['value'];
 			}
