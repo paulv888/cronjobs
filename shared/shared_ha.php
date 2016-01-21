@@ -1,5 +1,5 @@
 <?php
- // define( 'DEBUG_HA', TRUE );
+// define( 'DEBUG_HA', TRUE );
 // define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
@@ -32,10 +32,10 @@ function updateDeviceProperties($params) {
 	}
 
 	//
-	// No status or other props are set, force a primary prop (if we have commandID)
+	// Force update based on commandID, or given propertyID
 	//
 	foreach ($params['device']['previous_properties'] as $property) {
-		if ($property['primary_status'] == 1) {
+		if ($property['primary_status'] == 1 || (array_key_exists('propertyID', $params) && $property['propertyID'] == $params['propertyID'])) {
 			if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties']))) {
 				$params['device']['properties'][$property['description']]['value'] = "";
 				if (DEBUG_HA) echo $property['description'].": ".$params['device']['properties'][$property['description']]['value'].CRLF;

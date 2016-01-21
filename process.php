@@ -68,7 +68,7 @@ session_write_close();
 
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
 
-	if (DEBUG_INPUT) echo "callerID ".$params['callerID']." ".$params['messagetypeID'].CRLF;
+	if (DEBUG_INPUT) {echo "<pre>before executeCommand ";print_r($params);echo "</pre>";}
 	
 	$result = executeCommand($params);
 	if (is_array($result)) 

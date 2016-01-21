@@ -174,8 +174,8 @@ if(!window.scriptRemoteHasRun) {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
-			} else {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected};
+			} else if (selected.charAt(0) == 'V') {
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected.substring(1)};
 			}
 			callAjax (params) ;
 		});
@@ -229,8 +229,8 @@ if(!window.scriptRemoteHasRun) {
 					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
 				} else if (selected.charAt(0) == 'C') {
 					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
-				} else {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: VloRemote.COMMAND_SET_VALUE, commandvalue: parseInt(selected)};
+				} else if (selected.charAt(0) == 'V') {
+					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: VloRemote.COMMAND_SET_VALUE, commandvalue: parseInt(selected.substring(1))};
 				}
 				callAjax (params) ;
 			}
@@ -256,8 +256,8 @@ if(!window.scriptRemoteHasRun) {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
-			} else {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected};
+			} else if (selected.charAt(0) == 'V') {
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected.substring(1)};
 			}
 			callAjax (params) ;
 		});	
@@ -277,8 +277,8 @@ if(!window.scriptRemoteHasRun) {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C'){
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
-			} else {
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected};
+			} else if (selected.charAt(0) == 'V'){
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			}
 			callAjax (params) ;
 		});	

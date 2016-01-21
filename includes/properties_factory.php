@@ -9,19 +9,35 @@ function updateGeneric(&$params, $propertyName) {
 //
 	$feedback=Array();
 	if (DEBUG_PROP) {
-		echo "<PRE>Update $propertyName ";
+		echo "<PRE>Update Generic $propertyName ";
 		print_r($params);
 	}
 	
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
 	
+	if (array_key_exists('commandID', $params) && $params['device']['properties'][$propertyName]['value'] == "") {
+		$commandStatus =  getCommand($params['commandID'])['status'];
+		// echo var_dump($commandStatus);
+		if ($commandStatus !== false && $commandStatus != STATUS_NOT_DEFINED) {
+			if ($params['device']['previous_properties'][$propertyName]['invertstatus'] == "0") {
+				$newvalue = ($commandStatus == STATUS_ON ? STATUS_OFF : STATUS_ON);
+			} else {
+				$newvalue = $commandStatus;
+			}
+		} else {
+			unset($params['device']['properties'][$propertyName]);
+			return false;
+		}
+	}
+
 	if ($oldvalue != $newvalue) {			// Value changed
 		$feedback['DeviceID'] = $params['deviceID'];
 		$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 		$feedback['Status'] = $newvalue;
 	}
 	
+	$params['device']['properties'][$propertyName]['value'] = $newvalue;
 	if (DEBUG_PROP) echo "Exit Update $propertyName</PRE>";
 	return $feedback;
 }
@@ -33,7 +49,7 @@ function updateStatus(&$params, $propertyName) {
 
 	$feedback=Array();
 	if (DEBUG_PROP) {
-		echo "<PRE>Update $propertyName ";
+		echo "<PRE>Update Status $propertyName ";
 		print_r($params);
 	}
 

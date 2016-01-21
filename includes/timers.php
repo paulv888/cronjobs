@@ -1,5 +1,4 @@
 <?php
-
 define( 'DEBUG_TIMERS', TRUE );
 if (!defined('DEBUG_TIMERS')) define( 'DEBUG_TIMERS', FALSE );
 if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
@@ -115,6 +114,7 @@ function runTimerSteps($params) {
 				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
 				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+				echo "***".sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile)."****".CRLF;
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
 				$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';

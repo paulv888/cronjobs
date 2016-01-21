@@ -780,7 +780,7 @@ function sendGenericHTTP(&$params) {
 	switch ($targettype)
 	{
 	case "POSTAPP":          // PHP - vlosite
-	case "POSTTEXT":         // Only HTPC & IrrigationCaddy at the moment
+	case "POSTTEXT":         // Yahama AV & IrrigationCaddy at the moment
 	case "POSTURL":          // Web Arduino
 	case "JSON":             // Wink
 		if (DEBUG_DEVICES) echo $targettype."</p>";
@@ -791,9 +791,9 @@ function sendGenericHTTP(&$params) {
 			$tcomm = $tmp1[1];
 		} 
 		$url=setURL($params, $feedback['commandstr']);
-		if (DEBUG_DEVICES) echo $url." Params: ".$tcomm.CRLF;
+		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
-			$feedback['commandstr'] .= ' '.$tcomm;
+			$feedback['commandstr'] .= ' '.htmlentities($tcomm);
 			$curl = restClient::post($url, $tcomm, "", "", "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
 			$feedback['commandstr'] .= ' '.$tcomm;
@@ -814,7 +814,7 @@ function sendGenericHTTP(&$params) {
 			if ($targettype == "JSON") {
 				$feedback['result'] = json_decode($curl->getresponse(), true);
 			} else {
-				$feedback['result'] = $curl->getresponse();
+				$feedback['result'] = htmlentities($curl->getresponse());
 			}
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 			// echo "***";

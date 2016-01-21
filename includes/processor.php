@@ -69,13 +69,19 @@ function sendCommand(&$thiscommand) {
 		if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
 		if (DEBUG_DEVICES) print_r($thiscommand);
 		
-		if (array_key_exists('previous_properties', $thiscommand['device'])) {
-			$statusarr = search_array_key_value($thiscommand['device']['previous_properties'], 'primary_status', 1);
-			// Just take the first one 
-			if (array_key_exists(0, $statusarr)) {
+		
+		// Do TOGGLE - DIM, we need to have propertyID, Status/Dim and previous value of property
+		if (!array_key_exists('propertyID', $thiscommand)) $thiscommand['propertyID'] = 123;
+		// if (($thiscommand['commandID']==COMMAND_TOGGLE || $thiscommand['commandID']==COMMAND_DIM || $thiscommand['commandID']==COMMAND_BRIGHTEN)) {
+			// echo "<pre>Handle toggle ";
+			// print_r($thiscommand);exit;
+			$statusarr = search_array_key_value($thiscommand['device']['previous_properties'], 'propertyID', $thiscommand['propertyID']);
+			if (!empty($statusarr)) {
 				$status_key = $statusarr[0]['description'];
 				$status = $thiscommand['device']['previous_properties'][$status_key]['value'];
 				$rowmonitor = $thiscommand['device']['previous_properties'][$status_key];
+				// print_r($statusarr);
+			
 				// Special handling for toggle
 				if ($thiscommand['commandID']==COMMAND_TOGGLE) {   
 					if ($thiscommand['commandvalue'] > 0 && $thiscommand['commandvalue'] < 100) { // if dimvalue given then update dim, else toggle
@@ -84,6 +90,14 @@ function sendCommand(&$thiscommand) {
 						if ($rowmonitor) {
 							if (DEBUG_DEVICES) echo "Status Toggle: ".$status.CRLF;
 							$thiscommand['commandID'] = ($status == STATUS_ON ? COMMAND_OFF : COMMAND_ON); // toggle on/off
+							// Check special commands for this property
+							if (array_key_exists('propertyID', $thiscommand)) {
+								$mysql = 'SELECT * FROM ha_mi_properties_commands where on_off = '.$thiscommand['commandID']. ' AND propertyID = '.$thiscommand['propertyID'];
+								if ($rowpropcommand = FetchRow($mysql))  {								// Found command overwrite
+									// print_r($rowpropcommand);
+									$thiscommand['commandID'] = $rowpropcommand['commandID'];
+								}
+							}
 						} else {		// not status monitoring 
 							if (DEBUG_DEVICES) echo "NO STATUS RECORD FOUND, GETTING OUT".CRLF;
 							return;
@@ -93,7 +107,7 @@ function sendCommand(&$thiscommand) {
 				if ($thiscommand['commandID']==COMMAND_DIM || $thiscommand['commandID']==COMMAND_BRIGHTEN) {
 					if ($status != STATUS_OFF) {
 						if ($thiscommand['commandID']==COMMAND_DIM) {
-							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['Level']['value'] - $thiscommand['commandvalue'];
+							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['                                                                                                                         v-0-0-0-0-0']['value'] - $thiscommand['commandvalue'];
 							if ($thiscommand['commandvalue'] < 0) $thiscommand['commandID'] = COMMAND_OFF;
 						} else {
 							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['Level']['value'] + $thiscommand['commandvalue'];
@@ -104,20 +118,22 @@ function sendCommand(&$thiscommand) {
 						return;
 					}
 				}
+				// Invert Status is set
+				if (isset($rowmonitor) && $rowmonitor['invertstatus'] == "0") {  
+					if (DEBUG_DEVICES) echo "Status Invert: ".$status.CRLF;
+					if ($thiscommand['commandID'] == COMMAND_OFF) {
+						$thiscommand['commandID'] = COMMAND_ON;
+					} elseif ($thiscommand['commandID'] == COMMAND_ON) {
+						$thiscommand['commandID'] = COMMAND_OFF;
+					}
+				}
 			}
+		// }
+		if (array_key_exists('previous_properties', $thiscommand['device'])) {
 			$thiscommand['onlevel'] = 100;
 			if (array_key_exists('On Level', $thiscommand['device']['previous_properties'])) $thiscommand['onlevel'] = $thiscommand['device']['previous_properties']['On Level']['value'];
 			$thiscommand['dimmable'] = "NO";
 			if (array_key_exists('Dimmable', $thiscommand['device']['previous_properties'])) $thiscommand['dimmable'] = strtoupper($thiscommand['device']['previous_properties']['Dimmable']['value']);
-		}
-		// Invert Status is set
-		if (isset($rowmonitor) && $rowmonitor['invertstatus'] == "0") {  
-			if (DEBUG_DEVICES) echo "Status Invert: ".$status.CRLF;
-			if ($thiscommand['commandID'] == COMMAND_OFF) {
-				$thiscommand['commandID'] = COMMAND_ON;
-			} elseif ($thiscommand['commandID'] == COMMAND_ON) {
-				$thiscommand['commandID'] = COMMAND_OFF;
-			}
 		}
 
 	} else {
@@ -264,6 +280,7 @@ function executeCommand($callerparams) {
 						}
 					} else {
 						$callerparams['commandID']=$rowkeys['commandID'];
+						$callerparams['propertyID']=$rowkeys['propertyID'];
 					}
 				}
 			} else {
@@ -292,7 +309,7 @@ function executeCommand($callerparams) {
 						// echo $rowkeys['deviceID'].' -> ';
 						$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? $callerparams['SESSION']['properties']['SelectedPlayer']['value'] : $rowkeys['deviceID']);
 						// echo $deviceID.CRLF;
-						$propertyID = $rowkeys['propertyID'];
+						if (!is_null($rowkeys['propertyID'])) $propertyID = $rowkeys['propertyID'];
 						$devicesprop[$deviceID.$propertyID]['deviceID'] = $deviceID;
 						$devicesprop[$deviceID.$propertyID]['propertyID'] = $propertyID;
 					}

@@ -30,16 +30,16 @@ function replaceCommandPlaceholders($params) {
 
 function replaceResultPlaceholders($mess_subject, &$params, $resultin){
 
-		if (DEBUG_PHOLDERS) {
-			echo "<pre> replaceResultPlaceholders "; print_r ($resultin); echo "</pre>";
-			echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
-		}	
+	if (DEBUG_PHOLDERS) {
+		echo "<pre> replaceResultPlaceholders "; print_r ($resultin); echo "</pre>";
+		echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
+	}	
+
 	// Do an array search for the value to replace {postion}
 	// execute before clobbering input
-	$resultin['deviceID'] = $params['deviceID'];
-
 	preg_match('/\{result___(.*?)\}/', $mess_subject, $output);
 	if (!empty($output)) {	// Found me some
+		$resultin['deviceID'] = $params['deviceID'];
 		if (DEBUG_PHOLDERS) {
 			echo "<pre>Search Array for Key "; echo "DATA0:"; print_r ($params); echo "</pre>";
 			echo "<pre>Search Array for Key "; echo "PATTERN0:"; print_r ($output); echo "</pre>";
