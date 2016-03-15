@@ -69,6 +69,8 @@ foreach ($dataArray as $key => $user) {
 			$hauler = true;
 		} elseif ($product['code'] == 'supply') {
 			$supply = true;
+		} elseif ($product['code'] == 'jobsite') {
+			$supply = jobsite;
 		} elseif ($product['code'] == '') {
 			//$ticket = true;
 		} else {

@@ -4,5 +4,5 @@ require_once 'mc-includes.php';
 
 define("MY_DEVICE_ID", 219);
 
-print_r(clarifycases());
+print_r(clarifyhistory());
 ?>

@@ -5,11 +5,11 @@ if (!defined('DEBUG_CLARIFY')) define( 'DEBUG_CLARIFY', FALSE );
 //define( 'CLARIFY_INITIALIZE' , TRUE);
 //if (!defined('CLARIFY_INITIALIZE')) define( 'CLARIFY_INITIALIZE', FALSE );
 
-function clarifycases() {
+function clarifyhistory() {
 
 	if (DEBUG_CLARIFY) echo "<pre>";
 
-	$text = CasesBySLA();
+	$text = createHistory();
 	echo $text;
 	PDOupsert("mc_clarify_import", Array('description' => "SLA", 'result' => str_replace("</br>","",$text)), Array('description' => "SLA"));
 	if (DEBUG_CLARIFY) echo "</pre>";
@@ -52,11 +52,11 @@ function clarify($init = "CHANGES") {
 	if (DEBUG_CLARIFY) echo "</pre>";
 }
 
-function CasesBySLA() {
+function createHistory() {
 
 	$text = "";
 	
-	$mysql = 'INSERT INTO `mc_cases_by_sla_type`( `period`, `Case_ID`, `Site_ID`, `sla_typeID`, `main_productID`, `severity`, `case_type`, `cases`)
+	$mysql = 'INSERT INTO `mc_cases_history`( `period`, `Case_ID`, `Site_ID`, `sla_typeID`, `main_productID`, `severity`, `case_type`, `cases`)
 				SELECT curdate() as period,Case_ID,Site_Id,  sla_typeID, main_productID,severity, case_type , 1 FROM `mc_open_cases` c
 				LEFT JOIN mc_products p ON c.Part_Number=p.code
 				WHERE in_service = 1';
@@ -64,7 +64,28 @@ function CasesBySLA() {
 		mySqlError($mysql);
 		return false;
 	}
-	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Inserted to mc_cases_by_sla_type".CRLF;
+	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Inserted to mc_cases_history".CRLF;
+	
+	$mysql = 'INSERT INTO `mc_contracts_history`(`period`, `contractID`, `customerID`, `siteID`, `statusID`, `status_detailID`, `contract_number`, 
+                       `contract_date`, `salesmen_employeeID`, `lead_sourceID`, `probability`, `created_userID`, `modified_userID`, `in_service`, `main_productID`, 
+                       `productID`, `quantity`, `price`, `billing_optionsID`, `currency`, `currency_conversion`, `estimated_annual`, `estimated_mrr`, `billable`, `billing_start` ) 
+                  SELECT curdate() as period, c.id, `customerID`, `siteID`, `statusID`, `status_detailID`, `contract_number`, 
+                       `contract_date`, `salesmen_employeeID`, `lead_sourceID`, `probability`, `created_userID`, `modified_userID`, `in_service`, `main_productID`, 
+                        `productID`, `quantity`, `price`, `billing_optionsID`, `currency`, `currency_conversion`, `estimated_annual`, `estimated_mrr`, `billable`, `billing_start` 
+                  FROM `mc_contracts` c 
+                  LEFT JOIN mc_contract_products cp  ON c.id = cp.contractID WHERE 1';
+	if (!$result = mysql_query($mysql)){
+		mySqlError($mysql);
+		return false;
+	}
+	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Inserted to mc_contracts_history".CRLF;
+	
+	$mysql = 'UPDATE `mc_contracts_history` SET `billable_age`= CASE WHEN `billable` = 1 THEN 2 WHEN `billable` = 0 AND datediff(`period`, `contract_date`) <= 30 THEN 1 ELSE 0 END WHERE 1';
+	if (!$result = mysql_query($mysql)){
+		mySqlError($mysql);
+		return false;
+	}
+	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Updated billable_age to mc_contracts_history".CRLF;
 	
 	return $text;
 }
