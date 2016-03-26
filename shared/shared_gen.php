@@ -313,6 +313,7 @@ function ReloadScreenShot() {
 	$post = RestClient::post('http://htpc:8085/index.htm');
 	return;  // ReadCurlReturn($post);
 }
+
 function hex2rgb($hex) {
    $hex = str_replace("#", "", $hex);
 

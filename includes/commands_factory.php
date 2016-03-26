@@ -266,16 +266,23 @@ function getDuskDawn(&$params) {
 // echo "<pre>";
 // print_r($params);
 
-	//USAL0594
+	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='YAHOO'");
+	$credentials['method'] = $row['method'];
+	$credentials['client_id'] = $row['clientID'];
+	$credentials['secret'] = $row['secret'];
+	
+    $url = "https://query.yahooapis.com/v1/yql";  
+    $args = array();  
+    $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';  
+	// $args["diagnostics"] = "true";
+	// $args["debug"] = "true";
+    $args["format"] = "json";  
 
-	// TODO:: should be a command, device, connection
-	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
-	"%22%20and%20u%3D%22c%22&format=json&diagnostics=true&callback=";
-	$get = restClient::get($url);
-//	$response = file_get_contents($url);
+	$get = RestClient::get($url,$args,$credentials,30);
+
 	if (DEBUG_COMMANDS) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
-	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+	$feedback['error'] = ($get->getresponsecode()==200 ? "" : $get->getresponsecode());
     if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
 		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
@@ -283,8 +290,8 @@ function getDuskDawn(&$params) {
 		if (DEBUG_COMMANDS) print_r($result);
 		$result = $result->{'query'}->{'results'}->{'channel'};
 
-		$tsr = date("H:i", strtotime($result->{'astronomy'}->{'sunrise'}));
-		$tss = date("H:i", strtotime($result->{'astronomy'}->{'sunset'}));
+		$tsr = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunrise'})));
+		$tss = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunset'})));
 
 		//$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $params['deviceID']));
 
@@ -683,7 +690,7 @@ function sendInsteonCommand(&$params) {
 	$url=setURL($params, $feedback['commandstr']);
 	$feedback['commandstr'] .= $tcomm.'=I=3';
 	if (DEBUG_DEVICES) echo $url.CRLF;
-	$curl = restClient::get($url.$tcomm.'=I=3',null, "", "", $params['device']['connection']['timeout']);
+	$curl = restClient::get($url.$tcomm.'=I=3',null, null, $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 	else 
@@ -794,19 +801,19 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
 			$feedback['commandstr'] .= ' '.htmlentities($tcomm);
-			$curl = restClient::post($url, $tcomm, "", "", "text/plain", $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $tcomm, null, "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
 			$feedback['commandstr'] .= ' '.$tcomm;
-			$curl = restClient::post($url, $tcomm, "", "", "", $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $tcomm, null, "", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
 			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] .= ' '.$postparams;
-			$curl = restClient::post($url, $postparams, "", "", "application/json" , $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] .= $tcomm;
-			$curl = restClient::post($url.$tcomm,"","","","",$params['device']['connection']['timeout']);
+			$curl = restClient::post($url.$tcomm ,"" ,null ,"" ,$params['device']['connection']['timeout']);
 		}
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -826,7 +833,7 @@ function sendGenericHTTP(&$params) {
 		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 		$feedback['commandstr'] .= $tcomm;
-		$curl = restClient::get($url.$tcomm, array(), null, null, $params['device']['connection']['timeout']);
+		$curl = restClient::get($url.$tcomm, array(), null, $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 

@@ -211,17 +211,30 @@ class RestClient {
      
      /**
       * Set the Credentials for BASIC Authentication
-      * @param string $user
+      * @param Array (
+			'method' = "BASIC"/"OAUTH1"/"OAUTH2"
+			'username' (client_id)
+			'password' (secret)
       * @param string $pass
       * @return RestClient
       */
-     public function setCredentials($user,$pass) {
-         if($user != null) {
-             curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC);
-             curl_setopt($this->curl,CURLOPT_USERPWD,"{$user}:{$pass}");
-         }
-         return $this;
+     public function setCredentials($credentials, $method=NULL, $url = NULL, $body = NULL) {
+		if ($credentials['method'] == "BASIC") { 
+			if($credentials['username'] != null) {
+				curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC);
+				curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
+			}
+		} elseif ($credentials['method'] == "OAUTH1") {
+			if($credentials['client_id'] != null) {
+				$consumer = new OAuthConsumer($credentials['client_id'], $credentials['secret']);  
+				$request = OAuthRequest::from_consumer_and_token($consumer, NULL,$method , $url, $body);  
+				$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);  
+				curl_setopt($this->curl, CURLOPT_HTTPHEADER, array($request->to_header()));  
+			}
+		}
+		return $this;
      }
+
 
      /**
       * Set the Request HTTP Method
@@ -264,51 +277,47 @@ class RestClient {
       * Convenience method wrapping a commom POST call
       * @param string $url
       * @param mixed params
-      * @param string $user=null [optional]
-      * @param string $password=null [optional]
+      * @param string $credentials=null [optional]
       * @param string $contentType="multpary/form-data" [optional] commom post (multipart/form-data) as default
       * @return RestClient
       */
 //   public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
-     public static function post($url,$params=null,$user=null,$pwd=null,$contentType="application/x-www-form-urlencoded", $timeout=null) {
-         return self::call("POST",$url,$params,$user,$pwd,$contentType,$timeout);
+     public static function post($url,$params=null,$credentials=null,$contentType="application/x-www-form-urlencoded", $timeout=null) {
+         return self::call("POST",$url,$params,$credentials,$contentType,$timeout);
      }
 
      /**
       * Convenience method wrapping a commom PUT call
       * @param string $url
       * @param string $body 
-      * @param string $user=null [optional]
-      * @param string $password=null [optional]
+      * @param string $credentials=null [optional]
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function put($url,$body,$user=null,$pwd=null,$contentType=null,$timeout=null) {
-         return self::call("PUT",$url,$body,$user,$pwd,$contentType,$timeout);
+     public static function put($url,$body,$credentials=null,$contentType=null,$timeout=null) {
+         return self::call("PUT",$url,$body,$credentials,$contentType,$timeout);
      }
 
      /**
       * Convenience method wrapping a commom GET call
       * @param string $url
       * @param array params
-      * @param string $user=null [optional]
-      * @param string $password=null [optional]
+      * @param string $credentials [optional]
       * @return RestClient
       */
-     public static function get($url,array $params=null,$user=null,$pwd=null, $timeout=null) {
-         return self::call("GET",$url,$params,$user,$pwd,"",$timeout);
+     public static function get($url,array $params=null,$credentials=null, $timeout=null) {
+         return self::call("GET",$url,$params,$credentials,"",$timeout);
      }
 
      /**
       * Convenience method wrapping a commom delete call
       * @param string $url
       * @param array params
-      * @param string $user=null [optional]
-      * @param string $password=null [optional]
+      * @param string $credentials=null [optional]
       * @return RestClient
       */
-     public static function delete($url,array $params=null,$user=null,$pwd=null,$timeout=null) {
-         return self::call("DELETE",$url,$params,$user,$pwd,$timeout);
+     public static function delete($url,array $params=null,$credentials=null,$timeout=null) {
+         return self::call("DELETE",$url,$params,$credentials,$timeout);
      }
 
      /**
@@ -316,17 +325,16 @@ class RestClient {
       * @param string $method
       * @param string $url
       * @param string $body 
-      * @param string $user=null [optional]
-      * @param string $password=null [optional]
+      * @param string $credentials=null [optional]
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function call($method,$url,$body,$user=null,$pwd=null,$contentType=null,$timeout=null) {
+     public static function call($method,$url,$body,$credentials,$contentType=null,$timeout=null) {
 
          return self::createClient($url)
              ->setParameters($body)
              ->setMethod($method)
-             ->setCredentials($user,$pwd)
+             ->setCredentials($credentials, $method, $url, $body)
              ->setContentType($contentType)
              ->setTimeout($timeout)
              ->execute()

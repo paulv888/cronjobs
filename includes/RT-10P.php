@@ -49,7 +49,7 @@ function MoveHistory() {
 
 function GetSessions() {
 
-	$post = RestClient::get("http://192.168.2.1/Main_ConnStatus_Content.asp",null,FIREWALL_USER,FIREWALL_PASSWORD);
+	$post = RestClient::get("http://192.168.2.1/Main_ConnStatus_Content.asp" ,null , Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 	$post = RestClient::get("http://192.168.2.1/Logout.asp");
 
@@ -282,7 +282,7 @@ function ImportSessions() {
 function GetDeviceList() {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
-	$post = RestClient::get("http://192.168.2.1/device-map/clients.asp",null,FIREWALL_USER,FIREWALL_PASSWORD);
+	$post = RestClient::get("http://192.168.2.1/device-map/clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 	$post = RestClient::get("http://192.168.2.1/Logout.asp");
 

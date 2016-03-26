@@ -13,18 +13,24 @@ function getYahooWeather($params) {
 
 	$station = $params['commandvalue'];
 	$deviceID = $params['deviceID'];
+
+	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='YAHOO'");
+	$credentials['method'] = $row['method'];
+	$credentials['client_id'] = $row['clientID'];
+	$credentials['secret'] = $row['secret'];
 	
-	ini_set('max_execution_time',30);
+    $url = "https://query.yahooapis.com/v1/yql";  
+    $args = array();  
+    $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';  
+	// $args["diagnostics"] = "true";
+	// $args["debug"] = "true";
+    $args["format"] = "json";  
 
-	//USAL0594
-
-	$url = "https://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20weather.forecast%20where%20location%3D%22".$station.
-	"%22%20and%20u%3D%22c%22&format=json&diagnostics=true&callback=";
-	$get = restClient::get($url);
-//	$response = file_get_contents($url);
+	$get = RestClient::get($url,$args,$credentials,30);
+	
 	if (DEBUG_YAHOOWEATHER) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
-	$feedback['error'] = ($get->getresponsecode()==200 ? 0 : $get->getresponsecode());
+	$feedback['error'] = ($get->getresponsecode()==200 ? "" : $get->getresponsecode());
 	$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 	if (!$feedback['error']) {
 		$result = json_decode($get->getresponse());
@@ -72,8 +78,8 @@ function getYahooWeather($params) {
 		$array['typeID'] = DEV_TYPE_TEMP_HUMIDITY;
 		// Get night or day
 		$tpb = time();
-		$tsr = strtotime($result->{'astronomy'}->{'sunrise'});
-		$tss = strtotime($result->{'astronomy'}->{'sunset'});
+		$tsr = strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunrise'}));
+		$tss = strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunset'}));
 		if ($tpb>$tsr && $tpb<$tss) { $daynight = 'd'; } else { $daynight = 'n'; }
 		$image = $result->{'item'}->{'condition'}->{'code'}.$daynight.'.png';
 		cache_image(IMAGE_CACHE.$image, 'http://l.yimg.com/a/i/us/nws/weather/gr/'.$image);

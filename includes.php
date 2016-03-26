@@ -21,6 +21,7 @@ include_once 'includes/commands_thermo.php';
 include_once 'includes/thermo_common.php';
 include_once 'includes/media_library_commands.php';
 
+include_once 'myclasses/OAuth.php';
 include_once 'myclasses/thermo_lib.php';
 include_once 'myclasses/RestClient.class.php';
 include_once 'myclasses/TCPClient.php';
