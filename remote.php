@@ -15,16 +15,10 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
 <link rel="stylesheet" href="/templates/protostar-mod/css/template.css" type="text/css" media="screen" /> 
-<script type="text/javascript" src="/media/jui/js/jquery.min.js"></script>
-<!-- script type="text/javascript" src="/media/jui/js/jquery-noconflict.js"></script>
-<!--script type="text/javascript" src="/media/jui/js/jquery-migrate.min.js"></script>
-<!--script type="text/javascript" src="/media/system/js/mootools-core.js"></script>
-<!--script type="text/javascript" src="/media/system/js/core.js"></script>
-<!--script type="text/javascript" src="/media/system/js/mootools-more.js"></script-->
-<script type="text/javascript" src="/media/system/js/tabs-state.js"></script>
-<script type="text/javascript" src="/media/jui/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.min.js"></script>
-<!--script type="text/javascript" src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js?v=<?php echo rand(10000000,99999999);?>"></script-->
+<script src="/media/jui/js/jquery.min.js"></script>
+<script async src="/media/system/js/tabs-state.js"></script>
+<script async src="/media/jui/js/bootstrap.min.js"></script>
+<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.min.js"></script>
 </head>
 <body style="padding:0px">
    <div id='system-message-container'></div>

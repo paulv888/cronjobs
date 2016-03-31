@@ -3,7 +3,7 @@
 // define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_PARAMS', TRUE );
-// define( 'DEBUG_COMMANDS', TRUE );
+//define( 'DEBUG_COMMANDS', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
 if (isset($_POST['DEBUG_DEVICES'])) define( 'DEBUG_DEVICES', TRUE );
 if (isset($_POST['DEBUG_RETURN'])) define( 'DEBUG_RETURN', TRUE );

@@ -18,28 +18,30 @@ function getYahooWeather($params) {
 	$credentials['method'] = $row['method'];
 	$credentials['client_id'] = $row['clientID'];
 	$credentials['secret'] = $row['secret'];
-	
-    $url = "https://query.yahooapis.com/v1/yql";  
-    $args = array();  
-    $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';  
+
+	$url = "https://query.yahooapis.com/v1/yql";
+	$args = array();
+	$args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
 	// $args["diagnostics"] = "true";
 	// $args["debug"] = "true";
-    $args["format"] = "json";  
+	$args["format"] = "json";
 
 	$get = RestClient::get($url,$args,$credentials,30);
-	
+
 	if (DEBUG_YAHOOWEATHER) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
-	$feedback['error'] = ($get->getresponsecode()==200 ? "" : $get->getresponsecode());
-	$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
-	if (!$feedback['error']) {
+	$error = false;
+	if ($get->getresponsecode()!=200) $error=true;
+	if (!$error) {
+		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$result = json_decode($get->getresponse());
-		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
-		//if (DEBUG_YAHOOWEATHER) print_r($result);
 		if (DEBUG_YAHOOWEATHER) print_r($result);
-		$result = $result->{'query'}->{'results'}->{'channel'};
-		
-		$properties['Temperature']['value'] = $result->{'item'}->{'condition'}->{'temp'};
+		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
+		if (!isset($result->{'query'}->{'results'})) {
+			$error = true;
+		} else {
+			$result = $result->{'query'}->{'results'}->{'channel'};
+			$properties['Temperature']['value'] = $result->{'item'}->{'condition'}->{'temp'};
 		$properties['Humidity']['value'] =  $result->{'atmosphere'}->{'humidity'};
 		$properties['Status']['value'] = STATUS_ON;
 		$device['properties'] = $properties;
@@ -99,7 +101,7 @@ function getYahooWeather($params) {
 			$array['class'] = SEVERITY_WARNING_CLASS;
 		}
 		PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $deviceID));
-	
+
 		unset($array);
 		$i = 0;
 		foreach ($result->{'item'}->{'forecast'} as $forecast) {
@@ -128,7 +130,10 @@ function getYahooWeather($params) {
 //			PDOinsert("ha_weather_forecast", $array);
 			$i++;
 		}
-	} else {
+		}
+	}
+	if ($error) {
+		$feedback['error'] = $get->getresponsecode();
 		$properties['Status']['value'] = STATUS_ERROR;
 		$device['properties'] = $properties;
 		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
@@ -137,8 +142,8 @@ function getYahooWeather($params) {
 	if (DEBUG_YAHOOWEATHER) echo "</pre>";
 	return $feedback;
 }
-	
-//function cache_image($file, $url, $hours = 168, $fn = '', $fn_args = '') {
+
+
 function cache_image($file, $url, $hours = 168) {
 	//vars
 

@@ -270,38 +270,41 @@ function getDuskDawn(&$params) {
 	$credentials['method'] = $row['method'];
 	$credentials['client_id'] = $row['clientID'];
 	$credentials['secret'] = $row['secret'];
-	
-    $url = "https://query.yahooapis.com/v1/yql";  
-    $args = array();  
-    $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';  
+
+	$url = "https://query.yahooapis.com/v1/yql";
+	$args = array();
+	$args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
 	// $args["diagnostics"] = "true";
 	// $args["debug"] = "true";
-    $args["format"] = "json";  
+	$args["format"] = "json";
 
 	$get = RestClient::get($url,$args,$credentials,30);
 
 	if (DEBUG_COMMANDS) echo "<pre>";
 	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
-	$feedback['error'] = ($get->getresponsecode()==200 ? "" : $get->getresponsecode());
-    if (!$feedback['error']) {
-		$result = json_decode($get->getresponse());
-		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
-		//if (DEBUG_YAHOOWEATHER) print_r($result);
+        $error = false;
+        if ($get->getresponsecode()!=200) $error=true;
+        if (!$error) {
+                $result = json_decode($get->getresponse());
 		if (DEBUG_COMMANDS) print_r($result);
-		$result = $result->{'query'}->{'results'}->{'channel'};
+                $feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
+                if (!isset($result->{'query'}->{'results'})) {
+                        $error = true;
+                } else {
+			$result = $result->{'query'}->{'results'}->{'channel'};
 
-		$tsr = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunrise'})));
-		$tss = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunset'})));
-
-		//$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $params['deviceID']));
-
-		$properties['Astronomy Sunrise']['value'] = $tsr;
-		$properties['Astronomy Sunset']['value'] = $tss;
-		$properties['Link']['value'] = LINK_UP;
-		$params['device']['properties'] = $properties;
-	} else {
-		$properties['Status']['value'] = STATUS_ERROR;
-		$properties['Link']['value'] = LINK_DOWN;
+			$tsr = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunrise'})));
+			$tss = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunset'})));
+			$properties['Astronomy Sunrise']['value'] = $tsr;
+			$properties['Astronomy Sunset']['value'] = $tss;
+			$properties['Link']['value'] = LINK_UP;
+			$params['device']['properties'] = $properties;
+			if (DEBUG_COMMANDS) print_r($params);
+		}
+	}
+	if ($error) {
+                $feedback['error'] = $get->getresponsecode();
+ 		$properties['Link']['value'] = LINK_DOWN;
 		$params['device']['properties'] = $properties;
 	}
 	//$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));

@@ -7,8 +7,8 @@ define("MY_DEVICE_ID", 215);
 define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
-define("MOTION_URL1","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=30");
-define("MOTION_URL2","https://vlohome.homeip.net/index.php?option=com_content&view=article&id=238&Itemid=527");
+define("MOTION_URL1","https://vlohome.no-ip.org/index.php?option=com_content&view=article&id=238&Itemid=30");
+define("MOTION_URL2","https://vlohome.no-ip.org/index.php?option=com_content&view=article&id=238&Itemid=527");
 
 require_once 'includes.php';
 
