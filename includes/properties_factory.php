@@ -1,5 +1,5 @@
 <?php
-// define( 'DEBUG_PROP', TRUE );
+//define( 'DEBUG_PROP', TRUE );
 if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {
@@ -49,7 +49,7 @@ function updateStatus(&$params, $propertyName) {
 
 	$feedback=Array();
 	if (DEBUG_PROP) {
-		echo "<PRE>Update Status $propertyName ";
+		echo "<PRE>Update $propertyName ";
 		print_r($params);
 	}
 
@@ -82,39 +82,55 @@ function updateStatus(&$params, $propertyName) {
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	$feedback['Status'] = $newvalue;
 	$feedback['Datatype'] = $params['device']['previous_properties'][$propertyName]['datatype'];
-
-	
-	// 
-	// Handle HVAC cycles
-	//
-	if (array_key_exists('type', $params['device']) && $params['device']['type']['has_runtime']) {
-		if (timeExpired($params['lastUpdateDate'],60) || $oldvalue != $newvalue) {
-			$mysql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.$params['deviceID'].'
-					AND propertyID='.getProperty('Runtime')['id'].' order by updatedate desc limit 1';
-			if ($row = FetchRow($mysql)) {
-				$startdate = date("Y-m-d H:i:s", strtotime($row['updatedate']));
-				$enddate = date("Y-m-d H:i:s");
-				$system = $params['device']['type']['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
-				UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
-				$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
-								FROM `hvac_cycles`
-								WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
-								GROUP BY deviceID, system';
-				if (DEBUG_PROP) echo $mysql;
-				if ($row = FetchRow($mysql)) {
-					$updateProperty = $params;
-					unset($updateProperty['device']['properties']);
-					$updateProperty['device']['properties']['Runtime']['value'] = $row['runtime'];
-					setDevicePropertyValue($updateProperty, 'Runtime');
-				}
-			}
-		}
-	}
 	
 	$params['device']['properties'][$propertyName]['value'] = $newvalue;
 	if (DEBUG_PROP) echo "Exit Update Status</PRE>";
 	return $feedback;
 }	
+
+function updateRuntime(&$params, $propertyName) {
+//
+//		This is the actual runtime, while status is on,
+//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
+//
+	$feedback=Array();
+	if (DEBUG_PROP) {
+		echo "<PRE>Update $propertyName ";
+		print_r($params);
+	}
+	
+	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+	$newvalue = $params['device']['properties'][$propertyName]['value'];
+
+	if (timeExpired($params['lastUpdateDate'],60)) {
+		$mysql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.$params['deviceID'].'
+				AND propertyID='.getProperty('Runtime')['id'].' order by updatedate desc limit 1';
+		if ($row = FetchRow($mysql)) {
+			$startdate = date("Y-m-d H:i:s", strtotime($row['updatedate']));
+			$enddate = date("Y-m-d H:i:s");
+			$system = $params['device']['type']['internal_type'];	// Currently support 1 = Heating, 2 = Cooling
+			UpdateStatusCycle($params['deviceID'], false, false, false, true);                // Force cycle insert
+			$mysql = 'SELECT deviceID, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
+							FROM `hvac_cycles`
+							WHERE deviceID ='.$params['deviceID'].' AND system ='.$system.' AND start_time >= "' .$startdate.'" AND end_time <= "' .$enddate.'"
+							GROUP BY deviceID, system';
+			if (DEBUG_PROP) echo $mysql;
+			if ($row = FetchRow($mysql)) {
+				$newvalue = $row['runtime'];
+				$feedback['DeviceID'] = $params['deviceID'];
+				$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
+				$feedback['Status'] = $newvalue;
+			} else {
+				unset($params['device']['properties'][$propertyName]);
+				return false;
+			}
+		}
+	}
+
+	$params['device']['properties'][$propertyName]['value'] = $newvalue;
+	if (DEBUG_PROP) echo "Exit Update $propertyName</PRE>";
+	return $feedback;
+}
 
 function updateIsRunning(&$params, $propertyName) {
 //

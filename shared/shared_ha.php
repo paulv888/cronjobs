@@ -1,5 +1,5 @@
 <?php
-// define( 'DEBUG_HA', TRUE );
+//define( 'DEBUG_HA', TRUE );
 // define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
@@ -36,12 +36,15 @@ function updateDeviceProperties($params) {
 	//
 	foreach ($params['device']['previous_properties'] as $property) {
 		if ($property['primary_status'] == 1 || (array_key_exists('propertyID', $params) && $property['propertyID'] == $params['propertyID'])) {
-			if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties']))) {
+			//if (array_key_exists('commandID', $params) && (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties']))) {
+			if (!array_key_exists('properties', $params['device']) || !array_key_exists($property['description'], $params['device']['properties'])) {
 				$params['device']['properties'][$property['description']]['value'] = "";
 				if (DEBUG_HA) echo $property['description'].": ".$params['device']['properties'][$property['description']]['value'].CRLF;
 			}
 		}
 	}
+
+	// print_r($params['device']['properties']);
 	
 	if (array_key_exists('properties', $params['device'])) {		// Do we have props to update?
 		$params['device']['properties'] = sortArrayByArray($params['device']['properties'], Array('Status'));
@@ -73,7 +76,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	if (DEBUG_HA) {
 		echo "<pre>setDevicePropertyValue $propertyName ";
 		print_r ($deviceproperty);
-		print_r ($params);
+		//print_r ($params);
 	}
 	
 	if (strtoupper($deviceproperty['value']) == "TRUE" || strtoupper($deviceproperty['value']) == "ON") $deviceproperty['value'] = STATUS_ON;
@@ -101,12 +104,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	if ($monitor) {
 		$func = 'update'.str_replace(' ','',$propertyName);
-		if ($params['device']['previous_properties'][$propertyName]['primary_status'] == 1) {
-			if(!($feedback['updateStatus'] = updateStatus($params, $propertyName))) {
-				$feedback['!Fail'] = 'Factory returned false, exit';
-				return;
-			}
-		} elseif (function_exists ($func)) {
+		if (function_exists ($func)) {
 			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
 				$feedback['!Fail'] = 'Factory returned false, exit';
 				return;

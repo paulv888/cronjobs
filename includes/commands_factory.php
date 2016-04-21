@@ -902,4 +902,156 @@ function NOP() {
 	$feedback['result'] = "Nothing done";
 	return $feedback;
 }
+
+function graphCreate($params) {
+	if (DEBUG_GRAPH) echo "<pre>params: ";
+	if (DEBUG_GRAPH) print_r($params);
+	parse_str(urldecode($params['commandvalue']), $fparams);
+	if (DEBUG_GRAPH) print_r($fparams);
+
+	if (!array_key_exists('0', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
+		$feedback['error']="No Device selected";
+		return $feedback;
+	}
+	$devices = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0']);
+	foreach ($fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0'] as $deviceID) {
+		$caption[] = FetchRow('select description from ha_mf_devices where id='.$deviceID)['description'];
+	}
+	if (!array_key_exists('1', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
+		//$result['error']="No Device selected";
+		//return $result;
+		$result = listDeviceProperties($devices);
+		$result = array_unique($result, SORT_NUMERIC);
+		//if (DEBUG_GRAPH) print_r($result);
+		$properties = implode(",", $result);
+	} else {
+		$properties = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['1']);
+	}
+
+	if (empty($fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['2']['0'])) {
+		$startdate = date( 'Y-m-d 00:00:00', strtotime("-1 days"));
+		$enddate = date( 'Y-m-d 23:59:59', strtotime("tomorrow"));
+	} else {
+		$startdate = $fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['2']['0'];
+		$enddate = $fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['2']['1'];
+		$startdate = date( 'Y-m-d 00:00:00', strtotime($startdate));
+		$enddate = date( 'Y-m-d 23:59:59', strtotime($enddate));
+	}
+
+	$debug = 1;
+	if (DEBUG_GRAPH) {
+		echo $devices.CRLF;
+		echo $properties.CRLF;
+		echo $startdate.CRLF; 
+		echo $enddate.CRLF; 
+	}
+
+	//call sp_properties( '60,114,201', '138,126,123,127,124', "2015-09-25 00:00:00", "2015-09-27 23:59:59", 1) 
+	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(DEBUG_GRAPH ? 1 : 0).');';
+	if (DEBUG_GRAPH) echo $mysql.CRLF;
+	$feedback['message'] = '';
+	if ($rows = FetchRows($mysql)) {
+		//print_r($rows);
+		global $mysql_link;
+		mysql_close($mysql_link);
+		openMySql();
+
+
+		$mysql='SELECT * FROM ha_mi_properties_graph WHERE propertyID IN ('.$properties.');';
+		$rowsprops = FetchRows($mysql);
+
+		$tablename="graph_0";
+		$hidden = (DEBUG_GRAPH ? '' : ' hidden ');
+
+		if (count($rows)> MAX_DATAPOINTS) {
+			$rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
+			$s = $rows[0]['Date'];
+			$e = $rows[count($rows)-1]['Date'];
+			$feedback['message'] .= '<p class="badge badge-info">Too much data; Showing: '.count($rows).' from '.$s.' through '.$e.'<p>';
+		}
+		$s = $rows[0]['Date'];
+		$e = $rows[count($rows)-1]['Date'];
+		//	echo (int)(abs(strtotime($e)-strtotime($s))/300); //60*5 min intervals = 300?
+		$tickinterval=(abs(strtotime($e)-strtotime($s)))*100; 
+		//var_dump ($tickinterval);
+		$tickinterval=roundUpToAny(abs(strtotime($e)-strtotime($s))*50,3600000);
+		//var_dump($tickinterval);
+		//
+		//echo $tickinterval.CRLF;
+		//echo count($rows).CRLF;
+		$feedback['message'] .= '<table id="'.$tablename.'" class="'.$tablename.$hidden.' table table-striped table-hover" data-graph-xaxis-type="datetime" data-graph-yaxis-2-opposite="1" 
+				data-graph-xaxis-tick-interval="'.$tickinterval.'" data-graph-xaxis-align="right" data-graph-xaxis-rotation="270" data-graph-type="spline" 
+				data-graph-container-before="1" data-graph-zoom-type="x" data-graph-height="500" >';
+		//data-graph-xaxis-type="datetime"
+
+		if (DEBUG_GRAPH) print_r($rowsprops);
+
+		if (DEBUG_GRAPH) echo "</pre>";
+		$feedback['message'] .= '<caption>'.implode(", ",$caption).'</caption>';
+		$feedback['message'] .= '<thead><tr class="fabrik___heading">';
+		foreach($rows[0] as $header=>$value){
+			if ($header != "id") {
+				$datastr="";
+				if ($header != "Date") {
+					//print_r($rows[0]);
+					$t = explode('`',$header);
+					$propID = getProperty($t[0])['id'];
+					if (($prodIdx = findByKeyValue($rowsprops,'propertyID',$propID)) !== false) {
+						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
+						if (!empty($rowsprops[$prodIdx]['color'])) {
+							if (strpos($rowsprops[$prodIdx]['color'],",")>0) { 	// First time  read RGB from DB
+								$rowsprops[$prodIdx]['color'] = rgb2hex(explode(",",$rowsprops[$prodIdx]['color']));
+							}
+							$rowsprops[$prodIdx]['color'] = colorDuplicateProperty($rows[0], $header, $rowsprops[$prodIdx]['color']);
+							$datastr.='data-graph-color="'.$rowsprops[$prodIdx]['color'].'" ';
+						}
+						if (!empty(trim($rowsprops[$prodIdx]['dash_style']))) $datastr.='data-graph-dash-style="'.$rowsprops[$prodIdx]['dash_style'].'" ';
+						if ($rowsprops[$prodIdx]['hidden']==1) $datastr.='data-graph-hidden="'.$rowsprops[$prodIdx]['hidden'].'" ';
+						if ($rowsprops[$prodIdx]['skip']) $datastr.='data-graph-skip="'.$rowsprops[$prodIdx]['skip'].'" ';
+						if ($rowsprops[$prodIdx]['stack_group']) $datastr.='data-graph-stack-group="'.$rowsprops[$prodIdx]['stack_group'].'" ';
+						$datastr.='data-graph-yaxis="'.$rowsprops[$prodIdx]['yaxis'].'" ';
+						if ($rowsprops[$prodIdx]['type']) $datastr.='data-graph-type="'.$rowsprops[$prodIdx]['type'].'" ';
+						if ($rowsprops[$prodIdx]['value_scale']) $datastr.='data-graph-value-scale="'.$rowsprops[$prodIdx]['value_scale'].'" ';
+						if ($rowsprops[$prodIdx]['datalabels_enabled']) $datastr.='data-graph-datalabels-enabled="'.$rowsprops[$prodIdx]['datalabels_enabled'].'" ';
+						if ($rowsprops[$prodIdx]['datalabels_color']) $datastr.='data-graph-datalabels-color="'.$rowsprops[$prodIdx]['datalabels_color'].'" ';
+						if ($rowsprops[$prodIdx]['markers_enabled']) $datastr.='data-graph-markers-enabled="'.$rowsprops[$prodIdx]['markers_enabled'].'" ';
+					} else {
+						$feedback['message'] .= "Property $header not found!!!: $prodIdx".CRLF;
+					}
+				}
+				$feedback['message'] .= '<th id="'.$tablename.'_'.$header.'_header" '.$datastr;
+				$feedback['message'] .= '>' . str_replace('`',' ',$header). '</th>';
+			}
+//			if ($value == " ") {
+//				$rows[0][$header]=" ";
+//			}
+		}
+		$feedback['message'] .= '</tr></thead>';
+		$feedback['message'] .= '<tbody>';
+		$x=0;
+		foreach($rows as $key=>$row) {
+			$feedback['message'] .= '<tr id="'.$tablename.'row_'.$row['id'].'">';
+			foreach($row as $key2=>$value2){
+				if ($key2 != "id") {
+					if ($value2 != " ") {
+						if ($key2 != "Date") {
+							$feedback['message'] .= '<td id="'.$tablename.'_'.$key2.'_'.$row['id'].'" data-graph-x="'.$x.'">' . $value2 . '</td>';
+						} else {
+							$feedback['message'] .= '<td id="'.$tablename.'_'.$key2.'_'.$row['id'].'">' . $value2 . '</td>';
+						}
+					} else {
+						$feedback['message'] .= '<td id="'.$tablename.'_'.$key2.'_'.'Null'.'">' . $value2 . '</td>';
+					}
+				}
+			}
+			$feedback['message'] .= '</tr>';
+			$x++;
+		}
+		$feedback['message'] .= '</tbody>';
+		$feedback['message'] .= '</table>';
+	}
+//	$feedback['message'] = "";
+	return $feedback;
+
+}
 ?>

@@ -68,9 +68,9 @@ if(!window.scriptRemoteHasRun) {
 			};
 		}
 	
-		window.onerror = function( msg, url, line ) {
-			console.log("ERROR: \"" + msg + "\" at \"" + "\", line " + line);
-		}
+		// window.onerror = function( msg, url, line ) {
+			// console.log("ERROR: \"" + msg + "\" at \"" + "\", line " + line);
+		// }
 
 		// Android 3 fingers
 		window.addEventListener( "touchstart", function( e ) {
