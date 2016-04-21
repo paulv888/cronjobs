@@ -97,18 +97,40 @@ function getWeather($params) {
 				cache_image(IMAGE_CACHE.$image, 'http://icons.wxug.com/i/c/v4/'.$image);
 				$array['link1'] = FRONT_DIR.$image;
 				$array['rain'] = $forecast->{'pop'};
-				//$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = ".$forecast->{'code'});
-				// $array['class'] = "";
-				// if ($row['severity'] == SEVERITY_DANGER) {
-					// $array['class'] = SEVERITY_DANGER_CLASS;
-				// }
-				// if ($row['severity'] == SEVERITY_WARNING) {
-					// $array['class'] = SEVERITY_WARNING_CLASS;
-				// }
 				PDOupdate("ha_weather_forecast", $array, array('id' => $i));
 	//			PDOinsert("ha_weather_forecast", $array);
 				$i++;
 			}
+			
+	//$url = "http://api.wunderground.com/api/275a74de4762b2a3/alerts/q/TX/Houston.json";
+	// $url = "http://api.wunderground.com/api/275a74de4762b2a3/alerts/q/PA/Philadelphia.json";
+	// $get = RestClient::get($url,null,null,30);
+		// $result = json_decode($get->getresponse());
+		if (DEBUG_WEATHER) print_r($result);
+
+			unset($array);
+			foreach ($result->{'alerts'} as $alert) {
+				// print_r($forecast);
+				$array['deviceID'] = $deviceID;
+				$array['code'] = $alert->{'type'};
+				$array['mdate'] = date("Y-m-d H:i:s",$alert->{'date_epoch'});
+				$array['expires'] = date("Y-m-d H:i:s",$alert->{'expires_epoch'});
+				$array['description'] = $alert->{'description'};
+				$array['message'] = $alert->{'message'};
+				$row = FetchRow("SELECT `severity` FROM `ha_weather_codes` WHERE `code` = '".$alert->{'type'}."'");
+				$array['class'] = "";
+				if ($row['severity'] == SEVERITY_DANGER) {
+					$array['class'] = SEVERITY_DANGER_CLASS;
+				} elseif ($row['severity'] == SEVERITY_WARNING) {
+					$array['class'] = SEVERITY_WARNING_CLASS;
+				} elseif ($row['severity'] == SEVERITY_INFO) {
+					$array['class'] = SEVERITY_INFO_CLASS;
+				}
+				PDOupsert("ha_weather_alerts", $array, array('mdate' => $array['mdate'], 'code' => $array['code']));
+			}
+			
+
+			
 		}
 	}
 	if ($error) {
