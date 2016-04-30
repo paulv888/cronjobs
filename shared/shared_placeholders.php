@@ -20,6 +20,12 @@ function replaceCommandPlaceholders($params) {
 	$result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
 	$result = str_replace("{value}",trim($params['value']),$result);
 	$result = str_replace("{timervalue}",trim($params['timervalue']),$result);
+	if (preg_match("/\{calculate___(.*?)\}/", $result,$matches)) {
+		if (DEBUG_COMMANDS) {echo "<pre> calculate "; print_r ($matches); echo "</pre>";}
+		$calcvalue = eval('return '.$matches[1].';');
+		$result = str_replace($matches[0], $calcvalue, $result);
+	}
+	
 	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);
 	if (array_key_exists('mess_text',$params)) $result = str_replace("{mess_text}",trim($params['mess_text']),$result);
 	

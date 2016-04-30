@@ -1054,4 +1054,123 @@ function graphCreate($params) {
 	return $feedback;
 
 }
+
+function sendEchoBridge($params) {
+
+
+	// if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
+		// $timer['runasync'] = false;
+		// $timer['priorityID'] = 1;
+		// $timer['description'] = "";
+		// $timerID = $params['commandvalue'];
+	// } else {
+		// if (DEBUG_TIMERS) echo "<pre>".CRLF;
+		// if (DEBUG_TIMERS) print_r($params);
+		// $timer = $params['timer'];
+		// $timerID = $params['timer']['id'];
+	// }
+
+	
+	
+	// echo "<pre>";
+	// print_r($params);
+	
+	$vcIDs = explode(",", $params['commandvalue']);
+	
+	foreach ($vcIDs as $vcID) {
+		// echo "vcID ".$vcID.CRLF;
+	
+		$mysql = 'SELECT d.id, description, bridge_id, url_type, url FROM `ha_voice_devices` d LEFT JOIN  ha_voice_devices_urls u ON d.id = u.vdeviceID 
+			WHERE(((d.id) = '.$vcID.') AND active = 1) ORDER BY u.url_type';
+
+
+		$vlosite = "http://192.168.2.101/process.php?";
+		if ($in_commands = FetchRows($mysql)) {
+		// print_r($in_commands);
+			unset($send_params);
+			$send_params['id'] = (empty($in_commands[0]['bridge_id']) ? null : $in_commands[0]['bridge_id']);
+			$send_params['name'] = $in_commands[0]['description'];
+			$send_params['deviceType'] = "TCP";
+			$send_params['targetDevice'] = "Encapsulated";
+			foreach ($in_commands as $in_command) {
+				if ($in_command['url_type'] == 1) {		// On
+					$send_params['onUrl'] = $vlosite.$in_command['url'];
+				} elseif ($in_command['url_type'] == 2) {		// Dim
+					$send_params['dimUrl'] = $vlosite.$in_command['url'];
+				} elseif ($in_command['url_type'] == 3) {		// Off
+					$send_params['offUrl'] = $vlosite.$in_command['url'];
+				}
+			}
+		}
+	// print_r($send_params);
+	
+/*
+Add Device - Post
+{"id":null,"name":"Kitchen Recess1","deviceType":"TCP","targetDevice":"Encapsulated","offUrl":"http:
+//192.168.2.101/process.php?callerID=264&deviceID=9&messagetypeID=MESS_TYPE_COMMAND&commandID=20","dimUrl"
+:"http://192.168.2.101/process.php?callerID=264&deviceID=9&messagetypeID=MESS_TYPE_COMMAND&commandID
+=145&commandvalue=${intensity.percent}","onUrl":"http://192.168.2.101/process.php?callerID=264&deviceID
+=9&messagetypeID=MESS_TYPE_COMMAND&commandID=17"}
+
+
+Response
+[{"id":"78892528","name":"Kitchen Recess3","deviceType":"TCP","targetDevice":"Encapsulated","offUrl"
+:"http://192.168.2.101/process.php?callerID\u003d264\u0026deviceID\u003d9\u0026messagetypeID\u003dMESS_TYPE_COMMAND
+\u0026commandID\u003d20","dimUrl":"http://192.168.2.101/process.php?callerID\u003d264\u0026deviceID\u003d9
+\u0026messagetypeID\u003dMESS_TYPE_COMMAND\u0026commandID\u003d145\u0026commandvalue\u003d${intensity
+.percent}","onUrl":"http://192.168.2.101/process.php?callerID\u003d264\u0026deviceID\u003d9\u0026messagetypeID
+\u003dMESS_TYPE_COMMAND\u0026commandID\u003d17"}]
+
+Update - Put
+{"id":"910143788","name":"Kitchen Recess","deviceType":"TCP","targetDevice":"Encapsulated","offUrl":"http
+://192.168.2.101/process.php?callerID=264&deviceID=9&messagetypeID=MESS_TYPE_COMMAND&commandID=20","dimUrl"
+:"http://192.168.2.101/process.php?callerID=264&deviceID=9&messagetypeID=MESS_TYPE_COMMAND&commandID
+=145&commandvalue=${intensity.percent}","onUrl":"http://192.168.2.101/process.php?callerID=264&deviceID
+=9&messagetypeID=MESS_TYPE_COMMAND&commandID=17"}
+*/
+
+		$tcomm = replaceCommandPlaceholders($params);
+		$tmp1 = explode('?', $tcomm);
+		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
+			$params['device']['connection']['page'] .= $tmp1[0];
+			$tcomm = $tmp1[1];
+		} 
+		$url=setURL($params, $feedback['commandstr']);
+
+		$postparams = json_encode($send_params,JSON_UNESCAPED_SLASHES);
+		$feedback['commandstr'] .= ' '.$postparams;
+
+
+		if (!empty($send_params['id'])) {		// Update - PUT
+			$url .= '/'.$send_params['id'];
+			if (DEBUG_DEVICES) echo $url." PUT-Params: ".htmlentities($postparams).CRLF;
+			$curl = restClient::put($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
+			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+			} else {
+				$result = $curl->getresponse();
+				$feedback['result'][] = $result;
+			}
+		} else {									// Add - Post
+			if (DEBUG_DEVICES) echo $url." POST-Params: ".htmlentities($postparams).CRLF;
+			$curl = restClient::post($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
+			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+			} else {
+				$result = $curl->getresponse();
+				$feedback['result'][] = $result;
+				$result = json_decode($result,true);
+				// print_r($result);
+				PDOupdate("ha_voice_devices", array('bridge_id' => $result[0]['id']), array( 'id' => $vcID));
+			}
+		}
+			
+		
+		// echo "</pre>";
+	}
+
+	return $feedback;
+	
+}
+
 ?>
