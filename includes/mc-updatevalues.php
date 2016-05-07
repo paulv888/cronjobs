@@ -164,6 +164,19 @@ function updateValuesNew() {
 	}
 	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." Rows updated in mc_usage".CRLF;
 
+
+
+	$mysql = 'INSERT INTO `mc_usage`(`period`, `company`,`user_type`,`main_productID`,  `logins_period`)
+                       SELECT DATE_FORMAT(ticketDate,"%Y-%m-01"), 
+                              siteID, user_type, main_productID, COUNT(id) 
+                       FROM `mongoDB_tickets` 
+                       GROUP by DATE_FORMAT(ticketDate,"%Y-%m-01"),siteID,user_type,main_productID';
+	if (!$result = mysql_query($mysql)){
+					mySqlError($mysql);
+					return false;
+	}
+	$text.= date("Y-m-d H:i:s").": ".mysql_affected_rows()." MTicket rows inserted in mc_usage".CRLF;
+
 	return $text;
 	if (DEBUG_VALUES) echo "</pre>";
 }?>

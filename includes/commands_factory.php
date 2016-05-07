@@ -218,7 +218,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	if ($rowshemesteps = FetchRows($mysql)) {
 		if (!$asyncthread && current($rowshemesteps)['runasync']) {
 			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID commandvalue=$callerparams[commandvalue]";
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -1145,13 +1145,17 @@ Update - Put
 			$url .= '/'.$send_params['id'];
 			if (DEBUG_DEVICES) echo $url." PUT-Params: ".htmlentities($postparams).CRLF;
 			$curl = restClient::put($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
-			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
-				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-			} else {
+			if ($curl->getresponsecode() == 200 || $curl->getresponsecode() == 201) {
 				$result = $curl->getresponse();
 				$feedback['result'][] = $result;
+			} elseif ($curl->getresponsecode() == 400) { // Try Adding device does not exist (400: {"message":"Could not save an edited device, Device Id not found: 402389166 "} 
+				$send_params['id'] = "";
+				$postparams = json_encode($send_params,JSON_UNESCAPED_SLASHES);
+			} else {
+				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			}
-		} else {									// Add - Post
+		} 
+		if (empty($send_params['id'])) {				// Add - Post
 			if (DEBUG_DEVICES) echo $url." POST-Params: ".htmlentities($postparams).CRLF;
 			$curl = restClient::post($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {

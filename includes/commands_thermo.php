@@ -111,6 +111,40 @@ $now = date( 'Y-m-d H:i:s' );
 	}
 }
 
+function HvacSetTemp(&$params) {
+
+//global $lock;
+global $thermostats;
+
+$now = date( 'Y-m-d H:i:s' );
+
+	$thermostats = getThermoStats();
+	$thermostatRec = $thermostats[$params['deviceID']];
+	try
+	{
+		$thermostatRec = $thermostats[$params['deviceID']];
+		$stat = new Stat( $thermostatRec );
+		$stat->getStat();
+
+		// $result['device'] = getDevice($thermostatRec['deviceID']);
+		// $result['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thermostatRec['deviceID']));
+		$targettemp = ($params['commandvalue'] < 50 ? to_fahrenheit($params['commandvalue']) : $params['commandvalue']); 
+		$stat->setTemp($targettemp);
+
+		$properties['Status']['value'] = $stat->getTargetOnOff();
+		$properties['Temperature']['value'] = to_celcius($stat->temp);
+		$properties['Setpoint']['value'] =  to_celcius($stat->ttemp);
+		$params['device']['properties'] = $properties;
+		$feedback['message'] = 'Temperature set to '.$properties['Setpoint']['value'];
+
+		return $feedback;
+	}
+	catch( Exception $e )
+	{
+		echo 'Caught exception: ',  $e->getMessage(), CRLF;
+	}
+}
+
 function HvacUp(&$params) {
 	$params['commandvalue'] = 1;
 	return HvacTempAdd($params);
