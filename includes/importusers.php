@@ -47,6 +47,7 @@ $count = 0;
 foreach ($dataArray as $key => $user) {
 	unset($dataArray[$key]['hash']);
 	unset($dataArray[$key]['salt']);
+	unset($dataArray[$key]['migrated']);
 
 	if ($type[0] == TYPE_3RD_PARTY) {
 		$products [0]['code']="hauler";
