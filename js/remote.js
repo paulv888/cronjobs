@@ -161,7 +161,7 @@ if(!window.scriptRemoteHasRun) {
 		eventname = isMobile.any() ? "touchend" : "click";
 		jQuery('.btndropdown li a').unbind(eventname);
 		jQuery('.btndropdown li a').bind(eventname, function(event){
-			event.preventDefault()
+			//event.preventDefault()
 			// event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
