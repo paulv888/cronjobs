@@ -842,25 +842,53 @@ function sendGenericHTTP(&$params) {
 		else 
 			$feedback['result'][] = $curl->getresponse();
 		break;
-	case "TCP":              // iTach
+	case "TCP":              // iTach (Only \r)
 		if (DEBUG_DEVICES) echo "TCP_IR</p>";
+		print_r($params);
 		$url = setURL($params, $feedback['commandstr']);
 		$feedback['commandstr'] .= $params['command']."\r";
-		if (DEBUG_DEVICES) echo $params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		if (empty($params['device']['connection']['targetaddress'])) {
+			$ipaddress = $params['device']['ipaddress']['ip'];
+		} else {
+			$ipaddress = $params['device']['connection']['targetaddress'];
+		}
+		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
 		// open a client connection
-		$client = stream_socket_client('tcp://'.$params['device']['connection']['targetaddress'].':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
+		$client = stream_socket_client('tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
 		if ($client === false) {
 			echo $errno.' '.$errorMessage;
 			$result['error'] = "Failed to connect: $errorMessage";
 		} else {
 			stream_set_timeout($client, $params['device']['connection']['timeout']);
-			fwrite($client, $feedback['commandstr']);
+			if ($targettype == "TCP") { 
+				$binout = $feedback['commandstr'];
+			} else {
+				$binout = base64_decode($feedback['commandstr']);
+			}
+			fwrite($client, $binout);
 			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
+			echo "**>**".print_r($feedback['result'])."**<**";
 		}
 		// TODO:: Error handling (GCache errors)
 		// completeir,1:1,2
 		//if ($feedback['result'] != "ERR", or busy...
+		break;
+	case "TCP64":          // TP-Link
+		if (DEBUG_DEVICES) echo "TP-Link</p>";
+		$feedback['commandstr'] = $params['command'];
+		if (empty($params['device']['connection']['targetaddress'])) {
+			$ipaddress = $params['device']['ipaddress']['ip'];
+		} else {
+			$ipaddress = $params['device']['connection']['targetaddress'];
+		}
+		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		// open a client connection
+		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
+//		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $feedback['commandstr'], $params['device']['connection']['timeout']);
+		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
+		print_r($feedback['result']);
+		
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
@@ -1176,5 +1204,15 @@ Update - Put
 	return $feedback;
 	
 }
-
+function sendtoplug ($ip, $port, $payload, $timeout) {
+	$client = stream_socket_client('tcp://'.$ip.':'.$port, $errno, $errorMessage, $timeout);
+	if ($client === false) {
+		return "Failed to connect: $errno $errorMessage";
+	} else {
+		stream_set_timeout($client, $timeout);
+		fwrite($client, base64_decode($payload));
+		return base64_encode(stream_get_line ( $client , 1024 ));	
+		fclose($client);
+	}
+}
 ?>

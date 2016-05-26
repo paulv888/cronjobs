@@ -1,6 +1,6 @@
 <?php 
 // define( 'DEBUG_FLOW', TRUE );
-// define( 'DEBUG_DEVICES', TRUE );
+//define( 'DEBUG_DEVICES', TRUE );
 //define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_PARAMS', TRUE );
 //define( 'DEBUG_COMMANDS', TRUE );

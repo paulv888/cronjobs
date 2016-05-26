@@ -256,6 +256,10 @@ function getDevice($deviceID){
 		if ($rowtype = FetchRow($mysql)) {
 			$rowdevice['type'] = $rowtype;
 		}
+		$mysql = 'SELECT * FROM `ha_mf_device_ipaddress` WHERE id = '.$rowdevice['ipaddressID'];
+		if ($rowaddress = FetchRow($mysql)) {
+			$rowdevice['ipaddress'] = $rowaddress;
+		}
 		// if ($props = getDeviceProperties(Array('deviceID' => $deviceID))) {
 			// $rowdevice['properties'] = $props;
 		// }
