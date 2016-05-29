@@ -884,10 +884,10 @@ function sendGenericHTTP(&$params) {
 		}
 		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
 		// open a client connection
-		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
-//		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $feedback['commandstr'], $params['device']['connection']['timeout']);
-		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
-		print_r($feedback['result']);
+//		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
+		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $feedback['commandstr'], $params['device']['connection']['timeout']);
+//		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
+//		print_r($feedback['result']);
 		
 		break;
 	case null:
