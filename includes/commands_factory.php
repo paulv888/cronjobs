@@ -885,10 +885,10 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
 		// open a client connection
 //		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
+		//decodeTPLink(base64_decode($feedback['commandstr']));
 		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $feedback['commandstr'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
 //		print_r($feedback['result']);
-		
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
@@ -1211,8 +1211,47 @@ function sendtoplug ($ip, $port, $payload, $timeout) {
 	} else {
 		stream_set_timeout($client, $timeout);
 		fwrite($client, base64_decode($payload));
-		return base64_encode(stream_get_line ( $client , 1024 ));	
+//		return base64_encode(stream_get_line ( $client , 1024 ));	
+		return decodeTPLink(stream_get_line ( $client , 1024 ));	
 		fclose($client);
 	}
+}
+
+function decodeTPLink($raw) {
+/*int main(int argc, char *argv[])
+{
+  int c=getchar();
+  int skip=4;
+  int code=0xAB;
+  while(c!=EOF)
+  {
+    if (skip>0)
+    {
+      skip--;
+      c=getchar();
+    }
+    else
+    {
+     putchar(c^code);
+     code=c;
+     c=getchar();
+    }
+ }
+ printf("\n");
+}*/
+//echo "<pre>";
+//echo "instring:".base64_encode($raw).CRLF;
+$code = chr(0xAB);
+$decoded = "";
+$c = substr( $raw, 4, 1 );
+for( $i = 5; $i <= strlen($raw); $i++ ) {
+    $decoded.=$c^$code;
+    $code = $c;
+    $c = substr( $raw, $i, 1 );
+}
+//echo "decoded:".$decoded.CRLF;
+//print_r(json_decode($decoded));
+//echo "</pre>";
+return json_decode($decoded,TRUE);
 }
 ?>
