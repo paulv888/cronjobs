@@ -99,7 +99,7 @@ while (true) {
 					$properties['Link']['value'] = LINK_UP;
 					$device['properties'] = $properties;
 					echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-							'commandID' => $message['commandID'], 'device' => $device, 'caller' => $message)))."</br>\n";
+							'commandID' => $message['commandID'], 'device' => $device, 'caller' => $message)),JSON_UNESCAPED_SLASHES)."</br>\n";
 				}
 				
 				// Update My Link 

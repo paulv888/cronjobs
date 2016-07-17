@@ -348,7 +348,7 @@ function executeCommand($callerparams) {
 	
 	// print_r($result);
 	if (isset($encode)) {
-		$result = json_encode($result);
+		$result = json_encode($result,JSON_UNESCAPED_SLASHES);
 		switch (json_last_error()) {
 			case JSON_ERROR_NONE:
 				//echo ' - No errors';
@@ -381,11 +381,11 @@ function executeCommand($callerparams) {
 
 function RemoteKeys($in, $params) {
 
-// echo "<pre>";
+ // echo "<pre>";
  // print_r($params);
  // print_r($in);
 	if ($in['show_result']) {
-		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
+		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
@@ -402,6 +402,12 @@ function RemoteKeys($in, $params) {
 				} else {
 					if (strlen(str_replace(' ', '', preg_replace( "/\r|\n/", "", $res['message']))) > 0) $feedback['message'] = $res['message'].' ';
 				}
+			} else if (array_key_exists('result', $res)) {
+				if (is_array($feedback) && array_key_exists('message', $feedback)) {
+					if (!empty(trim($res['result']))) $feedback['message'].= trim($res['result']).' ';
+				} else {
+					if (!empty(trim($res['result']))) $feedback['message'] = trim($res['result']).' ';
+				}
 			} else if (array_key_exists('error', $res)) {
 				if (is_array($feedback) && array_key_exists('error', $feedback) && !empty(trim($res['error']))) {
 					$feedback['error'].= trim($res['error']).' ';
@@ -409,9 +415,10 @@ function RemoteKeys($in, $params) {
 					$feedback['error'] = trim($res['error']).' ';
 				}
 			} else {
+				unset($node);
 				if (array_key_exists('updateStatus', $res)) $node = 'updateStatus';
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
-				if (array_key_exists('DeviceID',$res[$node])) {
+				if (isset($node) && array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
 					$deviceStr = ($res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
 							$res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);

@@ -287,7 +287,7 @@ function getDuskDawn(&$params) {
         if (!$error) {
                 $result = json_decode($get->getresponse());
 		if (DEBUG_COMMANDS) print_r($result);
-                $feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
+                $feedback['result'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
                 if (!isset($result->{'query'}->{'results'})) {
                         $error = true;
                 } else {
@@ -774,7 +774,7 @@ function sendGenericPHP(&$params) {
 		$feedback['commandstr'] = $func.' '.$params['commandvalue'];
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
-		$feedback['commandstr'] = $func.' '.json_encode($params);
+		$feedback['commandstr'] = $func.' '.json_encode($params,JSON_UNESCAPED_SLASHES);
 		$feedback['result'] = $func($params);
 	}
 	return $feedback;
@@ -791,7 +791,7 @@ function sendGenericHTTP(&$params) {
 	{
 	case "POSTAPP":          // PHP - vlosite
 	case "POSTTEXT":         // Yahama AV & IrrigationCaddy at the moment
-	case "POSTURL":          // Web Arduino
+	case "POSTURL":          // Web Arduino/ESP8266
 	case "JSON":             // Wink
 		if (DEBUG_DEVICES) echo $targettype."</p>";
 		$tcomm = replaceCommandPlaceholders($params);

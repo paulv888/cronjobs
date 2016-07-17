@@ -37,7 +37,7 @@ function mysql_insert_assoc ($my_table, $my_array) {
        $values_number = count($values);
        for ($i = 0; $i < $values_number; $i++) {
          	$value = $values[$i];
-			if (is_array($value)) $value = json_encode($value);
+			if (is_array($value)) $value = json_encode($value,JSON_UNESCAPED_SLASHES);
          	if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
           
          	if (is_null($value)) {
@@ -257,7 +257,7 @@ function PDOupdate($table, $fields, $where){
 	$i = 0;
 	while (list($key, $value) = each($fields)) {
 //		echo "Key: $key; Value: $value<br />\n";
-		if (is_array($value)) $value = json_encode($value);
+		if (is_array($value)) $value = json_encode($value,JSON_UNESCAPED_SLASHES);
 		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
 		if (is_null($value)) {
 			$value="NULL";
@@ -315,7 +315,7 @@ function PDOinsert($table, $fields){
 	
 	foreach ($values AS $key => $value) {
 //		echo "Key: $key; Value: $value<br />\n";
-		if (is_array($value)) $values[$key] = json_encode($value);
+		if (is_array($value)) $values[$key] = json_encode($value, JSON_UNESCAPED_SLASHES);
 		if (is_null($value)) {
 			$values[$key]='NULL';
 		} 

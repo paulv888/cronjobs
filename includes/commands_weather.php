@@ -30,7 +30,7 @@ function getWeather($params) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$result = json_decode($get->getresponse());
 		if (DEBUG_WEATHER) print_r($result);
-		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
+		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
 		if (!isset($result->{'current_observation'})) {
 			$error = true;
 		} else {
@@ -171,7 +171,7 @@ function getYahooWeather($params) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$result = json_decode($get->getresponse());
 		if (DEBUG_WEATHER) print_r($result);
-		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true));
+		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
 		if (!isset($result->{'query'}->{'results'})) {
 			$error = true;
 		} else {

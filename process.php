@@ -40,8 +40,8 @@ if (isset($_GET['callerID'])) {
 	$_POST=$_GET;
 }
 
-if (DEBUG_INPUT) echo json_encode($_POST);
-if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"]) : "");
+if (DEBUG_INPUT) echo json_encode($_POST,JSON_UNESCAPED_SLASHES);
+if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"],JSON_UNESCAPED_SLASHES) : "");
 
 $params = $_POST;
 

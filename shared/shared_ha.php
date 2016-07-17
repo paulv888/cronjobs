@@ -13,7 +13,7 @@ function updateDLink($deviceID, $link = LINK_UP) {
         $params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => MY_DEVICE_ID));
         $properties['Link']['value'] = $link;
         $params['device']['properties'] = $properties;
-        return date("Y-m-d H:i:s").": ".json_encode(updateDeviceProperties($params))." My Link Updated <br/>\r\n";
+        return date("Y-m-d H:i:s").": ".json_encode(updateDeviceProperties($params),JSON_UNESCAPED_SLASHES)." My Link Updated <br/>\r\n";
 }
 
 function updateDeviceProperties($params) {
@@ -564,7 +564,7 @@ function logEvent($log) {
 
 	if (!is_null($log['result'])) {
 		if (is_array($log['result'])) 
-			$log['result'] = '<pre>'.prettyPrint(json_encode($log['result'])).'</pre>';
+			$log['result'] = '<pre>'.prettyPrint(json_encode($log['result'],JSON_UNESCAPED_SLASHES)).'</pre>';
 		else
 			$log['result'] = '<pre>'.str_replace('\n','</br>',$log['result']).'</pre>';
 	}
