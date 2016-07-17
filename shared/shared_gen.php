@@ -289,8 +289,14 @@ function prettyPrint( $json ) {
 
 function setURL($params, &$commandstr) {
 
+// echo "<pre>";
+// print_r($params);
 	$connect = $params['device']['connection'];
-	$url = $connect['targetaddress'];
+	if (empty($connect['targetaddress'])) {
+		$url = "http://".$params['device']['ipaddress']['ip'];
+	} else {
+		$url = $connect['targetaddress'];
+	}
 	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'].'/';
 	if (!empty($connect['page'])) $url .= $connect['page'];
 	$commandstr = $url;
