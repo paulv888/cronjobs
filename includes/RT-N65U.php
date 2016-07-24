@@ -346,14 +346,17 @@ if(networkmap_fullscan == 1) genClientList();
 		$deviceslist[] = explode(">", $row);
 	}
 
-	
+
 //echo "<pre>";
 //print_r($deviceslist);
 //echo "</pre>";
-    
+
+	usort($deviceslist, function($a, $b) {
+	    return ip2long($a[2]) - ip2long($b[2]);
+	});
+
 	$devicesimported=0;
-   	
-        if ($showlist) echo "<pre>";
+        if ($showlist) echo "<pre><table><thead><tr><th>Name</th><th>IP</th><th>Connection</th><th>Mac</th></tr></thead><tbody>";
 	foreach ($deviceslist as $device) {
 		$name = $device[1];
 		$ip = $device[2];
@@ -365,7 +368,7 @@ if(networkmap_fullscan == 1) genClientList();
 		$resdevices = mysql_query($mysql);
 		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
                         if ($showlist) {
-                                echo "$name - $ip - $connection - $mac".CRLF;
+                                echo "<tr><td>$name</td><td>$ip</td><td>$connection</td><td>$mac</td></tr>";
                         }
  		// does not work anymore on name, names are empty
 			if (strlen($name) == 0) $name = $rowdevice['name'];
@@ -431,10 +434,9 @@ if(networkmap_fullscan == 1) genClientList();
 				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
 		if (!mysql_query($mysql)) mySqlError($mysql);
     }
-    if ($showlist) echo "</pre>";
-	
-	
-    
+    if ($showlist) echo "</tbody></table>";
+
+
     //echo "</pre>";
 	return $devicesimported;
 
