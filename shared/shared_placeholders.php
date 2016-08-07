@@ -17,6 +17,12 @@ function replaceCommandPlaceholders($params) {
 			 $result = str_replace('{commandvalue'.$key.'}', $value, $result);
 		}
 	}
+	
+	if (strpos($result,"{port}") !== false) {
+		$port = getProperty($params['propertyID'])['port'];
+		$result = str_replace("{port}",$port,$result);
+//		print_r($port);
+	}
 	$result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
 	$result = str_replace("{value}",trim($params['value']),$result);
 	$result = str_replace("{timervalue}",trim($params['timervalue']),$result);

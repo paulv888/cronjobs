@@ -278,7 +278,7 @@ if(!window.scriptRemoteHasRun) {
 			} else if (selected.charAt(0) == 'C'){
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
 			} else if (selected.charAt(0) == 'V'){
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID:selected.substring(1)};
+				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandvalue:selected.substring(1)};
 			}
 			callAjax (params) ;
 		});	
