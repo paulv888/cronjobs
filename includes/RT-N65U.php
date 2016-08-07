@@ -110,7 +110,7 @@ function findRemoteName($ip) {
 		}
 	}
 	$hostname = gethostbyaddr($ip);
-	echo $ip." ".$hostname."</br>";
+	//echo $ip." ".$hostname."</br>";
 
 	if ($row) {
 		$processed = $row['processed'] + 1;
