@@ -52,6 +52,7 @@ function MoveHistory() {
 
 function GetSessions() {
 
+	
 	$post = RestClient::get("http://192.168.2.1/Main_ConnStatus_Content.asp",null,Array('method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 	$post = RestClient::get("http://192.168.2.1/Logout.asp");
@@ -294,8 +295,11 @@ function ImportSessions() {
 function GetDeviceList($showlist = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
+	
 	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
+	// refresh for next run
+	$post = RestClient::get("http://192.168.2.1/apply.cgi?action_mode=refresh_networkmap&action_script=&action_wait=5&current_page=device-map%2Fclients.asp&next_page=device-map%2Fclients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$post = RestClient::get("http://192.168.2.1/Logout.asp");
 
 	$pattern = "/fromNetworkmapd: '(.*?)'./si";
@@ -372,7 +376,8 @@ if(networkmap_fullscan == 1) genClientList();
                         }
  		// does not work anymore on name, names are empty
 			if (strlen($name) == 0) $name = $rowdevice['name'];
-			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
+//			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
+			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip) {		// Something changed
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
@@ -390,9 +395,10 @@ if(networkmap_fullscan == 1) genClientList();
 								"ha_alerts___v2" => $name, 
 								"ha_alerts___v3" => $rowdevice['ip'],
 								"ha_alerts___v4" => $ip);
-				echo executeCommand($params).CRLF;
+				print_r(executeCommand($params));
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", `last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
+				//echo $mysql;
 				if (!mysql_query($mysql)) mySqlError($mysql);	
 			} else {
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
@@ -408,7 +414,7 @@ if(networkmap_fullscan == 1) genClientList();
 							"ha_alerts___v2" => $name, 
 							"ha_alerts___v3" => $ip, 
 							"ha_alerts___v4" => $connection);
-			echo executeCommand($params).CRLF;
+			print_r(executeCommand($params));
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,
 						`mac` ,
