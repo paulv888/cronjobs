@@ -36,7 +36,7 @@ if (!($sdata=="")) { 					//import_event
 	
 	$message['deviceID'] = $rcv_message['device'];
 	$message['inout'] = COMMAND_IO_RECV;
-	$message['commandID'] = COMMAND_SET_VALUE;
+	$message['commandID'] = COMMAND_SET_RESULT;
 
 	//$message['typeID'] = getDevice($message['deviceID'])['typeID'];
 	
@@ -47,6 +47,7 @@ if (!($sdata=="")) { 					//import_event
 	
 	//$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
+	$message['data'] = $rcv_message['value'];
 	$message['message'] = $sdata;
 
 	//print_r($message);
