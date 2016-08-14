@@ -75,6 +75,7 @@ function createAlert($params) {
 	}
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
+	if ($params['priorityID'] < 3) $feedback['result'][] = sendBullet($params);
 	return $feedback;
 }
 
@@ -236,9 +237,16 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$params['commandID'] = $step['commandID'];
 			$params['schemeID'] = $step['runschemeID'];
 			$params['alert_textID'] = $step['alert_textID'];
-			$params['commandvalue'] = replacePlaceholder($text, $params);		// Replace placeholders in commandvalue
-			if (DEBUG_PARAMS) echo 'StepValue after replacePlaceholder: '.$params['commandvalue'].CRLF;
-			//replaceText($params, true);
+			
+			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+				$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+			}
+			
+			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
+			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$params['commandvalue'].CRLF;
+			$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
+			$params['commandvalue'] = $text;
+			if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
 			$result = SendCommand($params);
 			// TODO:: check for 'error'
 			// TODO:: bubble up message?
@@ -327,7 +335,7 @@ function setDevicePropertyCommand(&$params) {
 	
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
-	$text = replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
+	$text = replacePropertyPlaceholders($text, Array('deviceID' => $params['deviceID']));
 	if (strtoupper($text) == "TOGGLE") { 		// Toggle
 		if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
 			$text = STATUS_OFF;
@@ -348,7 +356,7 @@ function setSessionVar(&$params) {
 	
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
-	$text = replacePlaceholder($text, Array('deviceID' => $params['deviceID']));
+	$text = replacePropertyPlaceholders($text, Array('deviceID' => $params['deviceID']));
 	if (strtoupper($text) == "TOGGLE") { 		// Toggle
 		if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON) 
 			$text = STATUS_OFF;
@@ -648,7 +656,7 @@ function sendEmail(&$params) {
 
 	$headers = 'MIME-Version: 1.0' . "\r\n".
     'From: '.$fromname. "\r\n" .
-    'Reply-To: '.'vlohome@inbox.com'. "\r\n" .
+    'Reply-To: '.'myvlohome@gmail.com'. "\r\n" .
     'X-Mailer: PHP/' . phpversion() . "\r\n" ;
 	
 	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
@@ -662,6 +670,46 @@ function sendEmail(&$params) {
 	else {
 		return array();
 	}
+}
+
+function sendBullet(&$params) {
+
+	$feedback['Name'] = 'sendBullet';
+	$feedback['result'] = array();
+
+	
+	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
+
+		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any
+			// <a href="/local/path" title="with attributes">number</a> of
+			// <a href="#anchor" data-attr="lots">links</a>.';
+
+		$dom = new DomDocument();
+		$dom->loadHTML($params['mess_text']);
+		$output = array();
+		foreach ($dom->getElementsByTagName('a') as $item) {
+		   $output[] = array (
+			  'str' => $dom->saveHTML($item),
+			  'href' => $item->getAttribute('href'),
+			  'anchorText' => $item->nodeValue
+		   );
+		}
+		$text = strip_tags($params['mess_text']);
+	}
+	
+	try {
+		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
+		if (empty($output)) 
+			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
+		else {
+			echo "else\n";
+			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
+		}
+	} catch (Exception $e) {
+		$feedback['error'] = 'Error: '.$e->getMessage();
+	}
+    return $feedback;
+
 }
 
 function sendInsteonCommand(&$params) {
@@ -686,7 +734,7 @@ function sendInsteonCommand(&$params) {
 	$params['commandvalue'] = dec2hex($params['commandvalue'],2);
 	if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
 
-	$tcomm = replaceCommandPlaceholders($params);
+	$tcomm = replaceCommandPlaceholders($params['command'],$params);
 	$params['commandvalue'] = $cv_save;
 	
 	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
@@ -794,7 +842,7 @@ function sendGenericHTTP(&$params) {
 	case "POSTURL":          // Web Arduino/ESP8266
 	case "JSON":             // Wink
 		if (DEBUG_DEVICES) echo $targettype."</p>";
-		$tcomm = replaceCommandPlaceholders($params);
+		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$tmp1 = explode('?', $tcomm);
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
 			$params['device']['connection']['page'] .= $tmp1[0];
@@ -832,10 +880,10 @@ function sendGenericHTTP(&$params) {
 		break;
 	case "GET":          // Sony Cam at the moment
 		if (DEBUG_DEVICES) echo "GET</p>";
-		$tcomm = replaceCommandPlaceholders($params);
+		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-		$feedback['commandstr'] .= $tcomm;
+		$feedback['commandstr'] .= urlencode($tcomm);
 		$curl = restClient::get($url.$tcomm, array(), null, $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -844,7 +892,7 @@ function sendGenericHTTP(&$params) {
 		break;
 	case "TCP":              // iTach (Only \r)
 		if (DEBUG_DEVICES) echo "TCP_IR</p>";
-		print_r($params);
+		//print_r($params);
 		$url = setURL($params, $feedback['commandstr']);
 		$feedback['commandstr'] .= $params['command']."\r";
 		if (empty($params['device']['connection']['targetaddress'])) {
@@ -868,7 +916,7 @@ function sendGenericHTTP(&$params) {
 			fwrite($client, $binout);
 			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
-			echo "**>**".print_r($feedback['result'])."**<**";
+			//echo "**>**".print_r($feedback['result'])."**<**";
 		}
 		// TODO:: Error handling (GCache errors)
 		// completeir,1:1,2
@@ -876,17 +924,17 @@ function sendGenericHTTP(&$params) {
 		break;
 	case "TCP64":          // TP-Link
 		if (DEBUG_DEVICES) echo "TP-Link</p>";
-		$feedback['commandstr'] = $params['command'];
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$params['command'].CRLF;
 		// open a client connection
 //		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
 		//decodeTPLink(base64_decode($feedback['commandstr']));
-		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $feedback['commandstr'], $params['device']['connection']['timeout']);
+		$feedback['commandstr'] = "tcp://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command'];
+		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
 //		print_r($feedback['result']);
 		break;
@@ -1157,7 +1205,7 @@ Update - Put
 =9&messagetypeID=MESS_TYPE_COMMAND&commandID=17"}
 */
 
-		$tcomm = replaceCommandPlaceholders($params);
+		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$tmp1 = explode('?', $tcomm);
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
 			$params['device']['connection']['page'] .= $tmp1[0];

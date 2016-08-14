@@ -7,8 +7,8 @@ define("MY_DEVICE_ID", 215);
 define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
-define("MOTION_URL1","https://vlohome.no-ip.org/index.php?option=com_content&view=article&id=238&Itemid=30");
-define("MOTION_URL2","https://vlohome.no-ip.org/index.php?option=com_content&view=article&id=238&Itemid=527");
+define("MOTION_URL1","https://vlohome.no-ip.org/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
+define("MOTION_URL2","https://vlohome.no-ip.org/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=527");
 
 require_once 'includes.php';
 
@@ -82,7 +82,7 @@ function movePictures($camera) {
 			// echo ">$file<".CRLF;
 
 			$datedir = date ("Y-m-d", $filetime);
-			if (is_null($group_dir)) {					// Did we find a group dir? If not find the last one and the num files in it
+			if (is_null($group_dir)) {		// Did we find a group dir? If not find the last one and the num files in it
 				if ($group_dir = findLastGroupDir($dir.$datedir)) {		
 					$targetdir = $dir.$datedir.'/'.$group_dir;
 					echo date("Y-m-d H:i:s").": Existing directory ".$targetdir.CRLF;
@@ -161,7 +161,7 @@ function openGroup($camera) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
 			if (DEBUG_CAMERAS) print_r($camera);
 
-			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
+			$htmllong='<a href="'.MOTION_URL1.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
 			// update device
 			$params['callerID'] = MY_DEVICE_ID;
@@ -204,7 +204,7 @@ function closeGroup($camera) {
 			if (DEBUG_CAMERAS) print_r($camera);
 
 			// update device
-			$htmlshort=MOTION_URL2.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
+			$htmlshort=MOTION_URL2.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
 			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
 			$params['callerID'] = MY_DEVICE_ID;
@@ -222,17 +222,18 @@ function closeGroup($camera) {
 
 			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Critical Alert Files']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
-				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
-						'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				$camera['criticalalert'] = true;
 				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
+				uploadPictures($camera);
 			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['High Alert Files']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
-				echo executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 
-						'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+				//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
+				uploadPictures($camera);
 			}
 
 			$params['device']['properties'] = $properties;
@@ -271,5 +272,28 @@ function findLastGroupDir($dir) {
 			}
 		}
 	return null;
+}
+
+function uploadPictures($camera) {
+
+	$dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$camera['previous_properties']['Directory']['value'].'/';
+	$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
+
+	$files = array();
+	if ($handle = opendir($dir.$targetdir)) {
+		while (false !== ($file = readdir($handle))) {
+			$file_parts = mb_pathinfo($file);
+			if ($file != "." && $file != ".." && !is_dir($dir.$file) && $file_parts['extension']=='jpg') {
+				$files[] = $file;
+				//$filetimes[] = filemtime($dir.$file);
+			}
+		}
+		closedir($handle);
+	}
+	$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
+	for ($i = 2; $i <= 4; $i++) {
+		$pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
+	}
+
 }
 ?>

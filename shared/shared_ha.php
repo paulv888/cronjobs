@@ -246,7 +246,7 @@ function handleTriggers($params, $propertyID, $triggertype) {
 
 function getDevice($deviceID){
 
-	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse= 1';
+	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse = 1';
 	if ($rowdevice = FetchRow($mysql)) {
 		$mysql='SELECT * FROM ha_mi_connection where id ='.$rowdevice['connectionID'];
 		if ($rowconn = FetchRow($mysql)) {

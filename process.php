@@ -58,7 +58,7 @@ if (!headers_sent()) {
 //
 // Set default value for SelectedPlayer
 //
-if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
+if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) && is_numeric($_SESSION['properties']['SelectedPlayer']['value'])) {
 	$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
 } else {
 	$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;

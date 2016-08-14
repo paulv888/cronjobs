@@ -1,7 +1,7 @@
 <?php 
-//define( 'DEBUG_FLOW', TRUE );
-//define( 'DEBUG_DEVICES', TRUE );
-//define( 'DEBUG_RETURN', TRUE );
+// define( 'DEBUG_FLOW', TRUE );
+// define( 'DEBUG_DEVICES', TRUE );
+// define( 'DEBUG_RETURN', TRUE );
 // define( 'DEBUG_PARAMS', TRUE );
 // define( 'DEBUG_COMMANDS', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
@@ -58,7 +58,7 @@ function sendCommand(&$thiscommand) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
 		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
-		$thiscommand['device'] = (array_key_exists('device',$thiscommand) ? array_merge($thiscommand['device'], $device) : $device);
+		$thiscommand['device'] = (array_key_exists('device',$thiscommand) && $thiscommand['deviceID'] == $thiscommand['device']['id']? array_merge($thiscommand['device'], $device) : $device);
 		// print_r($thiscommand['device']);
 		// if ($thiscommand['device'] = $device) {
 		// $feedback['error'] = 'Device '.$thiscommand['deviceID'].' not found or inactive';
@@ -66,6 +66,7 @@ function sendCommand(&$thiscommand) {
 		// }
 		$thiscommand['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thiscommand['deviceID']));
 		$commandclassID = $thiscommand['device']['commandclassID'];
+
 		if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
 		if (DEBUG_DEVICES) print_r($thiscommand);
 		
@@ -186,6 +187,7 @@ function sendCommand(&$thiscommand) {
 	case COMMAND_CLASS_3MFILTRETE:          
 	case COMMAND_CLASS_GENERIC:	
 	case COMMAND_CLASS_EMAIL:
+	case COMMAND_CLASS_BULLET:
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC/COMMAND_CLASS_3MFILTRETE/EMAIL</p>";
 		if ($thiscommand['command'] == "exit") 
 			$exittrap=true;
@@ -459,7 +461,7 @@ function RemoteKeys($in, $params) {
 								$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 
 										$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
 								// echo $deviceID.CRLF;
-								$text = replacePlaceholder($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
+								$text = replacePropertyPlaceholders($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
 								if (!empty($text)) $feedback[$last_id]["text"] = $text;
 							}
 						}

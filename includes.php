@@ -32,4 +32,14 @@ include_once 'myclasses/sockettransport.class.php';
 include_once 'myclasses/Orders.class.php';
 include_once 'myclasses/Position.class.php';
 include_once 'includes/yahoostreamer.php';
+
+include_once('Pushbullet/Pushable.php');
+include_once('Pushbullet/Channel.php');
+include_once('Pushbullet/Contact.php');
+include_once('Pushbullet/PhonebookEntry.php');
+include_once('Pushbullet/Push.php');
+include_once('Pushbullet/Device.php');
+include_once('Pushbullet/Connection.php');
+include_once('Pushbullet/Pushbullet.php');
+
 ?>

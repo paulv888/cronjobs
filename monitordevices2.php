@@ -4,31 +4,37 @@ require_once 'includes.php';
 
 define("MY_DEVICE_ID", 211);
 
-class console{
-        public static function log($msg, $arr=array()){
-                $str = vsprintf($msg, $arr);
-                fprintf(STDERR, "$str\n");
-        }
-}
+$runonce = (isset($_GET['runonce']) && $_GET['runonce'] == 1 ? true : false);
 
-if(version_compare(PHP_VERSION, "5.3.0", '<')){
-        // tick use required as of PHP 4.3.0
-        declare(ticks = 1);
-}
+if (!$runonce) {
+	class console{
+			public static function log($msg, $arr=array()){
+					$str = vsprintf($msg, $arr);
+					fprintf(STDERR, "$str\n");
+			}
+	}
 
-pcntl_signal(SIGTERM, "signal_handler");
-pcntl_signal(SIGHUP, "signal_handler");
-pcntl_signal(SIGINT, "signal_handler");
+	if(version_compare(PHP_VERSION, "5.3.0", '<')){
+			// tick use required as of PHP 4.3.0
+			declare(ticks = 1);
+	}
 
-if(version_compare(PHP_VERSION, "5.3.0", '>=')){
-        pcntl_signal_dispatch();
-        console::log("Signal dispatched");
+
+	pcntl_signal(SIGTERM, "signal_handler");
+	pcntl_signal(SIGHUP, "signal_handler");
+	pcntl_signal(SIGINT, "signal_handler");
+
+	if(version_compare(PHP_VERSION, "5.3.0", '>=')){
+			pcntl_signal_dispatch();
+			console::log("Signal dispatched");
+	}
 }
 
 while (true) {
 	echo date("Y-m-d H:i:s").": ".monitorDevices("POLL2");
         echo updateDLink(MY_DEVICE_ID);
  	sleep(5);
+	if ($runonce) break;
 }
 
 function cleanup(){

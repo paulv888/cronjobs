@@ -160,7 +160,7 @@ function loadRemoteDiv($divid, $params) {
 						echo '">';
 						echo '</i>';
 					} 
-					if (isset($deviceID))$text = replacePlaceholder($text, Array('deviceID' => $deviceID));
+					if (isset($deviceID))$text = replacePropertyPlaceholders($text, Array('deviceID' => $deviceID));
 					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
 					echo "</td>\n\r";

@@ -84,6 +84,7 @@ define ("COMMAND_CLASS_IRRIGATIONCADDY", 9);
 define ("COMMAND_CLASS_X10_INSTEON", 10);
 define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
+define ("COMMAND_CLASS_BULLET", 28);
 
 
 // Special X10_INSTEON dim handling
@@ -197,6 +198,8 @@ define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
 define("LOCAL_RECYCLE", "_XXX_recyclebin/");
 define("LOCAL_IMPORT", "_XXX_import/");
 define("ALERT_KODI", 224);
+
+define("PUSH_CHANNEL", "vlohome");
 
 define("CRLF", "</br>\n");
 ?>
