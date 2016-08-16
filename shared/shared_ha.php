@@ -196,7 +196,8 @@ function setDevicePropertyValue($params, $propertyName) {
 	// 
 	// var_dump($oldvalue);
 	// var_dump($deviceproperty['value']);
-	if ($monitor && ($oldvalue !== $deviceproperty['value'])) {
+//	if ($monitor && ($oldvalue !== $deviceproperty['value'])) {
+	if ($oldvalue !== $deviceproperty['value']) {
 		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
 			if ($deviceproperty['value'] == STATUS_ON ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ON);
@@ -211,7 +212,6 @@ function setDevicePropertyValue($params, $propertyName) {
 		}
 		$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 		if (!empty($result)) $feedback['Triggers'] = $result;
-
 	}
 	
 	if (DEBUG_HA) echo "</pre>";
