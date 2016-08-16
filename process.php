@@ -44,6 +44,7 @@ if (DEBUG_INPUT) echo json_encode($_POST,JSON_UNESCAPED_SLASHES);
 if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"],JSON_UNESCAPED_SLASHES) : "");
 
 $params = $_POST;
+if (DEBUG_INPUT) {echo "<pre>Params:  ";print_r($params);echo "</pre>";}
 
 if (!headers_sent()) {
 	session_start();

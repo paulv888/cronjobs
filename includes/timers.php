@@ -195,18 +195,19 @@ function updateTimers($params) {
 
 function startTimer($params) {
 
-	// echo "<pre>+++StartTimer";
-	// print_r($params);
-	// echo "</pre>===StartTimer";
 	$thiscommand['loglevel'] = LOGLEVEL_COMMAND;
 	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
 	$thiscommand['caller'] = $params['caller'];
 	$thiscommand['commandID'] = COMMAND_ON;
 	$thiscommand['timervalue'] = $params['commandvalue'];
 	$thiscommand['deviceID'] = $params['deviceID'];
+	$thiscommand['device']['id'] =  $params['deviceID'];
 	$thiscommand['device']['properties']['Timer Date']['value'] = date("Y-m-d H:i:s");
 	$thiscommand['device']['properties']['Timer Value']['value'] = $params['commandvalue'];
 	$thiscommand['device']['properties']['Timer Remaining']['value'] = $params['commandvalue'];
+//	echo "<pre>+++StartTimer";
+//	print_r($params);
+//	echo "</pre>===StartTimer";
 	$feedback['SendCommand']=sendCommand($thiscommand); 
 	return $feedback;
 }

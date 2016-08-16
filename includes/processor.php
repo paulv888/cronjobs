@@ -58,7 +58,7 @@ function sendCommand(&$thiscommand) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
 		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
-		$thiscommand['device'] = (array_key_exists('device',$thiscommand) && $thiscommand['deviceID'] == $thiscommand['device']['id']? array_merge($thiscommand['device'], $device) : $device);
+		$thiscommand['device'] = (array_key_exists('device',$thiscommand) && array_key_exists('id', $thiscommand['device']) && $thiscommand['deviceID'] == $thiscommand['device']['id']? array_merge($thiscommand['device'], $device) : $device);
 		// print_r($thiscommand['device']);
 		// if ($thiscommand['device'] = $device) {
 		// $feedback['error'] = 'Device '.$thiscommand['deviceID'].' not found or inactive';
@@ -184,8 +184,8 @@ function sendCommand(&$thiscommand) {
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_X10".CRLF;
 		$feedback = sendX10Command($thiscommand);
 		break;
-	case COMMAND_CLASS_3MFILTRETE:          
-	case COMMAND_CLASS_GENERIC:	
+	case COMMAND_CLASS_3MFILTRETE:
+	case COMMAND_CLASS_GENERIC:
 	case COMMAND_CLASS_EMAIL:
 	case COMMAND_CLASS_BULLET:
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC/COMMAND_CLASS_3MFILTRETE/EMAIL</p>";
@@ -223,7 +223,7 @@ function sendCommand(&$thiscommand) {
 	} elseif (array_key_exists('Name', $feedback)) {
 		$params['commandvalue'] = $feedback['Name'];
 	}
-	
+
 	if ($rowcommands['need_device']) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
@@ -455,7 +455,8 @@ function RemoteKeys($in, $params) {
 								$starttext = getDisplayText($rowkeys);
 								$text = $starttext;
 								if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
-									if (array_key_exists('Timer Remaining',$res['updateStatus'])) $text.=' ('.$res['updateStatus']['Timer Remaining'].'min)';
+									if (array_key_exists('Timer Remaining',$res['updateStatus'])) 
+		$text.='&nbsp;(<i class="icon-clock btn-icon-small"></i>'.$res['updateStatus']['Timer Remaining'].')';
 								}
 								// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
 								$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 

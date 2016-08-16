@@ -15,7 +15,8 @@ define("MY_DEVICE_ID", 272);
 
 	 // 8/9/2015 Now receiving for Axis Cam
  */
- 
+
+
 //$file = 'esp.log';
 //$current = file_get_contents($file);
 //if (empty($sdata)) {

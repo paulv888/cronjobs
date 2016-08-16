@@ -208,7 +208,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	
 		
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID 
+	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.propertyID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID 
 	FROM ha_remote_schemes 
 	JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID 
 	LEFT JOIN ha_mf_commands ON ha_remote_scheme_steps.commandID = ha_mf_commands.id
@@ -235,6 +235,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
 			$params['deviceID'] =  $step['deviceID'];
 			$params['commandID'] = $step['commandID'];
+			if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
 			$params['schemeID'] = $step['runschemeID'];
 			$params['alert_textID'] = $step['alert_textID'];
 			
@@ -243,7 +244,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			}
 			
 			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
-			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$params['commandvalue'].CRLF;
+			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
 			$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
 			$params['commandvalue'] = $text;
 			if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
@@ -330,9 +331,11 @@ function setResult($params) {
 
 function setDevicePropertyCommand(&$params) {
 	$feedback['result'] = array();
-	
+
+//echo "<pre>";
+//print_r($params);
+
 	calculateProperty($params) ;
-	
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
 	$text = replacePropertyPlaceholders($text, Array('deviceID' => $params['deviceID']));

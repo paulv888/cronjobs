@@ -1,5 +1,5 @@
 <?php
-// define('DEBUG_PHOLDERS', TRUE);
+//define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($result, $params) {
@@ -8,7 +8,7 @@ function replaceCommandPlaceholders($result, $params) {
 //		in: $result
 //		out: return
 
-	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; print_r ($params); echo "</pre>";}
+	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; echo $result.CRLF; print_r ($params); echo "</pre>";}
 
 	if (strpos($result, "{mycommandID}") !== false) $result = str_replace("{mycommandID}",trim($params['commandID']),$result);
 	if (strpos($result, "{deviceID}") !== false) $result = str_replace("{deviceID}",trim($params['deviceID']),$result);
@@ -91,7 +91,7 @@ function replacePropertyPlaceholders($mess_subject, $params){
 //		out: return
 //
 
-	// echo "replacePlaceholder in: ".$mess_subject.CRLF;
+	//echo "replacePlaceholder in: ".$mess_subject.CRLF;
 	$mess_text = Null;
 	if (preg_match("/\{property.*\}/", $mess_subject, $matches)) {
 
