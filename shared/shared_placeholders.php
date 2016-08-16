@@ -20,11 +20,15 @@ function replaceCommandPlaceholders($result, $params) {
 			 $result = str_replace('{commandvalue'.$key.'}', $value, $result);
 		}
 	}
-	
+
 	if (strpos($result,"{port}") !== false) {
 		$port = getProperty($params['propertyID'])['port'];
+		if (is_null($port)) {
+			echo "Empty Port found!!!";
+			exit;
+		}
 		$result = str_replace("{port}",$port,$result);
-//		print_r($port);
+//		echo "******port:"; print_r($port);
 	}
 	if (strpos($result, "{macro___commandvalue}") !== false) $result = str_replace("{macro___commandvalue}",trim($params['macro___commandvalue']),$result);
 	if (strpos($result, "{commandvalue}") !== false) $result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
@@ -35,10 +39,9 @@ function replaceCommandPlaceholders($result, $params) {
 		$calcvalue = eval('return '.$matches[1].';');
 		$result = str_replace($matches[0], $calcvalue, $result);
 	}
-	
+
 	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);
 	if (array_key_exists('mess_text',$params)) $result = str_replace("{mess_text}",trim($params['mess_text']),$result);
-	
 
 	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders result"; echo($result); echo "</pre>";}
 	return $result;

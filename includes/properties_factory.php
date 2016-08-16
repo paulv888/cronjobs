@@ -12,11 +12,11 @@ function updateGeneric(&$params, $propertyName) {
 		echo "<PRE>Update Generic $propertyName ";
 		print_r($params);
 	}
-	
+
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
-	
-	if (array_key_exists('commandID', $params) && $params['device']['properties'][$propertyName]['value'] == "") {
+
+	if (array_key_exists('commandID', $params) && empty($params['device']['properties'][$propertyName]['value'])) {
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		// echo var_dump($commandStatus);
 		if ($commandStatus !== false && $commandStatus != STATUS_NOT_DEFINED) {
@@ -25,6 +25,8 @@ function updateGeneric(&$params, $propertyName) {
 			} else {
 				$newvalue = $commandStatus;
 			}
+		} else if ($commandStatus == STATUS_NOT_DEFINED && $params['device']['previous_properties'][$propertyName]['datatype'] == 'DECIMAL') {
+			$newvalue = $params['commandvalue'];
 		} else {
 			unset($params['device']['properties'][$propertyName]);
 			return false;
@@ -36,8 +38,9 @@ function updateGeneric(&$params, $propertyName) {
 		$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 		$feedback['Status'] = $newvalue;
 	}
-	
+
 	$params['device']['properties'][$propertyName]['value'] = $newvalue;
+
 	if (DEBUG_PROP) echo "Exit Update $propertyName</PRE>";
 	return $feedback;
 }
@@ -45,6 +48,7 @@ function updateGeneric(&$params, $propertyName) {
 function updateLocked(&$params, $propertyName) {
 	return updateStatus($params, $propertyName);
 }
+
 function updateStatus(&$params, $propertyName) {
 
 	$feedback=Array();
@@ -55,7 +59,7 @@ function updateStatus(&$params, $propertyName) {
 
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
-	
+
 	if (array_key_exists('commandID', $params) && $params['device']['properties'][$propertyName]['value'] == "") {
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		// echo var_dump($commandStatus);
@@ -70,23 +74,23 @@ function updateStatus(&$params, $propertyName) {
 			return false;
 		}
 	}
-	
+
 	if ($oldvalue != $newvalue && $newvalue == STATUS_OFF) {
 		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Date'));
 		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Value'));
 		removeDeviceProperty(Array('deviceID' => $params['deviceID'], 'description' => 'Timer Remaining'));
 	}
-	
+
 	if (DEBUG_PROP) echo "Status NewValue: ".$newvalue.CRLF;
 	$feedback['DeviceID'] = $params['deviceID'];
 	$feedback['PropertyID'] = $params['device']['previous_properties'][$propertyName]['propertyID'];
 	$feedback['Status'] = $newvalue;
 	$feedback['Datatype'] = $params['device']['previous_properties'][$propertyName]['datatype'];
-	
+
 	$params['device']['properties'][$propertyName]['value'] = $newvalue;
 	if (DEBUG_PROP) echo "Exit Update Status</PRE>";
 	return $feedback;
-}	
+}
 
 function updateRuntime(&$params, $propertyName) {
 //
@@ -98,7 +102,7 @@ function updateRuntime(&$params, $propertyName) {
 		echo "<PRE>Update $propertyName ";
 		print_r($params);
 	}
-	
+
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
 
@@ -142,10 +146,10 @@ function updateIsRunning(&$params, $propertyName) {
 		echo "<PRE>Update $propertyName ";
 		print_r($params);
 	}
-	
+
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
-	
+
 	if ($oldvalue != $newvalue) {			// Value changed
 	//
 	//		Insert new cycle
@@ -168,7 +172,7 @@ function updateIsRunning(&$params, $propertyName) {
 	$feedback['Status'] = $newvalue;
 	if (DEBUG_PROP) echo "Exit Update $propertyName</PRE>";
 	return $feedback;
-}			
+}
 
 function updateLastRecordingType(&$params, $propertyName) {
 //

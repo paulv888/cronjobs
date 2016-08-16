@@ -1,9 +1,9 @@
 <?php 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-// define( 'DEBUG_RETURN', TRUE );
-// define( 'DEBUG_PARAMS', TRUE );
+//define( 'DEBUG_PARAMS', TRUE );
 // define( 'DEBUG_COMMANDS', TRUE );
+// define( 'DEBUG_RETURN', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
 if (isset($_POST['DEBUG_DEVICES'])) define( 'DEBUG_DEVICES', TRUE );
 if (isset($_POST['DEBUG_RETURN'])) define( 'DEBUG_RETURN', TRUE );
@@ -108,7 +108,7 @@ function sendCommand(&$thiscommand) {
 				if ($thiscommand['commandID']==COMMAND_DIM || $thiscommand['commandID']==COMMAND_BRIGHTEN) {
 					if ($status != STATUS_OFF) {
 						if ($thiscommand['commandID']==COMMAND_DIM) {
-							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['                                                                                                                         v-0-0-0-0-0']['value'] - $thiscommand['commandvalue'];
+							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['Level']['value'] - $thiscommand['commandvalue'];
 							if ($thiscommand['commandvalue'] < 0) $thiscommand['commandID'] = COMMAND_OFF;
 						} else {
 							$thiscommand['commandvalue'] = $thiscommand['device']['previous_properties']['Level']['value'] + $thiscommand['commandvalue'];
@@ -166,8 +166,8 @@ function sendCommand(&$thiscommand) {
 		if ($rowtext['priorityID'] != Null) $thiscommand['priorityID']= $rowtext['priorityID'];
 		if (strlen($thiscommand['mess_text']) == 0) $thiscommand['mess_text'] = " ";
 		replaceText($thiscommand);
-	}	
-	
+	}
+
 	if (array_key_exists('device', $thiscommand) && $thiscommand['device']['connection']['targettype'] == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandID ".$thiscommand['commandID'].CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandclassID ".$commandclassID.CRLF;
@@ -198,7 +198,7 @@ function sendCommand(&$thiscommand) {
 	default:								// Everything else Ard/Sony/Cam/Irrigation/Virtual Devices
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_OTHER</p>";
 		$feedback = sendGenericHTTP($thiscommand);
-		break;		
+		break;
 	}
 
 	if (DEBUG_RETURN) echo "<pre>End sendCommandd: >";
@@ -214,7 +214,7 @@ function sendCommand(&$thiscommand) {
 		if (DEBUG_PARAMS) echo 'Text: '.$thiscommand['commandvalue'].CRLF;
 	}
 
-	
+
 	// Check for errors first?
 	if  (array_key_exists('error', $feedback)) {
 		$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
@@ -227,17 +227,16 @@ function sendCommand(&$thiscommand) {
 	if ($rowcommands['need_device']) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
-	
+
 	$exectime += microtime(true);
-	
-	
+
 	if (!array_key_exists('message', $feedback)) $feedback['message']='';
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $feedback['commandstr'], 'exectime' => $exectime));
 	if ($exittrap) exit($thiscommand['commandvalue']);
-	
+
 	if (DEBUG_FLOW) echo "Exit Send</pre>".CRLF;
 	return $feedback;
-} 
+}
 
 
 // Public (Timers, Triggers, cameras)

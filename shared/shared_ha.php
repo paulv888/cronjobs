@@ -1,6 +1,6 @@
 <?php
 //define( 'DEBUG_HA', TRUE );
-// define( 'DEBUG_PROPERTIES', TRUE );
+//define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
@@ -28,7 +28,6 @@ function updateDeviceProperties($params) {
 		print_r($params);
 //		echo "commandID:".$params['commandID'].CRLF;
 		echo "deviceID: ".$params['deviceID'].CRLF;
-		
 	}
 
 	//
@@ -45,16 +44,15 @@ function updateDeviceProperties($params) {
 	}
 
 	// print_r($params['device']['properties']);
-	
 	if (array_key_exists('properties', $params['device'])) {		// Do we have props to update?
 		$params['device']['properties'] = sortArrayByArray($params['device']['properties'], Array('Status'));
 		foreach ($params['device']['properties'] as $key=>$property) {
 			$feedback[] = setDevicePropertyValue($params, $key);
 		}
-	} 
-	
+	}
+
 	if (DEBUG_HA) echo "Exit updateProperties </pre>";
-	
+
 	return $feedback;
 }
 
@@ -71,30 +69,27 @@ function setDevicePropertyValue($params, $propertyName) {
 	$deviceproperty['deviceID'] = $params['deviceID'];
 	$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
 	$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
-	
-	
+
 	if (DEBUG_HA) {
 		echo "<pre>setDevicePropertyValue $propertyName ";
 		print_r ($deviceproperty);
 		//print_r ($params);
 	}
-	
+
 	if (strtoupper($deviceproperty['value']) == "TRUE" || strtoupper($deviceproperty['value']) == "ON") $deviceproperty['value'] = STATUS_ON;
 	if (strtoupper($deviceproperty['value']) == "FALSE" || strtoupper($deviceproperty['value']) == "OFF") $deviceproperty['value'] = STATUS_OFF;
-	
 
 	//
 	// Get previous property info (In case this if the first time we logging this property)
-	// 
+	//
 	$oldvalue = Null;
 	$monitor = false;
 	$deviceproperty['trend'] = "0";
 	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($propertyName,$params['device']['previous_properties'])) {
 		$monitor = $params['device']['previous_properties'][$propertyName]['active'];
 		$params['lastUpdateDate'] = $params['device']['previous_properties'][$propertyName]['updatedate'];
-	} 
+	}
 
-	
 	//
 	//	Always goto property factory 
 	//
@@ -124,13 +119,13 @@ function setDevicePropertyValue($params, $propertyName) {
 			$feedback['!Monitor']['message'] = 'Level set to '.$deviceproperty['value']."%";
 		}
 	}
-	
+
 	if (is_null($deviceproperty['value']) || trim($deviceproperty['value'])==='') {
-		if (DEBUG_HA) echo "</pre>";
+		if (DEBUG_HA) echo "IsNull - Getting out</pre>";
 		$feedback['!Empty'] = 'Null or Empty String, exit';
 		return $feedback;
 	}
-	
+
 	if ($deviceproperty['value'] != $oldvalue && $propertyName != 'Link') {		// Link special, updated in factory (How about not monitor?)
 		$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
@@ -140,7 +135,7 @@ function setDevicePropertyValue($params, $propertyName) {
 		echo "afterFactory $propertyName ";
 		print_r ($deviceproperty);
 	}
-		
+
 	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $deviceproperty['deviceID'].' AND propertyID='.$deviceproperty['propertyID'].' order by updatedate desc limit 1';
 	if ($row = FetchRow($sql)) {
 
@@ -468,7 +463,6 @@ function getProperty($key_description){
 //	Out: Property 
 //	Create if not found and $descriptiongiven
 //
-
 	if (is_numeric($key_description)) { 
 		$mysql='SELECT * FROM `ha_mi_properties` WHERE `id`='.(int)$key_description;
 		$descriptiongiven=false;

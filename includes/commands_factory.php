@@ -18,7 +18,7 @@
 	// $feedback['result'] = array();
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
-	
+
 	// if (DEBUG_COMMANDS) {
 		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
 	// }
@@ -26,10 +26,10 @@
 // }
 function monitorDevicesTimeout($params) {
 	// No Error checking
-	
+
 	// Need to handle inuse and active
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
-	
+
 	// echo "<pre>";
 	// print_r($devs);
 	$feedback['Name'] = 'monitorDevicesTimeout';
@@ -87,7 +87,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
-	
+
 	// Check if a commandvalue was given, if so save this for later use
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
 		$params['macro___commandvalue'] = $params['commandvalue'];
@@ -95,18 +95,18 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
 	if (DEBUG_COMMANDS) print_r($params);
-	
+
 	$feedback['Name'] = getSchemeName($schemeID);
-	
+
 	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
-	
+
 	if (!$rescond = mysql_query($mysql)) {
 		mySqlError($mysql); 
 		if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 		return false;
 	}
-	
-	while ($rowcond = mysql_fetch_assoc($rescond)) {	
+
+	while ($rowcond = mysql_fetch_assoc($rescond)) {
 		$testvalue = array();
 		switch ($rowcond['type'])
 		{
@@ -135,7 +135,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			}
 			$testvalue[] = $test;
 			break;
-		case SCHEME_CONDITION_CURRENT_TIME: 
+		case SCHEME_CONDITION_CURRENT_TIME:
 			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
 			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
 			$testvalue[] = time();
@@ -154,7 +154,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			default:
 				switch ($rowcond['type'])
 				{
-				case SCHEME_CONDITION_CURRENT_TIME: 
+				case SCHEME_CONDITION_CURRENT_TIME:
 					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
 					$temp[0] = strtoupper($temp[0]);
 					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
@@ -205,8 +205,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		if (DEBUG_COMMANDS) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
 	}
-	
-		
+
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.propertyID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID 
 	FROM ha_remote_schemes 
@@ -214,7 +213,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	LEFT JOIN ha_mf_commands ON ha_remote_scheme_steps.commandID = ha_mf_commands.id
 	WHERE ha_remote_schemes.id ='.$schemeID.'.
 	ORDER BY ha_remote_scheme_steps.sort';
-	
+
 	// Trap any async SCHEMES here
 	if ($rowshemesteps = FetchRows($mysql)) {
 		if (!$asyncthread && current($rowshemesteps)['runasync']) {
@@ -238,11 +237,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
 			$params['schemeID'] = $step['runschemeID'];
 			$params['alert_textID'] = $step['alert_textID'];
-			
+
 			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
 				$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 			}
-			
+
 			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
 			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
 			$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
@@ -739,7 +738,7 @@ function sendInsteonCommand(&$params) {
 
 	$tcomm = replaceCommandPlaceholders($params['command'],$params);
 	$params['commandvalue'] = $cv_save;
-	
+
 	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
 	$url=setURL($params, $feedback['commandstr']);
 	$feedback['commandstr'] .= $tcomm.'=I=3';
@@ -747,10 +746,10 @@ function sendInsteonCommand(&$params) {
 	$curl = restClient::get($url.$tcomm.'=I=3',null, null, $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-	else 
+	else
 		$feedback['result'][] = $curl->getresponse();
 	usleep(INSTEON_SLEEP_MICRO);
-	
+
 	if (array_key_exists('error', $feedback)) {
 		if ($params['dimmable'] == "YES") {
 			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
@@ -763,7 +762,7 @@ function sendX10Command(&$params) {
 
 	$feedback['Name'] = 'sendX10Command';
 	$feedback['result'] = array();
-	
+
 	global $inst_coder;
 	if ($inst_coder instanceof InsteonCoder) {
 	} else {
@@ -806,7 +805,7 @@ function sendX10Command(&$params) {
 		else 
 			$feedback['result'][] = $curl->getresponse();
 		usleep(INSTEON_SLEEP_MICRO);
-	}     
+	}
 	if (!array_key_exists('error', $feedback)){
 		if ($params['dimmable'] == "YES") {
 			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
@@ -972,7 +971,7 @@ function calculateProperty(&$params) {
 
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
-	
+
 	return $feedback;
 }
 
@@ -1149,16 +1148,13 @@ function sendEchoBridge($params) {
 		// $timerID = $params['timer']['id'];
 	// }
 
-	
-	
 	// echo "<pre>";
 	// print_r($params);
-	
+
 	$vcIDs = explode(",", $params['commandvalue']);
-	
+
 	foreach ($vcIDs as $vcID) {
 		// echo "vcID ".$vcID.CRLF;
-	
 		$mysql = 'SELECT d.id, description, bridge_id, url_type, url FROM `ha_voice_devices` d LEFT JOIN  ha_voice_devices_urls u ON d.id = u.vdeviceID 
 			WHERE(((d.id) = '.$vcID.') AND active = 1) ORDER BY u.url_type';
 
@@ -1182,7 +1178,7 @@ function sendEchoBridge($params) {
 			}
 		}
 	// print_r($send_params);
-	
+
 /*
 Add Device - Post
 {"id":null,"name":"Kitchen Recess1","deviceType":"TCP","targetDevice":"Encapsulated","offUrl":"http:
@@ -1247,14 +1243,12 @@ Update - Put
 				PDOupdate("ha_voice_devices", array('bridge_id' => $result[0]['id']), array( 'id' => $vcID));
 			}
 		}
-			
-		
 		// echo "</pre>";
 	}
 
 	return $feedback;
-	
 }
+
 function sendtoplug ($ip, $port, $payload, $timeout) {
 	$client = stream_socket_client('tcp://'.$ip.':'.$port, $errno, $errorMessage, $timeout);
 	if ($client === false) {
