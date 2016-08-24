@@ -14,7 +14,7 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
-<link rel="stylesheet" href="/templates/protostar-mod/css/template.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
 <script src="/media/jui/js/jquery.min.js"></script>
 <script async src="/media/system/js/tabs-state.js"></script>
 <script async src="/media/jui/js/bootstrap.min.js"></script>
