@@ -1,7 +1,7 @@
 <?php 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-//define( 'DEBUG_PARAMS', TRUE );
+// define( 'DEBUG_PARAMS', TRUE );
 // define( 'DEBUG_COMMANDS', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );

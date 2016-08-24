@@ -181,8 +181,10 @@ function mySqlError($mysql) {
 			echo 'Lost connection, exiting...\n';
 			exit;
 		} else {
-			echo "Error on: ".$mysql."<br/>\r\n";
+			echo "<pre>Error on: ".$mysql."<br/>\r\n";
 			echo mysql_errno($mysql_link) . ": " . mysql_error($mysql_link) . "<br/>\r\n";
+			var_dump(debug_backtrace());
+			echo "</pre>";
 		}
 }
 
