@@ -83,7 +83,7 @@ function dec2hex($num,$count=0)
         return strrev($ret);
 }
 
-function createthumb($name,$filename,$new_w,$new_h)
+function createthumb($name,$filename,$new_w,$new_h, $text = "")
 {
 	$system=explode(".",$name);
 	if (preg_match("/jpg|jpeg/",$system[1])){$src_img=imagecreatefromjpeg($name);}
@@ -107,6 +107,13 @@ function createthumb($name,$filename,$new_w,$new_h)
 	}
 	$dst_img=ImageCreateTrueColor($thumb_w,$thumb_h);
 	imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y); 
+	if ($text != "") {
+		$white = imagecolorallocate($dst_img, 0xff, 0xff, 0xff);
+		$grey = imagecolorallocate($im, 128, 128, 128);
+		$font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+		imagettftext($dst_img, 12, 0, 11, 21, $grey, $font, $text);
+		imagettftext($dst_img, 12, 0, 10, 20, $white, $font, $text);
+	}
 	if (preg_match("/png/",$system[1]))
 	{
 		imagepng($dst_img,$filename); 

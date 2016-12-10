@@ -35,6 +35,7 @@ define("COMMAND_IO_BOTH", 3 );		// Can be send or received
 define("STATUS_OFF", "0" );
 define("STATUS_ON", "1" );
 define("STATUS_UNKNOWN", "2" );
+define("STATUS_COMMAND_VALUE", "3" );
 define("STATUS_ERROR", "-1" );
 define("STATUS_NOT_DEFINED", "10");		// Used for defining status on commands 
 

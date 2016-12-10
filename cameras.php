@@ -143,7 +143,7 @@ function movePictures($camera) {
 			mkdir(LASTIMAGEDIR);
 		}
 		$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
-		createthumb($newfilename,$thumbname,200,200);
+		createthumb($newfilename,$thumbname,200,200, date('Y-m-d H:i:s'));
 
 		// Close group (for now)
 		$camera['datedir'] = $datedir;

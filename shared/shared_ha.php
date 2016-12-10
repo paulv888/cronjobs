@@ -1,6 +1,6 @@
 <?php
-//define( 'DEBUG_HA', TRUE );
-//define( 'DEBUG_PROPERTIES', TRUE );
+// define( 'DEBUG_HA', TRUE );
+// define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
@@ -98,6 +98,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	//	Are we monitoring this property?
 	//
 	if ($monitor) {
+	
 		$func = 'update'.str_replace(' ','',$propertyName);
 		if (function_exists ($func)) {
 			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {

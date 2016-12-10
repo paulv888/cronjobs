@@ -75,7 +75,7 @@ function createAlert($params) {
 	}
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
-	if ($params['priorityID'] < 3) $feedback['result'][] = sendBullet($params);
+	if ($params['priorityID'] <= 1) $feedback['result'][] = sendBullet($params);
 	return $feedback;
 }
 
@@ -218,6 +218,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	if ($rowshemesteps = FetchRows($mysql)) {
 		if (!$asyncthread && current($rowshemesteps)['runasync']) {
 			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+			$callerparams['commandvalue'] = (array_key_exists('commandvalue', $callerparams) ? $callerparams['commandvalue'] : null);
 			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID commandvalue=$callerparams[commandvalue]";
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -331,8 +332,7 @@ function setResult($params) {
 function setDevicePropertyCommand(&$params) {
 	$feedback['result'] = array();
 
-//echo "<pre>";
-//print_r($params);
+	if (DEBUG_COMMANDS) { echo "<pre>"; print_r($params); echo "</pre>"; };
 
 	calculateProperty($params) ;
 	$tarr = explode("___",$params['commandvalue']);

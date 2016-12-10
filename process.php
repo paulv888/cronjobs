@@ -36,7 +36,6 @@ if (isset($argv)) {
 }
 
 if (isset($_GET['callerID'])) {
-	//$sdata=json_decode($_GET['Message'], $assoc = TRUE); 
 	$_POST=$_GET;
 }
 

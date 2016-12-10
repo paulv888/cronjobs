@@ -1,5 +1,5 @@
 <?php
-//define( 'DEBUG_PROP', TRUE );
+// define( 'DEBUG_PROP', TRUE );
 if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {
@@ -16,7 +16,11 @@ function updateGeneric(&$params, $propertyName) {
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
 
-	if (array_key_exists('commandID', $params) && empty($params['device']['properties'][$propertyName]['value'])) {
+	// echo "dumpie";
+	// var_dump($params['device']['properties'][$propertyName]['value']);
+	if (array_key_exists('commandID', $params) && 
+	      ($params['device']['properties'][$propertyName]['value'] == "" ||
+				is_null($params['device']['properties'][$propertyName]['value']))) {
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		// echo var_dump($commandStatus);
 		if ($commandStatus !== false && $commandStatus != STATUS_NOT_DEFINED) {
@@ -25,8 +29,9 @@ function updateGeneric(&$params, $propertyName) {
 			} else {
 				$newvalue = $commandStatus;
 			}
-		} else if ($commandStatus == STATUS_NOT_DEFINED && $params['device']['previous_properties'][$propertyName]['datatype'] == 'DECIMAL') {
-			$newvalue = $params['commandvalue'];
+			if ($commandStatus == STATUS_COMMAND_VALUE) {
+				$newvalue = $params['commandvalue'];
+			}
 		} else {
 			unset($params['device']['properties'][$propertyName]);
 			return false;
