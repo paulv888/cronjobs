@@ -109,7 +109,7 @@ function createthumb($name,$filename,$new_w,$new_h, $text = "")
 	imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y); 
 	if ($text != "") {
 		$white = imagecolorallocate($dst_img, 0xff, 0xff, 0xff);
-		$grey = imagecolorallocate($im, 128, 128, 128);
+		$grey = imagecolorallocate($dst_img, 128, 128, 128);
 		$font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
 		imagettftext($dst_img, 12, 0, 11, 21, $grey, $font, $text);
 		imagettftext($dst_img, 12, 0, 10, 20, $white, $font, $text);
