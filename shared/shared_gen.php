@@ -344,9 +344,13 @@ function search_r($array, $key, $value, &$results)
     }
 }
 
-function get_string_between($string, $start, $end){
+function get_string_between($string, $start, $end, $occ = 1){
     $string = ' ' . $string;
-    $ini = strpos($string, $start);
+	$ini = -1;
+	for ($i=1; $i<=$occ; $i++) {
+		$ini++;
+		$ini = strpos($string, $start, $ini);
+	}
     if ($ini == 0) return '';
     $ini += strlen($start);
     $len = strpos($string, $end, $ini) - $ini;

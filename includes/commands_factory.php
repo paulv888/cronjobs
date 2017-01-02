@@ -649,6 +649,54 @@ function rebootFireTV($params) {
 
 } 
 
+function fireTVnetflix($params) {
+
+        $feedback['Name'] = 'fireTVnetflix';
+        $feedback['result'] = array();
+        // echo "<pre>";
+        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+        $cmd = 'nohup nice -n 10 '.getPath().'fireTVnetflix.sh';
+        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+        return $feedback;               // GET OUT
+
+}
+
+function fireTVkodi($params) {
+
+        $feedback['Name'] = 'fireTVkodi';
+        $feedback['result'] = array();
+        // echo "<pre>";
+        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+        $cmd = 'nohup nice -n 10 '.getPath().'fireTVkodi.sh';
+        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+        return $feedback;               // GET OUT
+
+}
+
+function fireTVcamera($params) {
+
+        $feedback['Name'] = 'fireTVcamera';
+        $feedback['result'] = array();
+        // echo "<pre>";
+        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
+        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
+        $cmd = 'nohup nice -n 10 '.getPath().'fireTVcamera.sh '.$params['commandvalue'];
+        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+        return $feedback;               // GET OUT
+
+}
+
 function sendEmail(&$params) {
 
 	$feedback['Name'] = 'sendmail';
