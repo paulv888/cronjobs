@@ -177,7 +177,7 @@ function openGroup($camera) {
 
 			// Be careful any triggers will be executed on changed properties
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
-			logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
+			//logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
 			if (DEBUG_CAMERAS) print_r($feedback);
 
 			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value'])) {
@@ -239,7 +239,7 @@ function closeGroup($camera) {
 			$params['device']['properties'] = $properties;
 			// Be careful any triggers will be executed on changed properties
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
-			logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
+			//logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
 			if (DEBUG_CAMERAS) print_r($feedback);
 
 			$recording['count'] = $camera['numfiles'];
