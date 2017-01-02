@@ -24,9 +24,9 @@ function monitorDevice($deviceID, $pingport) {
 	$status = false;
 	if ($rowip['ip'] != NULL) {
 		if ($pingport>0) {
-			$status = pingip ($rowip['ip'],$pingport,2);
+			$status = pingtcp ($rowip['ip'],$pingport,2);
 		} else {
-			$status = pingtcp ($rowip['ip'],100);
+			$status = pingip ($rowip['ip'],100);
 		}
 	}
 	if ($status) {
@@ -47,7 +47,7 @@ function monitorDevice($deviceID, $pingport) {
 	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
 }
 
-function pingip($host, $port, $timeout)
+function pingtcp($host, $port, $timeout)
 { 
 	$tB = microtime(true); 
 	$fP = @fSockOpen($host, $port, $errno, $errstr, $timeout); 
@@ -58,7 +58,7 @@ function pingip($host, $port, $timeout)
 	//return true;
 }
 
-function pingtcp($host, $timeout)
+function pingip($host, $timeout)
 { 
 	$tB = microtime(true); 
 	$fP = exec("fping -t$timeout $host", $output, $status);

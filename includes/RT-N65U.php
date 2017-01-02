@@ -10,6 +10,7 @@ function natSessions($params = Null) {
 }
 
 function deviceList($showlist) {
+
 	$result=GetDeviceList($showlist)." Devices Read <br/>\r\n";
 	return $result;
 }
@@ -52,41 +53,78 @@ function MoveHistory() {
 
 function GetSessions() {
 
-	
-	$post = RestClient::get("http://192.168.2.1/Main_ConnStatus_Content.asp",null,Array('method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
-	$response= $post->getResponse();
-	$post = RestClient::get("http://192.168.2.1/Logout.asp");
-
-    /*
-<textarea style="width:99%; font-family:'Courier New', Courier, mono; font-size:13px;background:#475A5F;color:#FFFFFF;" cols="63" rows="25" readonly="readonly" wrap=off>Proto NATed Address                            Destination Address                      State 
-tcp   192.168.2.110:62703                      192.168.2.101:443                        ESTABLISHED
-tcp   192.168.2.110:62589                      208.111.131.125:443                      TIME_WAIT  
-</textarea>
-	*/
-	$pattern = "/State(.*?)</si";
-	$noresult = preg_match_all($pattern, $response, $matches);
-	$lasterr = preg_last_error();
-	$t1 = '';
-	if (array_key_exists(1, $matches[1]) and $matches[1][1] != '')
-    {
-        $t1=$matches[1][1];
-    } else {
-    	echo $response;
-		return -1;
-    } 
-    	
-//print_r($t1);    
-    
-    $sess = explode("\n", $t1); 
-	unset($sess[0]);
-	end($sess);
-	unset($sess[key($sess)]);
-    
-	foreach ($sess as $row) {
-		$sessions[] = preg_split('/[\s:]+/', $row);
+		// Get myIP
+	if (!($myip = FetchRow('SELECT ip FROM `ha_mf_device_ipaddress`  WHERE name="PublicIP"')['ip'])) {
+		echo "Could not find 'PublicIP'";
+		exit; 
 	}
+	//echo "MyIP:".$myip.CRLF;
+    $dir = (empty($_SERVER['DOCUMENT_ROOT']) ? '/home/pvloon/php' : '.');
+    $output = shell_exec($dir.'/telnetcmd');
+
+    
+    $sessions_raw = explode("\n", $output); 
+    // unset($sess[0]);
+	end($sessions_raw);
+	unset($sessions_raw[key($sessions_raw)]);
+
+	foreach ($sessions_raw as $row) {
+		$row_split = preg_split('/[\s:]+/', $row);
+
+	// echo "<pre>";
+	//echo $row.CRLF;
+		unset($session);
+		$session['raw'] = $row;
+		$session['protocol'] = $row_split[1];
+		if (!($session['local_address'] = get_string_between($row, 'src=', ' '))) continue;
+
+		$session['local_port'] = get_string_between($row, 'sport=', ' ');
+		if (substr($session['local_address'],0,strlen(MY_SUBNET)) <> MY_SUBNET &&
+				substr($session['local_address'],0,strlen(MY_VPN_SUBNET)) <> MY_VPN_SUBNET &&
+				$session['local_address'] <> $myip)	{
+           	$session['class'] = SEVERITY_DANGER_CLASS;
+			$session['remote_address'] = $session['local_address'];
+			$session['remote_port'] = $session['local_port'];
+			$session['local_address'] = get_string_between($row, 'src=', ' ', 2);
+			$session['local_port'] = get_string_between($row, 'sport=', ' ', 2);
+			$session['packets']  = get_string_between($row, 'packets=', ' ', 2);
+			$session['bytes'] = get_string_between($row, 'bytes=', ' ', 2); 
+		}	else {
+
+			$session['remote_address'] = get_string_between($row, 'dst=', ' ');
+			$session['remote_port'] = get_string_between($row, 'dport=', ' ');
+			$session['packets']  = get_string_between($row, 'packets=', ' ');
+			$session['bytes'] = get_string_between($row, 'bytes=', ' '); 
+		}
+		if ($session['protocol']==6) $session['TCPstate'] = $row_split[3];
+		if ($session['protocol']==6) $session['flags'] = $row_split[16];
+		$session['active'] = 1;
+	// print_r($session);
+	// echo "</pre>";
+		$sessions[] = $session;
+
+	}
+	
+    // Protocol name.
+    // Protocol number. (6 = TCP. 17 = UDP.)
+    // Seconds until this entry expires.
+    // TCP only: TCP connection state.
+    // Source address of “original”-side packets (packets from the side that initiated the connection).
+    // Destination address of original-side packets.
+    // Source port of original-side packets.
+    // Destination port of original-side packets.
+    // “[UNREPLIED]”, if this connection has not seen traffic in both directions. Otherwise not present.
+    // Source address of “reply”-side packets (packets from the side that received the connection).
+    // Destination address of reply-side packets.
+    // Source port of reply-side packets.
+    // Destination port of reply-side packets.
+    // “[ASSURED]”, if this connection has seen traffic in both directions (for UDP) or an ACK in an ESTABLISHED connection (for TCP). Otherwise not present.
+    // Use count of this connection structure. 
+	
 // echo "<pre>";
 // print_r($sessions);
+// echo "</pre>";
+// exit;
        
 	return $sessions;
 }
@@ -135,7 +173,7 @@ function findLocalName($ip) {
 	if (!$res) mySqlError();
 
 	if ($row=FetchRow($mysql)) {
-		return  $row['name'];
+		return  $row['friendly_name'];
 	} else {
 		$params = array('callerID' => MY_DEVICE_ID, 
 						'deviceID' => MY_DEVICE_ID, 
@@ -143,7 +181,7 @@ function findLocalName($ip) {
 						'schemeID' => ALERT_UNKNOWN_IP_FOUND,
 						'ha_alerts___l1' => 'IP Address', 
 						'ha_alerts___v1' => $ip);
-		echo executeCommand($params).CRLF;
+		print_r(executeCommand($params));
 		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 			`ip` ,
 			`mac` ,
@@ -189,12 +227,12 @@ function ImportSessions() {
 	$sessionsimported=0;
    	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
 	if (!mysql_query($mysql))  mySqlError($mysql);
-    	
-	foreach ($sessionsresponse AS $session) {
+    
+	foreach ($sessionsresponse as $session) {
     	
 		$mysql="SELECT * ". 
 				" FROM  `net_sessions`" .  
-				" WHERE local_address='".$session[1]."'"." AND local_port='".$session[2]."'"." AND remote_address='".$session[3]."'"." AND remote_port='".$session[4]."'";  
+				" WHERE local_address='".$session['local_address']."'"." AND local_port='".$session['local_port']."'"." AND remote_address='".$session['remote_address']."'"." AND remote_port='".$session['remote_port']."'";  
 		$ressessions=mysql_query($mysql);
 		if ($dbsession=mysql_fetch_array($ressessions)) {
 			// check for same ip's???
@@ -204,90 +242,16 @@ function ImportSessions() {
 				if (!mysql_query($mysql)) mySqlError($mysql);
 			}
 
-			
-		$class = "";
-			
-		if (substr ($session[1],0,strlen(MY_SUBNET)) <> MY_SUBNET && substr ($session[1],0,strlen(MY_VPN_SUBNET)) <> MY_VPN_SUBNET) {
-           	$class = SEVERITY_DANGER_CLASS;
-			$ip = $session[1];
-			$po = $session[2];
-			$session[1] = $session[3];
-			$session[2] = $session[4];
-			$session[3] = $ip;
-			$session[4] = $po;
-		}
+
+		$local = $session['local_address'];
+		$session['local_name'] = findLocalName($session['local_address']); 
+		$remote = $session['remote_address'];
+		$session['remote_name'] = findRemoteName($session['remote_address']); 
 		
-		$local = $session[1];
-		$localname= findLocalName($session[1]); 
-		$remote = $session[3];
-		$remotename= findRemoteName($session[3]); 
-   		$mysql= 'INSERT INTO `net_sessions` (
-					`sessionid` ,
-					`protocol` ,
-					`local_address` ,
-					`local_name` ,
-					`local_port` ,
-					`remote_address` ,
-					`remote_name` ,
-					`remote_port` ,
-					`firewall_address` ,
-					`firewall_port` ,
-					`TCPstate` ,
-					`last_used` ,
-					`bkt` ,
-					`flags` ,
-					`count` ,
-					`lnd` ,
-					`fnd` ,
-					`max_idle` ,
-					`IN_is` ,
-					`IN_sent` ,
-					`IN_unacked` ,
-					`IN_mss` ,
-					`IN_windows_state` ,
-					`OUT_is` ,
-					`OUT_sent` ,
-					`OUT_unacked` ,
-					`OUT_mss` ,
-					`OUT_windows_state` ,
-					`active`,
-					`class`
-					)
-				VALUES (' . 
-					'"",'.
-					'"'.$session[0].'",'.
-					'"'.$session[1].'",'.
-					'"'.$localname.'",'.
-					'"'.$session[2].'",'.
-					'"'.$session[3].'",'.
-					'"'.$remotename.'",'.
-					'"'.$session[4].'",'.
-					'"",'.
-					'"",'.
-					'"'.(isset($session[5]) ? $session[5] : "").'",'.
-					'"'.(isset($session['last_used']) ? $session['last_used'] : "").'",'.
-					'"'.(isset($session['bkt']) ? $session['bkt'] : "").'",'.
-					'"'.(isset($session['flags']) ? $session['flags'] : "").'",'.
-					'"'.(isset($session['cnt']) ? $session['cnt'] : "").'",'.
-					'"'.(isset($session['lnd']) ? $session['lnd'] : "").'",'.
-					'"'.(isset($session['fnd']) ? $session['fnd'] : "").'",'.
-					'"'.(isset($session['max_idle']) ? $session['max_idle'] : "").'",'.
-					'"'.(isset($session['IN_is']) ? $session['IN_is'] : "").'",'.
-					'"'.(isset($session['IN_sent']) ? $session['IN_sent'] : "").'",'.
-					'"'.(isset($session['IN_unacked']) ? $session['IN_unacked'] : "").'",'.
-					'"'.(isset($session['IN_mss']) ? $session['IN_mss'] : "").'",'.
-					'"'.(isset($session['IN_windows_state']) ? $session['IN_windows_state'] : "").'",'.
-					'"'.(isset($session['OUT_is']) ? $session['OUT_is'] : "").'",'.
-					'"'.(isset($session['OUT_sent']) ? $session['OUT_sent'] : "").'",'.
-					'"'.(isset($session['OUT_unacked']) ? $session['OUT_unacked'] : "").'",'.
-					'"'.(isset($session['OUT_mss']) ? $session['OUT_mss'] : "").'",'.
-					'"'.(isset($session['OUT_windows_state']) ? $session['OUT_windows_state'] : "").'",'.
-					'"'."1".'",'.
-					'"'.$class.'");';
-	
-			if (!mysql_query($mysql)) mySqlError($mysql);	
-			$sessionsimported++;
-    }
+		PDOinsert('net_sessions', $session);
+		$sessionsimported++;
+
+	}
     
 	return $sessionsimported;
 }
@@ -296,11 +260,25 @@ function GetDeviceList($showlist = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
 	
-	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
+	$get = RestClient::get('http://icanhazip.com/');
+
+    if ($get->getresponsecode() == 200) {
+		$myip = trim($get->getresponse());
+		//echo ">".$myip."<";
+		$mysql='UPDATE `ha_mf_device_ipaddress` SET ip = "'.$myip.'" WHERE name="PublicIP"';  
+		if (!mysql_query($mysql)) mySqlError($mysql);
+		//exit;
+	} else {
+		echo "Could not connect to http://icanhazip.com/".CRLF;
+	}
+
+	
+	$post = RestClient::get("http://192.168.2.".$showlist."/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
+//echo $response;
 	// refresh for next run
-	$post = RestClient::get("http://192.168.2.1/apply.cgi?action_mode=refresh_networkmap&action_script=&action_wait=5&current_page=device-map%2Fclients.asp&next_page=device-map%2Fclients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
-	$post = RestClient::get("http://192.168.2.1/Logout.asp");
+	$post = RestClient::get("http://192.168.2.".$showlist."/apply.cgi?action_mode=refresh_networkmap&action_script=&action_wait=5&current_page=device-map%2Fclients.asp&next_page=device-map%2Fclients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
+	$post = RestClient::get("http://192.168.2.".$showlist."/Logout.asp");
 
 	$pattern = "/fromNetworkmapd: '(.*?)'./si";
 	
@@ -447,74 +425,4 @@ if(networkmap_fullscan == 1) genClientList();
 	return $devicesimported;
 
 }
-
-/* 
-function showclient_list(list){
-
-var client_list_col = client_list_row[i].split('>');
-var overlib_str = "";
-if(client_list_col[1] == "")
-client_list_col[1] = retHostName(client_list_col[3]);
-if(client_list_col[1].length > 16){
-overlib_str += "<p>User Name</p>" + client_list_col[1];
-client_list_col[1] = client_list_col[1].substring(0, 13);
-client_list_col[1] += "...";
-}
-overlib_str += "<p>MAC address:</p>" + client_list_col[3];
-if(login_ip_str() == client_list_col[2])
-overlib_str += "<p>Local Device:</p>YES";
-if(client_list_col[5] == 1)
-overlib_str += "<p>Printer Service:</p>YES";
-if(client_list_col[6] == 1)
-overlib_str += "<p>iTunes Service:</p>YES";
-for(var j = 0; j < client_list_col.length-3; j++){
-if(j == 0){
-if(client_list_col[0] == "0" || client_list_col[0] == ""){
-code +='<td width="12%" height="30px;" title="'+DEVICE_TYPE[client_list_col[0]]+'"><div id="device_img6"></div></td>';
-networkmap_scanning = 1;
-}
-else{
-code +='<td width="12%" height="30px;" title="'+DEVICE_TYPE[client_list_col[0]]+'">';
-code +='<div id="device_img'+client_list_col[0]+'"></div></td>';
-}
-}
-else if(j == 1){
-if(client_list_col[1] != "")
-code += '<td width="40%" onclick="oui_query(\'' + client_list_col[3] + '\');overlib_str_tmp=\''+ overlib_str +'\';return overlib(\''+ overlib_str +'\');" onmouseout="nd();" class="ClientName" style="cursor:pointer;text-decoration:underline;">'+ client_list_col[1] +'</td>'; // Show Device-name
-else
-code += '<td width="40%" onclick="oui_query(\'' + client_list_col[3] + '\');overlib_str_tmp=\''+ overlib_str +'\';return overlib(\''+ overlib_str +'\');" onmouseout="nd();" class="ClientName" style="cursor:pointer;text-decoration:underline;">'+ client_list_col[3] +'</td>'; // Show MAC
-}
-else if(j == 2){
-if(client_list_col[4] == "1")
-code += '<td width="36%"><a title="LAN IP" class="ClientName" style="text-decoration:underline;" target="_blank" href="http://'+ client_list_col[2] +'">'+ client_list_col[2] +'</a></td>';
-else
-code += '<td width="36%"><span title="LAN IP" class="ClientName">'+ client_list_col[2] +'</span></td>';
-}
-else if(j == client_list_col.length-4)
-code += '';
-else
-code += '<td width="36%" class="ClientName" onclick="oui_query(\'' + client_list_col[3] + '\');overlib_str_tmp=\''+ overlib_str +'\';return overlib(\''+ overlib_str +'\');" onmouseout="nd();">'+ client_list_col[j] +'</td>';
-}
-if(parent.sw_mode == 1 && ParentalCtrl_support)
-code += '<td width="12%"><input class="remove_btn_NM" type="submit" title="Block" onclick="block_this_client(this);" value=""/></td></tr>';
-else
-code += '</tr>';
-}
-}
-code +='</table>';
-$("client_list_Block").innerHTML = code;
-$("client_list_Block").style.display = "none";
-for(var i=client_list_row.length-1; i>0; i--){
-var client_list_col = client_list_row[i].split('>');
-if(list == is_blocked_client(client_list_col[3])){
-$('client_list_table').deleteRow(i-1);
-}
-}
-if($('client_list_table').innerHTML == "<tbody></tbody>"){
-code ='<tr><td style="color:#FFCC00;" colspan="4">No data in table.</td></tr>'
-$("client_list_Block").innerHTML = code;
-}
-parent.client_list_array = client_list_array;
-parent.show_client_status();
-} */
 ?>
