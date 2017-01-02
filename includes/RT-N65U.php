@@ -60,8 +60,7 @@ function GetSessions() {
 	}
 	//echo "MyIP:".$myip.CRLF;
     $dir = (empty($_SERVER['DOCUMENT_ROOT']) ? '/home/pvloon/php' : '.');
-    $output = shell_exec($dir.'/telnetcmd');
-
+    $output = shell_exec($dir.'/telnetcmd '.FIREWALL_USER.' '.FIREWALL_PASSWORD);
     
     $sessions_raw = explode("\n", $output); 
     // unset($sess[0]);
