@@ -207,24 +207,35 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	}
 
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.propertyID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID 
+	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.propertyID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID, s2.runasync as step_async 
 	FROM ha_remote_schemes 
 	JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID 
 	LEFT JOIN ha_mf_commands ON ha_remote_scheme_steps.commandID = ha_mf_commands.id
-	WHERE ha_remote_schemes.id ='.$schemeID.'.
+	LEFT JOIN ha_remote_schemes s2 ON ha_remote_scheme_steps.runschemeID = s2.id
+	WHERE ha_remote_schemes.id ='.$schemeID.'
 	ORDER BY ha_remote_scheme_steps.sort';
-
-	// Trap any async SCHEMES here
+		
+	//
+	// Trap any async SCHEMES here 
+	//		Trapping at first step after checking conditions. Nice for root level, however does not allow async in async
+	//		Adding to check individual steps as well and spawn immediately
+	//
 	if ($rowshemesteps = FetchRows($mysql)) {
 		if (!$asyncthread && current($rowshemesteps)['runasync']) {
-			$devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-			$callerparams['commandvalue'] = (array_key_exists('commandvalue', $callerparams) ? $callerparams['commandvalue'] : null);
-			$curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID commandvalue=$callerparams[commandvalue]";
-			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php '.$curlparams;
+			unset($values);
+			$values['callerID'] = $callerparams['callerID'];
+			$values['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : "");
+			$values['messagetypeID'] = "MESS_TYPE_SCHEME";
+			$values['commandvalue'] = (array_key_exists('commandvalue', $callerparams) ? $callerparams['commandvalue'] : null);
+			$values['schemeID'] = $schemeID;
+			$getparams = http_build_query($values, '',' ');
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence.'; //."  Log:".$outputfile;
+			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence. Log: '.$outputfile;
+			$feedback['commandstr'] = $cmd;
 			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
@@ -245,13 +256,34 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
 			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
+
 			$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
 			$params['commandvalue'] = $text;
+			splitCommandvalue($params);
 			if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
-			$result = SendCommand($params);
-			// TODO:: check for 'error'
-			// TODO:: bubble up message?
-			// print_r($feedback['result']);
+			if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r($params['cvs']);
+
+			$result = Array();
+			if ($step['step_async']) {			// Spawn it
+				unset($values);
+				$values['callerID'] = $callerparams['callerID'];
+				$values['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : "");
+				$values['messagetypeID'] = "MESS_TYPE_SCHEME";
+				$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
+				$values['schemeID'] = $params['schemeID'];
+				$getparams = http_build_query($values, '',' ');
+				
+				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+
+				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
+				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+				$result['message'] = "Initiated ".$result['Name'].' sequence. Log: '.$outputfile;
+				$result['commandstr'] = $cmd;
+				if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
+			} else {
+				$result = SendCommand($params);
+			}
 			if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
 			if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
 			if (DEBUG_PARAMS) echo 'Loaded last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
@@ -429,8 +461,8 @@ function getNowPlaying(&$params) {
 		echo "Handle Transport Error";
 		print_r($result);
 	} else {
-		//$result = json_decode($result['result'][0],true);
-		// print_r($result['result']);
+// echo "<pre>";
+// print_r($result);
 		$result = $result['result'];
 		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
@@ -445,6 +477,7 @@ function getNowPlaying(&$params) {
 			}
 			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 			$properties['File']['value'] = $result['result']['item']['file'];
+			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
 		} else {
@@ -637,9 +670,6 @@ function rebootFireTV($params) {
 
 	$feedback['Name'] = 'rebootFireTV';
 	$feedback['result'] = array();
-	// echo "<pre>";
-	// $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-	// $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
 	$cmd = 'nohup nice -n 10 '.getPath().'rebootFireTV.sh';
 	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
@@ -653,9 +683,6 @@ function fireTVnetflix($params) {
 
         $feedback['Name'] = 'fireTVnetflix';
         $feedback['result'] = array();
-        // echo "<pre>";
-        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
         $cmd = 'nohup nice -n 10 '.getPath().'fireTVnetflix.sh';
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
@@ -669,9 +696,6 @@ function fireTVkodi($params) {
 
         $feedback['Name'] = 'fireTVkodi';
         $feedback['result'] = array();
-        // echo "<pre>";
-        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
         $cmd = 'nohup nice -n 10 '.getPath().'fireTVkodi.sh';
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
@@ -685,14 +709,26 @@ function fireTVcamera($params) {
 
         $feedback['Name'] = 'fireTVcamera';
         $feedback['result'] = array();
-        // echo "<pre>";
-        // $devstr = (array_key_exists('deviceID', $callerparams) ? "deviceID=".$callerparams['deviceID'] : "");
-        // $curlparams = "ASYNC_THREAD callerID=$callerparams[callerID] $devstr messagetypeID=MESS_TYPE_SCHEME schemeID=$schemeID";
         $cmd = 'nohup nice -n 10 '.getPath().'fireTVcamera.sh '.$params['commandvalue'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
         $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+        return $feedback;               // GET OUT
+
+}
+
+function storeCamImage($params) {
+
+        $feedback['Name'] = 'storeCamImage';
+        $feedback['result'] = array();
+
+        echo "<pre>";
+		print_r($params['cvs']);
+        echo "</pre>";
+		if (!copy($params['cvs'][0], $params['cvs'][1])) $feedback['error'] = "Error during copy";
+
+        $feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
         return $feedback;               // GET OUT
 
 }
@@ -896,7 +932,12 @@ function sendGenericHTTP(&$params) {
 		$tmp1 = explode('?', $tcomm);
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
 			$params['device']['connection']['page'] .= $tmp1[0];
-			$tcomm = $tmp1[1];
+			array_shift($tmp1);
+			$tcomm = implode('?',$tmp1);
+			// echo "<pre>";
+			// print_r($tmp1);
+			// echo "******".$tcomm;
+			// echo "</pre>";
 		} 
 		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;

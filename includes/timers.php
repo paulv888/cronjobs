@@ -81,7 +81,7 @@ function RunTimers(){
 function runTimerSteps($params) {
 
 
-	if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
+	if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands (Not in Use? There is a command runTimerSteps, but not used?
 		$timer['runasync'] = false;
 		$timer['priorityID'] = 1;
 		$timer['description'] = "";

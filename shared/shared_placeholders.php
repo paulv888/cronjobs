@@ -1,5 +1,5 @@
 <?php
-//define('DEBUG_PHOLDERS', TRUE);
+// define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($result, $params) {
@@ -47,6 +47,22 @@ function replaceCommandPlaceholders($result, $params) {
 	return $result;
 }
 
+function splitCommandvalue(&$params) {
+//
+//  For macro stepvalues
+//		in: $params
+//		out: add cvs array to $params
+
+	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue "; print_r($params); print_r ($params); echo "</pre>";}
+
+	if (strpos($params['commandvalue'],'|') !== false) {
+		$cvs = explode('|', $params['commandvalue']);
+		$params['cvs']= $cvs;
+	}
+	
+	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue result"; print_r($params); print_r ($params); echo "</pre>";}
+	return;
+}
 function replaceResultPlaceholders($mess_subject, &$params, $resultin){
 
 	if (DEBUG_PHOLDERS) {

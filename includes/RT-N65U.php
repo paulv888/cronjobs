@@ -231,7 +231,8 @@ function ImportSessions() {
     	
 		$mysql="SELECT * ". 
 				" FROM  `net_sessions`" .  
-				" WHERE local_address='".$session['local_address']."'"." AND local_port='".$session['local_port']."'"." AND remote_address='".$session['remote_address']."'"." AND remote_port='".$session['remote_port']."'";  
+				" WHERE local_address='".$session['local_address']."'"." AND local_port='".$session['local_port']."'".
+                                     " AND remote_address='".$session['remote_address']."'"." AND remote_port='".$session['remote_port']."'";  
 		$ressessions=mysql_query($mysql);
 		if ($dbsession=mysql_fetch_array($ressessions)) {
 			// check for same ip's???
@@ -246,7 +247,7 @@ function ImportSessions() {
 		$session['local_name'] = findLocalName($session['local_address']); 
 		$remote = $session['remote_address'];
 		$session['remote_name'] = findRemoteName($session['remote_address']); 
-		
+		$session['createdate'] = date('Y-m-d H:i:s');
 		PDOinsert('net_sessions', $session);
 		$sessionsimported++;
 
@@ -272,12 +273,12 @@ function GetDeviceList($showlist = false) {
 	}
 
 	
-	$post = RestClient::get("http://192.168.2.".$showlist."/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
+	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 //echo $response;
 	// refresh for next run
-	$post = RestClient::get("http://192.168.2.".$showlist."/apply.cgi?action_mode=refresh_networkmap&action_script=&action_wait=5&current_page=device-map%2Fclients.asp&next_page=device-map%2Fclients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
-	$post = RestClient::get("http://192.168.2.".$showlist."/Logout.asp");
+	$post = RestClient::get("http://192.168.2.1/apply.cgi?action_mode=refresh_networkmap&action_script=&action_wait=5&current_page=device-map%2Fclients.asp&next_page=device-map%2Fclients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
+	$post = RestClient::get("http://192.168.2.1/Logout.asp");
 
 	$pattern = "/fromNetworkmapd: '(.*?)'./si";
 	

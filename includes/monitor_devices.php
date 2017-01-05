@@ -15,7 +15,7 @@ function monitorDevices($linkmonitor) {
 }
 
 function monitorDevice($deviceID, $pingport) {
-	$mysql = 'SELECT `ip`, `name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
+	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 	if (!$resip = mysql_query($mysql)) {
 		mySqlError($mysql); 
 		return false;
@@ -37,11 +37,11 @@ function monitorDevice($deviceID, $pingport) {
 		$statverb = "Offline";
 	}
 
-	echo date("Y-m-d H:i:s").": ".$rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
+	echo date("Y-m-d H:i:s").": ".$rowip['friendly_name']."-".$rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
 	$params['callerID'] = MY_DEVICE_ID;
 	$params['deviceID'] = $deviceID;
 	$params['commandID'] = COMMAND_PING;
-    $params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
+    	$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 	$properties['Link']['value'] = $curlink;
 	$params['device']['properties'] = $properties;
 	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
