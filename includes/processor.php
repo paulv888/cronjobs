@@ -214,20 +214,18 @@ function sendCommand(&$thiscommand) {
 		if (DEBUG_PARAMS) echo 'Text: '.$thiscommand['commandvalue'].CRLF;
 	}
 
-
-	// Check for errors first?
-	if  (array_key_exists('error', $feedback)) {
-		$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
-	} elseif (array_key_exists('message', $feedback)) {
-		$params['commandvalue'] = $feedback['message'];
-	} elseif (array_key_exists('Name', $feedback)) {
-		$params['commandvalue'] = $feedback['Name'];
-	}
-
 	if ($rowcommands['need_device']) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
-
+	
+	// Check for errors first?
+	if  (array_key_exists('error', $feedback)) {
+		$thiscommand['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
+	} elseif (array_key_exists('message', $feedback)) {
+		$thiscommand['commandvalue'] = $feedback['message'];
+	} elseif (array_key_exists('Name', $feedback)) {
+		$thiscommand['commandvalue'] = $feedback['Name'];
+	}	
 	$exectime += microtime(true);
 
 	if (!array_key_exists('message', $feedback)) $feedback['message']='';

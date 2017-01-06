@@ -234,7 +234,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-			$feedback['message'] = "Initiated ".$feedback['Name'].' sequence. Log: '.$outputfile;
+			$feedback['message'] = "Initiated ".current($rowshemesteps)['name'].' sequence. Log: '.$outputfile;
 			$feedback['commandstr'] = $cmd;
 			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
@@ -278,7 +278,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-				$result['message'] = "Initiated ".$result['Name'].' sequence. Log: '.$outputfile;
+				$result['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
 				$result['commandstr'] = $cmd;
 				if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
 			} else {

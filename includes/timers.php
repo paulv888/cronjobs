@@ -123,7 +123,9 @@ function runTimerSteps($params) {
 			} else {
 				$feedback['Name'] = $description;
 				$feedback['result'] .= json_encode(executeCommand($step),JSON_UNESCAPED_SLASHES).'</br>';
-				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'result' => $feedback['result'] ));
+				// No logging here, is done in Command
+				//if ($timer['priorityID'] != PRIORITY_HIDE) 
+//logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'result' => $feedback['result'] ));
 			}
 		}
 		return $feedback;		// GET OUT

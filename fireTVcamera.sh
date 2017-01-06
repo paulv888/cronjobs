@@ -1,5 +1,9 @@
 #! /bin/bash
-./fireTVconnected.sh
+adb devices | grep '192.168.2.30' &> /dev/null
+if [ $? != 0 ]; then
+  adb connect 192.168.2.30
+  sleep 1         # give it time to run
+fi
 
 GALLERY="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW -e selectCameraName"
 SELECT="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.MAIN' -e selectView GALLERY_VIEW -e selectCameraName"
