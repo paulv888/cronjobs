@@ -46,6 +46,9 @@ function MoveHistory() {
 	$result=mysql_query($mysql);
 	if (!$result) mySqlError($mysql);	
 	$num_rows = mysql_affected_rows();
+    $mysql='UPDATE `net_sessions_history` SET `remote_domain`=if(`remote_name`=`remote_address`, `remote_name`, SUBSTRING_INDEX(`remote_name`, ".", -2))   WHERE `remote_domain` IS Null';
+	$result=mysql_query($mysql);
+	if (!$result) mySqlError($mysql);	
     $mysql="DELETE FROM `net_sessions` WHERE active=0;";
 	if (!mysql_query($mysql)) mySqlError($mysql);
 	return $num_rows;
@@ -59,14 +62,15 @@ function GetSessions() {
 		exit; 
 	}
 	//echo "MyIP:".$myip.CRLF;
-    $dir = (empty($_SERVER['DOCUMENT_ROOT']) ? 'SRVMEDIA_SOURCE' : '.');
-    $output = shell_exec($dir.'/telnetcmd '.FIREWALL_USER.' '.FIREWALL_PASSWORD);
+    $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD);
     
     $sessions_raw = explode("\n", $output); 
     // unset($sess[0]);
 	end($sessions_raw);
 	unset($sessions_raw[key($sessions_raw)]);
 
+	$sessions= Array();
+	
 	foreach ($sessions_raw as $row) {
 		$row_split = preg_split('/[\s:]+/', $row);
 
@@ -221,7 +225,7 @@ function ImportSessions() {
 //print_r($sessionsresponse);
 //echo "</pre>";
 
-	if ($sessionsresponse < 0) return -1;
+	if (empty($sessionsresponse)) return -1;
 	
 	$sessionsimported=0;
    	$mysql = "UPDATE `net_sessions` SET `active` = '0';";

@@ -198,7 +198,6 @@ define("ADD_MOVE_TO", "/home/www/vlohome/data");
 define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
 define("LOCAL_RECYCLE", "_XXX_recyclebin/");
 define("LOCAL_IMPORT", "_XXX_import/");
-define("SRVMEDIA_SOURCE", "/home/pvloon/php");
 define("ALERT_KODI", 224);
 
 define("PUSH_CHANNEL", "vlohome");

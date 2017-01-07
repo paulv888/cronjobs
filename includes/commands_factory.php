@@ -251,6 +251,9 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$params['alert_textID'] = $step['alert_textID'];
 
 			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+				if (!isset($_SESSION)) {
+					$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+				}
 				$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 			}
 

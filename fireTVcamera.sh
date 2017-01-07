@@ -10,7 +10,10 @@ SELECT="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivi
 MATRIX="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView MATRIX_VIEW -e selectGroupName"
 MSELECT="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.MAIN' -e selectView MATRIX_VIEW -e selectGroupName"
 
-##adb shell am force-stop com.rcreations.WebCamViewerPaid 
+#adb shell am force-stop com.rcreations.WebCamViewerPaid
+adb shell am force-stop org.xbmc.kodi
+adb shell am force-stop com.netflix.ninja
+
 case "$1" in
 1) CAM="Front"
    echo $GALLERY $CAM
@@ -44,15 +47,18 @@ case "$1" in
     ;;
 outside) CAM="Outside"
    echo $MATRIX $CAM
+#   $GALLERY "Front"
    $MATRIX "$CAM"
    $MSELECT "$CAM"
     ;;
 chickens) CAM="Coop"
    echo $MATRIX $CAM
+#   $GALLERY "Front"
    $MATRIX "$CAM"
    $MSELECT "$CAM"
     ;;
-*) adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity
+*) echo "No View specified >$1<" 
+#adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity
    ;;
 esac
 
@@ -60,3 +66,4 @@ esac
 #adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a "android.intent.action.MAIN" -e selectView GALLERY_VIEW -e selectGroupName Coop
 #adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a "android.intent.action.MAIN" -e selectView GALLERY_VIEW -e selectCameraName "Front Door"
 adb disconnect
+
