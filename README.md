@@ -33,4 +33,4 @@ Currently interfacing to:
        Yahoo           API              Dusk/Dawn Info          Get/JSON
        Yahoo           Streamer-API     Stock-Ticks             Get/JSON
        IB              API              Stock ORders            Get/JSON
-       
+       Amazon          FireTV Stick     Media Player            ADB
