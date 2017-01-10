@@ -34,3 +34,4 @@ Currently interfacing to:
        Yahoo           Streamer-API     Stock-Ticks             Get/JSON
        IB              API              Stock ORders            Get/JSON
        Amazon          FireTV Stick     Media Player            ADB
+       Amazon          Alexa            Voice Service           Post/JSON
