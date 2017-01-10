@@ -347,8 +347,7 @@ function getDeviceProperties($deviceproperty){
 						[toggleignore] => 15 0
 						[description] => Status
 					) */
-
-
+// If DeviceID given, then only that device, (or deviceList) 
 
 	if (array_key_exists('description', $deviceproperty)) {
 		$propertyName = $deviceproperty['description'];
@@ -397,7 +396,7 @@ function getDeviceProperties($deviceproperty){
 			}
 		}
 		return $result;
-	} elseif (array_key_exists('deviceID', $deviceproperty))  {		// Only DeviceID
+	} elseif (array_key_exists('deviceID', $deviceproperty))  {		// Only DeviceID (Support deviceList
 		$result = Array();
 		if (!is_null($deviceproperty['deviceID']) && $rowproperties = FetchRows(
 			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype`, `p`.`primary_status` FROM ha_mf_device_properties dp 
@@ -458,7 +457,7 @@ function removeDevicePropertyByID($deviceproperty){
 	return true ;
 }
 
-function getProperty($key_description){
+function getProperty($key_description, $autocreate = true){
 //
 //	In:  Description or ID
 //	Out: Property 
@@ -473,7 +472,7 @@ function getProperty($key_description){
 	}
 	if ($rowproperty = FetchRow($mysql)) {
 		return $rowproperty;
-	} elseif ($descriptiongiven) {		// Create
+	} elseif ($descriptiongiven && $autocreate) {		// Create
 		$id = PDOinsert('ha_mi_properties', Array('description' => $key_description));
 		$mysql='SELECT * FROM `ha_mi_properties` WHERE `id`='.$id;;
 		return FetchRow($mysql);
@@ -579,7 +578,6 @@ function listDeviceProperties($devices){
 //
 // Feed in property Array (Only used from highchart graphs
 //
-	//$id = getPropertyID($propertyName);
 	if ($rows = FetchRows('SELECT propertyID FROM ha_mf_device_properties  WHERE deviceID IN ('.$devices.')')) {
 		foreach ($rows AS $prop) {
 			$result[] = $prop['propertyID'];

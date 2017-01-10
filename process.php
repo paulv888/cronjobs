@@ -1,6 +1,6 @@
 <?php 
 require_once 'includes.php';
-//define( 'DEBUG_INPUT', TRUE );
+// define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 

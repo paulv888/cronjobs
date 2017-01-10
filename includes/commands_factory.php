@@ -250,11 +250,14 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$params['schemeID'] = $step['runschemeID'];
 			$params['alert_textID'] = $step['alert_textID'];
 
+ // {echo "<pre>before error ";print_r($params);echo "</pre>";}
+
 			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
-				if (!isset($_SESSION)) {
-					$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
-				}
-				$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+				if (array_key_exists('SESSION', $params)) {
+					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+				} else if (array_key_exists('SESSION', $params['caller'])) {
+					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
+				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEFAULT_PLAYER;
 			}
 
 			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
