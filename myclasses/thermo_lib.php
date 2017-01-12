@@ -487,9 +487,11 @@ $this->debug = false;
 		$ttemp=(float)$ttemp;
 		
 		if ($this->tmode == 1) {
-			$value = array ('t_heat'=>$ttemp);	 
+			if ($ttemp > 75) return array('error'=> 'Temp greater than 24C/75F limit'); 							// Set protection limit, for voice misinterpretation
+			$value = array ('t_heat'=>$ttemp);
 		} else {
-			$value = array ('t_cool'=>$ttemp);	 
+			if ($ttemp < 64) return array('error'=> 'Temp less than 18C/64F limit');    							// Set protection limit, for voice misinterpretation
+			$value = array ('t_cool'=>$ttemp);
 		}
 		
 		if ($this->tmode == 0) return 32;
@@ -504,9 +506,9 @@ $this->debug = false;
 		
 		if (array_key_exists("success", $result)) {
 			$this->ttemp=$ttemp;
-			return $ttemp;
+			return array('result'=>$ttemp);
 		} else
-			return $result;
+			return array('error'=>$result);
 	}
 
 	// Interpret current status based on cool/heat mode and current target temp

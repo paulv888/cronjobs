@@ -481,9 +481,9 @@ function getNowPlaying(&$params) {
 				$properties['Artist']['value'] = substr($properties['Playing']['value'], 0, $br);
 				$properties['Title']['value'] =  substr($properties['Playing']['value'], $br + 3);
 			}
-			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 			$properties['File']['value'] = $result['result']['item']['file'];
 			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
+			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
 		} else {
@@ -952,7 +952,7 @@ function sendGenericHTTP(&$params) {
 			$curl = restClient::post($url, $tcomm, null, "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
 			$feedback['commandstr'] .= ' '.$tcomm;
-			$curl = restClient::post($url, $tcomm, null, "", $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $tcomm, null, "application/x-www-form-urlencoded", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
@@ -980,7 +980,7 @@ function sendGenericHTTP(&$params) {
 		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-		$feedback['commandstr'] .= urlencode($tcomm);
+		$feedback['commandstr'] .= implode('/', array_map('rawurlencode', explode('/', $tcomm)));;
 		$curl = restClient::get($url.$tcomm, array(), null, $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -1157,7 +1157,7 @@ function graphCreate($params) {
 				data-graph-container-before="1" data-graph-zoom-type="x" data-graph-height="500" >';
 		//data-graph-xaxis-type="datetime"
 
-		if (DEBUG_GRAPH) print_r($rowsprops);
+		if (DEBUG_GRAPH) {echo "RowsProps:"; print_r($rowsprops);}
 
 		if (DEBUG_GRAPH) echo "</pre>";
 		$feedback['message'] .= '<caption>'.implode(", ",$caption).'</caption>';

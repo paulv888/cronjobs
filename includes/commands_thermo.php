@@ -95,7 +95,7 @@ $now = date( 'Y-m-d H:i:s' );
 
 		// $result['device'] = getDevice($thermostatRec['deviceID']);
 		// $result['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $thermostatRec['deviceID']));
-		$stat->TempAdd($params['commandvalue']);
+		$feedback = $stat->TempAdd($params['commandvalue']);
 
 		$properties['Status']['value'] = $stat->getTargetOnOff();
 		$properties['Temperature']['value'] = to_celcius($stat->temp);

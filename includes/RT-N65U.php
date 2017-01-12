@@ -189,18 +189,20 @@ function findLocalName($ip) {
 			`ip` ,
 			`mac` ,
 			`name` ,
+			`friendly_name` ,
 			`connection` ,
 			`trusted`
 			)
 		VALUES (' . 
 			'"'.$ip.'",'.
-			'"",'.
+			'"'.$ip.'",'.
+			'"**Unknown",'.
 			'"**Unknown",'.
 			'"",'.
 			'"0");';
 		if (!mysql_query($mysql)) mySqlError($mysql);	
 	}
-	return "***Unknown";
+	return "**Unknown";
 }
 
 
