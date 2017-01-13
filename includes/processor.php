@@ -201,7 +201,7 @@ function sendCommand(&$thiscommand) {
 		break;
 	}
 
-	if (DEBUG_RETURN) echo "<pre>End sendCommandd: >";
+	if (DEBUG_RETURN) echo "<pre>End sendCommand: >";
 	if (DEBUG_RETURN) print_r($feedback);
 	if (DEBUG_RETURN) print_r($thiscommand);
 	if (DEBUG_RETURN) echo "</pre>".CRLF;
@@ -228,6 +228,7 @@ function sendCommand(&$thiscommand) {
 	}	
 	$exectime += microtime(true);
 
+	if  (!array_key_exists('commandstr', $feedback)) $feedback['commandstr'] ="Not set.";
 	if (!array_key_exists('message', $feedback)) $feedback['message']='';
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $feedback['commandstr'], 'exectime' => $exectime));
 	if ($exittrap) exit($thiscommand['commandvalue']);

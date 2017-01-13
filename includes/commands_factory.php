@@ -73,6 +73,7 @@ function createAlert($params) {
 	if (DEBUG_COMMANDS) {
 		echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
 	}
+	$feedback['commandstr'] = 'PDOInsert...';
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	if ($params['priorityID'] <= 1) $feedback['result'][] = sendBullet($params);
@@ -242,7 +243,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		foreach ($rowshemesteps as $step) {
 			//Deleting|{property___DeleteFile}
 			$text =  $step['value'];
-			if (DEBUG_PARAMS) echo 'StepValue: '.$text.CRLF;
+			if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
 			if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
 			$params['deviceID'] =  $step['deviceID'];
 			$params['commandID'] = $step['commandID'];
@@ -257,7 +258,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 				} else if (array_key_exists('SESSION', $params['caller'])) {
 					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEFAULT_PLAYER;
+				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
 			}
 
 			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
@@ -267,7 +268,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$params['commandvalue'] = $text;
 			splitCommandvalue($params);
 			if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
-			if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r($params['cvs']);
+			if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split"))).CRLF;
 
 			$result = Array();
 			if ($step['step_async']) {			// Spawn it
@@ -290,9 +291,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			} else {
 				$result = SendCommand($params);
 			}
+			//echo "****";print_r($result);
 			if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
 			if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
-			if (DEBUG_PARAMS) echo 'Loaded last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
+			if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
+			if (DEBUG_PARAMS) echo '</pre>';
 			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
 		}
 	} else {
@@ -464,8 +467,14 @@ function getNowPlaying(&$params) {
 	// echo "<pre>";	
 	
 	if (array_key_exists('error', $result)) {
-		echo "Handle Transport Error";
-		print_r($result);
+		$properties['Playing']['value'] =  'Nothing';
+		$properties['File']['value'] = '*';
+		$properties['Artist']['value'] = '*';
+		$properties['Title']['value'] =  '*';
+		$properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+		$properties['PlayingID']['value'] =  '0';
+		$params['device']['properties'] = $properties;
+		$feedback['error']='Error - Nothing playing';
 	} else {
 // echo "<pre>";
 // print_r($result);
@@ -488,10 +497,11 @@ function getNowPlaying(&$params) {
 			$feedback['message'] = $properties['Playing']['value'];
 		} else {
 			$properties['Playing']['value'] =  'Nothing';
-			$properties['PlayingID']['value'] =  '0';
 			$properties['File']['value'] = '*';
 			$properties['Artist']['value'] = '*';
 			$properties['Title']['value'] =  '*';
+			$properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+			$properties['PlayingID']['value'] =  '0';
 			$params['device']['properties'] = $properties;
 			$feedback['error']='Error - Nothing playing';
 		}
@@ -755,12 +765,14 @@ function sendEmail(&$params) {
 		$headers.= "Content-Type: text/html; \r\n"; 
 	}
 	
+	$feedback['commandstr'] = 'mail('.$to.', '.$params['mess_subject'].',  '.$params['mess_text'].', '.$headers.')';
 	if(!mail($to, $params['mess_subject'],  $params['mess_text'], $headers)) {
 	    $feedback['error'] = "Mailer - error";
 	    return $feedback;
 	}
 	else {
-		return array();
+	    $feedback['message'] = 'Email to: '.$to.' Subj:'.$params['mess_subject'];
+		return $feedback;
 	}
 }
 
@@ -794,7 +806,7 @@ function sendBullet(&$params) {
 		if (empty($output)) 
 			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
 		else {
-			echo "else\n";
+			//echo "else\n";
 			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
 		}
 	} catch (Exception $e) {
@@ -906,16 +918,15 @@ function sendX10Command(&$params) {
 
 function sendGenericPHP(&$params) {
 // TODO: Result not arrays?
-	$feedback['Name'] = 'sendGenericPHP';
-	$feedback['result'] = array();
+	//$feedback['result'] = array();
 
 	$func = $params['command'];
 	if ($func == "sleep") {
-		$feedback['commandstr'] = $func.' '.$params['commandvalue'];
+		//$feedback['commandstr'] = $func.' '.$params['commandvalue'];
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
-		$feedback['commandstr'] = $func.' '.json_encode($params,JSON_UNESCAPED_SLASHES);
-		$feedback['result'] = $func($params);
+		///$feedback['commandstr'] = $func.' '.json_encode($params,JSON_UNESCAPED_SLASHES);
+		$feedback = $func($params);
 	}
 	return $feedback;
 }

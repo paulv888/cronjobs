@@ -124,6 +124,9 @@ function importVideos(&$params) {
 	$feedback = refreshVideos($params);
 	// echo $params['file']['moveto'].$params['file']['newname'];
 	// print_r($feedback);
+	echo "<pre>";
+	print_r($feedback['result']);
+	echo "</pre>";
 	return $feedback;
 }
 
