@@ -13,15 +13,16 @@ function getWeather($params) {
 
 	$deviceID = $params['deviceID'];
 
-
-	$url = "http://api.wunderground.com/api/275a74de4762b2a3/alerts/forecast/astronomy/conditions/q/35244.json";
+	$feedback['Name'] = 'getWeather';
+	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/35244.json";
+	$feedback['result'] = array();
 	// $args = array();
 	// $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
 	// $args["diagnostics"] = "true";
 	// $args["debug"] = "true";
 	// $args["format"] = "json";
 
-	$get = RestClient::get($url,null,null,30);
+	$get = RestClient::get($feedback['commandstr'],null,null,30);
 
 	if (DEBUG_WEATHER) echo "<pre>";
 	$error = false;
@@ -30,7 +31,7 @@ function getWeather($params) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 		$result = json_decode($get->getresponse());
 		if (DEBUG_WEATHER) print_r($result);
-		$feedback['result'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
+		$feedback['result']['WU'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
 		if (!isset($result->{'current_observation'})) {
 			$error = true;
 		} else {
@@ -39,7 +40,7 @@ function getWeather($params) {
 			$properties['Humidity']['value'] =  $co->{'relative_humidity'};
 			$properties['Status']['value'] = STATUS_ON;
 			$device['properties'] = $properties;
-			$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
+			$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
 
 			$array['deviceID'] = $deviceID;
 			$array['mdate'] = date("Y-m-d H:i:s",strtotime( $co->{'observation_time_rfc822'}));
@@ -106,7 +107,7 @@ function getWeather($params) {
 	// $url = "http://api.wunderground.com/api/275a74de4762b2a3/alerts/q/PA/Philadelphia.json";
 	// $get = RestClient::get($url,null,null,30);
 		// $result = json_decode($get->getresponse());
-		if (DEBUG_WEATHER) print_r($result);
+			if (DEBUG_WEATHER) print_r($result);
 
 			unset($array);
 			foreach ($result->{'alerts'} as $alert) {
@@ -129,17 +130,29 @@ function getWeather($params) {
 				PDOupsert("ha_weather_alerts", $array, array('mdate' => $array['mdate'], 'code' => $array['code']));
 			}
 			
-
-			
+			if (DEBUG_WEATHER) print_r($result->{'sun_phase'});
+			if (isset($result->{'sun_phase'})) {
+				$dark_params['caller'] = $params['caller'];
+				$dark_params['deviceID'] = DEVICE_DARK_OUTSIDE;
+				$dark_params['device']['id'] =  DEVICE_DARK_OUTSIDE;
+				$dark_params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => DEVICE_DARK_OUTSIDE));
+				$dark_properties['Astronomy Sunrise']['value'] = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'sun_phase'}->{'sunrise'}->{'hour'}.':'.$result->{'sun_phase'}->{'sunrise'}->{'minute'})));
+				$dark_properties['Astronomy Sunset']['value'] = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'sun_phase'}->{'sunset'}->{'hour'}.':'.$result->{'sun_phase'}->{'sunset'}->{'minute'})));
+				$dark_properties['Link']['value'] = LINK_UP;
+				$dark_params['device']['properties'] = $dark_properties;
+				if (DEBUG_WEATHER) print_r($dark_params);
+				$feedback['result']['updateDeviceProperties_Dark'] = updateDeviceProperties($dark_params);
+			}
 		}
 	}
 	if ($error) {
 		$feedback['error'] = $get->getresponsecode();
 		$properties['Status']['value'] = STATUS_ERROR;
 		$device['properties'] = $properties;
-		$feedback['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
+		$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array('callerID' => $params['callerID'], 'deviceID' => $deviceID, 'device' => $device));
 	}
 
+	
 	if (DEBUG_WEATHER) echo "</pre>";
 	return $feedback;
 }

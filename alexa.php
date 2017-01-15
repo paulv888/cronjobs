@@ -2,8 +2,11 @@
 // define( 'DEBUG_ALX', TRUE );
 if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
 require_once 'includes.php';
+require_once 'includesAlexa.php';
+
 define("MY_DEVICE_ID", 283);
-define("APP_ID","amzn1.ask.skill.a2ffdb0e-1bd3-414c-bce2-0dfd5ba527b1");
+define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
+
 
 $status_feedback = array (
 	array("off","on"),		// 0
@@ -27,81 +30,121 @@ $current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 file_put_contents($file, $current);
 
 if (!($sdata=="")) { 					//import_event
-	$rcv_message = json_decode($sdata, TRUE);
 
-	if ($rcv_message['session']['application']['applicationId'] != APP_ID) {
-		echo '{"errorMessage": "Exception: applicationId not matching"}';
-		return ;
+
+	$rcv_message = json_decode($sdata);
+
+	$alexaRequest = \Alexa\Request\Request::fromData($rcv_message);
+
+	try {
+	  $alexaRequest->validate(APP_ID);
+	} catch(Exception $e) {
+	  echo 'Message: ' .$e->getMessage();
+	  exit;
 	}
 
-	if (DEBUG_ALX) { print_r($rcv_message);}
-	$session = $rcv_message['session'];
-	$request = $rcv_message['request'];
-	$type = str_replace('AMAZON.', '', $request['type']);
-	if (function_exists($type)) {
-		$text = $type($request);
-	} else {
-		$text = "Sorry, I do not understand that";
+	// print_r($alexaRequest);
+ 	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
+		if (function_exists($alexaRequest->intentName)) {
+			$fname= $alexaRequest->intentName;
+			$response = new \Alexa\Response\Response;
+			// Launched, dialog keep open and save Launched
+			if (!$alexaRequest->session->new && isset($alexaRequest->session->attributes) && isset($alexaRequest->session->attributes->Launched)) {
+				$response->sessionAttributes(Array("Launched" => true));
+				$response->endSession(false);
+			}
+			$result = $fname($alexaRequest, $alexaRequest->session, $response);
+		} else {
+			$response = new \Alexa\Response\Response;
+			$response->respond("<speak> I'm sorry I didn't understand that.</speak>")
+			 ->reprompt("<speak> Try that again. You can say things like, " .
+				"System status <break time=\"0.2s\" /> " .
+				"Are there any windows open <break time=\"0.2s\" /> " .
+				"What is Playing. Or you can say exit. " .
+				"Now, what can I help you with? </speak>");
+
+			$response->ask();
+			return;
+		}
 	}
 
- 	$result = Array();
-	$result['version'] = "1.0";
-	$result['response']['outputSpeech']['type'] = "PlainText";
-	$result['response']['outputSpeech']['text'] = $text;
-	$result['response']['shouldEndSession'] = true;
-	$result['sessionAttributes'] = Array();
-	$response = json_encode($result);
-	header('Content-Type: application/json; charset=utf-8');
-	echo $response;
+ 	if ($alexaRequest instanceof \Alexa\Request\LaunchRequest) {
+		$response = new \Alexa\Response\Response;
+		$result = LaunchRequest($alexaRequest, $alexaRequest->session, $response);
+	}
 	
-	// $rcv_message['code']=WINK_CODE;
-	// $message['deviceID'] = setDeviceID($rcv_message);
-	// $message['commandID'] = $rcv_message['Command'];
-	// if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = COMMAND_IO_RECV;
-	// $message['inout'] = $rcv_message['InOut'];
-	// // Should read primary_status 
-	// if (array_key_exists('Status', $rcv_message)) $status_key = 'Status';
-	// if (array_key_exists('Locked', $rcv_message)) $status_key = 'Locked';
-	
-	// if (!array_key_exists($status_key, $rcv_message)) $rcv_message[$status_key] = null;
-	// if (array_key_exists('Value', $rcv_message)) {
-		// $message['data'] = $rcv_message['Value'];
-	// } else {
-		// $message['data'] = $rcv_message[$status_key];
-	// }
-	// $message['typeID'] = getDevice($message['deviceID'])['typeID'];
-	
-	// $properties = array();
-	// if (array_key_exists('attributes', $rcv_message)) {
-		// foreach ($rcv_message['attributes'] as $attr) {
-			// $properties[str_replace('_', ' ', $attr['attributeName'])]['value'] =  ($attr['value_get'] != "" ? $attr['value_get'] : $attr['value_set']);
-		// }
-	// }
-	// //print_r($properties);
-	
-	// //$message['message'] = prettyPrint($sdata);
-	// $message['callerID'] = MY_DEVICE_ID;
-	// $message['message'] = $sdata;
-	//print_r($message);
-	// if ($message['inout'] == COMMAND_IO_RECV) {
-		// $error_message = (array_key_exists('errorMessage', $rcv_message) ? implode(" - ", $errorMessage) : null);
-		// $device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
-		// $properties[$status_key]['value'] = (string)$rcv_message[$status_key];
-		// $properties['Link']['value'] = LINK_UP;
-		// $properties['Value']['value'] = $v;
-		// $device['properties'] = $properties;
-		// $message['result'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'device' => $device, 'message' => $error_message));
-	// }
-	// logEvent($message);
+ 	if ($alexaRequest instanceof \Alexa\Request\SessionEndedRequest) {
+		$response = new \Alexa\Response\Response;
+		$result = SessionEndedRequest($alexaRequest, $alexaRequest->session, $response);
+	}
 
-return;
+	if (DEBUG_ALX) print_r($alexaRequest);
+
+	return;
 }
 
-function WhatsTemperatureIntent($request) {
+function ShortAnswerIntent($request, $session, $response) {
 
-	$responses = array ( "At the moment, the %s temperature is %s degrees.", "Asjkum, The %s temperature is %s degrees.", "%s, %s degrees, thank you");
 
-	$find = (array_key_exists('value', $request['intent']['slots']['TempDevice']) ? $request['intent']['slots']['TempDevice']['value'] : 'outside');
+	$finddate = strtolower((isset($request->slots->Date) ? $request->slots->Date : ""));
+	$findelse = strtolower((isset($request->slots->CatchAll) ? $request->slots->CatchAll : ""));
+	$orgIntent = "NotFound";
+	if (!$session->new && isset($session->attributes) && isset($session->attributes->intentSequence)) {
+		$orgIntent = $session->attributes->intentSequence;
+	}
+	
+	// var_dump(isset('attributes', $session));
+	// var_dump($session);
+	// var_dump(!$session->new);
+	// print_r($request);
+	// var_dump(isset($request->slots->CatchAll));
+	// print_r($request->slots);
+	// echo "$findelse"." "."$orgIntent".CRLF;
+
+	if (empty($findelse) && empty($finddate)) {
+		$response->respond("Sorry, I did not understand, please start over.");
+		$response->tell();
+	}
+
+	switch ($orgIntent) {
+		case "WhatsTemperatureIntent":
+			$request->slots->TempDevice = $findelse;
+			$request->intentName = $orgIntent;
+			break;
+		case "AnySecurityOpenIntent":
+			$request->slots->Types = $findelse;
+			$request->intentName = $orgIntent;
+			break;
+		case "DeviceStatusIntent":
+			$request->slots->Device = $findelse;
+			$request->intentName = $orgIntent;
+			break;
+		case "WhatsBedtimeIntent":
+			$request->slots->Date = $finddate;
+			$request->intentName = $orgIntent;
+			break;
+		case "WhatsPlayingIntent":
+		case "NotFound":
+		default:
+			$response->respond("Sorry, I did not understand, please start over.");
+			$response->tell();
+			return;
+	}
+	
+	if (DEBUG_ALX) { print_r($request);}
+	$fname= $request->intentName;
+	$result = $fname($request, $session, $response);
+
+	return ;
+	
+}
+
+
+function WhatsTemperatureIntent($request, $session, $response) {
+
+	$responses = array ( "At the moment, the %s temperature is %s degrees.", "<speak>".SAY_ASKIM.", The %s temperature is %s degrees.</speak>", "%s, %s degrees.");
+
+	$find = strtolower((isset($request->slots->TempDevice) ? $request->slots->TempDevice : "outside"));
 
 	$mysql = 'SELECT deviceID, LOWER(description) as description FROM `ha_voice_names` WHERE deviceID > 0'; 
 	$voicenames = FetchRows($mysql);
@@ -110,26 +153,33 @@ function WhatsTemperatureIntent($request) {
 	if (!empty($found)) { 
 		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
 	} else {
-		return sprintf("I do not know what the temperature is in the %s",  $find);
+		$response->respond(sprintf("I do not know what the temperature is in the %s, do you want to try another device?",  $find))
+		 ->reprompt("Sorry which device you want?");
+		$response->sessionAttributes(Array("intentSequence"=>"WhatsTemperatureIntent"));
+		$response->ask();
+		return false;
 	}
 
 	$propertyName = 'Temperature';
 	$deviceProperty = getDeviceProperties(array('description'=>$propertyName, 'deviceID'=>$deviceID));
 	
 	if (DEBUG_ALX) { print_r($deviceProperty); print_r($voicenames);}
-	return sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperty['value'],1) + 0);
-
+	
+	$response->respond(sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperty['value'],1) + 0));
+    $response->tell();
+	return ;
+	
 }
 
-function AnySecurityOpenIntent($request) {
+function AnySecurityOpenIntent($request, $session, $response) {
 
 	$responses_all = array ("All %s are closed.");
-	$responses_some = array ("The %s is open");
+	$responses_some = array ("The %s is open.");
 
-	$find = (array_key_exists('value', $request['intent']['slots']['Types']) ? $request['intent']['slots']['Types']['value'] : 'doors');
-	
+	$find = strtolower(isset($request->slots->Types) ? $request->slots->Types : 'doors');
 	$propertyID = getProperty('Status', false)['id'];
 
+	
 	$mysql = 'SELECT typeID, LOWER(description) as description FROM `ha_voice_names` WHERE typeID > 0'; 
 	$voicenames = FetchRows($mysql);
 	$found = search_array_key_value($voicenames, 'description' , $find);
@@ -144,41 +194,58 @@ function AnySecurityOpenIntent($request) {
 		}
 		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
 	} else {
-		return sprintf("I cannot find devices for %s",  $find);
+		$response->respond("Sorry which device group you want?")
+		 ->reprompt("Sorry which device group you want?");
+		$response->sessionAttributes(Array("intentSequence"=>"AnySecurityOpenIntent"));
+		$response->ask();
+		return false;
 	}
 	
-	$response = "";
+	
+	$answer = "";
 	$anyopen = 0;
 	foreach ($feedback as $status) {
 		if ($status['Status']) {
 			$anyopen = true;
-			$response .= ($response != "" ? ' and ' : '').sprintf($responses_some[rand(0,count($responses_some)-1)], defaultFeedbackName($status['DeviceID'])); 
+			$answer .= ($answer != "" ? ' and ' : '').sprintf($responses_some[rand(0,count($responses_some)-1)], defaultFeedbackName($status['DeviceID'])); 
 		}
 	}
+	
 	if (!$anyopen) {
-		$response = sprintf($responses_all[rand(0,count($responses_all)-1)], $find);
+		$answer = sprintf($responses_all[rand(0,count($responses_all)-1)], $find);
 	} 
 	
 	if (DEBUG_ALX) { print_r($devices); print_r($voicenames);}
-	return $response;
+
+	$response->respond($answer);
+    $response->tell();
+	return ;
 
 }
 
-function DeviceStatusIntent($request) {
+function DeviceStatusIntent($request, $session, $response) {
 
-	$responses = array ("The %s is %s", "The status of the %s is %s");
 
-	$findDevice = (array_key_exists('value', $request['intent']['slots']['Device']) ? $request['intent']['slots']['Device']['value'] : ""); // No default
-	$findProperty = (array_key_exists('value', $request['intent']['slots']['Status']) ? $request['intent']['slots']['Status']['value'] : "Status"); // No default
+	$responses = array ("The %s is %s", "The status of the %s is %s.");
 
+	$findDevice = strtolower(isset($request->slots->Device) ? $request->slots->Device : "system");
+	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
+	$findProperty = "Status";
+
+	if ($findDevice == "home" || $findDevice == "system") {homeStatus($request, $session, $response); return;}
+	
 	$mysql = 'SELECT deviceID, LOWER(description) as description FROM `ha_voice_names` WHERE deviceID > 0'; 
 	$voicenames = FetchRows($mysql);
 	$found = search_array_key_value($voicenames, 'description' , $findDevice);
-	//if (DEBUG_ALX) { print_r($found);}
+	if (DEBUG_ALX) { print_r($found);}
 	if (!empty($found)) { 
 		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
 	} else {
-		return sprintf("Unable to find device called %s",  $findDevice);
+		$response->respond("Sorry which device you want?")
+		 ->reprompt("Sorry which device you want?");
+		$response->sessionAttributes(Array("intentSequence"=>"DeviceStatusIntent"));
+		$response->ask();
+		return false;
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
@@ -211,154 +278,218 @@ function DeviceStatusIntent($request) {
 		$status="undefined";
 	}
 	
-	return sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
-	//return sprintf($responses[rand(0,count($responses)-1)], $findDevice, $status);
+	$response->respond(sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status));
+    $response->tell();
+	return ;
 
 }
 
-function WhatsBedtimeIntent($request) {
+function WhatsBedtimeIntent($request, $session, $response) {
 
-	$responses = array("On %s you went to bed at %s.");
-
-	
 	// Handle not getting date
-	$find = (array_key_exists('value', $request['intent']['slots']['Date']) ? $request['intent']['slots']['Date']['value'] : date("Y-m-d"));
-	
+	$find = strtolower(isset($request->slots->Date) ? $request->slots->Date :  date("Y-m-d"));
+
 	if ($find > date("Y-m-d")) { 		// Future
 		$date = new DateTime($find);
-		$response = sprintf("Sorry, I can not look into the future, please let me know once it is %s", $date->format("jS F Y"));
+		$response->respond("Only past dates please, which day did you want to know about?")
+				->reprompt("Which day did you want to know about.");
+		$response->sessionAttributes(Array("intentSequence"=>"WhatsBedtimeIntent"));
+		$response->ask();
+		return false;
 	} else {
 		// Yesterday should be day before, others should be normal?
 		$fromdate = $find;
-		$todate = date("Y-m-d H:i", strtotime($fromdate." +24 hour"));
-		$mysql = 'SELECT alert_date FROM `ha_alerts`  WHERE (description LIKE "%goodnight%" and `alert_date` > "'.$fromdate.'" and `alert_date` < "'. $todate.'") order by alert_date desc limit 1';
+		$to_date = date("Y-m-d H:i", strtotime($fromdate." +24 hour"));
+		$mysql = 'SELECT alert_date FROM `ha_alerts`  WHERE (description LIKE "%goodnight%" and `alert_date` > "'.$fromdate.'" and `alert_date` < "'. $to_date.'") order by alert_date desc limit 1';
 		// echo $mysql;
-		$response = "Insufficient data. Please specify parameters.";
+		$answer = "Insufficient data. Please specify parameters.";
 		if ($row = FetchRow($mysql)) {
 			$date = new DateTime($row['alert_date']);
-			$response = sprintf($responses[rand(0,count($responses)-1)], $date->format('l'), $date->format('g:i'));
 		} else { 
 			$mysql = 'SELECT alert_date FROM `ha_alerts`  WHERE (description LIKE "%goodnight%") order by alert_date desc limit 1';
 			if ($row = FetchRow($mysql)) {
 				$date = new DateTime($row['alert_date']);
-				$response = sprintf("The latest bedtime I could find was on %s at %s", $date->format('l'), $date->format('g:i'));
 			}
 		}
 	}
 
-	return $response;
+	$datestr = checkYesterday($date->format("Y-m-d"));
+	// var_dump($datestr);
+	if ($datestr) {
+		$answer = sprintf("%s you went to bed at %s.", $datestr, $date->format('g:i'));
+	} else {
+		$answer = sprintf("On %s you went at %s to bed.", $date->format('l'), $date->format('g:i'));
+	}
+	$response->respond($answer);
+    $response->tell();
+	return ;
 
 }
 
-function WhatsPlayingIntent($request) {
+function WhatsPlayingIntent($request, $session, $response) {
 
-	$responses = array("This is %s by %s","We're listening to %s by %s", "%s by %s, thank you!");
+	$responses = array("<speak>This is <break time=\"0.2s\" /> %s <break time=\"0.2s\" />by %s.</speak>","<speak>We're listening to <break time=\"0.2s\" /> %s  <break time=\"0.2s\" /> by %s </speak>", "<speak>%s  <break time=\"0.2s\" /> by %s.</speak>");
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
 	if (DEBUG_ALX) { print_r($deviceProperties); }
-	return sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']);
+	
+	$response->respond(sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']));
+    $response->tell();
+	
+	return;
 
 }
-	//	$result['currentTrack'] = array( "title" => "Current Title", "artist" => 'Alexa');
+
+function DoingIntent($request, $session, $response) {
+
+	$responses1 = array("Let me check on %s. <break time=\"3s\" />","Searching %s... <break time=\"3s\" />", "Looking for %s, Switching on cameras... <break time=\"3s\" />","Searching %s... <break time=\"3s\" />Still searching, checking under the couch now <break time=\"3s\" />");
+	$responses2 = array("Yep, looks like it","I bet you!", "Hmm, No probably just resting the eyes!","Yep, what's new?","Yep, no suprise here!");
+	$responses3 = array("No, off course not!","Nope, looks like you are completely wrong!", "Absolutely not! Really!, how dare you","Absolutely not, maybe you should check on yourself!","Nope, it could not be farther from the thruth!");
+
+	$find = strtolower(isset($request->slots->People) ? $request->slots->People : "that");
+	if ($find == "paul" || $find == "the husband" || $find == "husband") {
+		$response->respond("<speak>".sprintf($responses1[rand(0,count($responses1)-1)], $find).$responses3[rand(0,count($responses2)-1)]."</speak>");
+	} else {
+		$response->respond("<speak>".sprintf($responses1[rand(0,count($responses1)-1)], $find).$responses2[rand(0,count($responses2)-1)]."</speak>");
+	}
+    $response->tell();
+	
+	return;
+
+}
+
+function homeStatus($request, $session, $response) {
+
+	$responses_all = [ "Primary systems are on-line <break time=\"0.2s\" />", "Secondary systems functioning at peak efficiency." ];
+	$responses_some = [ "Following primary systems are off-line: <break time=\"0.2s\" />", "Following secondary systems are off-line: <break time=\"0.2s\" />" ];
+	$responses_offline = ["%s <break time=\"0.2s\" />", "%s <break time=\"0.2s\" />"];
+
+
+	$find = strtolower(isset($request->slots->Types) ? $request->slots->Types : 'doors');
+	$propertyID = getProperty('Link', false)['id'];
+
+	$index = 0;
+	$answer = ["" , ""];
+	foreach (['17', '18'] as $groupID) {
+		$mysql = 'SELECT deviceID, groupID FROM `ha_mf_device_group` WHERE groupID = '.$groupID; 
+		$devices = FetchRowsIdDescription($mysql);
+		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
+		$feedback = array();
+		foreach ($devices as $deviceID => $value) {
+			$feedback[] = getStatusLink(array('deviceID'=>$deviceID, 'propertyID'=>$propertyID));
+		}
+		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
+		
+		$anydown = 0;
+		foreach ($feedback as $status) {
+			if (array_key_exists('Link', $status) && $status['Link'] != "1") {
+				$anydown = true;
+				$answer[$index] .= ($answer[$index] != "" ? ' ; ' : $responses_some[$index].' ; ').sprintf($responses_offline[$index], defaultFeedbackName($status['DeviceID'])); 
+			}
+		}
+		
+		if (!$anydown) {
+			$answer[$index] = sprintf($responses_all[$index]);
+		} 
+		$index++;
+		
+	}
+	$response->respond("<speak>".implode(". ", $answer)."</speak>");
+    $response->tell();
+	return ;
+
+}
+
+function HelpIntent($request, $session, $response) {
+
+    $response->respond("You can ask for the status of Vlohome devices, recent alert" .
+        "For example, is the front door locked or what the temperature in the coop. " .
+        "Now, what can I help you with?")
+     ->reprompt("<speak> I'm sorry I didn't understand that. You can say things like, " .
+        "System status <break time=\"0.2s\" /> " .
+        "Are there any windows open <break time=\"0.2s\" /> " .
+        "What is Playing. Or you can say exit. " .
+        "Now, what can I help you with? </speak>");
+
+    $response->ask();
+	return;
+}
+
+function StopIntent($request, $session, $response) {
+
+	CancelIntent($request, $session, $response);
+	return;
+}
+
+function CancelIntent($request, $session, $response) {
+	$responses = array ("adiós"," adieu"," addio"," adeus","aloha","arrivederci","ciao","auf Wiedersehen","au revoir","bon voyage",
+				"sayonara","tot ziens","Goodbye","Farewell","Have a good day","Take care","See you later","Hear you later","OK. have a good one.",
+				"Bye bye!","Later!","Later"," man","Have a good one.","So long.","All right then.","Catch you later",
+				"Peace!","Peace out.","I'm out!","Smell you later.","Hoşçakal","Güle güle");
+				
+	$response->sessionAttributes(Array("Launched" => null));
+	$response->endSession(true);
+    $response->respond($responses[rand(0,count($responses)-1)]);
+    $response->tell();
+	return;
+}
+
+function LaunchRequest($request, $session, $response) {
+    // If we wanted to initialize the session to have some attributes we could add those here.
+    $response->respond("<speak> Welcome to home automation <break strength=\"weak\" />reporting service, <break time=\"0.3s\" />Please state the nature of your emergency?</speak>")
+     ->reprompt("<speak> I'm sorry I didn't understand that. You can say things like, " .
+        "System status <break time=\"0.2s\" /> " .
+        "Are there any windows open <break time=\"0.2s\" /> " .
+        "What is Playing. Or you can say exit. " .
+        "Now, what can I help you with? </speak>");
+
+	$response->sessionAttributes(Array("Launched" => true));
+
+	$response->ask();
+	return;
+}
+
+function SessionEndedRequest($request, $session, $response) {
+// logit();
+	echo "{}";
+}
 
 function defaultFeedbackName($deviceID) {
 		$mysql = 'SELECT LOWER(description) as description FROM `ha_voice_names` WHERE default_feedback = 1 and deviceID ='.$deviceID; 
 		if ($row = FetchRow($mysql)) {
 			return $row['description'];
-		} else {
-			$mysql = 'SELECT LOWER(description) as description FROM `ha_voice_names` WHERE and deviceID ='.$deviceID; 
-			if ($row = FetchRow($mysql)) {
+		} else if ($row = FetchRow('SELECT LOWER(description) as description FROM `ha_voice_names` WHERE deviceID ='.$deviceID)) {
 				return $row['description'];		
-			}
-		}
+		} else if ($row = FetchRow('SELECT LOWER(description) as description FROM `ha_mf_devices` WHERE id ='.$deviceID)) {
+				return $row['description'];		
+		} 
 		return "no name";
 }
 
-function HelpIntent($request) {
-    $speechText = "You can ask for the best sellers on Amazon for a given category. " +
-        "For example, get best sellers for books, or you can say exit. " +
-        "Now, what can I help you with?";
-    $repromptText = "<speak> I'm sorry I didn't understand that. You can say things like, " +
-        "books <break time=\"0.2s\" /> " +
-        "movies <break time=\"0.2s\" /> " +
-        "music. Or you can say exit. " +
-        "Now, what can I help you with? </speak>";
+function checkYesterday($timestamp) {
 
-    $speechOutput = array (
-        'speech'=>$speechText,
-        'type'=>"PlainText"
-    );
-    $repromptOutput = array(
-        'speech'=>$repromptText,
-        'type'=>'SSML'
-    );
-    askResponse($speechOutput, $repromptOutput);
-}
+	// echo $timestamp.CRLF;
+	$today = new DateTime(); // This object represents current date/time
+	$today->setTime( 0, 0, 0 ); // reset time part, to prevent partial comparison
 
-function LaunchRequest($request) {
-    // If we wanted to initialize the session to have some attributes we could add those here.
-    $speechText = "Welcome to me. What do you want to know about your home?";
-    $repromptText = "<speak>Please choose a category by saying, " +
-        "books <break time=\"0.2s\" /> " +
-        "fashion <break time=\"0.2s\" /> " +
-        "movie <break time=\"0.2s\" /> " +
-        "kitchen</speak>";
+	$match_date = DateTime::createFromFormat("Y-m-d", $timestamp );
+	$match_date->setTime( 0, 0, 0 ); // reset time part, to prevent partial comparison
 
-    $speechOutput = array(
-        'speech'=>$speechText,
-        'type'=>"PlainText"
-    );
-    
-	$repromptOutput = array(
-        'speech'=>$repromptText,
-        'type'=>AlexaSkill.speechOutputType.SSML
-    );
-    askResponse($speechOutput, $repromptOutput);
-}
+	$diff = $today->diff( $match_date );
+	$diffDays = (integer)$diff->format( "%R%a" ); // Extract days count in interval
 
-function IntentRequest($request) {
-	$intent = str_replace('AMAZON.', '', $request['intent']['name']);
-	if (function_exists($intent)) {
-		$text = $intent($request);
-	} else {
-		$text = "Sorry, I do not understand that";
+	switch( $diffDays ) {
+		case 0:
+			return "last night";
+			break;
+		case -1:
+			return "yesterday evening";
+			break;
+		case +1:
+			return false;
+			break;
+		default:
+			return false;
 	}
-	return $text;
-}
-
-function SessionEndedRequest($request) {
-    // If we wanted to initialize the session to have some attributes we could add those here.
-    // var speechText = "Welcome to me. What do you want to know about your home?";
-    // var repromptText = "<speak>Please choose a category by saying, " +
-        // "books <break time=\"0.2s\" /> " +
-        // "fashion <break time=\"0.2s\" /> " +
-        // "movie <break time=\"0.2s\" /> " +
-        // "kitchen</speak>";
-
-    // var speechOutput = {
-        // speech: speechText,
-        // type: AlexaSkill.speechOutputType.PLAIN_TEXT
-    // };
-    // var repromptOutput = {
-        // speech: repromptText,
-        // type: AlexaSkill.speechOutputType.SSML
-    // };
-    // response.ask(speechOutput, repromptOutput);
-}
-
-function askResponse($speechOutput, $repromptOutput) {
- // Do something
- }
-
-function sendResponse ($speechOutput, $repromptOutput) {
- 	$result = Array();
-	$result['version'] = "1.0";
-	$result['response']['outputSpeech'] = $speechOutput;
-	//$result['response']['outputSpeech']['text'] = $text;
-	$result['response']['shouldEndSession'] = true;
-	$result['sessionAttributes'] = Array();
-	$response = json_encode($result);
-	header('Content-Type: application/json; charset=utf-8');
-	echo $response;
 }
 ?>

@@ -23,10 +23,7 @@ function updateDeviceProperties($params) {
  	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : Null);
 
 	$feedback = Array();
-	if (DEBUG_HA) {
-		echo "<PRE>updateProperties ";
-		print_r($params);
-//		echo "commandID:".$params['commandID'].CRLF;
+	if (DEBUG_HA) {	echo "<PRE>updateProperties ";	print_r($params);//		echo "commandID:".$params['commandID'].CRLF;
 		echo "deviceID: ".$params['deviceID'].CRLF;
 	}
 
@@ -97,6 +94,8 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	//	Are we monitoring this property?
 	//
+	// Update prop back
+	$params['device']['properties'][$propertyName]['value'] = $deviceproperty['value'];
 	if ($monitor) {
 	
 		$func = 'update'.str_replace(' ','',$propertyName);
@@ -429,7 +428,7 @@ function getStatusLink($devprop) {
 			$feedback['Status'] = $property['value'];
 			$feedback['PropertyID'] =$devprop['propertyID'];
 		}
-		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Link')))) $feedback['Link'] = $property['value'];
+		if ($link = FetchRow('SELECT ln FROM `ha_vw_monitor_link_status` WHERE deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['ln'];
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
 		$feedback['DeviceID'] = $devprop['deviceID'];
 	}

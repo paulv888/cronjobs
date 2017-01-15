@@ -668,9 +668,9 @@ function addToFavorites(&$params) {
 		if (strpos($playlist, $playing) === false) {
 			$playlist .= $playingfile."\n";
 			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
-			$feedback['message'] = $playing.'|Added to - '.$params['macro___commandvalue'];
+			$feedback['message'] = 'Added to - '.$params['macro___commandvalue'].'|'.$playing;
 		} else {
-			$feedback['message'] = $playing.'|Already part of - '.$params['macro___commandvalue'];
+			$feedback['message'] = 'Already part of - '.$params['macro___commandvalue'].'|'.$playing;
 		}
 	} else {
 		$error = 'Could not open playlist: '.$params['macro___commandvalue'].'|';
@@ -980,7 +980,8 @@ function sendGenericHTTP(&$params) {
 			if ($targettype == "JSON") {
 				$feedback['result'] = json_decode($curl->getresponse(), true);
 			} else {
-				$feedback['result'] = htmlentities($curl->getresponse());
+				$feedback['result_raw'] = $curl->getresponse();
+				$feedback['result'] = htmlentities($feedback['result_raw']);
 			}
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 			// echo "***";
@@ -1133,6 +1134,7 @@ function graphCreate($params) {
 	//call sp_properties( '60,114,201', '138,126,123,127,124', "2015-09-25 00:00:00", "2015-09-27 23:59:59", 1) 
 	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(DEBUG_GRAPH ? 1 : 0).');';
 	if (DEBUG_GRAPH) echo $mysql.CRLF;
+	$feedback['result'] = array();
 	$feedback['message'] = '';
 	if ($rows = FetchRows($mysql)) {
 		//print_r($rows);
@@ -1405,4 +1407,66 @@ for( $i = 5; $i <= strlen($raw); $i++ ) {
 //echo "</pre>";
 return json_decode($decoded,TRUE);
 }
+
+function getStereoSettings(&$params) {
+
+	$feedback['result'][] = array();
+	$feedback['Name'] = 'getStereoSettings';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = COMMAND_GET_VALUE;
+	$result[] = sendCommand($command); 
+	
+	// echo "<pre>";	
+   	$main = new SimpleXMLElement($result[0]['result_raw']);
+	// print_r($main);
+    
+	$feedback['Name'] = 'getStereoSettings';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 408;
+	$result[] = sendCommand($command); 
+	
+	// echo "<pre>";	
+   	$Zone_2 = new SimpleXMLElement($result[1]['result_raw']);
+	// print_r($Zone_2);
+    
+	// if (!is_numeric((string)$flexresponse->code)) {
+    		// echo date("Y-m-d H:i:s").": "."Error: ".$xml->code."<br/>\r\n on: '".$url; 
+	    	// die();
+    	// }
+
+	// print_r($params);
+	if (array_key_exists('error', $result)) {
+		// $properties['Playing']['value'] =  'Nothing';
+		// $properties['File']['value'] = '*';
+		// $properties['Artist']['value'] = '*';
+		// $properties['Title']['value'] =  '*';
+		// $properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+		// $properties['PlayingID']['value'] =  '0';
+		// $params['device']['properties'] = $properties;
+		// $feedback['error']='Error - Nothing playing';
+	} else {
+		$properties['Status']['value'] =  (string)$main->Main_Zone->Basic_Status->Power_Control->Power;
+		$properties['Input']['value'] =  (string)$main->Main_Zone->Basic_Status->Input->Input_Sel->Title;
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Basic_Status->Volume->Lvl->Val) + 500) / 5  ) ;
+		$properties['Muted']['value'] =  (string)$main->Main_Zone->Basic_Status->Volume->Mute ;
+		$properties['Enhancer']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Enhancer ;
+		$properties['Straight']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Straight ;
+		$properties['Sound_Program']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Sound_Program ;
+
+		$properties['Deck']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Power_Control->Power;
+		$properties['Input-2']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Input->Input_Sel->Title;
+		$properties['Volume-2']['value'] =  (string)(int)(((int)($Zone_2->Zone_2->Basic_Status->Volume->Lvl->Val) + 500) / 5 ) ;
+		$properties['Muted-2']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Volume->Mute ;
+		$params['device']['properties'] = $properties;
+	}	
+	$feedback['result'] = $result;
+	return $feedback;
+
+	// echo "</pre>";	
+} 
+
 ?>
