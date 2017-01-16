@@ -48,7 +48,7 @@ class Response {
 		$this->card = new Card;
 		$this->card->title = $title;
 		$this->card->content = $content;
-		
+
 		return $this;
 	}
 
@@ -59,7 +59,7 @@ class Response {
 
 	public function ask() {
 		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(
+		$commandstr = json_encode(
 		[
 			'version' => $this->version,
 			'sessionAttributes' => $this->sessionAttrib,
@@ -70,12 +70,14 @@ class Response {
 				'shouldEndSession' => false
 			]
 		] );
-		return;
+		echo $commandstr;
+		$feedback['commandstr'] = $commandstr;
+		return $feedback;
 	}
 		
 	public function tell() {
 		header('Content-Type: application/json; charset=utf-8');
-		echo json_encode(
+		$commandstr = json_encode(
 		[
 			'version' => $this->version,
 			'sessionAttributes' => $this->sessionAttrib,
@@ -86,7 +88,9 @@ class Response {
 				'shouldEndSession' => $this->shouldEndSession ? true : false
 			]
 		] );
-		return;
+		echo $commandstr;
+		$feedback['commandstr'] = $commandstr;
+		return $feedback;
 	}
 		
 	public function render() {

@@ -1449,16 +1449,16 @@ function getStereoSettings(&$params) {
 		// $params['device']['properties'] = $properties;
 		// $feedback['error']='Error - Nothing playing';
 	} else {
-		$properties['Status']['value'] =  (string)$main->Main_Zone->Basic_Status->Power_Control->Power;
-		$properties['Input']['value'] =  (string)$main->Main_Zone->Basic_Status->Input->Input_Sel->Title;
+		$properties['Status']['value'] =  ((string)$main->Main_Zone->Basic_Status->Power_Control->Power == "Standby" ? "Off" : (string)$main->Main_Zone->Basic_Status->Power_Control->Power);
+		$properties['Input']['value'] =  (string)$main->Main_Zone->Basic_Status->Input->Input_Sel_Item_Info->Title;
 		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Basic_Status->Volume->Lvl->Val) + 500) / 5  ) ;
 		$properties['Muted']['value'] =  (string)$main->Main_Zone->Basic_Status->Volume->Mute ;
 		$properties['Enhancer']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Enhancer ;
 		$properties['Straight']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Straight ;
 		$properties['Sound_Program']['value'] =  (string)$main->Main_Zone->Basic_Status->Surround->Program_Sel->Current->Sound_Program ;
 
-		$properties['Deck']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Power_Control->Power;
-		$properties['Input-2']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Input->Input_Sel->Title;
+		$properties['Deck']['value'] =  ((string)$Zone_2->Zone_2->Basic_Status->Power_Control->Power == "Standby" ? "Off" : (string)$Zone_2->Zone_2->Basic_Status->Power_Control->Power);
+		$properties['Input-2']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Input->Input_Sel_Item_Info->Title;
 		$properties['Volume-2']['value'] =  (string)(int)(((int)($Zone_2->Zone_2->Basic_Status->Volume->Lvl->Val) + 500) / 5 ) ;
 		$properties['Muted-2']['value'] =  (string)$Zone_2->Zone_2->Basic_Status->Volume->Mute ;
 		$params['device']['properties'] = $properties;
