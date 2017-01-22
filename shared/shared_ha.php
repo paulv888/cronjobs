@@ -79,7 +79,6 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	// Get previous property info (In case this if the first time we logging this property)
 	//
-	$oldvalue = Null;
 	$monitor = false;
 	$deviceproperty['trend'] = "0";
 	if (array_key_exists('previous_properties',$params['device']) && array_key_exists($propertyName,$params['device']['previous_properties'])) {
@@ -96,6 +95,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	// Update prop back
 	$params['device']['properties'][$propertyName]['value'] = $deviceproperty['value'];
+	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	if ($monitor) {
 	
 		$func = 'update'.str_replace(' ','',$propertyName);
@@ -110,7 +110,6 @@ function setDevicePropertyValue($params, $propertyName) {
 				return;
 			}
 		}
-		$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 		$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
 		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 	} else {
@@ -126,7 +125,16 @@ function setDevicePropertyValue($params, $propertyName) {
 		return $feedback;
 	}
 
-	if ($deviceproperty['value'] != $oldvalue && $propertyName != 'Link') {		// Link special, updated in factory (How about not monitor?)
+	// var_dump($deviceproperty['value']);
+	// echo CRLF;
+	// var_dump($oldvalue);
+	// echo CRLF;
+	// var_dump($deviceproperty['value'] !== $oldvalue);
+	// echo CRLF;
+	if ($deviceproperty['value'] !== $oldvalue && $propertyName != 'Link') {		// Link special, updated in factory (How about not monitor?)
+		// echo "<pre>Updateing:";
+		// print_r($deviceproperty);
+		// echo "</pre>Updateing:";
 		$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 	}

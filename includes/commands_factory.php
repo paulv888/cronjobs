@@ -250,7 +250,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			return $feedback;		// GET OUT
 		}
 		foreach ($rowshemesteps as $step) {
-			//Deleting|{property___DeleteFile}
 			$text =  $step['value'];
 			if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
 			if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;

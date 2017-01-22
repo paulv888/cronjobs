@@ -218,7 +218,6 @@ function sendCommand(&$thiscommand) {
 	if ($rowcommands['need_device']) {
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
-	
 	// Check for errors first?
 	if  (array_key_exists('error', $feedback)) {
 		$thiscommand['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log

@@ -85,11 +85,12 @@ function replaceResultPlaceholders($mess_subject, &$params, $resultin){
 
 		$filterkeep = array( $output[1] => 1);
 		doFilter($resultin, array(), $filterkeep, $result);
+
 		// echo "Filtered: >";
 		// print_r($result);
 
 		if (is_array($result)) {
-			//echo $result[0][$output[1]].CRLF;	
+			// echo "res0.out1:".$result[0][$output[1]].CRLF;	
 			$mess_subject = str_replace($output[0], trim($result[0][$output[1]]), $mess_subject);
 			$propname = str_replace('result___', '', $output[1]);
 			$params['device']['properties'][$propname]['value']= $result[0][$output[1]];
@@ -97,11 +98,11 @@ function replaceResultPlaceholders($mess_subject, &$params, $resultin){
 		}
 		
 		if (DEBUG_PHOLDERS) {
-			echo "<pre>"; echo $mess_subject.CRLF; echo "</pre>";
+			echo "<pre>Props:"; print_r($params['device']['properties']); echo "</pre>";
 		}	
 	}
 	
-	// echo "return replacePlaceholder in: ".$mess_subject.CRLF;
+	//echo "return replacePlaceholder in: ".$mess_subject.CRLF;
 	return $mess_subject;
 }
 
