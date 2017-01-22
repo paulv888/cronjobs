@@ -35,14 +35,23 @@ function monitorDevicesTimeout($params) {
 	$feedback['Name'] = 'monitorDevicesTimeout';
 	$feedback['result'] = array();
 	$params['callerID'] = $params['callerID'];
+	// $date = getdate();
+	// $day = $date["wday"];	
 	foreach ($devs as $key => $props) {
-		if (array_key_exists('linkmonitor', $props['Link'])) {
+		// if (array_key_exists('linkmonitor', $props['Link']) && 
+			// ($props['Link']['active'] == 1 || 
+			// ($props['Link']['active'] == 2 && ($day > 0 && $day < 6 )) ||
+			// ($props['Link']['active'] == 3 && ($day == 0 || $day == 6 )))) 
+		// {
+		if (array_key_exists('linkmonitor', $props['Link']) && 
+			($props['Link']['active'] > 0)) 
+		{
 			if($props['Link']['linkmonitor'] == "INTERNAL" || $props['Link']['linkmonitor'] == "MONSTAT") {
 				$params['deviceID'] = $key;
 				$params['device']['previous_properties'] = $props;
 				$properties['Link']['value'] = LINK_TIMEDOUT;
 				$params['device']['properties'] = $properties;
-		//		print_r($params);
+				// print_r($params);
 				$feedback['result'][] = updateDeviceProperties($params);
 			}
 		}

@@ -285,8 +285,7 @@ function AnySecurityOpenIntent($request, $session, $response) {
 	return $feedback;
 
 }
-
-function DeviceStatusIntent($request, $session, $response) {
+function LocationStatusIntent($request, $session, $response) {
 
 	global $log;
 	$feedback['Name'] = 'DeviceStatusIntent';
@@ -303,6 +302,69 @@ function DeviceStatusIntent($request, $session, $response) {
 		return $feedback;
 	}
 	
+	$found = findDeviceByName($findDevice);
+	if (DEBUG_ALX) { print_r($found);}
+	if (!empty($found)) { 
+		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
+	} else {
+		$response->respond("Sorry which device you want?")
+		 ->reprompt("Sorry which device you want?");
+		$response->sessionAttributes(Array("intentSequence"=>"DeviceStatusIntent"));
+		$feedback['result'] = $response->ask();
+		$feedback['error'] = "Cannot find device";
+		return $feedback;
+	}
+
+	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
+	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
+
+	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
+	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
+	
+ 
+	if ($deviceProperties[$found]['invertstatus'] == "0") {  
+		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
+			$deviceProperties[$found]['value'] == STATUS_ON;
+		} else if ($deviceProperties[$found]['value'] == STATUS_ON) {
+			$deviceProperties[$found]['value'] == STATUS_OFF;
+		}
+	}
+	
+	global $status_feedback;
+	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
+	// print_r($statusNames);
+	if ($deviceProperties[$found]['value'] == STATUS_OFF) {
+		$status=$statusNames[STATUS_OFF];
+	} elseif ($deviceProperties[$found]['value'] == STATUS_UNKNOWN) {
+		$status="unknown";
+	} elseif ($deviceProperties[$found]['value'] == STATUS_ON) {
+		$status=$statusNames[STATUS_ON];
+	} elseif ($deviceProperties[$found]['value'] == STATUS_ERROR) {
+		$status="error";
+	} else { 							
+		$status="undefined";
+	}
+	
+	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
+	$response->respond($answer);
+	$feedback['message'] = $answer;
+	$feedback['result'] = $response->tell();
+	return $feedback;
+
+}
+
+function DeviceStatusIntent($request, $session, $response) {
+
+	global $log;
+	$feedback['Name'] = 'DeviceStatusIntent';
+
+	$responses = array ("The %s is %s", "The status of the %s is %s.");
+
+	$findDevice = strtolower(isset($request->slots->Device) ? $request->slots->Device : "system");
+	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
+	$findProperty = "Status";
+	$log['data'] = "Device: ".$findDevice;
+
 	$found = findDeviceByName($findDevice);
 	if (DEBUG_ALX) { print_r($found);}
 	if (!empty($found)) { 

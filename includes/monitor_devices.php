@@ -1,15 +1,21 @@
 <?php
 function monitorDevices($linkmonitor) {
-	$mysql = 'SELECT d.`id` AS `deviceID`, l.`linkmonitor` AS `linkmonitor` , l.`pingport` AS `pingport` ' .
+	$mysql = 'SELECT d.`id` AS `deviceID`, l.`linkmonitor` AS `linkmonitor` , l.`active` AS `active` , l.`pingport` AS `pingport` ' .
 			 ' FROM ha_mf_monitor_link l' .
 			 ' LEFT JOIN ha_mf_devices d ON l.deviceID = d.id ' .
 			 ' WHERE d.`inuse` = 1 AND l.`linkmonitor` = "'.$linkmonitor .'"' .
-			 ' AND l.active = 1' ;
+			 ' AND l.active > 0' ;
 	if (!$reslinks = mysql_query($mysql)) {
 		mySqlError($mysql); 
 		return false;
 	}
-	while ($rowlinks = mysql_fetch_assoc($reslinks)) {	
+	$date = getdate();
+	$day = $date["wday"];
+	while ($rowlinks = mysql_fetch_assoc($reslinks)) {
+		// if ($rowlinks['active'] == 1 || 
+			// ($rowlinks['active'] == 2 && ($day > 0 && $day < 6 )) ||
+			// ($rowlinks['active'] == 3 && ($day == 0 || $day == 6 ))) 			
+		if ($rowlinks['active'] > 0) 			
 		monitorDevice($rowlinks['deviceID'],$rowlinks['pingport']);
 	}
 }
