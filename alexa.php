@@ -8,16 +8,6 @@ define("MY_DEVICE_ID", 283);
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 
 
-$status_feedback = array (
-	array("off","on"),		// 0
-	array("off","on"),		// 1
-	array("closed","open"),
-	array("un-locked","locked"),
-	array("disarmed","armed"),
-	array("not seen","detected"),
-	array("off","running")
-);
-
 if (isset($_GET["Message"])) {
 	$sdata=$_GET["Message"];
 } else {
@@ -330,21 +320,8 @@ function LocationStatusIntent($request, $session, $response) {
 		}
 	}
 	
-	global $status_feedback;
-	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
-	// print_r($statusNames);
-	if ($deviceProperties[$found]['value'] == STATUS_OFF) {
-		$status=$statusNames[STATUS_OFF];
-	} elseif ($deviceProperties[$found]['value'] == STATUS_UNKNOWN) {
-		$status="unknown";
-	} elseif ($deviceProperties[$found]['value'] == STATUS_ON) {
-		$status=$statusNames[STATUS_ON];
-	} elseif ($deviceProperties[$found]['value'] == STATUS_ERROR) {
-		$status="error";
-	} else { 							
-		$status="undefined";
-	}
 	
+	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
 	$response->respond($answer);
 	$feedback['message'] = $answer;
@@ -393,21 +370,9 @@ function DeviceStatusIntent($request, $session, $response) {
 		}
 	}
 	
-	global $status_feedback;
-	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
-	// print_r($statusNames);
-	if ($deviceProperties[$found]['value'] == STATUS_OFF) {
-		$status=$statusNames[STATUS_OFF];
-	} elseif ($deviceProperties[$found]['value'] == STATUS_UNKNOWN) {
-		$status="unknown";
-	} elseif ($deviceProperties[$found]['value'] == STATUS_ON) {
-		$status=$statusNames[STATUS_ON];
-	} elseif ($deviceProperties[$found]['value'] == STATUS_ERROR) {
-		$status="error";
-	} else { 							
-		$status="undefined";
-	}
 	
+	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
+
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
 	$response->respond($answer);
 	$feedback['message'] = $answer;
@@ -849,7 +814,7 @@ function findDeviceByName($find) {
 	$mysql = 'SELECT deviceID, LOWER(description) as description FROM `ha_voice_names` WHERE deviceID > 0 and LOWER(description) LIKE "%'.$find.'%"'; 
 	$found = FetchRows($mysql);
 	if (empty($found)) {		//		Try by description
-		$mysql = 'SELECT deviceID, LOWER(description) as description FROM `ha_devices` WHERE LOWER(description) LIKE "%'.$find.'%"'; 
+		$mysql = 'SELECT id, LOWER(description) as description FROM `ha_mf_devices` WHERE LOWER(description) LIKE "%'.$find.'%" OR LOWER(shortdesc) LIKE "%'.$find.'%"'; 
 		$found = FetchRows($mysql);
 	}
 	return $found;

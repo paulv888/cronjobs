@@ -2,9 +2,11 @@
 // define( 'DEBUG_HA', TRUE );
 // define( 'DEBUG_PROPERTIES', TRUE );
 // define( 'DEBUG_TRIGGERS', TRUE );
+// define( 'DEBUG_COND', TRUE );
 if (!defined('DEBUG_HA')) define( 'DEBUG_HA', FALSE );
 if (!defined('DEBUG_PROPERTIES')) define( 'DEBUG_PROPERTIES', FALSE );
 if (!defined('DEBUG_TRIGGERS')) define( 'DEBUG_TRIGGERS', FALSE );
+if (!defined('DEBUG_COND')) define( 'DEBUG_COND', FALSE );
 
 function updateDLink($deviceID, $link = LINK_UP) {
         $params['callerID'] = MY_DEVICE_ID;
@@ -649,5 +651,168 @@ function doFilter(&$arr, $nodefilter, &$filter, &$result) {
     }
 	// print_r($result);
     return;
+}
+
+function checkConditions($rows) {
+
+	$feedback = array();
+	$feedback['result'] = array( false );
+	foreach ($rows as $rowcond) {
+		$testvalue = array();
+		switch ($rowcond['cond_type'])
+		{
+		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
+			if (DEBUG_COND) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
+			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
+			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $rowcond['cond_deviceID']))['value'];
+			$message = getProperty($rowcond['cond_propertyID'])['description']." of device ".getDevice($rowcond['cond_deviceID'])['description']." "." is not";
+			$savedeviceID = $rowcond['cond_deviceID'];
+			// echo "<pre>";
+			// print_r(getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $rowcond['cond_deviceID'])));
+			break;
+		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
+		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
+			if (DEBUG_COND) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
+			$condtype = "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR";
+			if ($rowcond['cond_type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
+				$test = 1;
+			} else {
+				$test = 0;
+			}
+			$mysql = 'SELECT g.groupID as groupID, gr.description as group_description, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
+					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
+					JOIN `ha_mf_groups` gr ON g.groupID = gr.id 
+					WHERE groupID = '.$rowcond['cond_groupID']; 
+			$groups = FetchRows($mysql);
+			//$groups = getGroup(array('commandvalue' => $rowcond['cond_groupID']));
+			// [getGroup] => Array (['result'][0] => Array ([groupselect] => Array ([DeviceID] => 1))
+			foreach ($groups as $device) {
+				if ($rowcond['cond_type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
+					$test = $test & getDeviceProperties(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['cond_propertyID']))['value'];
+					$message = "Some devices in group ".$device['group_description']." are ";
+				} else {
+					$test = $test | getDeviceProperties(Array('deviceID' => $device['deviceID'], 'propertyID' => $rowcond['cond_propertyID']))['value'];
+					$message = "No devices in group ".$device['group_description']." are ";
+				}
+				$savedeviceID = $device['deviceID'];
+			// echo "<pre>";
+			// print_r(getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $device['groupselect']['DeviceID'])));
+			}
+			$testvalue[] = $test;
+			break;
+		case SCHEME_CONDITION_CURRENT_TIME:
+			if (DEBUG_COND) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
+			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
+			$testvalue[] = time();
+			$message = "Current time is ".$device['group_description'];
+			break;
+		default:	// No or not recognized cond_type
+			$feedback['result'] = array (true);
+			return $feedback;
+			break;
+		}
+
+		if ($rowcond['cond_value'] !== NULL) {
+			switch (strtoupper($rowcond['cond_value']))
+			{
+			case "ON":
+				$testvalue[] = STATUS_ON;
+				$message2 = getFeedbackStatus($savedeviceID, STATUS_ON);
+				break;
+			case "OFF":
+				$testvalue[] = STATUS_OFF;
+				$message2 = getFeedbackStatus($savedeviceID, STATUS_OFF);
+				break;
+			default:
+				switch ($rowcond['cond_type'])
+				{
+				case SCHEME_CONDITION_CURRENT_TIME:
+					$temp = preg_split( "/([+-])/" , $rowcond['cond_value'], -1, PREG_SPLIT_DELIM_CAPTURE);
+					$temp[0] = strtoupper($temp[0]);
+					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
+						if ($temp[0] == "DAWN") {$temp[0] = getDawn(); $message2 = "dawn. ";}
+						if ($temp[0] == "DUSK") {$temp[0] = getDusk(); ; $message2 = "dusk. ";}
+						if (isset($temp[1])) {
+							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes. ");
+							$message2 = "today $temp[0] $temp[1]$temp[2] minutes. ";
+						} else {
+							$testvalue[] = strtotime("today $temp[0]");
+							$message2 = "today $temp[0]. ";
+						}
+					} else {
+						$testvalue[] = strtotime("today $temp[0]");
+						$message2 = "today $temp[0]. ";
+					}
+					break;
+				default:
+					$testvalue[] = $rowcond['cond_value'];
+					$message2 = ($rowcond['cond_value'] == STATUS_ON || $rowcond['cond_value'] == STATUS_OFF ? getFeedbackStatus($savedeviceID, $rowcond['cond_value']) : $rowcond['cond_value']);
+					break;
+				}
+				break;
+			}
+		}
+		switch ($rowcond['cond_operator'])
+		{
+		case CONDITION_GREATER:
+			if ($testvalue[0] <= $testvalue[1]) {
+				if (DEBUG_COND) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Programme skipped, '.$message.' greater than '.$message2;
+				if (DEBUG_COND) echo "Exit executeMacro</pre>".CRLF;
+				return $feedback;
+			}
+			break;
+		case CONDITION_LESS:
+			if ($testvalue[0] >= $testvalue[1]) {
+				if (DEBUG_COND) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Programme skipped, '.$message.' less than '.$message2;
+				if (DEBUG_COND) echo "Exit executeMacro</pre>".CRLF;
+				return $feedback;
+			}
+			break;
+		case CONDITION_EQUAL:
+			if ($testvalue[0] != $testvalue[1]) {
+				if (DEBUG_COND) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
+				$feedback['message'] = 'Programme skipped, '.$message.' '.$message2;
+				if (DEBUG_COND) echo "Exit executeMacro</pre>".CRLF;
+				return $feedback;
+			}
+			break;
+		}
+		if (DEBUG_COND) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
+	}
+	
+	// All passed unset false result
+	$feedback['result'] = array (true);
+	return $feedback;
+}
+
+function getFeedbackStatus($deviceID, $status) {
+$status_feedback = array (
+	array("off","on"),		// 0
+	array("off","on"),		// 1
+	array("closed","open"),
+	array("un-locked","locked"),
+	array("disarmed","armed"),
+	array("not seen","detected"),
+	array("off","running")
+);
+
+	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
+	
+	// print_r($statusNames);
+	if ($status == STATUS_OFF) {
+		$feedbackstatus=$statusNames[STATUS_OFF];
+	} elseif ($status == STATUS_UNKNOWN) {
+		$feedbackstatus="unknown";
+	} elseif ($status == STATUS_ON) {
+		$feedbackstatus=$statusNames[STATUS_ON];
+	} elseif ($status == STATUS_ERROR) {
+		$feedbackstatus="error";
+	} else { 							
+		$feedbackstatus=$status;
+	}
+	return $feedbackstatus;
+
 }
 ?>

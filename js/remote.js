@@ -3,7 +3,6 @@ if(!window.scriptRemoteHasRun) {
 	window.scriptRemoteHasRun = true; 
 
    var VloRemote = {
-			'COMMAND_GET_GROUP' : 282,
 			'COMMAND_SET_VALUE' : 145,
 			'COMMAND_GET_VALUE' : 136,
 			'COMMAND_TOGGLE' : 19,
@@ -180,33 +179,6 @@ if(!window.scriptRemoteHasRun) {
 			callAjax (params) ;
 		});
 
-		// Group drop downs
-		eventname = isMobile.any() ? "touchend" : "click";
-		jQuery('#group li a').unbind(eventname);
-		jQuery('#group li a').bind(eventname, function(event){
-			event.preventDefault()
-			// event.stopImmediatePropagation()
-			var mbut = this.parentNode.parentNode.parentNode;
-			var textNode = mbut.getElementsByClassName("buttontext")[0];
-			textNode.textContent = this.text;
-			var selected = jQuery(this).attr('data-value');
-			var selectedtext = jQuery(this).text();
-			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
-			
-			if (selected == VloRemote.GROUP_NO_SELECTED){
-				jQuery(mbut).removeClass('btn-info');
-				jQuery(mbut).addClass('btn-success');
-				resetSelection();
-			} else {
-				jQuery(mbut).addClass('btn-info');
-				jQuery(mbut).removeClass('btn-success');
-				resetSelection();
-				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: VloRemote.COMMAND_GET_GROUP, commandvalue: jQuery(this).attr('data-value').substring(1)};
-				callAjax (params) ; 		// get group members here and set select
-			}
-		});
-
-		
 		// Dimmer dropdowns
 		eventname = isMobile.any() ? "touchend" : "click";
 		jQuery('.dimmer li a').unbind(eventname);

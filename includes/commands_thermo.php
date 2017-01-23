@@ -22,6 +22,20 @@
 	* Date is simply the last time the status was updated
 	*/
 
+function getThermoSettings(&$params) {
+	$feedback['result'][] = array();
+	$feedback['Name'] = 'getThermoSettings';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = COMMAND_GET_VALUE;
+	//$result[] = sendCommand($command); 
+	$feedback['message'] = "Under construction";
+
+	return $feedback;
+}
+	
+	
 function HvacToggle(&$params) {
 
 //$callerID, $deviceID, $status = NULL, $timervalue = Null

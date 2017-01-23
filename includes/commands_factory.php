@@ -61,20 +61,6 @@ function monitorDevicesTimeout($params) {
 	return $feedback;
 }
 
-function getGroup($params) {
-	$feedback['Name'] = 'getGroup';
-	$feedback['result'] = array();
-	$groupID = $params['commandvalue'];
-	$mysql = 'SELECT g.groupID as groupID, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
-					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
-					WHERE groupID = '.$groupID; 
-	$groups = FetchRows($mysql);
-	foreach($groups as $device) {
-		$feedback['result'][]['groupselect']['DeviceID'] = $device['deviceID'];
-	}
-	return $feedback;
-}
-
 function createAlert($params) {
 
 	$feedback['Name'] = 'createAlert';
@@ -108,123 +94,33 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 	$feedback['Name'] = getSchemeName($schemeID);
 
-	$mysql = 'SELECT * FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID;
-
-	if (!$rescond = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
-		return false;
+	$mysql = 'SELECT type as cond_type, groupID as cond_groupID, deviceID as cond_deviceID, propertyID as cond_propertyID,
+				operator as cond_operator, value as cond_value 
+				FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID.' ORDER BY SORT';
+	if ($rows = FetchRows($mysql)) {
+		$feedback = checkConditions($rows);
+		// echo "<pre>Check cond result".CRLF;
+		// print_r($rows);
+		// print_r($feedback);
+		if (!$feedback['result'][0]) {
+			$feedback['Name'] = getSchemeName($schemeID);
+			$feedback['message'] = $feedback['Name'].": ".$feedback['message'];
+			return $feedback;
+		}
 	}
 
-	while ($rowcond = mysql_fetch_assoc($rescond)) {
-		$testvalue = array();
-		switch ($rowcond['type'])
-		{
-		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
-			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
-			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
-			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value'];
-			break;
-		case SCHEME_CONDITION_GROUP_PROPERTY_AND:
-		case SCHEME_CONDITION_GROUP_PROPERTY_OR:
-			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR".CRLF;
-			$condtype = "SCHEME_CONDITION_GROUP_PROPERTY_AND_OR";
-			if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
-				$test = 1;
-			} else {
-				$test = 0;
-			}
-			$groups = getGroup(array('commandvalue' => $rowcond['groupID']))['result'];
-			// [getGroup] => Array (['result'][0] => Array ([groupselect] => Array ([DeviceID] => 1))
-			foreach ($groups as $device) {
-				if ($rowcond['type'] == SCHEME_CONDITION_GROUP_PROPERTY_AND) {
-					$test = $test & getDeviceProperties(Array('deviceID' => $device['groupselect']['DeviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
-				} else {
-					$test = $test | getDeviceProperties(Array('deviceID' => $device['groupselect']['DeviceID'], 'propertyID' => $rowcond['propertyID']))['value'];
-				}
-			}
-			$testvalue[] = $test;
-			break;
-		case SCHEME_CONDITION_CURRENT_TIME:
-			if (DEBUG_COMMANDS) echo "SCHEME_CONDITION_CURRENT_TIME</p>";
-			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
-			$testvalue[] = time();
-			break;
-		}
-
-		if ($rowcond['value'] !== NULL) {
-			switch (strtoupper($rowcond['value']))
-			{
-			case "ON":
-				$testvalue[] = STATUS_ON;
-				break;
-			case "OFF":
-				$testvalue[] = STATUS_OFF;
-				break;
-			default:
-				switch ($rowcond['type'])
-				{
-				case SCHEME_CONDITION_CURRENT_TIME:
-					$temp = preg_split( "/([+-])/" , $rowcond['value'], -1, PREG_SPLIT_DELIM_CAPTURE);
-					$temp[0] = strtoupper($temp[0]);
-					if ($temp[0] == "DAWN" || $temp[0] == "DUSK") {
-						if ($temp[0] == "DAWN") $temp[0] = getDawn();
-						if ($temp[0] == "DUSK") $temp[0] = getDusk();
-						if (isset($temp[1])) {
-							$testvalue[] = strtotime("today $temp[0] $temp[1]$temp[2] minutes");
-						} else {
-							$testvalue[] = strtotime("today $temp[0]");
-						}
-					} else {
-						$testvalue[] = strtotime("today $temp[0]");
-					}
-					break;
-				default:
-					$testvalue[] = $rowcond['value'];
-					break;
-				}
-				break;
-			}
-		}
-		switch ($rowcond['operator'])
-		{
-		case CONDITION_GREATER:
-			if ($testvalue[0] <= $testvalue[1]) {
-				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted, startup test failed '.$testvalue[0].' > '.$testvalue[1];
-				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
-				return $feedback;
-			}
-			break;
-		case CONDITION_LESS:
-			if ($testvalue[0] >= $testvalue[1]) {
-				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' < '.$testvalue[1];
-				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
-				return $feedback;
-			}
-			break;
-		case CONDITION_EQUAL:
-			if ($testvalue[0] != $testvalue[1]) {
-				if (DEBUG_COMMANDS) echo 'Fail: "'.$testvalue[0].'" == "'.$testvalue[1].'"'.CRLF;
-				$feedback['message'] = $feedback['Name'].': Programme '.getProperty($rowcond['propertyID'])['description'].' aborted startup test failed '.$testvalue[0].' == '.$testvalue[1];
-				if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
-				return $feedback;
-			}
-			break;
-		}
-		if (DEBUG_COMMANDS) echo "Condition Pass: condition value: ".$testvalue[0].", test for: ".$testvalue[1].CRLF;
-	}
 
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$mysql = 'SELECT ha_remote_schemes.name, ha_remote_schemes.runasync, ha_remote_scheme_steps.id, ha_mf_commands.description as commandName, ha_remote_scheme_steps.groupID, ha_remote_scheme_steps.deviceID, ha_remote_scheme_steps.propertyID, ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value,ha_remote_scheme_steps.runschemeID,ha_remote_scheme_steps.sort,ha_remote_scheme_steps.alert_textID, s2.runasync as step_async 
-	FROM ha_remote_schemes 
-	JOIN ha_remote_scheme_steps ON ha_remote_schemes.id = ha_remote_scheme_steps.schemesID 
-	LEFT JOIN ha_mf_commands ON ha_remote_scheme_steps.commandID = ha_mf_commands.id
-	LEFT JOIN ha_remote_schemes s2 ON ha_remote_scheme_steps.runschemeID = s2.id
-	WHERE ha_remote_schemes.id ='.$schemeID.'
-	ORDER BY ha_remote_scheme_steps.sort';
-		
+	$mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
+				st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID,st.sort,st.alert_textID,
+				st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, "123" as cond_propertyID, st.cond_operator, st.cond_value,
+				s2.runasync as step_async 
+				FROM ha_remote_schemes sh
+				JOIN ha_remote_scheme_steps st ON sh.id = st.schemesID 
+				LEFT JOIN ha_mf_commands c ON st.commandID = c.id
+				LEFT JOIN ha_remote_schemes s2 ON st.runschemeID = s2.id
+				WHERE sh.id ='.$schemeID.'
+				ORDER BY st.sort';
 	//
 	// Trap any async SCHEMES here 
 	//		Trapping at first step after checking conditions. Nice for root level, however does not allow async in async
@@ -249,63 +145,73 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 			return $feedback;		// GET OUT
 		}
+		
 		foreach ($rowshemesteps as $step) {
-			$text =  $step['value'];
-			if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
-			if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
-			$params['deviceID'] =  $step['deviceID'];
-			$params['commandID'] = $step['commandID'];
-			if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
-			$params['schemeID'] = $step['runschemeID'];
-			$params['alert_textID'] = $step['alert_textID'];
-
- // {echo "<pre>before error ";print_r($params);echo "</pre>";}
-
-			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
-				if (array_key_exists('SESSION', $params)) {
-					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
-				} else if (array_key_exists('SESSION', $params['caller'])) {
-					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
-			}
-
-			$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
-			if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
-
-			$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
-			$params['commandvalue'] = $text;
-			splitCommandvalue($params);
-			if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
-			if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split"))).CRLF;
-
 			$result = Array();
-			if ($step['step_async']) {			// Spawn it
-				unset($values);
-				$values['callerID'] = $callerparams['callerID'];
-				$values['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : "");
-				$values['messagetypeID'] = "MESS_TYPE_SCHEME";
-				$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
-				$values['schemeID'] = $params['schemeID'];
-				$getparams = http_build_query($values, '',' ');
-				
-				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
 
-				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
-				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
-				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-				$result['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
-				$result['commandstr'] = $cmd;
-				if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
-			} else {
-				$result = SendCommand($params);
-			}
-			//echo "****";print_r($result);
-			if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
-			if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
-			if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
-			if (DEBUG_PARAMS) echo '</pre>';
-			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
+			// echo "<pre>Check cond result".CRLF;
+			// print_r(array($step));
+			$result = checkConditions(array($step));
+			// print_r($result);
+			// echo "</pre>Check cond result".CRLF;
+
+			if ($result['result'][0]) {
+				$text =  $step['value'];
+				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
+				if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
+				$params['deviceID'] =  $step['deviceID'];
+				$params['commandID'] = $step['commandID'];
+				if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
+				$params['schemeID'] = $step['runschemeID'];
+				$params['alert_textID'] = $step['alert_textID'];
+
+	 // {echo "<pre>before error ";print_r($params);echo "</pre>";}
+
+				if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+					if (array_key_exists('SESSION', $params)) {
+						$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+					} else if (array_key_exists('SESSION', $params['caller'])) {
+						$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
+					} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+				}
+
+				$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
+				if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
+
+				$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
+				$params['commandvalue'] = $text;
+				splitCommandvalue($params);
+				if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
+				if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split"))).CRLF;
+
+				if ($step['step_async']) {			// Spawn it
+					unset($values);
+					$values['callerID'] = $callerparams['callerID'];
+					$values['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : "");
+					$values['messagetypeID'] = "MESS_TYPE_SCHEME";
+					$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
+					$values['schemeID'] = $params['schemeID'];
+					$getparams = http_build_query($values, '',' ');
+					
+					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+
+					$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
+					$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+					exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+					$result['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
+					$result['commandstr'] = $cmd;
+					if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
+				} else {
+					$result = SendCommand($params);
+				}
+				//echo "****";print_r($result);
+				if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
+				if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
+				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
+				if (DEBUG_PARAMS) echo '</pre>';
+			} 
 		}
+		$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
 	}
