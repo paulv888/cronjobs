@@ -135,7 +135,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$values['commandvalue'] = (array_key_exists('commandvalue', $callerparams) ? $callerparams['commandvalue'] : null);
 			$values['schemeID'] = $schemeID;
 			$getparams = http_build_query($values, '',' ');
-			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
 
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -193,7 +193,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['schemeID'] = $params['schemeID'];
 					$getparams = http_build_query($values, '',' ');
 					
-					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'process.php ASYNC_THREAD '.$getparams;
+					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
 
 					$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 					$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -210,8 +210,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
 				if (DEBUG_PARAMS) echo '</pre>';
 			} 
+			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
 		}
-		$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
 	}
@@ -267,7 +267,7 @@ function getDuskDawn(&$params) {
 		}
 	}
 	if ($error) {
-                $feedback['error'] = $get->getresponsecode();
+		$feedback['error'] = $get->getresponsecode();
  		$properties['Link']['value'] = LINK_DOWN;
 		$params['device']['properties'] = $properties;
 	}
@@ -451,7 +451,7 @@ function moveToRecycle($params) {
 		'caller'  => $params['caller'],
 		'deviceID' => $params['deviceID'], 
 		'commandID' => COMMAND_RUN_SCHEME,
-		'schemeID' => ALERT_KODI);
+		'schemeID' => SCHEME_ALERT_KODI);
 		
 	if (!array_key_exists('error',$result)) {
 		$command['macro___commandvalue'] = $result['message'];
@@ -600,7 +600,7 @@ function rebootFireTV($params) {
 
 	$feedback['Name'] = 'rebootFireTV';
 	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'rebootFireTV.sh';
+	$cmd = 'nohup nice -n 10 '.getPath().'/rebootFireTV.sh';
 	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -613,7 +613,7 @@ function fireTVnetflix($params) {
 
         $feedback['Name'] = 'fireTVnetflix';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'fireTVnetflix.sh';
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVnetflix.sh';
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -626,7 +626,7 @@ function fireTVkodi($params) {
 
         $feedback['Name'] = 'fireTVkodi';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'fireTVkodi.sh';
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVkodi.sh';
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -639,7 +639,7 @@ function fireTVcamera($params) {
 
         $feedback['Name'] = 'fireTVcamera';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'fireTVcamera.sh '.$params['commandvalue'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVcamera.sh '.$params['commandvalue'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -656,10 +656,14 @@ function storeCamImage($params) {
         echo "<pre>";
 		print_r($params['cvs']);
         echo "</pre>";
-		if (!copy($params['cvs'][0], $params['cvs'][1])) $feedback['error'] = "Error during copy";
+		// copy(getPath().'/includes/offline.jpg', LASTIMAGEDIR. );
+		if (!copy($params['cvs'][0], $params['cvs'][1])) {
+			$errors= error_get_last();
+			$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];
+		}
 
         $feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
-        return $feedback;               // GET OUT
+        return $feedback;
 
 }
 
@@ -836,10 +840,8 @@ function sendGenericPHP(&$params) {
 
 	$func = $params['command'];
 	if ($func == "sleep") {
-		//$feedback['commandstr'] = $func.' '.$params['commandvalue'];
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
-		///$feedback['commandstr'] = $func.' '.json_encode($params,JSON_UNESCAPED_SLASHES);
 		$feedback = $func($params);
 	}
 	return $feedback;

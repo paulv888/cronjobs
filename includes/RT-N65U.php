@@ -202,7 +202,7 @@ function findLocalName($ip) {
 			'"0");';
 		if (!mysql_query($mysql)) mySqlError($mysql);	
 	}
-	return "**Unknown";
+	return false;
 }
 
 
@@ -250,7 +250,8 @@ function ImportSessions() {
 
 
 		$local = $session['local_address'];
-		$session['local_name'] = findLocalName($session['local_address']); 
+		$session['local_name'] = "*unknown";
+		if ($lname = findLocalName($session['local_address'])) $session['local_name'] = $lname; 
 		$remote = $session['remote_address'];
 		$session['remote_name'] = findRemoteName($session['remote_address']); 
 		$session['createdate'] = date('Y-m-d H:i:s');

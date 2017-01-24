@@ -8,7 +8,8 @@ function getPath(){
 	$str = $_SERVER['SCRIPT_FILENAME'];
 	$chunks = explode('/', $str);
 	unset($chunks[count($chunks)-1]);
-	return implode('/', $chunks).'/';
+	if (empty($chunks)) return "/home/pvloon/php";
+	return implode('/', $chunks);
 }
 
 function to_celcius($f) {

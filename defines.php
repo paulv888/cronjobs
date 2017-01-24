@@ -58,6 +58,8 @@ define("COMMAND_VOICE", 324);
 define("COMMAND_GET_PROPERTIES", 325);
 define("COMMAND_LOG_EVENT", 378);
 
+define("SCHEME_ALERT_KODI", 224);
+
 // Triggers
 define("TRIGGER_AFTER_ON", 1);
 define("TRIGGER_AFTER_OFF", 2);
@@ -94,6 +96,7 @@ define ("COMMAND_DIM_CLASS_X10_INSTEON_DIMM", "|0263{code}480");
 
 // Scheme Condition Types
 define ("SCHEME_CONDITION_DEVICE_PROPERTY_VALUE", 10);
+define ("SCHEME_CONDITION_DEVICE_PROPERTY_VALUE_AS_STEP", 0);
 define ("SCHEME_CONDITION_GROUP_PROPERTY_AND", 20);
 define ("SCHEME_CONDITION_GROUP_PROPERTY_OR", 25);
 define ("SCHEME_CONDITION_CURRENT_TIME", 40);
@@ -196,7 +199,8 @@ define("ADD_MOVE_TO", "/home/www/vlohome/data");
 define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
 define("LOCAL_RECYCLE", "_XXX_recyclebin/");
 define("LOCAL_IMPORT", "_XXX_import/");
-define("ALERT_KODI", 224);
+
+define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 
 define("PUSH_CHANNEL", "vlohome");
 

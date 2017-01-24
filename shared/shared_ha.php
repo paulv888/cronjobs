@@ -97,7 +97,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	// Update prop back
 	$params['device']['properties'][$propertyName]['value'] = $deviceproperty['value'];
-	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
+	$oldvalue = (array_key_exists($propertyName, $params['device']['previous_properties']) ? $params['device']['previous_properties'][$propertyName]['value'] : Null);
 	if ($monitor) {
 	
 		$func = 'update'.str_replace(' ','',$propertyName);
@@ -515,6 +515,13 @@ function logEvent($log) {
         	$log['ip'] = $_SERVER['HTTP_X_FORWARDED_FOR'];
 	elseif (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != '')
         	$log['ip'] = $_SERVER['REMOTE_ADDR'];
+	if (array_key_exists('ip', $log)) {
+		if ($lname = findLocalName($log['ip'])) {
+			$log['ip'] = $lname; 
+		} else {
+			$log['ip'] = findRemoteName($log['ip']);
+		}
+	}
  	if (!array_key_exists('deviceID', $log)) $log['deviceID'] = Null;
 	if (!array_key_exists('commandID', $log)) $log['commandID'] = COMMAND_UNKNOWN;
 	if (!array_key_exists('inout', $log)) $log['inout'] = COMMAND_IO_NOT;
@@ -661,7 +668,8 @@ function checkConditions($rows) {
 		$testvalue = array();
 		switch ($rowcond['cond_type'])
 		{
-		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									// what a mess already :(
+		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									
+		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE_AS_STEP: 									
 			if (DEBUG_COND) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
 			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
 			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $rowcond['cond_deviceID']))['value'];

@@ -4,7 +4,6 @@
 if (!defined('DEBUG_CAMERAS')) define( 'DEBUG_CAMERAS', FALSE );
 
 define("MY_DEVICE_ID", 215);
-define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
 define("MOTION_URL1","https://vlohome.no-ip.org/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");

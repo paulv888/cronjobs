@@ -1,6 +1,8 @@
 <?php
 require_once 'includes.php';
 
-echo __FILE__."\n";
-echo __DIR__."\n";
+echo __FILE__.CRLF;
+echo __DIR__.CRLF;
+echo $_SERVER['SCRIPT_FILENAME'].CRLF;
+echo getPath().CRLF;
 ?>
