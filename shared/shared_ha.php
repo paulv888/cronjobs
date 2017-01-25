@@ -1,3 +1,4 @@
+
 <?php
 // define( 'DEBUG_HA', TRUE );
 // define( 'DEBUG_PROPERTIES', TRUE );
@@ -206,17 +207,17 @@ function setDevicePropertyValue($params, $propertyName) {
 		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
 			if ($deviceproperty['value'] == STATUS_ON ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ON);
-				if (!empty($result)) $feedback['Triggers'] = $result;
+				if (!empty($result)) $feedback = array_merge($feedback, $result);
 			} elseif ($deviceproperty['value'] == STATUS_OFF ) {
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_OFF);
-				if (!empty($result)) $feedback['Triggers'] = $result;
+				if (!empty($result)) $feedback = array_merge($feedback, $result);
 			} elseif ($deviceproperty['value'] == STATUS_ERROR ){
 				$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_ERROR);
-				if (!empty($result)) $feedback['Triggers'] = $result;
+				if (!empty($result)) $feedback = array_merge($feedback, $result);
 			}
 		}
 		$result = HandleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
-		if (!empty($result)) $feedback['Triggers'] = $result;
+		if (!empty($result)) $feedback = array_merge($feedback, $result);
 	}
 	
 	if (DEBUG_HA) echo "</pre>";
@@ -227,7 +228,7 @@ function setDevicePropertyValue($params, $propertyName) {
 function handleTriggers($params, $propertyID, $triggertype) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
 			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.') ORDER BY sort';
-	$feedback =  Null; 
+	$feedback =  array(); 
 	
 	if (DEBUG_TRIGGERS) echo "Handle Triggers Params: ";
 	if (DEBUG_TRIGGERS) print_r($params);

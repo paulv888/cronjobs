@@ -699,7 +699,6 @@ function sendBullet(&$params) {
 	$feedback['Name'] = 'sendBullet';
 	$feedback['result'] = array();
 
-	
 	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
 		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any
@@ -718,7 +717,10 @@ function sendBullet(&$params) {
 		}
 		$text = strip_tags($params['mess_text']);
 	}
-	
+
+	// $feedback['message'] = 'Temp disabled';
+	// return $feedback;
+
 	try {
 		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
 		if (empty($output)) 
@@ -850,10 +852,10 @@ function sendGenericPHP(&$params) {
 
 function sendGenericHTTP(&$params) {
 
-	$feedback['Name'] = 'sendGenericHTTP';
+	$targettype = $params['device']['connection']['targettype'];
+	$feedback['Name'] = 'sendGenericHTTP - '.$targettype;
 	$feedback['result'] = array();
 
-	$targettype = $params['device']['connection']['targettype'];
 	switch ($targettype)
 	{
 	case "POSTAPP":          // PHP - vlosite

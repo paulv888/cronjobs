@@ -1,4 +1,4 @@
-﻿<?php 
+<?php 
 include_once 'logins.php' ;
 include_once 'connect-db.php';
 include_once 'defines.php';
@@ -21,25 +21,16 @@ include_once 'includes/commands_thermo.php';
 include_once 'includes/thermo_common.php';
 include_once 'includes/media_library_commands.php';
 
-include_once 'myclasses/OAuth.php';
-include_once 'myclasses/thermo_lib.php';
-include_once 'myclasses/RestClient.class.php';
-include_once 'myclasses/TCPClient.php';
-include_once 'myclasses/insteon_hub.class.php';
-include_once 'myclasses/insteon_decoder.class.php';
-include_once 'myclasses/sockettransport.class.php';
+include_once 'Classes/OAuth.php';
+include_once 'Classes/thermo_lib.php';
+include_once 'Classes/RestClient.class.php';
+include_once 'Classes/TCPClient.php';
+include_once 'Classes/insteon_hub.class.php';
+include_once 'Classes/insteon_decoder.class.php';
+include_once 'Classes/sockettransport.class.php';
 
-include_once 'myclasses/Orders.class.php';
-include_once 'myclasses/Position.class.php';
+include_once 'Classes/Orders.class.php';
+include_once 'Classes/Position.class.php';
+include_once 'includesPushbullet.php';
 include_once 'includes/yahoostreamer.php';
-
-include_once('Pushbullet/Pushable.php');
-include_once('Pushbullet/Channel.php');
-include_once('Pushbullet/Contact.php');
-include_once('Pushbullet/PhonebookEntry.php');
-include_once('Pushbullet/Push.php');
-include_once('Pushbullet/Device.php');
-include_once('Pushbullet/Connection.php');
-include_once('Pushbullet/Pushbullet.php');
-
 ?>

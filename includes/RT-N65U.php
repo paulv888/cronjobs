@@ -166,7 +166,7 @@ function findRemoteName($ip) {
 	return  $hostname;
 }
 
-function findLocalName($ip) {
+function findLocalName($ip, $sendAlert = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
 	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
@@ -178,29 +178,31 @@ function findLocalName($ip) {
 	if ($row=FetchRow($mysql)) {
 		return  $row['friendly_name'];
 	} else {
-		$params = array('callerID' => MY_DEVICE_ID, 
-						'deviceID' => MY_DEVICE_ID, 
-						'messagetypeID' => 'MESS_TYPE_SCHEME',
-						'schemeID' => ALERT_UNKNOWN_IP_FOUND,
-						'ha_alerts___l1' => 'IP Address', 
-						'ha_alerts___v1' => $ip);
-		print_r(executeCommand($params));
-		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
-			`ip` ,
-			`mac` ,
-			`name` ,
-			`friendly_name` ,
-			`connection` ,
-			`trusted`
-			)
-		VALUES (' . 
-			'"'.$ip.'",'.
-			'"'.$ip.'",'.
-			'"**Unknown",'.
-			'"**Unknown",'.
-			'"",'.
-			'"0");';
-		if (!mysql_query($mysql)) mySqlError($mysql);	
+		if ($sendAlert) {
+			$params = array('callerID' => MY_DEVICE_ID, 
+							'deviceID' => MY_DEVICE_ID, 
+							'messagetypeID' => 'MESS_TYPE_SCHEME',
+							'schemeID' => ALERT_UNKNOWN_IP_FOUND,
+							'ha_alerts___l1' => 'IP Address', 
+							'ha_alerts___v1' => $ip);
+			print_r(executeCommand($params));
+			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
+				`ip` ,
+				`mac` ,
+				`name` ,
+				`friendly_name` ,
+				`connection` ,
+				`trusted`
+				)
+			VALUES (' . 
+				'"'.$ip.'",'.
+				'"'.$ip.'",'.
+				'"**Unknown",'.
+				'"**Unknown",'.
+				'"",'.
+				'"0");';
+			if (!mysql_query($mysql)) mySqlError($mysql);	
+		}
 	}
 	return false;
 }
@@ -251,7 +253,7 @@ function ImportSessions() {
 
 		$local = $session['local_address'];
 		$session['local_name'] = "*unknown";
-		if ($lname = findLocalName($session['local_address'])) $session['local_name'] = $lname; 
+		if ($lname = findLocalName($session['local_address'], true)) $session['local_name'] = $lname; 
 		$remote = $session['remote_address'];
 		$session['remote_name'] = findRemoteName($session['remote_address']); 
 		$session['createdate'] = date('Y-m-d H:i:s');

@@ -61,6 +61,8 @@ function RunTimers(){
 					if (!DEBUG_TIMERS) ob_start();
 					if ($timer['priorityID'] != PRIORITY_HIDE) {
 						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_MACRO)); 
+						// logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 
+									// 'data' => $timer['description'], 'result' => $feedback['result'] ));
 					} else {
 						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_NONE));
 					}
@@ -81,7 +83,7 @@ function RunTimers(){
 function runTimerSteps($params) {
 
 
-	if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands (Not in Use? There is a command runTimerSteps, but not used?
+	if (!array_key_exists('timer',$params))	{ // Called directly from remote executeCommands from form
 		$timer['runasync'] = false;
 		$timer['priorityID'] = 1;
 		$timer['description'] = "";
@@ -95,12 +97,13 @@ function runTimerSteps($params) {
 
 	$deviceID = $params['callerID'];
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
-	$mysql = 'SELECT ha_timers.description, ha_remote_scheme_steps.deviceID,
-		ha_remote_scheme_steps.commandID, ha_remote_scheme_steps.value as commandvalue, ha_remote_scheme_steps.runschemeID as schemeID ,
-		ha_remote_scheme_steps.alert_textID 
-		FROM (ha_timers INNER JOIN ha_remote_scheme_steps ON ha_timers.id = ha_remote_scheme_steps.timerID) 
-		WHERE(((ha_timers.id) = '.$timerID.')) ORDER BY ha_remote_scheme_steps.sort';
-	
+	$mysql = 'SELECT st.id, t.description, st.deviceID, c.description as commandName,
+		st.commandID, st.value as commandvalue, st.runschemeID as schemeID ,
+		st.alert_textID 
+		FROM (ha_timers t INNER JOIN ha_remote_scheme_steps st ON t.id = st.timerID
+			LEFT JOIN ha_mf_commands c ON st.commandID = c.id) 
+		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
+		
 	$feedback['result'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
@@ -122,10 +125,7 @@ function runTimerSteps($params) {
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
 				$feedback['Name'] = $description;
-				$feedback['result'] .= json_encode(executeCommand($step),JSON_UNESCAPED_SLASHES).'</br>';
-				// No logging here, is done in Command
-				//if ($timer['priorityID'] != PRIORITY_HIDE) 
-//logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 'data' => $timer['description'], 'result' => $feedback['result'] ));
+				$feedback['result']['runTimerSteps:'.$step['id'].'_'.$step['commandName']] = executeCommand($step);
 			}
 		}
 		return $feedback;		// GET OUT
