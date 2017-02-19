@@ -1162,21 +1162,6 @@ function graphCreate($params) {
 function sendEchoBridge($params) {
 
 
-	// if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
-		// $timer['runasync'] = false;
-		// $timer['priorityID'] = 1;
-		// $timer['description'] = "";
-		// $timerID = $params['commandvalue'];
-	// } else {
-		// if (DEBUG_TIMERS) echo "<pre>".CRLF;
-		// if (DEBUG_TIMERS) print_r($params);
-		// $timer = $params['timer'];
-		// $timerID = $params['timer']['id'];
-	// }
-
-	// echo "<pre>";
-	// print_r($params);
-
 	$vcIDs = explode(",", $params['commandvalue']);
 
 	foreach ($vcIDs as $vcID) {
