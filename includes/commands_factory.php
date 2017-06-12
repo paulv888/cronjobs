@@ -899,11 +899,10 @@ function sendGenericHTTP(&$params) {
 				$feedback['result'] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();
-				$feedback['result'] = htmlentities($feedback['result_raw']);
+				$feedback['result'][] = htmlentities($feedback['result_raw']);
 			}
+			if (!is_array($feedback['result'])) $feedback['result'][] = $feedback['result'];
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
-			// echo "***";
-			// print_r($feedback);
 		break;
 	case "GET":          // Sony Cam at the moment
 		if (DEBUG_DEVICES) echo "GET</p>";
@@ -970,6 +969,16 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
 		break;
 	}
+	
+	foreach ($feedback['result'] as $key => $value) {	
+		if (!is_array($value) && strtoupper($value) == "OK") $feedback['result'][$key]= "";
+	}
+	// echo "<pre>";
+	// echo "***";
+	// print_r($feedback);
+	// echo "</pre>";
+	
+	
 	if (array_key_exists('result', $feedback)) {
 		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
 //			$feedback['message'] = $feedback['result'];
