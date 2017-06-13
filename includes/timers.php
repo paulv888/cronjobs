@@ -85,7 +85,7 @@ function runTimerSteps($params) {
 
 	if (!array_key_exists('timer',$params))	{ // Called directly from remote from form
 		$timer['runasync'] = false;
-		$timer['priorityID'] = 1;
+		$timer['priorityID'] = PRIORITY_HIGH;
 		$timer['description'] = "";
 		$timerID = $params['commandvalue'];
 	} else {

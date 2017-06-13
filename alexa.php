@@ -519,11 +519,11 @@ function homeStatus($request, $session, $response) {
 		
 	}
 	
-	$mysql = 'SELECT count(id) as count FROM ha_alerts WHERE `priorityID` < 3 AND DATE_FORMAT( NOW() , "%Y-%m-%d" ) = DATE_FORMAT(`alert_date`, "%Y-%m-%d" )';
+	$mysql = 'SELECT count(id) as count FROM ha_alerts WHERE `priorityID` < '.PRIORITY_LOW.' AND DATE_FORMAT( NOW() , "%Y-%m-%d" ) = DATE_FORMAT(`alert_date`, "%Y-%m-%d" )';
 	$alerts = FetchRow($mysql);
 	// print_r($alerts);
 	if (!empty($alerts['count'])) {		// Alerts
-		$answer = "<speak>".implode(". ", $answer)." You have ".$alerts['count']."alerts for today. Do you want to hear these?</speak>";
+		$answer = "<speak>".implode(". ", $answer)." You have ".$alerts['count']." alerts for today. Do you want to hear these?</speak>";
 		$response->respond($answer)
 			->reprompt("Do you want to listen to today's alerts?");
 		$response->sessionAttributes(Array("intentSequence"=>"AlertsIntent"));
@@ -544,7 +544,7 @@ function AlertsIntent($request, $session, $response) {
 	global $log;
 	
 	$feedback['Name'] = 'AlertsIntent';
-	$wherestr = '`priorityID` < 3 ';
+	$wherestr = '`priorityID` < '.PRIORITY_LOW.' ';
 	$responsstr = "";
 	
 	$findDevice = strtolower(isset($request->slots->Device) ? $request->slots->Device : "");
