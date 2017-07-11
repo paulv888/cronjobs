@@ -167,10 +167,12 @@ function loadRemoteDiv($divid, $params) {
 				} else {
 					if ($rowremotekeys['inputtype']=="btndropdown") {
 						echo '<div style="position: relative;height:100%">';
-						echo '<button class="btn btn-block btn-success dropdown-toggle rem-button';
+						echo '<button class="btn btn-block dropdown-toggle rem-button';
 						if (strlen($status)>1) echo ' '.$status;
 						if (strlen($link)>1) echo ' '.$link;
+						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
+						
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo ' type="button" data-toggle="dropdown">';
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';

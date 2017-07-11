@@ -899,11 +899,10 @@ function sendGenericHTTP(&$params) {
 				$feedback['result'] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();
-				$feedback['result'] = htmlentities($feedback['result_raw']);
+				$feedback['result'][] = htmlentities($feedback['result_raw']);
 			}
+			if (!is_array($feedback['result'])) $feedback['result'][] = $feedback['result'];
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
-			// echo "***";
-			// print_r($feedback);
 		break;
 	case "GET":          // Sony Cam at the moment
 		if (DEBUG_DEVICES) echo "GET</p>";
@@ -970,6 +969,16 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
 		break;
 	}
+	
+	foreach ($feedback['result'] as $key => $value) {	
+		if (!is_array($value) && strtoupper($value) == "OK") $feedback['result'][$key]= "";
+	}
+	// echo "<pre>";
+	// echo "***";
+	// print_r($feedback);
+	// echo "</pre>";
+	
+	
 	if (array_key_exists('result', $feedback)) {
 		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
 //			$feedback['message'] = $feedback['result'];
@@ -1162,21 +1171,6 @@ function graphCreate($params) {
 function sendEchoBridge($params) {
 
 
-	// if (!array_key_exists('timer',$params))	{ // Called directly from executeCommands
-		// $timer['runasync'] = false;
-		// $timer['priorityID'] = 1;
-		// $timer['description'] = "";
-		// $timerID = $params['commandvalue'];
-	// } else {
-		// if (DEBUG_TIMERS) echo "<pre>".CRLF;
-		// if (DEBUG_TIMERS) print_r($params);
-		// $timer = $params['timer'];
-		// $timerID = $params['timer']['id'];
-	// }
-
-	// echo "<pre>";
-	// print_r($params);
-
 	$vcIDs = explode(",", $params['commandvalue']);
 
 	foreach ($vcIDs as $vcID) {
@@ -1195,15 +1189,15 @@ function sendEchoBridge($params) {
 			$send_params['targetDevice'] = "Encapsulated";
 			foreach ($in_commands as $in_command) {
 				if ($in_command['url_type'] == 1) {		// On
-					$send_params['onUrl'] = $vlosite.$in_command['url'];
+					$send_params['onUrl'] = json_encode(Array(Array('item' => $vlosite.$in_command['url'], 'type' => 'httpDevice')));
 				} elseif ($in_command['url_type'] == 2) {		// Dim
-					$send_params['dimUrl'] = $vlosite.$in_command['url'];
+					$send_params['dimUrl'] = json_encode(Array(Array('item' => $vlosite.$in_command['url'], 'type' => 'httpDevice')));
 				} elseif ($in_command['url_type'] == 3) {		// Off
-					$send_params['offUrl'] = $vlosite.$in_command['url'];
+					$send_params['offUrl'] = json_encode(Array(Array('item' => $vlosite.$in_command['url'], 'type' => 'httpDevice')));
 				}
 			}
 		}
-	// print_r($send_params);
+	//echo "<pre>";print_r($send_params);echo "</pre>";
 
 /*
 Add Device - Post
@@ -1241,7 +1235,7 @@ Update - Put
 		$postparams = json_encode($send_params,JSON_UNESCAPED_SLASHES);
 		$feedback['commandstr'] .= ' '.$postparams;
 
-
+		
 		if (!empty($send_params['id'])) {		// Update - PUT
 			$url .= '/'.$send_params['id'];
 			if (DEBUG_DEVICES) echo $url." PUT-Params: ".htmlentities($postparams).CRLF;

@@ -161,7 +161,7 @@ function executeQuery($params) {
 		$feedback['error'] =  mysql_error($mysql_link);
 		return $feedback;
 	}
-	$feedback['result'] =  $res." Rows affected";
+	$feedback['result'] =  mysql_affected_rows() ." Rows affected";
 	return $feedback;
 }
    

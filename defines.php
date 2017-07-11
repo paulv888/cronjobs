@@ -182,6 +182,10 @@ define("CONDITION_EQUAL", 30);
 
 define("THERMO_CONNECTION_TIMEOUT", 10);
 
+define("PRIORITY_CRITICAL", 1);
+define("PRIORITY_HIGH", 2);
+define("PRIORITY_NORMAL", 3);
+define("PRIORITY_LOW", 4);
 define("PRIORITY_HIDE", 99);
 
 define("REPEAT_EVERY_RUN", -1);
