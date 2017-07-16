@@ -22,10 +22,10 @@ if (isset($_GET["Message"])) {
 	$sdata = file_get_contents("php://input");
 }
 
-// $file = 'arduino.log';
-// $current = file_get_contents($file);
-// $current .= $sdata."\n";
-// file_put_contents($file, $current);
+$file = 'arduino.log';
+$current = file_get_contents($file);
+$current .= $sdata."\n";
+file_put_contents($file, $current);
 
 
 if (!($sdata=="")) { 					//import_event

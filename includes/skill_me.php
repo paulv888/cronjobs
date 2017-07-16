@@ -35,7 +35,7 @@ $commandMap = [
 	"NoIntent"   =>                  "424"
 ];
 
-$file = 'alexa.log';
+$file = 'skill_me.log';
 $current = file_get_contents($file);
 $current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 file_put_contents($file, $current);
@@ -212,7 +212,9 @@ function WhatsTemperatureIntent($request, $session, $response) {
 	if (DEBUG_ALX) { print_r($deviceProperty); print_r($voicenames);}
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperty['value'],1) + 0);
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
+
+
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -269,12 +271,14 @@ function AnySecurityOpenIntent($request, $session, $response) {
 	
 	if (DEBUG_ALX) { print_r($devices); print_r($voicenames);}
 
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
+
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
 
 }
+
 function LocationStatusIntent($request, $session, $response) {
 
 	global $log;
@@ -323,7 +327,7 @@ function LocationStatusIntent($request, $session, $response) {
 	
 	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -374,7 +378,7 @@ function DeviceStatusIntent($request, $session, $response) {
 	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
 
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -419,7 +423,7 @@ function WhatsBedtimeIntent($request, $session, $response) {
 	$datestr = dateToSpeach($date->format("Y-m-d"));
 	// var_dump($datestr);
 	$answer = sprintf("%s you went at %s to bed.", $datestr, $date->format('g:i'));
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -441,7 +445,7 @@ function WhatsPlayingIntent($request, $session, $response) {
 	if (DEBUG_ALX) { print_r($deviceProperties); }
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']);
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -469,7 +473,8 @@ function DoingIntent($request, $session, $response) {
 		$answer = "<speak>".sprintf($responses1[rand(0,count($responses1)-1)], $find).$responses2[rand(0,count($responses2)-1)]."</speak>";
 	}
 	
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
+
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -533,7 +538,8 @@ function homeStatus($request, $session, $response) {
 	}
 
 	$answer = "<speak>".implode(". ", $answer)."</speak>";
-	$response->respond($answer);
+	$response->respond($answer)->withCard(strip_tags($answer));
+
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;
@@ -596,7 +602,7 @@ function AlertsIntent($request, $session, $response) {
 	$alerts = FetchRows($mysql);
 	if (empty($alerts)) {
 		$answer = 'You have no alerts for selected criteria.';
-		$response->respond($answer);
+		$response->respond($answer)->withCard(strip_tags($answer));
 		$feedback['message'] = $answer;
 		$feedback['result'] = $response->tell();
 		return $feedback;
@@ -635,8 +641,9 @@ function AlertsIntent($request, $session, $response) {
 	}
 	$answer .= "<break time=\"0.3s\" /> End Report.";
 		
-	//$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
-	$response->respond('<speak>'.$answer.'</speak>');
+	$answer = '<speak>'.$answer.'</speak>';
+	$response->respond($answer)->withCard(strip_tags($answer));
+
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
 	return $feedback;

@@ -69,7 +69,7 @@ class Response {
 				'reprompt' => $this->reprompt ? $this->reprompt->render() : null,
 				'shouldEndSession' => false
 			]
-		] );
+		] , JSON_UNESCAPED_SLASHES);
 		echo $commandstr;
 		$feedback['commandstr'] = $commandstr;
 		return $feedback;
@@ -87,7 +87,7 @@ class Response {
 				'reprompt' => $this->reprompt ? $this->reprompt->render() : null,
 				'shouldEndSession' => $this->shouldEndSession ? true : false
 			]
-		] );
+		] , JSON_UNESCAPED_SLASHES);
 		echo $commandstr;
 		$feedback['commandstr'] = $commandstr;
 		return $feedback;
