@@ -219,14 +219,14 @@ function closeGroup($camera) {
 				$properties['Recording']['value'] = STATUS_OFF;
 			}
 
-			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Critical Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Critical Alert Files']['value'])  {
+			if (!$camera['criticalalert'] && !empty($camera['previous_properties']['Critical Alert Items']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Critical Alert Items']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
 				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				$camera['criticalalert'] = true;
 				$camera['highalert'] = true;
 				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
 				uploadPictures($camera);
-			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['High Alert Files']['value']) && $camera['numfiles'] >= $camera['previous_properties']['High Alert Files']['value'])  {
+			} elseif (!$camera['highalert'] && !empty($camera['previous_properties']['High Alert Items']['value']) && $camera['numfiles'] >= $camera['previous_properties']['High Alert Items']['value'])  {
 				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
 				//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
