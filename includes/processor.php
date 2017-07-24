@@ -15,8 +15,8 @@ if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 // Private
 function sendCommand(&$thiscommand) { 
-//   "<pre>";
- // print_r($thiscommand);
+	// echo "<pre>";
+	// print_r($thiscommand);
 	$exittrap=false;
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
@@ -140,10 +140,15 @@ function sendCommand(&$thiscommand) {
 	} else {
 		$commandclassID = COMMAND_CLASS_GENERIC;
 	}
+
+	if (DEBUG_DEVICES) echo "ThisCommand: DeviceID: ";
+	if (DEBUG_DEVICES) print_r($thiscommand);
 	
 	$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 			" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 			" WHERE ha_mf_commands.id =".$thiscommand['commandID']. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
+	if (DEBUG_COMMANDS) $mysql.CRLF;
+	
 	if (!$rowcommands = FetchRow($mysql))  {			// No device specific command found, try generic, else exit
 		$commandclassID = COMMAND_CLASS_GENERIC;
 		$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".

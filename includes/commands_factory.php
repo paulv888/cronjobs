@@ -1,4 +1,6 @@
 <?php
+// @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
+//
 //	Command in:
 // 		$params
 //
@@ -613,7 +615,7 @@ function fireTVnetflix($params) {
 
         $feedback['Name'] = 'fireTVnetflix';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVnetflix.sh';
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -626,7 +628,7 @@ function fireTVkodi($params) {
 
         $feedback['Name'] = 'fireTVkodi';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVkodi.sh';
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -639,7 +641,7 @@ function fireTVcamera($params) {
 
         $feedback['Name'] = 'fireTVcamera';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVcamera.sh '.$params['commandvalue'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -1384,31 +1386,29 @@ function checkSyslog(&$params) {
 	// echo "<pre>".$feedback['Name'].': '; print_r($devs); echo "</pre>";
 
 
-	$mysql = 'SELECT `host`, `period`,`sum` FROM `net_syslog_stats` WHERE DATE(`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY `host`';
+        $mysql = 'SELECT m.`deviceID`, s.`period`, s.`host`, sum(`sum`) as sum FROM `net_syslog_mapping` m 
+                  RIGHT JOIN `net_syslog_stats` s ON s.host = m.fromhost 
+                  WHERE DATE(s.`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY m.`deviceID` ';
+
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
-			$dev = search_array_key_value($devs, 'value', $row['host']);
+			// $dev = search_array_key_value($devs, 'value', $row['host']);
 			// echo "<pre>".$feedback['Name'].': '; print_r($dev); echo "</pre>";
-			if (empty($dev)) {		// Not found
-				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>288, 'commandvalue'=>$row['host'].' - Missing Syslog device name: '));
-				
+			if (empty($row['deviceID'])) {		// Not found
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>290, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
 			} else {
-				$props = getDeviceProperties(array('deviceID' => $dev[0]['deviceID'])); 
+				$props = getDeviceProperties(array('deviceID' => $row['deviceID'])); 
 				// echo "<pre>".$feedback['Name'].' Props: '; print_r($props); echo "</pre>";
 				if (array_key_exists('Critical Alert Items',$props) && $row['sum']>$props['Critical Alert Items']['value']) {	// Critical
-					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $dev[0]['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
+					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
 				}
 				if (array_key_exists('High Alert',$props) && $row['sum']>$props['High Alert']['value']) {	// High
-					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $dev[0]['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - High syslog messages: '.$row['sum']));
-				} else {
-				// echo "not send".CRLF;
-				// echo "</pre>";
-				
-				}
+					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - High syslog messages: '.$row['sum']));
+				} 
 			}
 		}
 	}
-	
+
 	return $feedback;
 }
 ?>

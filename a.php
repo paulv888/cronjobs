@@ -15,7 +15,7 @@ define("MY_DEVICE_ID", 214);
 
 	 // 8/9/2015 Now receiving for Axis Cam
  */
- 
+
 if (isset($_GET["Message"])) {
 	$sdata=$_GET["Message"];
 } else {
@@ -24,13 +24,13 @@ if (isset($_GET["Message"])) {
 
 $file = 'arduino.log';
 $current = file_get_contents($file);
-$current .= $sdata."\n";
+$current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 file_put_contents($file, $current);
-
 
 if (!($sdata=="")) { 					//import_event
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
 //print_r($rcv_message);
+
 	$message['deviceID'] = $rcv_message['Device'];
 	$message['commandID'] = $rcv_message['Command'];
 	if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = 1;

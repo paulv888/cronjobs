@@ -1,6 +1,6 @@
 <?php 
 require_once 'includes.php';
-// define( 'DEBUG_INPUT', TRUE );
+//define( 'DEBUG_INPUT', TRUE );
 if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
 if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 
@@ -62,7 +62,7 @@ if (!headers_sent()) {
 if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) && is_numeric($_SESSION['properties']['SelectedPlayer']['value'])) {
 	$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
 } else {
-	$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+	$params['SESSION']['properties']['SelectedPlayer']['value'] = (isset($params['playerID']) ? $params['playerID'] : DEVICE_DEFAULT_PLAYER);
 }
 $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
 session_write_close();
