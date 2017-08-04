@@ -17,33 +17,27 @@ function trHost() {
 			" FROM  `net_iplookup`"   .
 			" WHERE ip=name and processed<>1 LIMIT 5000";  
 
-	$res = mysql_query($mysql);
-
-	if (!$res) mySqlError();
-
 	// While a row of data exists, put that row in $row as an associative array
 	// Note: If you're expecting just one row, no need to use a loop
 	// Note: If you put extract($row); inside the following loop, you'll
 	//       then create $userid, $fullname, and $userstatus
-	while ($row = mysql_fetch_assoc($res)) {
-		$ip =$row['ip'];
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $row) {
+			$ip =$row['ip'];
 
-		$hostname = gethostbyaddr($ip);
-		echo $ip." ".$hostname."</br>";
-	   	$mysql = "UPDATE `net_iplookup` SET `processed` = 1, `name`='".$hostname."' WHERE id =".$row['id'];
-		if (!mysql_query($mysql))  mySqlError($mysql);
-//		usleep(2000);
+			$hostname = gethostbyaddr($ip);
+			echo $ip." ".$hostname."</br>";
+			PDOupdate('net_iplookup', array('processed' => 1, 'name' => $hostname), array( 'id' => $row['id']));
+		}
  	}
 }
 
 
 function MoveHistory() {
-    $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
-	$result=mysql_query($mysql);
-	if (!$result) mySqlError($mysql);	
-	$num_rows = mysql_affected_rows();
-    $mysql="DELETE FROM `net_sessions` WHERE active=0;";
-	if (!mysql_query($mysql)) mySqlError($mysql);
+    $mysql = "INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
+	$result = PDOExec($mysql);
+    $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
+	PDOExec($mysql);
 	return $num_rows;
 }
 

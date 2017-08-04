@@ -1,8 +1,6 @@
 <?php 
-include_once 'logins.php' ;
-include_once 'connect-db.php';
+include 'logins.php' ;
 include_once 'defines.php';
-
 include_once 'includes/remote.php';
 include_once 'shared/shared_db.php';
 include_once 'shared/shared_file.php';
@@ -29,8 +27,8 @@ include_once 'Classes/insteon_hub.class.php';
 include_once 'Classes/insteon_decoder.class.php';
 include_once 'Classes/sockettransport.class.php';
 
-include_once 'Classes/Orders.class.php';
-include_once 'Classes/Position.class.php';
+// include_once 'Classes/Orders.class.php';
+// include_once 'Classes/Position.class.php';
 include_once 'includesPushbullet.php';
-include_once 'includes/yahoostreamer.php';
+// include_once 'includes/yahoostreamer.php';
 ?>

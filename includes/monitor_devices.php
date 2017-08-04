@@ -5,28 +5,21 @@ function monitorDevices($linkmonitor) {
 			 ' LEFT JOIN ha_mf_devices d ON l.deviceID = d.id ' .
 			 ' WHERE d.`inuse` = 1 AND l.`linkmonitor` = "'.$linkmonitor .'"' .
 			 ' AND l.active > 0' ;
-	if (!$reslinks = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		return false;
-	}
 	$date = getdate();
 	$day = $date["wday"];
-	while ($rowlinks = mysql_fetch_assoc($reslinks)) {
-		// if ($rowlinks['active'] == 1 || 
-			// ($rowlinks['active'] == 2 && ($day > 0 && $day < 6 )) ||
-			// ($rowlinks['active'] == 3 && ($day == 0 || $day == 6 ))) 			
-		if ($rowlinks['active'] > 0) 			
-		monitorDevice($rowlinks['deviceID'],$rowlinks['pingport']);
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $rowlinks) {
+			if ($rowlinks['active'] > 0) 			
+			monitorDevice($rowlinks['deviceID'],$rowlinks['pingport']);
+		}
 	}
 }
 
 function monitorDevice($deviceID, $pingport) {
 	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
-	if (!$resip = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	$rowip = mysql_fetch_assoc($resip);
+
+	
+	$rowip = FetchRow($mysql);
 	$status = false;
 	if ($rowip['ip'] != NULL) {
 		if ($pingport>0) {

@@ -282,7 +282,7 @@ function setResult($params) {
 	$feedback['Name'] = 'setResult';
 	$feedback['result'] = array();
 	$feedback['message'] = $params['commandvalue'];
-	break;
+	return;
 }
 
 
@@ -1080,9 +1080,10 @@ function graphCreate($params) {
 	$feedback['message'] = '';
 	if ($rows = FetchRows($mysql)) {
 		//print_r($rows);
-		global $mysql_link;
-		mysql_close($mysql_link);
-		openMySql();
+
+		// global $mysql_link;
+		// mysql_close($mysql_link);
+		// openMySql();
 
 
 		$mysql='SELECT * FROM ha_mi_properties_graph WHERE propertyID IN ('.$properties.');';

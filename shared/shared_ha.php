@@ -462,7 +462,7 @@ function removeDevicePropertyByID($deviceproperty){
 //	Need DeviceID and PropertyID 
 //
 	$mysql = 'DELETE FROM `ha_mf_device_properties` WHERE(`deviceID` ='.$deviceproperty['deviceID'].' AND `propertyID`='.$deviceproperty['propertyID'].');';
-	if (!mysql_query($mysql)) mySqlError($mysql);
+	PDOExec($mysql);
 
 	return true ;
 }
@@ -543,10 +543,6 @@ function logEvent($log) {
 		$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 		$mysql = 'SELECT invertstatus FROM `ha_mf_monitor_property` ' .
 					' WHERE propertyID = 123 AND deviceID = '.$log['deviceID']; 
-		if (!$resdevice=mysql_query($mysql)) {
-			mySqlError($mysql); 
-			return false;
-		}
 		$rowdevice=FetchRow($mysql);
 		if ($rowdevice['invertstatus'] == '0') {
 			$log['data'] .= ' Inverted'; 
@@ -563,10 +559,7 @@ function logEvent($log) {
 	if (is_null($log['loglevel']))	{
 		if (!is_null($log['commandID'])) {
 			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
-			if (!$rescommand=mysql_query($mysql)) {
-				mySqlError($mysql);
-			} else {
-				$rowcommand=mysql_fetch_array($rescommand);
+			if ($rowcommand=FetchRow($mysql)) {
 				$log['loglevel'] = $rowcommand['loglevel'];
 			}
 		}
@@ -606,10 +599,7 @@ function listDeviceProperties($devices){
 
 function updateThermType($deviceID, $typeID){
 
-	$mysql = "UPDATE `ha_mf_devices` SET " .
-    			  " `typeID` = " . $typeID . "" .
-				  " WHERE(`id` ='" . $deviceID . "')";
-	if (!mysql_query($mysql)) mySqlError($mysql);
+	PDOUpdate('ha_mf_devices', array('typeID' => $typeID), array('id' => $deviceID ));
 	return true;
 }
 

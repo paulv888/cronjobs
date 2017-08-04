@@ -21,37 +21,31 @@ function trHost() {
 			" FROM  `net_iplookup`"   .
 			" WHERE ip=name and processed<>1 LIMIT 5000";  
 
-	$res = mysql_query($mysql);
-
-	if (!$res) mySqlError();
-
 	// While a row of data exists, put that row in $row as an associative array
 	// Note: If you're expecting just one row, no need to use a loop
 	// Note: If you put extract($row); inside the following loop, you'll
 	//       then create $userid, $fullname, and $userstatus
-	while ($row = mysql_fetch_assoc($res)) {
-		$ip =$row['ip'];
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $row) {
+			$ip =$row['ip'];
 
-		$hostname = gethostbyaddr($ip);
-		echo $ip." ".$hostname."</br>";
-	   	$mysql = "UPDATE `net_iplookup` SET `processed` = 1, `name`='".$hostname."' WHERE id =".$row['id'];
-		if (!mysql_query($mysql))  mySqlError($mysql);
-//		usleep(2000);
+			$hostname = gethostbyaddr($ip);
+			echo $ip." ".$hostname."</br>";
+			$mysql = "UPDATE `net_iplookup` SET `processed` = 1, `name`='".$hostname."' WHERE id =".$row['id'];
+			PDOupdate('net_iplookup', array('processed' => 1, 'name' => $hostname), array( 'id' => $row['id']));
+		}
  	}
 }
 
 
 function MoveHistory() {
     $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
-	$result=mysql_query($mysql);
-	if (!$result) mySqlError($mysql);	
-	$num_rows = mysql_affected_rows();
+	$result = PDOExec($mysql);
     $mysql='UPDATE `net_sessions_history` SET `remote_domain`=if(`remote_name`=`remote_address`, `remote_name`, SUBSTRING_INDEX(`remote_name`, ".", -2))   WHERE `remote_domain` IS Null';
-	$result=mysql_query($mysql);
-	if (!$result) mySqlError($mysql);	
-    $mysql="DELETE FROM `net_sessions` WHERE active=0;";
-	if (!mysql_query($mysql)) mySqlError($mysql);
-	return $num_rows;
+	PDOExec($mysql);
+    $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
+	PDOExec($mysql);
+	return $result;
 }
 
 function GetSessions() {
@@ -135,10 +129,6 @@ function GetSessions() {
 function findRemoteName($ip) {
 	$mysql="SELECT * FROM  `net_iplookup` WHERE ip='".$ip."';";  
 
-	$res = mysql_query($mysql);
-
-	if (!$res) mySqlError();
-
 	if ($row=FetchRow($mysql)) {
 		$last = new DateTime($row['updatedate']);
 		$nowdt = new DateTime();
@@ -157,10 +147,10 @@ function findRemoteName($ip) {
 	if ($row) {
 		$processed = $row['processed'] + 1;
 	   	$mysql = "UPDATE `net_iplookup` SET `processed` =".$processed.", `name`='".$hostname."' WHERE id =".$row['id'];
-		if (!mysql_query($mysql))  mySqlError($mysql);
+		PDOExec($mysql);
 	} else {
 		$mysql = "INSERT INTO `net_iplookup` (ip, name, processed) values ('".$ip."','".$hostname."', 1)";
-		if (!mysql_query($mysql))  mySqlError($mysql);
+		PDOExec($mysql);
 	}
 
 	return  $hostname;
@@ -170,10 +160,6 @@ function findLocalName($ip, $sendAlert = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
 	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
-
-	$res = mysql_query($mysql);
-
-	if (!$res) mySqlError();
 
 	if ($row=FetchRow($mysql)) {
 		return  $row['friendly_name'];
@@ -201,26 +187,26 @@ function findLocalName($ip, $sendAlert = false) {
 				'"**Unknown",'.
 				'"",'.
 				'"0");';
-			if (!mysql_query($mysql)) mySqlError($mysql);	
+			PDOExec($mysql);	
 		}
 	}
 	return false;
 }
 
 
-function FindAddress($ip) {
-	$mysql="SELECT * ". 
-			" FROM  `net_iplookup`" .  
-			" WHERE ip='".$ip."'";  
-	if ($resset=FetchRow($mysql)) {
-		return $resset['id'];
-	} else { 			// insert and return id
-	    $mysql="INSERT INTO `net_iplookup` (ip, name) values ('".$ip."','".$ip."')";
-		$result=mysql_query($mysql);
-		if (!$result) mySqlError($mysql);	
-		return  mysql_insert_id();
-	}
-}
+// function FindAddress($ip) {
+	// $mysql="SELECT * ". 
+			// " FROM  `net_iplookup`" .  
+			// " WHERE ip='".$ip."'";  
+	// if ($resset=FetchRow($mysql)) {
+		// return $resset['id'];
+	// } else { 			// insert and return id
+	    // $mysql="INSERT INTO `net_iplookup` (ip, name) values ('".$ip."','".$ip."')";
+		// $result = mysql_query($mysql);
+		// if (!$result) mySqlError($mysql);	
+		// return  mysql_insert_id();
+	// }
+// }
 
 function ImportSessions() {
  
@@ -233,7 +219,7 @@ function ImportSessions() {
 	
 	$sessionsimported=0;
    	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
-	if (!mysql_query($mysql))  mySqlError($mysql);
+	PDOExec($mysql);
     
 	foreach ($sessionsresponse as $session) {
     	
@@ -241,13 +227,12 @@ function ImportSessions() {
 				" FROM  `net_sessions`" .  
 				" WHERE local_address='".$session['local_address']."'"." AND local_port='".$session['local_port']."'".
                                      " AND remote_address='".$session['remote_address']."'"." AND remote_port='".$session['remote_port']."'";  
-		$ressessions=mysql_query($mysql);
-		if ($dbsession=mysql_fetch_array($ressessions)) {
+		if ($dbsession = FetchRow($mysql)) {
 			// check for same ip's???
 				$mysql="DELETE ". 
 						" FROM  `net_sessions`" .  
 						" WHERE id='".$dbsession['id']."'";  
-				if (!mysql_query($mysql)) mySqlError($mysql);
+				PDOExec($mysql);
 			}
 
 
@@ -275,7 +260,7 @@ function GetDeviceList($showlist = false) {
 		$myip = trim($get->getresponse());
 		//echo ">".$myip."<";
 		$mysql='UPDATE `ha_mf_device_ipaddress` SET ip = "'.$myip.'" WHERE name="PublicIP"';  
-		if (!mysql_query($mysql)) mySqlError($mysql);
+		PDOExec($mysql);
 		//exit;
 	} else {
 		echo "Could not connect to http://icanhazip.com/".CRLF;
@@ -356,8 +341,7 @@ if(networkmap_fullscan == 1) genClientList();
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
 				" WHERE mac='".$mac."'";  
-		$resdevices = mysql_query($mysql);
-		if ($rowdevice = mysql_fetch_array($resdevices)) {			// Update existing mac
+		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
                         if ($showlist) {
                                 echo "<tr><td>$name</td><td>$ip</td><td>$connection</td><td>$mac</td></tr>";
                         }
@@ -368,8 +352,7 @@ if(networkmap_fullscan == 1) genClientList();
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
-				$resdev = mysql_query($mysql);
-				if ($rowdev = mysql_fetch_array($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
+				if ($rowdev = FetchRow($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
 				$params = array('callerID' => MY_DEVICE_ID, 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
@@ -386,11 +369,9 @@ if(networkmap_fullscan == 1) genClientList();
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", `last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				//echo $mysql;
-				if (!mysql_query($mysql)) mySqlError($mysql);	
+				PDOExec($mysql);	
 			} else {
-				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET 
-					`last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
-				if (!mysql_query($mysql)) mySqlError($mysql);	
+				PDOUpdate('ha_mf_device_ipaddress',array('last_list_date' => 'NOW()'),array('id' => $rowdevice['id']));	
 			}
 		}	else {				// New MAC
 			$params = array('callerID' => MY_DEVICE_ID, 
@@ -416,7 +397,7 @@ if(networkmap_fullscan == 1) genClientList();
 						'"'.$connection.'",'.
 						'"0");';
 		
-				if (!mysql_query($mysql)) mySqlError($mysql);	
+				PDOExec($mysql);	
 				$devicesimported++;
 		}
 		//
@@ -425,7 +406,7 @@ if(networkmap_fullscan == 1) genClientList();
 		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
 				" ip = NULL " .  
 				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
-		if (!mysql_query($mysql)) mySqlError($mysql);
+		PDOExec($mysql);
     }
     if ($showlist) echo "</tbody></table>";
 

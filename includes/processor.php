@@ -428,9 +428,8 @@ function RemoteKeys($in, $params) {
 					$deviceStr = ($res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
 							$res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
 					$mysql = 'SELECT * FROM ha_remote_keys where deviceID IN ('.$deviceStr.') '.$wherestr;
-					$reskeys = mysql_query($mysql);
-					// echo $mysql.CRLF;
-					while ($rowkeys = mysql_fetch_array($reskeys)) {
+					$rows = FetchRows($mysql);
+					foreach ($rows as $rowkeys) {
 						if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
 							$feedback[][$node] = true;
 							$last_id=GetLastKey($feedback);

@@ -241,9 +241,9 @@ function AnySecurityOpenIntent($request, $session, $response) {
 	if (!empty($found)) { 
 		$typeID = $found[0]['typeID'];
 		$mysql = 'SELECT id as deviceID, typeID FROM `ha_mf_devices` WHERE typeID IN ('.$typeID.') and inuse = 1'; // Handle multiple matches?
-		$devices = FetchRowsIdDescription($mysql);
+		$devices = FetchRows($mysql);
 		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
-		foreach ($devices as $deviceID => $value) {
+		foreach ($devices as $key => $deviceID) {
 			$results[] = getStatusLink(array('deviceID'=>$deviceID, 'propertyID'=>$propertyID));
 		}
 		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
@@ -500,10 +500,10 @@ function homeStatus($request, $session, $response) {
 	$answer = ["" , ""];
 	foreach (['17', '18'] as $groupID) {
 		$mysql = 'SELECT deviceID, groupID FROM `ha_mf_device_group` WHERE groupID = '.$groupID; 
-		$devices = FetchRowsIdDescription($mysql);
+		$devices = FetchRows($mysql);
 		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
 		$feedback = array();
-		foreach ($devices as $deviceID => $value) {
+		foreach ($devices as $key => $deviceID) {
 			$feedback[] = getStatusLink(array('deviceID'=>$deviceID, 'propertyID'=>$propertyID));
 		}
 

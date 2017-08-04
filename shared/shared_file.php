@@ -1,15 +1,4 @@
 <?php
-function openLockFile($lockFileName) {
-	global $lock;
-	
-	$lock = @fopen( $lockFileName, 'w' );
-	if( !$lock )
-	{
-		error( "Could not write to lock file $lockFileName" );
-		continue;
-	}
-	return flock($lock, LOCK_EX);
-}
 if (!function_exists("mb_basename"))
 {
   function mb_basename($path)

@@ -2,152 +2,115 @@
 //define( 'DEBUG_DB', TRUE );
 if (!defined('DEBUG_DB')) define( 'DEBUG_DB', FALSE );
 
-// Future logging method
-function doError( $msg )
-{
-   echo $msg . "\n";
-   file_put_contents( 'php://stderr', $msg . "<br/>\r\n" );
-}
+function openDB() {
 
+	static $pdo = Null;
 
-function mysql_insert_assoc ($my_table, $my_array) {
-     //
-   // Insert values into a MySQL database
-   // Includes quote_smart code to foil SQL Injection
-   //
-   // A call to this function of:
-   //
-   //  $val1 = "foobar";
-   //  $val2 = 495;
-   //  mysql_insert_assoc("tablename", array(col1=>$val1, col2=>$val2, col3=>"val3", col4=>720, col5=>834.987));
-   //
-   // Sends the following query:
-   //  INSERT INTO 'tablename' (col1, col2, col3, col4, col5) values ('foobar', 495, 'val3', 720, 834.987)
-   //
- 
-		global $mysql_link;
-      
-       // Find all the keys (column names) from the array $my_array
-       $columns = array_keys($my_array);
-
-       // Find all the values from the array $my_array
-       $values = array_values($my_array);
-      
-       // quote_smart the values
-       $values_number = count($values);
-       for ($i = 0; $i < $values_number; $i++) {
-         	$value = $values[$i];
-			if (is_array($value)) $value = json_encode($value,JSON_UNESCAPED_SLASHES);
-         	if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
-          
-         	if (is_null($value)) {
-         		$value="NULL";
-         	} elseif (strlen($value)==0) {
-         		$value="'"."'";
-         	} elseif (!is_numeric($value)) {
-         	//	$value = "'" . mysql_real_escape_string($value, $db_link) . "'";
-         		$value = "'" . $value . "'";
-         	}
-         	$values[$i] = $value;
-         }
-        
-       // Compose the query
-       $sql = "INSERT INTO $my_table ";
-
-       // create comma-separated string of column names, enclosed in parentheses
-       $sql .= "(`" . implode("`, `", $columns) . "`)";
-       $sql .= " values ";
-
-       // create comma-separated string of values, enclosed in parentheses
-       $sql .= "(" . implode(", ", $values) . ")";
-      
-//       $result = @mysql_query ($sql) OR die ("<br />\n<span style=\"color:red\">Query: $sql UNsuccessful :</span> " . mysql_error() . "\n<br />");
-		if (!mysql_query($sql)) {
-			mySqlError($sql);
-			return false;
+	$retries = 60;
+	if (empty($pdo)) {
+		while ($retries > 0)
+		{
+			try
+			{
+				$pdo = new PDO('mysql:host=vlosite-16;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES, false));
+				$retries = 0;
+			}
+			catch (PDOException $e)
+			{
+				// Should probably check $e is a connection error, could be a query error!
+				print_r($e);exit;
+				echo ".";
+				$retries--;
+				sleep(1);
+			}
 		}
-		return true;
+	}
+	
+	return $pdo;
 }
-
 
 function FetchRow($mysql) {
+
+	$pdo = openDB();
+
 	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
-	if (!$res_row = mysql_query($mysql)) {
-		mySqlError($mysql); 
+ 	try
+	{
+		//$mysql = $pdo->quote($mysql);
+		if (!$res_row = $pdo->query($mysql)) {
+			mySqlError($mysql); 
+			return false;
+		}
+	} 
+	catch( Exception $e )
+	{
+		PDOError($mysql, array(), $e);
 		return false;
 	}
-	if (!$numrows = mysql_num_rows($res_row)) {
-//		echo "0 Rows returned".CRLF; 
-		return false;
-	}
-	if (!$rows = mysql_fetch_assoc($res_row)) {
-		mySqlError($mysql); 
+
+ 	try
+	{
+		$rows = $res_row->fetch(PDO::FETCH_ASSOC);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($mysql, $values, $e);
 		return false;
 	}
 	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
-	return $rows;
+	return (!empty($rows) ? $rows : false);
 }
 
 function FetchRows($mysql) {
+
+	$pdo = openDB();
+
 	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
 	$result = array();
-	if (!$res_row = mysql_query($mysql)) {
-		mySqlError($mysql); 
+
+ 	try
+	{
+		$res_row = $pdo->query($mysql);
+	} 
+	catch( Exception $e )
+	{
+	    die(json_encode(array('outcome' => false)));
+
+		PDOError($mysql, array(), $e);
 		return false;
 	}
-	if (!$numrows = mysql_num_rows($res_row)) {
-//		echo "0 Rows returned".CRLF; 
+
+ 	try
+	{
+		$rows = $res_row->fetchAll(PDO::FETCH_ASSOC);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($mysql, $values, $e);
 		return false;
 	}
-	if (!$rows = mysql_fetch_assoc($res_row)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	$result[] = $rows;
-	while ($rows = mysql_fetch_assoc($res_row)) {
-			$result[] = $rows;
-	}
+
 	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
-	return $result;
-}
- 
-function FetchRowsIdDescription($mysql) {
-	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
-	$result = array();
-	if (!$res_row = mysql_query($mysql)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	if (!$numrows = mysql_num_rows($res_row)) {
-//		echo "0 Rows returned".CRLF; 
-		return false;
-	}
-	if (!$rows = mysql_fetch_row($res_row)) {
-		mySqlError($mysql); 
-		return false;
-	}
-	$result[$rows[0]] = trim(strtolower($rows[1]));
-	while ($rows = mysql_fetch_row($res_row)) {
-			$result[$rows[0]] = trim(strtolower($rows[1]));
-	}
-	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
-	return $result;
-} 
- 
-function CopyRow($my_table,$where,$posid) {
-	$mysql="SELECT * FROM  ".$my_table.
-			" WHERE ".$where;
-	$res_row = mysql_query($mysql) ;
-	if ($res_row) {
-		while ($row=mysql_fetch_assoc($res_row)) {
-			unset($row['id']);
-			$row['posid']=$posid;
-			mysql_insert_assoc($my_table,$row);
-		}
-	}
+	return (!empty($rows) ? $rows : false);
+
 }
 
+// function CopyRow($my_table,$where,$posid) {
+	// $mysql="SELECT * FROM  ".$my_table.
+			// " WHERE ".$where;
+	// $res_row = mysql_query($mysql) ;
+	// if ($res_row) {
+		// while ($row=mysql_fetch_assoc($res_row)) {
+			// unset($row['id']);
+			// $row['posid']=$posid;
+			// mysql_insert_assoc($my_table,$row);
+		// }
+	// }
+// }
+
 function executeQuery($params) {
+
+	$pdo = openDB();		
 
 	$mysql = $params['commandvalue'];
 	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
@@ -155,67 +118,23 @@ function executeQuery($params) {
 	$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
 	$mysql=str_replace("{DEVICE_DARK_OUTSIDE}",DEVICE_DARK_OUTSIDE,$mysql);
 	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
-	$res = mysql_query($mysql);
-	if (!$res) {
-		mySqlError($mysql); 
-		$feedback['error'] =  mysql_error($mysql_link);
-		return $feedback;
+
+
+ 	try
+	{
+		$rowCount = $pdo->exec($mysql);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($mysql, array(), $e);
+		return false;
 	}
-	$feedback['result'] =  mysql_affected_rows() ." Rows affected";
+
+	$feedback['result'] =  $rowCount ." Rows affected";
 	return $feedback;
+	
 }
    
-function mySqlError($mysql) {
-		global $mysql_link;
-		global $dbConfig;
-		
-		if (mysql_errno($mysql_link)==2006) {
-			$retry = 5;
-			while ($retry-- > 0) {
-				echo "Trying to reconnect...\n";
-				sleep (10);
-				mysql_close($mysql_link);
-				$mysql_link = mysql_connect($dbConfig['server'], $dbConfig['username'], $dbConfig['password']);
-				if (mysql_select_db($dbConfig['database'],$mysql_link)) return true;
-			}
-			echo 'Lost connection, exiting...\n';
-			exit;
-		} else {
-			echo "<pre>Error on: ".$mysql."<br/>\r\n";
-			echo mysql_errno($mysql_link) . ": " . mysql_error($mysql_link) . "<br/>\r\n";
-			var_dump(debug_backtrace());
-			echo "</pre>";
-		}
-}
-
-function PDOError($mysql, $values, $e) {
-	global $pdo;		
-	global $dbConfig;		
-
-	if ($e->getCode() == "HY000" || $e->getCode() == "08S01") {
-		$retry = 5;
-		$pdo = null;
-		while ($retry-- > 0) {
-			echo "Trying to reconnect PDO...\n";
-			try {
-				$pdo = new PDO( $dbConfig['dsn'], $dbConfig['username'], $dbConfig['password'] , array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-				return true;
-			}
-			catch(PDOException $ex){
-				sleep(10);
-			}
-		}
-		echo ('Lost connection PDO, exiting...\n');
-		throw(e);
-	} else {
-		echo "<pre>";
-		echo "Error on: ".$mysql."<br/>\r\n";
-		echo $e->getCode(). ": " . $e->getMessage() . "<br/>\r\n";
-		print_r($values);
-		echo "</pre>";
-	}
-}
-
 function PDOupsert($table, $fields, $where) {
 
 
@@ -244,7 +163,7 @@ function PDOupdate($table, $fields, $where){
 //$queryUpdate = $pdo->prepare( $sql );
 //$queryUpdate->execute( array( $now, $newStartDateHeat, $newStartDateCool, $newStartDateFan, $heatStatus, $coolStatus, $fanStatus, $thermostatRec['deviceID'] ) );
 
-	global $pdo;
+	$pdo = openDB();
 
     $placeholder = array();
 
@@ -297,13 +216,14 @@ function PDOupdate($table, $fields, $where){
 	catch( Exception $e )
 	{
 		PDOError($sql, $values, $e);
+		return false;
 	}
 
 	return $result;
 }
 
 function PDOinsert($table, $fields){
-	global $pdo;
+	$pdo = openDB();
 
     $placeholder = array();
 	$values = array_values($fields);
@@ -344,7 +264,52 @@ function PDOinsert($table, $fields){
 	catch( Exception $e )
 	{
 		PDOError($sql, $values, $e);
+		return false;
 	}
 
+}
+
+function PDOExec($mysql) {
+
+	$pdo = openDB();		
+
+ 	try
+	{
+		$rowCount = $pdo->exec($mysql);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($mysql, array(), $e);
+		return false;
+	}
+
+	return $rowCount;
+	
+}
+
+function PDOError($mysql, $values, $e) {
+
+	if ($e->getCode() == "HY000" || $e->getCode() == "08S01") {
+		$retry = 5;
+		$pdo = null;
+		while ($retry-- > 0) {
+			echo "Trying to reconnect PDO...\n";
+			try {
+				$pdo = new PDO( HA_DSN, HA_USER, HA_PASSWORD , array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+				return $pdo;
+			}
+			catch(PDOException $ex){
+				sleep(10);
+			}
+		}
+		echo ('Lost connection PDO, exiting...\n');
+		throw(e);
+	} else {
+		echo "<pre>";
+		echo "Error on: ".$mysql."<br/>\r\n";
+		echo $e->getCode(). ": " . $e->getMessage() . "<br/>\r\n";
+		print_r($values);
+		echo "</pre>";
+	}
 }
 ?>

@@ -43,24 +43,25 @@ function loadRemotePaneContent($remoteID, $select, $params) {
 
     
     $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
-    $resdivs = mysql_query($mysql);
     $mycount=1;
-    while ($rowdivs = mysql_fetch_array($resdivs)) {
-		if ($mycount==1) {
-			echo '<div class="tab-pane active in" id="divid_'.$rowdivs['id'].'">';
-		} else {
-			echo '<div class="tab-pane" id="divid_'.$rowdivs['id'].'">';
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $rowdivs) {
+			if ($mycount==1) {
+				echo '<div class="tab-pane active in" id="divid_'.$rowdivs['id'].'">';
+			} else {
+				echo '<div class="tab-pane" id="divid_'.$rowdivs['id'].'">';
+			}
+			$mycount=2;
+			loadRemoteDiv($rowdivs['divID'], $params);
+			echo "</div>";
 		}
-		$mycount=2;
-		loadRemoteDiv($rowdivs['divID'], $params);
-		echo "</div>";
-    }
+	}
 }
 
 function loadRemoteDiv($divid, $params) {
 
-	$resremotekeys = mysql_query("SELECT MAX(xpos) as maxx, MAX(ypos) as maxy FROM ha_remote_keys WHERE remotediv =".$divid );
-	$rowremotekeys = mysql_fetch_array($resremotekeys);
+	$mysql = "SELECT MAX(xpos) as maxx, MAX(ypos) as maxy FROM ha_remote_keys WHERE remotediv =".$divid;
+	$rowremotekeys = FetchRow($mysql);
 	$myxmax = $rowremotekeys['maxx'];
 	$myymax = $rowremotekeys['maxy'];
 	$tdwidth = floor(100/$myxmax);
@@ -68,8 +69,8 @@ function loadRemoteDiv($divid, $params) {
 	for ($myycell = 1; $myycell <= $myymax; $myycell++) {
 		echo '<tr class="keysrow">';
 		for ($myxcell = 1; $myxcell <= $myxmax; $myxcell++) {
-			$resremotekeys = mysql_query("SELECT * FROM ha_remote_keys where remotediv =".$divid." AND xpos =".$myxcell." AND ypos =".$myycell." ORDER BY remotediv DESC");
-			$rowremotekeys = mysql_fetch_array($resremotekeys);
+			$mysql = ("SELECT * FROM ha_remote_keys where remotediv =".$divid." AND xpos =".$myxcell." AND ypos =".$myycell." ORDER BY remotediv DESC");
+			$rowremotekeys = FetchRow($mysql);
 			if ($rowremotekeys) {
 				$status = '';
 				$link = '';
@@ -79,13 +80,8 @@ function loadRemoteDiv($divid, $params) {
 				if (strlen($rowremotekeys['deviceID'])>0) {
 					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_CURRENT_SESSION ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
 					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, booticon FROM ha_mf_devices ' .
-							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$deviceID.
-							' AND inuse = 1' ;
-					$resdevices = mysql_query($mysql);
-					if  (!$resdevices) {
-						mySqlError($mysql);
-					} else {						
-						$rowdevices = mysql_fetch_array($resdevices);
+							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$deviceID.' AND inuse = 1' ;
+					if  ($rowdevices = FetchRow($mysql)) {
 						if  ($rowdevices['inuse'] == 0) {
 							echo '<td style="width:'.$tdwidth.'%" class="keyscellempty">'.'</td>';
 							continue;
