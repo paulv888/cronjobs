@@ -72,7 +72,7 @@ function createAlert($params) {
 	}
 	$feedback['commandstr'] = 'PDOInsert...';
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
-	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => $params['caller']['deviceID'], 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
+	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	if ($params['priorityID'] <= 1) $feedback['result'][] = sendBullet($params);
 	return $feedback;
 }
@@ -156,7 +156,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$result = checkConditions(array($step));
 			// print_r($result);
 			// echo "</pre>Check cond result".CRLF;
-
+// echo '<pre>';
 			if ($result['result'][0]) {
 				$text =  $step['value'];
 				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
@@ -206,7 +206,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				} else {
 					$result = SendCommand($params);
 				}
-				//echo "****";print_r($result);
+				// echo "****";print_r($params).CRLF;
+				// echo "****";var_dump($result).CRLF;
 				if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
 				if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
 				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
@@ -219,6 +220,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	}
 	if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
 	if (empty($feedback['message'])) unset($feedback['message']);
+	// echo '</pre>';
 	return $feedback;
 }
 
@@ -1423,5 +1425,19 @@ function checkSyslog(&$params) {
 	}
 
 	return $feedback;
+}
+
+function executeQuery($params) {
+
+	$mysql = $params['commandvalue'];
+	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
+	$mysql=str_replace("{DEVICE_ALARM_ZONE1}",DEVICE_ALARM_ZONE1,$mysql);
+	$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
+	$mysql=str_replace("{DEVICE_DARK_OUTSIDE}",DEVICE_DARK_OUTSIDE,$mysql);
+	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
+
+	$feedback['result'] =  PDOExec($mysql) ." Rows affected";
+	return $feedback;
+	
 }
 ?>

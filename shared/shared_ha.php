@@ -523,12 +523,12 @@ function logEvent($log) {
 			$log['ip'] = findRemoteName($log['ip']);
 		}
 	}
- 	if (!array_key_exists('deviceID', $log)) $log['deviceID'] = Null;
+ 	if (!array_key_exists('deviceID', $log)) $log['deviceID'] = 0;
 	if (!array_key_exists('commandID', $log)) $log['commandID'] = COMMAND_UNKNOWN;
 	if (!array_key_exists('inout', $log)) $log['inout'] = COMMAND_IO_NOT;
-	if (!array_key_exists('callerID', $log)) $log['callerID'] = Null;
+	if (!array_key_exists('callerID', $log)) $log['callerID'] = 0;
 	if (!array_key_exists('data', $log)) $log['data'] = Null;
-	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = Null;
+	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = 0;
 	if (!array_key_exists('message', $log)) $log['message'] = Null;
 	if (!array_key_exists('result', $log)) $log['result'] = Null;
 	if (!array_key_exists('commandstr', $log)) $log['commandstr']=Null;
@@ -538,8 +538,8 @@ function logEvent($log) {
 	//
 	//	Get device type and monitorid
 	//
-	$log['typeID'] = NULL;
-	if ($log['deviceID'] != Null) {
+	$log['typeID'] = 0;
+	if ($log['deviceID'] != 0) {
 		$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 		$mysql = 'SELECT invertstatus FROM `ha_mf_monitor_property` ' .
 					' WHERE propertyID = 123 AND deviceID = '.$log['deviceID']; 

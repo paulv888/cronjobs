@@ -57,7 +57,10 @@ function sendCommand(&$thiscommand) {
 		if ($thiscommand['deviceID'] == DEVICE_CURRENT_SESSION) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
-		if (!$device = getDevice($thiscommand['deviceID'])) return; // not found or not in use continue silently
+		if (!$device = getDevice($thiscommand['deviceID'])) {
+			$feedback['message'] = "Device not found or not active";
+			return $feedback;			// silent abort	
+		}
 		$thiscommand['device'] = (array_key_exists('device',$thiscommand) && array_key_exists('id', $thiscommand['device']) && $thiscommand['deviceID'] == $thiscommand['device']['id']? array_merge($thiscommand['device'], $device) : $device);
 		// print_r($thiscommand['device']);
 		// if ($thiscommand['device'] = $device) {
@@ -101,7 +104,8 @@ function sendCommand(&$thiscommand) {
 							}
 						} else {		// not status monitoring 
 							if (DEBUG_DEVICES) echo "NO STATUS RECORD FOUND, GETTING OUT".CRLF;
-							return;
+							$feedback['message'] = "No status to toggle found";
+							return $feedback;			// silent abort	
 						}
 					}
 				}
@@ -116,7 +120,8 @@ function sendCommand(&$thiscommand) {
 						}
 					} else {
 						if (DEBUG_DEVICES) echo "STATUS IS OFF, NOT DIMMING, GETTING OUT".CRLF;
-						return;
+						$feedback['message'] = "Light is off, skipping dimming";
+						return $feedback;			// silent abort	
 					}
 				}
 				// Invert Status is set
@@ -425,7 +430,7 @@ function RemoteKeys($in, $params) {
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 				if (isset($node) && array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
-					$deviceStr = ($res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
+					$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
 							$res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
 					$mysql = 'SELECT * FROM ha_remote_keys where deviceID IN ('.$deviceStr.') '.$wherestr;
 					$rows = FetchRows($mysql);

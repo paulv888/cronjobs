@@ -352,7 +352,7 @@ if(networkmap_fullscan == 1) genClientList();
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
-				if ($rowdev = FetchRow($resdev)) $deviceID = $rowdev['id']; else $deviceID = 0;
+				if ($rowdev = FetchRow($mysql)) $deviceID = $rowdev['id']; else $deviceID = 0;
 				$params = array('callerID' => MY_DEVICE_ID, 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',

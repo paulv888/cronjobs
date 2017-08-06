@@ -9,15 +9,13 @@ function logit( $msg )
 
 function getThermostats(){
 
-	global $pdo;
-
 	try
 	{
 	  $thermostats = array();
 	  $sql = "SELECT * FROM `ha_mf_devices` inner join ha_mf_devices_thermostat as t ON ". 
 			  "t.deviceID=`ha_mf_devices`.`id` inner join ha_mi_connection AS l ON connectionID=l.id " .
 			  "WHERE typeID=".DEV_TYPE_THERMOSTAT_CT30_HEAT." OR typeID=" . DEV_TYPE_THERMOSTAT_CT30_COOL ." OR typeID= " . DEV_TYPE_THERMOSTAT_CT30_OFF;
-	  foreach( $pdo->query($sql) as $row )
+	  foreach( FetchRows($sql) as $row )
 	  {
 		  $thermostats[$row['deviceID']] = $row;
 	  }
@@ -32,8 +30,7 @@ function getThermostats(){
 
 function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $forcemove = false) {
 				
-	global $pdo;
-	global $dbConfig;
+	$pdo = openDB();
 	$now = (string)date('Y-m-d H:i:s');
 
 	try

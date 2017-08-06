@@ -46,7 +46,7 @@ if (!($sdata=="")) { 					//import_event
 	$message['message'] = json_encode($sdata);
 	// print_r($sdata);
 	// print_r($message);
-	if ($message['inout'] == COMMAND_IO_RECV && (int)$rcv_message['Accuracy'] > MIN_ACCURACY) {
+	if ($message['inout'] == COMMAND_IO_RECV && (int)$rcv_message['Accuracy'] < MIN_ACCURACY) {
 		//$error_message = (array_key_exists('errorMessage', $sdata) ? implode(" - ", $errorMessage) : null);
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
 		//$properties[$status_key]['value'] = (string)$sdata[$status_key];
@@ -83,7 +83,7 @@ if (!($sdata=="")) { 					//import_event
 			'accuracy' => $rcv_message['Accuracy'],'image' => $image
 			));
 	} else {
-		$message['data'] = 'Skipping: Accuracy -'.(int)$rcv_message['Accuracy'];
+		$message['data'] = 'Skipping - Accuracy: '.(int)$rcv_message['Accuracy'];
 	}
 	logEvent($message);
 }

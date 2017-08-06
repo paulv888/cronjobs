@@ -8,9 +8,8 @@ echo date("Y-m-d H:i:s").": ".UpdateTemps();
 echo updateDLink(MY_DEVICE_ID);
  
 function UpdateTemps() {
-	global $pdo;
-	global $dbConfig;
-	
+	$pdo = openDB();
+		
 	$today = date( 'Y-m-d' );
 	$yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
 	

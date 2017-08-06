@@ -4,28 +4,42 @@ if (!defined('DEBUG_DB')) define( 'DEBUG_DB', FALSE );
 
 function openDB() {
 
-	static $pdo = Null;
+	static $pdo = null;
+
+	if (!empty($pdo)) {
+		try
+		{
+			$status = $pdo->query("SELECT 1");
+			$connected = true;
+		}
+		catch (PDOException $e)
+		{
+			$connected = false;
+		}
+	} else {
+		$connected = false;
+		
+	}
 
 	$retries = 60;
-	if (empty($pdo)) {
+	if (!$connected) {
 		while ($retries > 0)
 		{
 			try
 			{
-				$pdo = new PDO('mysql:host=vlosite-16;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES, false));
+				$pdo = new PDO('mysql:host=vlosite;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES, false));
 				$retries = 0;
+				return $pdo;
 			}
 			catch (PDOException $e)
 			{
-				// Should probably check $e is a connection error, could be a query error!
-				print_r($e);exit;
 				echo ".";
 				$retries--;
 				sleep(1);
 			}
 		}
+        die($e->getMessage());
 	}
-	
 	return $pdo;
 }
 
@@ -36,27 +50,15 @@ function FetchRow($mysql) {
 	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
  	try
 	{
-		//$mysql = $pdo->quote($mysql);
-		if (!$res_row = $pdo->query($mysql)) {
-			mySqlError($mysql); 
-			return false;
-		}
-	} 
-	catch( Exception $e )
-	{
-		PDOError($mysql, array(), $e);
-		return false;
-	}
-
- 	try
-	{
+		$res_row = $pdo->query($mysql);
 		$rows = $res_row->fetch(PDO::FETCH_ASSOC);
 	} 
 	catch( Exception $e )
 	{
-		PDOError($mysql, $values, $e);
+		PDOError($e, "FetchRow", $mysql);
 		return false;
 	}
+
 	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
 	return (!empty($rows) ? $rows : false);
 }
@@ -71,22 +73,11 @@ function FetchRows($mysql) {
  	try
 	{
 		$res_row = $pdo->query($mysql);
-	} 
-	catch( Exception $e )
-	{
-	    die(json_encode(array('outcome' => false)));
-
-		PDOError($mysql, array(), $e);
-		return false;
-	}
-
- 	try
-	{
 		$rows = $res_row->fetchAll(PDO::FETCH_ASSOC);
 	} 
 	catch( Exception $e )
 	{
-		PDOError($mysql, $values, $e);
+		PDOError($e, "FetchRows", $mysql);
 		return false;
 	}
 
@@ -95,30 +86,9 @@ function FetchRows($mysql) {
 
 }
 
-// function CopyRow($my_table,$where,$posid) {
-	// $mysql="SELECT * FROM  ".$my_table.
-			// " WHERE ".$where;
-	// $res_row = mysql_query($mysql) ;
-	// if ($res_row) {
-		// while ($row=mysql_fetch_assoc($res_row)) {
-			// unset($row['id']);
-			// $row['posid']=$posid;
-			// mysql_insert_assoc($my_table,$row);
-		// }
-	// }
-// }
-
-function executeQuery($params) {
+function PDOExec($mysql) {
 
 	$pdo = openDB();		
-
-	$mysql = $params['commandvalue'];
-	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
-	$mysql=str_replace("{DEVICE_ALARM_ZONE1}",DEVICE_ALARM_ZONE1,$mysql);
-	$mysql=str_replace("{DEVICE_ALARM_ZONE2}",DEVICE_ALARM_ZONE2,$mysql);
-	$mysql=str_replace("{DEVICE_DARK_OUTSIDE}",DEVICE_DARK_OUTSIDE,$mysql);
-	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
-
 
  	try
 	{
@@ -126,15 +96,14 @@ function executeQuery($params) {
 	} 
 	catch( Exception $e )
 	{
-		PDOError($mysql, array(), $e);
+		PDOError($e, "PDOExec", $mysql);
 		return false;
 	}
 
-	$feedback['result'] =  $rowCount ." Rows affected";
-	return $feedback;
+	return $rowCount;
 	
 }
-   
+
 function PDOupsert($table, $fields, $where) {
 
 
@@ -148,7 +117,7 @@ function PDOupsert($table, $fields, $where) {
 		$sql.= '`'.$key.'` = "'.$value.'"';
 		$i++;
 	}
-//	echo "Up: ".$sql.CRLF;
+
 	if (FetchRow($sql)) {
 		PDOupdate($table, $fields, $where);
 	} else {
@@ -158,10 +127,6 @@ function PDOupsert($table, $fields, $where) {
 
 
 function PDOupdate($table, $fields, $where){
-
-//$sql = "UPDATE {$dbConfig['table_prefix']}hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
-//$queryUpdate = $pdo->prepare( $sql );
-//$queryUpdate->execute( array( $now, $newStartDateHeat, $newStartDateCool, $newStartDateFan, $heatStatus, $coolStatus, $fanStatus, $thermostatRec['deviceID'] ) );
 
 	$pdo = openDB();
 
@@ -174,7 +139,7 @@ function PDOupdate($table, $fields, $where){
 	// print_r($cols);
 	// print_r($values);
 	
-	$sql = 'UPDATE '. $table . ' SET ';
+	$mysql = 'UPDATE '. $table . ' SET ';
 	$i = 0;
 	while (list($key, $value) = each($fields)) {
 //		echo "Key: $key; Value: $value<br />\n";
@@ -187,35 +152,35 @@ function PDOupdate($table, $fields, $where){
 		} elseif (!is_numeric($value)) {
 			$value = "'" . $value . "'";
 		}
-		$sql .= "`".$key."` = ?"; 
+		$mysql .= "`".$key."` = ?"; 
 		if(++$i < $numItems) {
-			$sql .= ", ";
+			$mysql .= ", ";
 		}
     }
   
   
-	$sql .= ' WHERE ';
+	$mysql .= ' WHERE ';
 	$i = 0;
 	while (list($key, $value) = each($where)) {
-		if ($i>0) $sql.= " AND ";
-		$sql.= "`".$key."` = ?";
+		if ($i>0) $mysql.= " AND ";
+		$mysql.= "`".$key."` = ?";
 		$values[] = $value;
 		$i++;
 	}
 
-	// echo "sql sofar: ". $sql.CRLF;
+	// echo "mysql sofar: ". $mysql.CRLF;
 	// print_r($values);
 
 	$result = false;
 
 	try
 	{
-		$stmt = $pdo->prepare($sql);
+		$stmt = $pdo->prepare($mysql);
 		$result = $stmt->execute($values);
 	}
 	catch( Exception $e )
 	{
-		PDOError($sql, $values, $e);
+		PDOError($e, "PDOupdate" , $mysql, $table, $fields, $where);
 		return false;
 	}
 
@@ -249,67 +214,37 @@ function PDOinsert($table, $fields){
 	}
 
 	
-    $sql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
-    $sql.= 'VALUES (' . implode(", ", $placeholder) . ')';
+    $mysql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
+    $mysql.= 'VALUES (' . implode(", ", $placeholder) . ')';
 
-	// echo "sql sofar: ". $sql.CRLF;
 	// print_r($values);
 	
  	try
 	{
-		$stmt = $pdo->prepare($sql);
+		$stmt = $pdo->prepare($mysql);
 		$stmt->execute($values);
 		return $pdo->lastInsertId();
 	} 
 	catch( Exception $e )
 	{
-		PDOError($sql, $values, $e);
+		PDOError($e, "PDOinsert", $mysql, $table, $fields);
 		return false;
 	}
 
 }
 
-function PDOExec($mysql) {
+function PDOError($e, $function, $mysql) {
 
-	$pdo = openDB();		
-
- 	try
-	{
-		$rowCount = $pdo->exec($mysql);
-	} 
-	catch( Exception $e )
-	{
-		PDOError($mysql, array(), $e);
-		return false;
-	}
-
-	return $rowCount;
-	
-}
-
-function PDOError($mysql, $values, $e) {
-
-	if ($e->getCode() == "HY000" || $e->getCode() == "08S01") {
-		$retry = 5;
-		$pdo = null;
-		while ($retry-- > 0) {
-			echo "Trying to reconnect PDO...\n";
-			try {
-				$pdo = new PDO( HA_DSN, HA_USER, HA_PASSWORD , array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
-				return $pdo;
-			}
-			catch(PDOException $ex){
-				sleep(10);
-			}
-		}
-		echo ('Lost connection PDO, exiting...\n');
-		throw(e);
-	} else {
-		echo "<pre>";
-		echo "Error on: ".$mysql."<br/>\r\n";
-		echo $e->getCode(). ": " . $e->getMessage() . "<br/>\r\n";
-		print_r($values);
-		echo "</pre>";
-	}
+	// if ($e->errorInfo['1'] == 2006) {
+		// $pdo = openDB();
+		// return;
+	// } else {
+	echo "<pre>";
+	echo "PDOError:".print_r($e);
+	echo CRLF."MySql: ".$mysql.CRLF;
+	print_r($values);
+	echo "</pre>";
+	// }
+	return;
 }
 ?>
