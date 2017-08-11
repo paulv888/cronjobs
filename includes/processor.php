@@ -430,47 +430,52 @@ function RemoteKeys($in, $params) {
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 				if (isset($node) && array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
-					$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? 
-							$res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
+					//$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? $res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
+					$deviceStr = $res[$node]['DeviceID'];
+					// echo "<pre>";
+					// var_dump($deviceStr);
+					// echo "</pre>";
+					// DEBUGPRT($deviceStr);
 					$mysql = 'SELECT * FROM ha_remote_keys where deviceID IN ('.$deviceStr.') '.$wherestr;
-					$rows = FetchRows($mysql);
-					foreach ($rows as $rowkeys) {
-						if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
-							$feedback[][$node] = true;
-							$last_id=GetLastKey($feedback);
-							$feedback[$last_id]["remotekey"] = $rowkeys['id'];
-							if ($node == 'updateStatus') {
-								$propertyID = (empty($rowkeys['propertyID']) ? '123' : $rowkeys['propertyID']);
-								if (array_key_exists('Status', $res['updateStatus']) && $res['updateStatus']['PropertyID'] == $propertyID) {
-									if ($res['updateStatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
-										$feedback[$last_id]["status"]="off";
-									} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
-										$feedback[$last_id]["status"]="unknown";
-									} elseif ($res['updateStatus']['Status'] == STATUS_ON) {
-										$feedback[$last_id]["status"]="on";
-									} elseif ($res['updateStatus']['Status'] == STATUS_ERROR) {
-										$feedback[$last_id]["status"]="error";
-									} else { 										// else assume a value
-										$feedback[$last_id]["status"]="undefined";
+					if ($rows = FetchRows($mysql)) {
+						foreach ($rows as $rowkeys) {
+							if ($rowkeys['inputtype']== "button" || $rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "display") {
+								$feedback[][$node] = true;
+								$last_id=GetLastKey($feedback);
+								$feedback[$last_id]["remotekey"] = $rowkeys['id'];
+								if ($node == 'updateStatus') {
+									$propertyID = (empty($rowkeys['propertyID']) ? '123' : $rowkeys['propertyID']);
+									if (array_key_exists('Status', $res['updateStatus']) && $res['updateStatus']['PropertyID'] == $propertyID) {
+										if ($res['updateStatus']['Status'] == STATUS_OFF) {    			// if monitoring status and command not off then new status is on (dim/bright)
+											$feedback[$last_id]["status"]="off";
+										} elseif ($res['updateStatus']['Status'] == STATUS_UNKNOWN) {
+											$feedback[$last_id]["status"]="unknown";
+										} elseif ($res['updateStatus']['Status'] == STATUS_ON) {
+											$feedback[$last_id]["status"]="on";
+										} elseif ($res['updateStatus']['Status'] == STATUS_ERROR) {
+											$feedback[$last_id]["status"]="error";
+										} else { 										// else assume a value
+											$feedback[$last_id]["status"]="undefined";
+										}
 									}
+									
+									if (array_key_exists('Link',$res['updateStatus'])) {
+										$feedback[$last_id]['link'] = ($res['updateStatus']['Link'] == LINK_UP ? '' : ($res['updateStatus']['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
+									}
+									
+									$starttext = getDisplayText($rowkeys);
+									$text = $starttext;
+									if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
+										if (array_key_exists('Timer Remaining',$res['updateStatus'])) 
+			$text.='&nbsp;(<i class="icon-clock btn-icon-small"></i>'.$res['updateStatus']['Timer Remaining'].')';
+									}
+									// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
+									$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 
+											$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
+									// echo $deviceID.CRLF;
+									$text = replacePropertyPlaceholders($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
+									if (!empty($text)) $feedback[$last_id]["text"] = $text;
 								}
-								
-								if (array_key_exists('Link',$res['updateStatus'])) {
-									$feedback[$last_id]['link'] = ($res['updateStatus']['Link'] == LINK_UP ? '' : ($res['updateStatus']['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
-								}
-								
-								$starttext = getDisplayText($rowkeys);
-								$text = $starttext;
-								if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
-									if (array_key_exists('Timer Remaining',$res['updateStatus'])) 
-		$text.='&nbsp;(<i class="icon-clock btn-icon-small"></i>'.$res['updateStatus']['Timer Remaining'].')';
-								}
-								// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
-								$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 
-										$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
-								// echo $deviceID.CRLF;
-								$text = replacePropertyPlaceholders($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
-								if (!empty($text)) $feedback[$last_id]["text"] = $text;
 							}
 						}
 					}

@@ -12,9 +12,11 @@ function getThermostats(){
 	try
 	{
 	  $thermostats = array();
-	  $sql = "SELECT * FROM `ha_mf_devices` inner join ha_mf_devices_thermostat as t ON ". 
-			  "t.deviceID=`ha_mf_devices`.`id` inner join ha_mi_connection AS l ON connectionID=l.id " .
-			  "WHERE typeID=".DEV_TYPE_THERMOSTAT_CT30_HEAT." OR typeID=" . DEV_TYPE_THERMOSTAT_CT30_COOL ." OR typeID= " . DEV_TYPE_THERMOSTAT_CT30_OFF;
+	  $sql = 'SELECT * FROM `ha_mf_devices` inner join ha_mf_devices_thermostat as t ON  
+			  t.deviceID=`ha_mf_devices`.`id` inner join ha_mi_connection AS l ON connectionID=l.id 
+			  WHERE (typeID='.DEV_TYPE_THERMOSTAT_CT30_HEAT.' OR typeID=' . DEV_TYPE_THERMOSTAT_CT30_COOL .' OR typeID= ' . DEV_TYPE_THERMOSTAT_CT30_OFF. ')
+                      AND `inuse` =1';
+			          ;
 	  foreach( FetchRows($sql) as $row )
 	  {
 		  $thermostats[$row['deviceID']] = $row;

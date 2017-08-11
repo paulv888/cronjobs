@@ -76,6 +76,7 @@ if (!($sdata=="")) { 					//import_event
 				$image = '/map_start.png';
 			}
 		}
+		if ($rcv_message['Speed'] != "0") $rcv_message['Speed'] = $rcv_message['Speed'];
 		PDOinsert('geo_location', Array('deviceID' => $message['deviceID'], 'description' => $rcv_message['Description'] , 
 			'datetime' => date('Y-m-d H:i:s', $thisMessageTime), 'speed' => $rcv_message['Speed'], 
 			'speed' => $rcv_message['Speed'],'altitude' => $rcv_message['Altitude'], 'direction' => $rcv_message['Direction'],
