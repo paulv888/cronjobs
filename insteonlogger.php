@@ -23,8 +23,7 @@ if (isset($_GET['DEBUG'])) {
 	define("INSTEON_HUB_PORT", 3333);
 	define("DEBUG_MODE", true);
 } else {
-	define("INSTEON_HUB_IP", "192.168.2.25");
-	define("INSTEON_HUB_PORT", 9761);
+	define("INSTEON_HUB_DEVICE", "115");
 	define("DEBUG_MODE", false);
 } 
 
@@ -66,10 +65,10 @@ if (!DEBUG_MODE) {
 $errors = 0;
 
 // Inf loop till signal
-while (true) {
+//while (true) {
 	try {
-		$transport = new SocketTransport(array(INSTEON_HUB_IP),INSTEON_HUB_PORT);
-		$inst_hub = new InsteonHub(INSTEON_HUB_IP,INSTEON_HUB_PORT);
+		// $transport = new SocketTransport(array(INSTEON_HUB_IP),INSTEON_HUB_PORT);
+		$inst_hub = new InsteonHub(INSTEON_HUB_DEVICE);
 
 		if ($inst_hub) {
 
@@ -93,6 +92,7 @@ while (true) {
 					$properties['Level']['value'] = round(100/255*$message['commandvalue']);
 					unset($message['commandvalue']);
 				}
+				if (array_key_exists('extdata',$message)) unset($message['extdata']);
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
 					$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
@@ -114,7 +114,7 @@ while (true) {
 		sleep(30 * $errors);
 	}
 	
-}	
+//}	
 
 function cleanup(){
 	global $inst_hub;

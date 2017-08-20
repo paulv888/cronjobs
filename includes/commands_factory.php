@@ -73,7 +73,7 @@ function createAlert($params) {
 	$feedback['commandstr'] = 'PDOInsert...';
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
-	if ($params['priorityID'] <= 1) $feedback['result'][] = sendBullet($params);
+	if ($params['priorityID'] <= PRIORITY_HIGH) $feedback['result'][] = sendBullet($params);
 	return $feedback;
 }
 
@@ -735,20 +735,28 @@ function sendBullet(&$params) {
 		$text = strip_tags($params['mess_text']);
 	}
 
+	// echo "<pre>";
+	// print_r($params);
+	
 	// $feedback['message'] = 'Temp disabled';
 	// return $feedback;
 
 	try {
 		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-		if (empty($output)) 
-			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
-		else {
-			//echo "else\n";
+		if (!empty($output)) 
 			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
+		elseif (!empty($params['cvs'][2])) { // No image dir
+			$pb->channel(PUSH_CHANNEL)->pushFile($params['cvs'][2],null,$params['cvs'][0],$params['cvs'][1]);
+		} else {
+			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
 		}
+		
+
 	} catch (Exception $e) {
 		$feedback['error'] = 'Error: '.$e->getMessage();
+		echo $e->getMessage().CRLF;
 	}
+	// echo "</pre>";
     return $feedback;
 
 }
