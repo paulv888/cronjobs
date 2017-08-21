@@ -4,8 +4,6 @@ require_once 'includes.php';
 
 define("MY_DEVICE_ID", 137);
 
-
-
 if (isset($argv)) {
 	var_dump($argv);
 	foreach ($argv as $arg) {
@@ -92,7 +90,6 @@ $errors = 0;
 					$properties['Level']['value'] = round(100/255*$message['commandvalue']);
 					unset($message['commandvalue']);
 				}
-				if (array_key_exists('extdata',$message)) unset($message['extdata']);
 				logEvent($message);
 				if ($message['inout'] == COMMAND_IO_RECV) {
 					$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));

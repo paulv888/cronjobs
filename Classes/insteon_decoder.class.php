@@ -10,49 +10,49 @@
 class InsteonCoder
 {
 	private static $plmcmd = array (
-	 '0204' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '020B' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0221' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0250' => array ('name' => 'insteon_received', 'len' => array (11, 11), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0251' => array ('name' => 'insteon_ext_received', 'len' => array (25, 25), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0252' => array ('name' => 'x10_received', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0253' => array ('name' => 'all_link_complete', 'len' => array (10, 10), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0254' => array ('name' => 'plm_button_event', 'len' => array (3, 3), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0255' => array ('name' => 'user_plm_reset', 'len' => array (2, 2), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '0256' => array ('name' => 'all_link_clean_failed', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0257' => array ('name' => 'all_link_record', 'len' => array (10, 10), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0258' => array ('name' => 'all_link_clean_status', 'len' => array (3, 3), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0260' => array ('name' => 'plm_info', 'len' => array (2, 9), 'inout' => COMMAND_IO_RECV, 'log' => true),
+	 '0204' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '020B' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0221' => array ('name' => 'insteon_something', 'len' => array (10, 10), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0250' => array ('name' => 'insteon_received', 'len' => array (11, 11), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0251' => array ('name' => 'insteon_ext_received', 'len' => array (25, 25), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0252' => array ('name' => 'x10_received', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0253' => array ('name' => 'all_link_complete', 'len' => array (10, 10), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0254' => array ('name' => 'plm_button_event', 'len' => array (3, 3), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0255' => array ('name' => 'user_plm_reset', 'len' => array (2, 2), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0256' => array ('name' => 'all_link_clean_failed', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0257' => array ('name' => 'all_link_record', 'len' => array (10, 10), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0258' => array ('name' => 'all_link_clean_status', 'len' => array (3, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0260' => array ('name' => 'plm_info', 'len' => array (2, 9), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 	 
 	 
 	 
-	 '0261' => array ('name' => 'all_link_send', 'len' => array (5, 6), 'inout' => COMMAND_IO_SEND, 'log' => false),
-	 '0262' => array ('name' => 'insteon_send', 'len' => array (11, 11 ), 'inout' => COMMAND_IO_SEND, 'log' => false),
-	 '0263' => array ('name' => 'x10_send', 'len' => array (5, 5), 'inout' => COMMAND_IO_SEND, 'log' => true),
-	 '0264' => array ('name' => 'all_link_start', 'len' => array (4, 5), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0265' => array ('name' => 'all_link_cancel', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0266' => array ('name' => 'set_host_device_cat', 'len' => array (5, 6), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '0267' => array ('name' => 'plm_reset', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '0268' => array ('name' => 'set_insteon_ack_cmd2', 'len' => array (3, 4), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '0269' => array ('name' => 'all_link_first_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '026A' => array ('name' => 'all_link_next_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '026B' => array ('name' => 'plm_set_config', 'len' => array (3, 4), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '026C' => array ('name' => 'get_sender_all_link_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => false),
-	 '026D' => array ('name' => 'plm_led_on', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '026E' => array ('name' => 'plm_led_off', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '026F' => array ('name' => 'all_link_manage_rec', 'len' => array (11, 12), 'inout' => COMMAND_IO_BOTH, 'log' => false),
+	 '0261' => array ('name' => 'all_link_send', 'len' => array (5, 6), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_NONE),
+	 '0262' => array ('name' => 'insteon_send', 'len' => array (9, 9 ), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_NONE),
+	 '0263' => array ('name' => 'x10_send', 'len' => array (5, 5), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0264' => array ('name' => 'all_link_start', 'len' => array (4, 5), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0265' => array ('name' => 'all_link_cancel', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0266' => array ('name' => 'set_host_device_cat', 'len' => array (5, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0267' => array ('name' => 'plm_reset', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0268' => array ('name' => 'set_insteon_ack_cmd2', 'len' => array (3, 4), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '0269' => array ('name' => 'all_link_first_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '026A' => array ('name' => 'all_link_next_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '026B' => array ('name' => 'plm_set_config', 'len' => array (3, 4), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '026C' => array ('name' => 'get_sender_all_link_rec', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '026D' => array ('name' => 'plm_led_on', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '026E' => array ('name' => 'plm_led_off', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '026F' => array ('name' => 'all_link_manage_rec', 'len' => array (11, 12), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 
 	 
-	 '0270' => array ('name' => 'insteon_nak', 'len' => array (3, 4), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0271' => array ('name' => 'insteon_ack', 'len' => array (4, 5), 'inout' => COMMAND_IO_RECV, 'log' => true),
-	 '0272' => array ('name' => 'rf_sleep', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '0273' => array ('name' => 'plm_get_config', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'log' => true),
-	 '027F' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'log' => false)
+	 '0270' => array ('name' => 'insteon_nak', 'len' => array (3, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0271' => array ('name' => 'insteon_ack', 'len' => array (4, 5), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0272' => array ('name' => 'rf_sleep', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '0273' => array ('name' => 'plm_get_config', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '027F' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_NONE)
 
 
 );
 
- // '' => array ('name' => '', 'len' => 10, 'inout' => COMMAND_IO_RECV, 'log' => true),
+ // '' => array ('name' => '', 'len' => 10, 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 
 
 private static $inout_a = Array (
@@ -618,6 +618,7 @@ private static $x10_house_codes_enc;
 				$plm_message .= $this->insteon_decode(substr($plm_string,10));
 				$plm_decode_result['insteon'] = $this->insteon_decode_r(substr($plm_string,10));
 				$plm_ack_pos = $flag_ext ? 44 : 16;
+				// echo "flag:".$flag_ext." ack:".$plm_ack_pos.CRLF;
 			} elseif($plmcmdID == '0263'){
                 $plm_message .= sprintf("%20s: ",'X10 Message').substr($plm_string,4,4)."\n";
                 $plm_message .= $this->plm_x10_decode(substr($plm_string,4,4));
@@ -711,7 +712,7 @@ private static $x10_house_codes_enc;
 
 			if(strlen($plm_string)>$plm_ack_pos) {
 				$plm_message .= sprintf("%20s: (",'PLM Response').substr($plm_string,$plm_ack_pos,2).") ".(substr($plm_string,$plm_ack_pos,2) == '06' ? "ACK" : "NACK")."\n";
-				$plm_string = substr($plm_string, $plm_ack_pos + 2, strlen($plm_string));
+				//$plm_string = substr($plm_string, $plm_ack_pos + 2, strlen($plm_string));
 			}
 			$finished++;
 		} #if($FSM==)
@@ -721,13 +722,12 @@ private static $x10_house_codes_enc;
 	$plm_decode_result['length'] = 0;
 	if (array_key_exists('plmcmdID', $plm_decode_result)) {
 		if (array_key_exists($plm_decode_result['plmcmdID'], self::$plmcmd)) {
-			$plm_decode_result['log'] = self::$plmcmd[$plmcmdID]['log'];
+			$plm_decode_result['loglevel'] = self::$plmcmd[$plmcmdID]['loglevel'];
 			$plm_decode_result['inout'] = self::$plmcmd[$plmcmdID]['inout'];
-			$plm_decode_result['length'] = self::$plmcmd[$plmcmdID]['len'][0] * 2;
+			$plm_decode_result['length'] = (isset($plm_ack_pos) ? $plm_ack_pos + 2 : self::$plmcmd[$plmcmdID]['len'][0] * 2);
 		}
 	}
 //	return $plm_message;
-// echo "*************";print_r($plm_decode_result);
 	return $plm_decode_result;
 }
 
@@ -786,7 +786,7 @@ private function insteon_message_flags_decode($flags_string) {
 	$flags_message .= sprintf("%28s: (%01b) ",'Message strlen',$flag_ext).($flag_ext?'Extended strlen':'Standard strlen')."\n";
 	$flags_message .= sprintf("%28s: %d\n",'Hops Left',hexdec(substr($flags_string,1,1))>>2);
 	$flags_message .= sprintf("%28s: %d\n",'Max Hops',hexdec(substr($flags_string,1,1))&0x3);
-        return($flags_message);
+    return($flags_message);
 }
 
 /*=item insteon_decode(command_string)

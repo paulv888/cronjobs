@@ -78,11 +78,14 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 				}
 				
 			while ($result) {
-				echo "result loop".CRLF;
+				// echo "result loop".CRLF;
 				$this->last = time();
 				$plm_decode_result = $this->inst_coder->plm_decode($result);
 				// check for to short for PLM message, if so save result for rest
 				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
+				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." +++plm_decode_result\n";
+				if (DEBUG_INSTEON) print_r($plm_decode_result);
+				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." ===end plm_decode_result\n";
 				switch ($plm_decode_result['extdata'])
 				{
 					case ERROR_MESSAGE_TO_SHORT:  		// leave result and wait for more
@@ -101,12 +104,11 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 						$result = "";								// Clear result padding
 						break;
 					default:
-						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." +++plm_decode_result\n";
-						if (DEBUG_INSTEON) print_r($plm_decode_result);
-						if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." ===end plm_decode_result\n";
-						if ($plm_decode_result['log']) $this->addMessage($plm_decode_result);
+						if ($plm_decode_result['loglevel'] != LOGLEVEL_NONE)  $this->addMessage($plm_decode_result);
 						if ($plm_decode_result['length'] > 0) {		// This was a readable message
+							// echo "%%%%%%%:".$result."->".$plm_decode_result['length'];
 							$result = substr($result,$plm_decode_result['length']);	
+							// echo "%%%%%%%:".$result;
 						} else { 									// non recognize code, throw all away (or mayby try next 4?
 							$result = "";
 						}
@@ -138,6 +140,7 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 						$compl['inout'] = $plm_decode_result['inout'];
 						$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 						$compl ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
+						$compl ['loglevel'] = $plm_decode_result['loglevel'];
 						$this->messages->enqueue($compl);
 						//if (DEBUG_INSTEON) print_r($compl);
 						if ($compl['commandID'] == 5) {			// Push extra message for status request response (does not have an Unit Code)
@@ -167,11 +170,12 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 				$insteon = $plm_decode_result['insteon'];
 				if (array_key_exists("commandvalue",$insteon )) $compl['commandvalue'] = $insteon['commandvalue'];
 				if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
-				if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
+				// if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
 				$compl['commandID'] = $insteon['commandID'];
 			}
 			$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 			$compl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
+			$compl ['loglevel'] = $plm_decode_result['loglevel'];
 			$this->messages->enqueue($compl);
 		}
 	}

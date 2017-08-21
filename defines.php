@@ -206,7 +206,7 @@ define("LOCAL_IMPORT", "_XXX_import/");
 
 define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
 
-define("PUSH_CHANNEL", "vlohome1");
+define("PUSH_CHANNEL", "vlohome");
 
 define("CRLF", "</br>\n");
 ?>
