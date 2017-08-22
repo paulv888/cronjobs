@@ -44,10 +44,11 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 
 		$short_message = 0;
 		$result = "";
-		
+// $result ='0250288477343D062019ff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058';
+
 		while ($this->messages->count()<1) {
 	
-			usleep(1000000);
+			usleep(500000);
 	
 			// if (DEBUG_MODE) echo $this->url.CRLF;
 			$curl = restClient::get($this->url,null, null, 1);
@@ -58,20 +59,6 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 				preg_match('#<BS>(.*?)</BS>#', $curl->getresponse(), $matches);
 				$tmpresult = substr($matches[0],  4, strlen($matches[0]) -9 );
 				$curl = restClient::get($this->clearurl,null, null, 1);
-//				$tmpresult = '02622466A90F11660602502466A9343D062B1166027F0206027F0006027F0206027F0006027F0206027F0006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000058';
-				// if ( $tmpresult != $lastresult) {
-					// // Find difference
-					// echo $tmpresult.CRLF;
-					// echo $lastresult.CRLF;
-					
-					// $strlen = strlen( $tmpresult );
-					// for( $i = 0; $i <= $strlen; $i++ ) {
-						// if (substr( $tmpresult, $i, 1 ) != substr( $lastresult, $i, 1 )) {
-							// $result .= substr( $tmpresult, $i , $strlen);
-							// echo "added to result: $result".CRLF;
-							// break;
-						// }
-					// }
 					if ( $tmpresult != $this->empty_buffer) {
 						$result = $tmpresult;
 					}
@@ -84,16 +71,13 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 				// check for to short for PLM message, if so save result for rest
 				if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
 				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." +++plm_decode_result\n";
-				if (DEBUG_INSTEON) print_r($plm_decode_result);
+				if (DEBUG_INSTEON) if (substr($plm_decode_result['plm_string'],0,2) != "00") print_r($plm_decode_result);
 				if (DEBUG_INSTEON) echo date("Y-m-d H:i:s")." ===end plm_decode_result\n";
 				switch ($plm_decode_result['extdata'])
 				{
 					case ERROR_MESSAGE_TO_SHORT:  		// leave result and wait for more
-						echo "ERROR_MESSAGE_TO_SHORT"." Waiting for more"."\n";
-						if ($short_message++ > 2) {
-							$result = "";
-							$short_message = 0;
-						}
+						echo "ERROR_MESSAGE_TO_SHORT"." Disregard"."\n";
+						$result = "";
 						break;
 					case ERROR_STX_MISSING:				// not handled yet. 
 						if (substr($plm_decode_result['plm_string'],0,2) != "00") { // silent on 00
@@ -172,6 +156,7 @@ protected $empty_buffer='0000000000000000000000000000000000000000000000000000000
 				if (array_key_exists("data",$insteon )) $compl['data'] = $insteon['data'];
 				// if (array_key_exists("extdata",$insteon )) $compl['extdata'] = $insteon['extdata'];
 				$compl['commandID'] = $insteon['commandID'];
+				if (array_key_exists('status', $insteon )) $compl['status'] = $insteon['status'];
 			}
 			$compl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 			$compl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];

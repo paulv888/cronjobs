@@ -64,7 +64,6 @@ function updateStatus(&$params, $propertyName) {
 
 	$oldvalue = $params['device']['previous_properties'][$propertyName]['value'];
 	$newvalue = $params['device']['properties'][$propertyName]['value'];
-
 	if (array_key_exists('commandID', $params) && $params['device']['properties'][$propertyName]['value'] == "") {
 		$commandStatus =  getCommand($params['commandID'])['status'];
 		// echo var_dump($commandStatus);

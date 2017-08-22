@@ -22,6 +22,7 @@ class InsteonCoder
 	 '0256' => array ('name' => 'all_link_clean_failed', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 '0257' => array ('name' => 'all_link_record', 'len' => array (10, 10), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 '0258' => array ('name' => 'all_link_clean_status', 'len' => array (3, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
+	 '025C' => array ('name' => 'insteon_something', 'len' => array (11, 11), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 '0260' => array ('name' => 'plm_info', 'len' => array (2, 9), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 	 
 	 
@@ -47,6 +48,7 @@ class InsteonCoder
 	 '0271' => array ('name' => 'insteon_ack', 'len' => array (4, 5), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 	 '0272' => array ('name' => 'rf_sleep', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
 	 '0273' => array ('name' => 'plm_get_config', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
+	 '027A' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_NONE) ,
 	 '027F' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_NONE)
 
 
@@ -144,8 +146,12 @@ private static $insteonCmd = array (
 'SA18' => array ('Cmd1Name'=>'ALL-Link Alias 4 Low','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'161'),
 'SC18' => array ('Cmd1Name'=>'ALL-Link Alias 4 Low','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'161'),
 'SD19' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'5'),
+'SDA19' => array ('Cmd1Name'=>'Light Status Request Ack','Cmd2Flag'=>'Status','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>COMMAND_SET_RESULT),
+'SDA1900' => array ('Cmd1Name'=>'Light Status Request Ack Off','Cmd2Flag'=>'Status','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>COMMAND_SET_RESULT),
+'SDA19FF' => array ('Cmd1Name'=>'Light Status Request Ack On','Cmd2Flag'=>'Status','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>COMMAND_SET_RESULT),
 'SD1900' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'On Level','commandID'=>'5'),
 'SD1901' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'LED Bit Flags','commandID'=>'5'),
+'SD1902' => array ('Cmd1Name'=>'Light Status Request','Cmd2Flag'=>'Command','Cmd2Value'=>'0x02','Cmd2Name'=>'Send by phone app','commandID'=>'5'),
 'SD1F' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'180'),
 'SD1F00' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'0x00','Cmd2Name'=>'Request Flags','commandID'=>'180'),
 'SD1F01' => array ('Cmd1Name'=>'Get Operating Flags','Cmd2Flag'=>'Command','Cmd2Value'=>'0x01','Cmd2Name'=>'All-Link Database Delta Number','commandID'=>'180'),
@@ -488,7 +494,7 @@ private static $x10_house_codes_enc;
 	$abort = 0;
 	$finished = 0;
 	if (strlen($plm_string) < 4) {
-		$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
+		$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 		$abort = 1;
 	}
 	while(!$abort and !$finished) {
@@ -497,7 +503,7 @@ private static $x10_house_codes_enc;
 			#Must start with STX or it is garbage
 			if(substr($plm_string,0,2) != '02') {
 				$plm_message .= "Missing (02)STX: Invalid message\n";
-				$plm_decode_result['extdata'] = ERROR_STX_MISSING;
+				$plm_decode_result['length'] = ERROR_STX_MISSING;
 				$abort++;
 			} else {
 				$FSM++;
@@ -513,13 +519,13 @@ private static $x10_house_codes_enc;
 				$plm_message .= sprintf("%20s: (","PLM Command").$plmcmdID.") ".self::$plmcmd[$plmcmdID]['name']."\n";
 				$plm_decode_result['plmcmdID'] = $plmcmdID;
 				if(strlen($plm_string) < self::$plmcmd[$plmcmdID]['len'][0] * 2) {
-					$plm_message .= "        Message strlen too short for PLM command.  Not parsed\n";
-					$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
+					$plm_message .= "Message strlen too short for PLM command.  Not parsed\n";
+					$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 					$abort++;
 				} elseif(strlen($plm_string) > self::$plmcmd[$plmcmdID]['len'][0] * 2 
 						and strlen($plm_string) < self::$plmcmd[$plmcmdID]['len'][1] * 2) {
-					$plm_message .= "        Message strlen too short for PLM command.  Not parsed\n";
-					$plm_decode_result['extdata'] = ERROR_MESSAGE_TO_SHORT;
+					$plm_message .= "Message strlen too short for PLM command.  Not parsed\n";
+					$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 					$abort++;
 				} elseif(substr($plm_string,2,1) == '5') {
 					#commands from PLM are 50-58
@@ -539,8 +545,7 @@ private static $x10_house_codes_enc;
                 $plm_message .= $this->insteon_message_flags_decode(substr($plm_string,16,2));
 				$flag_ext = hexdec(substr($plm_string,16,1))&0x1;
                 $plm_message .= sprintf("%24s: ",'Insteon Message').substr($plm_string,18,($flag_ext ? 32 : 4))."\n";
-                $plm_message .= $this->insteon_decode(substr($plm_string,16));
-				$plm_decode_result['insteon'] = $this->insteon_decode_r(substr($plm_string,16));
+				$plm_decode_result['insteon'] = $this->insteon_decode(substr($plm_string,16));
 			} elseif($plmcmdID == '0251'){
 				$plm_message .= sprintf("%24s: ",'From Address').substr($plm_string,4,2).":".substr($plm_string,6,2).":".substr($plm_string,8,2)."\n";
 				$plm_decode_result['from'] = substr($plm_string,4,6);
@@ -550,8 +555,7 @@ private static $x10_house_codes_enc;
 				$plm_message .= $this->insteon_message_flags_decode(substr($plm_string,16,2));
 				$flag_ext = hexdec(substr($plm_string,16,1))&0x1;
                 $plm_message .= sprintf("%24s: ",'Insteon Message').substr($plm_string,18,($flag_ext ? 32 : 4))."\n";
-				$plm_message .= $this->insteon_decode(substr($plm_string,16));
-				$plm_decode_result['insteon'] = $this->insteon_decode_r(substr($plm_string,16));
+				$plm_decode_result['insteon'] = $this->insteon_decode(substr($plm_string,16));
 			} elseif($plmcmdID == '0252'){
                 $plm_message .= sprintf("%20s: ",'X10 Message').substr($plm_string,4,4)."\n";
                 $plm_message .= $this->plm_x10_decode(substr($plm_string,4,4));
@@ -568,7 +572,7 @@ private static $x10_house_codes_enc;
 				$button_event = array('','','Tapped','Held 3 seconds','Released');
 				$plm_message .= sprintf("%20s: (",'Button Event').substr($plm_string,4,2).") ".$buttons[substr($plm_string,4,1)].$button_event[substr($plm_string,5,1)]."\n";
 			} elseif($plmcmdID == '0255'){
-				#Nothing else to do
+				$plm_message .= "Something\n";
 			} elseif($plmcmdID == '0256'){
 				$plm_message .= sprintf("%20s: ",'All-Link Group').substr($plm_string,4,2)."\n";
 				$plm_message .= sprintf("%20s: ",'Device').substr($plm_string,6,2).":".substr($plm_string,8,2).":".substr($plm_string,10,2)."\n";
@@ -587,9 +591,13 @@ private static $x10_house_codes_enc;
 				$plm_message .= sprintf("%20s: ",'All-Link Data').substr($plm_string,18,2)."\n";
 				#TODO:  Find insteon information for link data decode
 			} elseif($plmcmdID == '0258'){
-				$plm_message .= sprintf("%20s: (",'Status Byte').substr($plm_string,4,2).") ".(substr($plm_string,4,2) == '06' ? "ACK" : "NACK")."\n";
+				$plm_message .= sprintf("%20s: (",'Status Byte').substr($plm_string,4,2).") ".(substr($plm_string,4,2) == '06' ? "ACK": "NACK")."\n";
+			} elseif($plmcmdID == '025C'){
+				$plm_message .= "Something\n";
+				#Nothing else to do
 			} else {
 				$plm_message .= sprintf("%20s: (",'Undefined Cmd Data').substr($plm_string,4).")\n";
+				$abort++;
 			}
 			$finished++;
 		} elseif($FSM==3) {
@@ -615,10 +623,10 @@ private static $x10_house_codes_enc;
 				$plm_message .= $this->insteon_message_flags_decode(substr($plm_string,10,2));
 				$flag_ext = hexdec(substr($plm_string,10,1))&0x1;
                 $plm_message .= sprintf("%24s: ",'Insteon Message').substr($plm_string,12,($flag_ext ? 32 : 4))."\n";
-				$plm_message .= $this->insteon_decode(substr($plm_string,10));
-				$plm_decode_result['insteon'] = $this->insteon_decode_r(substr($plm_string,10));
+				// echo "here 1".CRLF;
+				$plm_decode_result['insteon'] = $this->insteon_decode(substr($plm_string,10));
 				$plm_ack_pos = $flag_ext ? 44 : 16;
-				// echo "flag:".$flag_ext." ack:".$plm_ack_pos.CRLF;
+				// echo "flag:".$flag_ext."ack:".$plm_ack_pos.CRLF;
 			} elseif($plmcmdID == '0263'){
                 $plm_message .= sprintf("%20s: ",'X10 Message').substr($plm_string,4,4)."\n";
                 $plm_message .= $this->plm_x10_decode(substr($plm_string,4,4));
@@ -703,29 +711,34 @@ private static $x10_house_codes_enc;
 					$plm_message .= sprintf("%20s: ",'Spare 2').substr($plm_string,8,2)."\n";
 				}
 				$plm_ack_pos = 10;
+			} elseif($plmcmdID == '027A'){
+				$plm_ack_pos = 6;
 			} elseif($plmcmdID == '027F'){
 				$plm_ack_pos = 6;
 			} else {
 				$plm_message .= sprintf("%20s: (",'Undefined Cmd Data').substr($plm_string,4).")\n";
 				$plm_ack_pos = 255;
+				$abort++;
 			}
 
-			if(strlen($plm_string)>$plm_ack_pos) {
-				$plm_message .= sprintf("%20s: (",'PLM Response').substr($plm_string,$plm_ack_pos,2).") ".(substr($plm_string,$plm_ack_pos,2) == '06' ? "ACK" : "NACK")."\n";
-				//$plm_string = substr($plm_string, $plm_ack_pos + 2, strlen($plm_string));
-			}
+			// if(strlen($plm_string)>$plm_ack_pos) {
+				// $plm_message .= sprintf("%20s: (",'PLM Response').substr($plm_string,$plm_ack_pos,2).") ".(substr($plm_string,$plm_ack_pos,2) == '06' ? "ACK": "NACK")."\n";
+				// //$plm_string = substr($plm_string, $plm_ack_pos + 2, strlen($plm_string));
+			// }
 			$finished++;
 		} #if($FSM==)
 	} #while(!$abort)
-	$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
 	$plm_decode_result['inout'] = COMMAND_IO_NOT;
-	$plm_decode_result['length'] = 0;
-	if (array_key_exists('plmcmdID', $plm_decode_result)) {
-		if (array_key_exists($plm_decode_result['plmcmdID'], self::$plmcmd)) {
-			$plm_decode_result['loglevel'] = self::$plmcmd[$plmcmdID]['loglevel'];
-			$plm_decode_result['inout'] = self::$plmcmd[$plmcmdID]['inout'];
-			$plm_decode_result['length'] = (isset($plm_ack_pos) ? $plm_ack_pos + 2 : self::$plmcmd[$plmcmdID]['len'][0] * 2);
-		}
+	//$plm_decode_result['length'] = ERROR_UNKNOWN_MESSAGE;
+	$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
+	if (!$abort) {
+		$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
+		$plm_decode_result['loglevel'] = self::$plmcmd[$plmcmdID]['loglevel'];
+		$plm_decode_result['inout'] = self::$plmcmd[$plmcmdID]['inout'];
+		if ($FSM == 2) 
+			$plm_decode_result['length'] = self::$plmcmd[$plmcmdID]['len'][0] * 2;
+		else 
+			$plm_decode_result['length'] = $plm_ack_pos + 2;
 	}
 //	return $plm_message;
 	return $plm_decode_result;
@@ -789,77 +802,7 @@ private function insteon_message_flags_decode($flags_string) {
     return($flags_message);
 }
 
-/*=item insteon_decode(command_string)
-
-Returns a string containing a decoded Insteon message. Input
-string should be the Insteon message starting with the 
-message flag byte.
-
-=cut*/
-
 private function insteon_decode($command_string) {
-	 
-/*#Mapping from message type bit field to acronyms used in
-#  the INSTEON Command Tables documentation
-#100 4 - SB: Standard Broadcast
-
-#000 0 - SD or ED: Standard/Extended Direct
-#001 1 - SDA or EDA: Standard/Extended Direct ACK
-#101 5 - SDN or EDN: Standard/Extended Direct NACK
-
-#110 6 - SA: Standard All-Link Broadcast
-#010 2 - SC: Standard Cleanup Direct
-#011 3 - SCA: Standard Cleanup Direct ACK
-#111 7 - SCN: Standard Cleanup Direct NACK
-
-#For SDA parsing 1st look for SDA command entry, if not found
-#then lookup SD command entry for parsing information.
-
-#For SDN, EDN, SCN NACK responses, lookup coorespnding
-#SD, ED, or SC entry for parsing, but always use the 
-#common NACK decoding for Cmd2
-
-#Lookup SB, SD, ED, SA, and SC messages with just the 
-#Cmd1 entry appended at the key.  If Cmd2 Flag == "Command" 
-#then repeat lookup appending both Cmd1 and Cmd2 for 
-#the key.  If Cmd2 Flag != "Command" then use flag value
-#to control how Cmd2 is displayed.  If second lookup fails,
-#simply print Cmd2 and indicate "not decoded".
-*/
-
-	$extended = hexdec(substr($command_string,0,1))&0x1;
-	$msg_type = (hexdec(substr($command_string,0,1))&0xE)>>1;
-	$cmd1 = substr($command_string,2,2);
-	$cmd2 = substr($command_string,4,2);
-	$data = '';
-	if ($extended) $data = substr($command_string,6) ;
-
-	#Truncate $command_string to remove PLM ACK byte
-	$command_string = substr($command_string,0, ($extended ? 34 : 8));
-	$insteon_message='';
-	// echo "msg_type: ".$msg_type.CRLF;
-	if( $msg_type == 0) {
-		#SD/ED: Standard/Extended Direct
-		$insteon_message .= $this->insteon_decode_cmd(($extended ? 'ED' : 'SD'), $cmd1, $cmd2, $extended, $data);
-	} elseif( $msg_type == 1 or $msg_type == 5) {
-		#SDA/EDA: Standard/Extended Direct ACK/NACK
-		$insteon_message .= $this->insteon_decode_cmd(($extended ? 'EDA' : 'SDA'), $cmd1, $cmd2, $extended, $data);
-	} elseif( $msg_type == 6) {
-		#SA: Standard All-Link Broadcast
-		$insteon_message .= $this->insteon_decode_cmd('SA', $cmd1, $cmd2, $extended, $data);
-	} elseif( $msg_type == 2) {
-		#SC: Standard Direct Cleanup
-		$insteon_message .= $this->insteon_decode_cmd('SC', $cmd1, $cmd2, $extended, $data);
-	} elseif( $msg_type == 3 or $msg_type == 7) {
-		#SCA: Standard Direct Cleanup ACK/NACK
-		$insteon_message .= $this->insteon_decode_cmd('SCA', $cmd1, $cmd2, $extended, $data);
-	} else {
-		$insteon_message .= sprintf("%28s: ",'')."Insteon message type not decoded\n";
-	}
-
-	return $insteon_message;
-}
-private function insteon_decode_r($command_string) {
 
 	/*#Mapping from message type bit field to acronyms used in
 	 #  the INSTEON Command Tables documentation
@@ -884,7 +827,7 @@ private function insteon_decode_r($command_string) {
 	#Lookup SB, SD, ED, SA, and SC messages with just the
 	#Cmd1 entry appended at the key.  If Cmd2 Flag == "Command"
 	#then repeat lookup appending both Cmd1 and Cmd2 for
-	#the key.  If Cmd2 Flag != "Command" then use flag value
+	#the key.  If Cmd2 Flag != "Command"then use flag value
 	#to control how Cmd2 is displayed.  If second lookup fails,
 	#simply print Cmd2 and indicate "not decoded".
 	*/
@@ -900,94 +843,31 @@ private function insteon_decode_r($command_string) {
 	#Truncate $command_string to remove PLM ACK byte
 	$command_string = substr($command_string,0, ($extended ? 34 : 8));
 	$insteon_message='';
+	// echo "here 2: $msg_type".CRLF;
+
 	if( $msg_type == 0) {
 		#SD/ED: Standard/Extended Direct
-		$result = $this->insteon_decode_cmd_r(($extended ? 'ED' : 'SD'), $cmd1, $cmd2, $extended, $data);
+		$result = $this->insteon_decode_cmd(($extended ? 'ED' : 'SD'), $cmd1, $cmd2, $extended, $data);
 	} elseif( $msg_type == 1 or $msg_type == 5) {
 		#SDA/EDA: Standard/Extended Direct ACK/NACK
-		$result = $this->insteon_decode_cmd_r(($extended ? 'EDA' : 'SDA'), $cmd1, $cmd2, $extended, $data);
+		$result = $this->insteon_decode_cmd(($extended ? 'EDA' : 'SDA'), $cmd1, $cmd2, $extended, $data);
 	} elseif( $msg_type == 6) {
 		#SA: Standard All-Link Broadcast
-		$result = $this->insteon_decode_cmd_r('SA', $cmd1, $cmd2, $extended, $data);
+		$result = $this->insteon_decode_cmd('SA', $cmd1, $cmd2, $extended, $data);
 	} elseif( $msg_type == 2) {
 		#SC: Standard Direct Cleanup
-		$result = $this->insteon_decode_cmd_r('SC', $cmd1, $cmd2, $extended, $data);
+		$result = $this->insteon_decode_cmd('SC', $cmd1, $cmd2, $extended, $data);
 	} elseif( $msg_type == 3 or $msg_type == 7) {
 		#SCA: Standard Direct Cleanup ACK/NACK
-		$result = $this->insteon_decode_cmd_r('SCA', $cmd1, $cmd2, $extended, $data);
+		$result = $this->insteon_decode_cmd('SCA', $cmd1, $cmd2, $extended, $data);
 	} else {
-		$result['extdata'] = "Insteon Message Undefined\n";
+		// $result['length'] = ERROR_UNKNOWN_MESSAGE;
+		$result['length'] = -5;
 	}
-
 	return $result;
 }
 
 private function insteon_decode_cmd($cmdLookup, $cmd1, $cmd2, $extended, $Data) {
-
-	$insteon_message='';
-	//$cmdDecoder1='';
-	//$cmdDecoder2='';
-
-	#lookup 1st without using Cmd2
-	if (array_key_exists($cmdLookup.$cmd1,self::$insteonCmd)) $cmdDecoder1 = self::$insteonCmd[$cmdLookup.$cmd1];
-
-	if(!isset($cmdDecoder1)) {
-		#lookup failed, if this is an ACK/NACK retry w/ direct version
-		if( $cmdLookup == 'SDA') {
-			$cmdDecoder1 = self::$insteonCmd['SD'.$cmd1];
-		} elseif( $cmdLookup == 'EDA')  {
-			$cmdDecoder1 = self::$insteonCmd['ED'.$cmd1];
-		} elseif( $cmdLookup == 'SCA') {
-			$cmdDecoder1 = self::$insteonCmd['SC'.$cmd1];
-		}
-		if(!isset($cmdDecoder1)) {
-			#still not found so quit trying to decode
-			$insteon_message .= sprintf("%28s: ",'Cmd 1').$cmd1." Insteon command not decoded\n";
-			$insteon_message .= sprintf("%28s: ",'Cmd 2').$cmd2."\n";
-			if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n";
-			return $insteon_message;
-		}
-	}
-
-	if($cmdDecoder1['Cmd2Flag'] == 'Command') {
-		$insteon_message='';
-		#2nd lookup with Cmd2
-		if (array_key_exists($cmdLookup.$cmd1.$cmd2,self::$insteonCmd)) $cmdDecoder2 = self::$insteonCmd[$cmdLookup.$cmd1.$cmd2];
-		if(!isset($cmdDecoder2)) {
-			#lookup failed, if this is an ACK/NACK retry w/ direct version
-			if( $cmdLookup == 'SDA') {
-				$cmdDecoder2 = self::$insteonCmd['SD'.$cmd1];
-			} elseif( $cmdLookup == 'EDA') {
-				$cmdDecoder2 = self::$insteonCmd['ED'.$cmd1];
-			} elseif( $cmdLookup == 'SCA') {
-				$cmdDecoder2 = self::$insteonCmd['SC'.$cmd1];
-			}
-		}
-		if(!isset($cmdDecoder2)) {
-			#still not found so don't decode
-			$insteon_message .= sprintf("%28s: ",'Cmd 1').$cmd1." Insteon command not decoded\n";
-			$insteon_message .= sprintf("%28s: ",'Cmd 2').$cmd2."\n";
-			if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n" ;
-		} else {
-			$insteon_message .= sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder2['Cmd1Name']."\n";
-			$insteon_message .= sprintf("%28s: (",'Cmd 2').$cmd2.") ".$cmdDecoder2['Cmd2Name']."\n";
-			if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n" ;
-		}
-	} elseif( $cmdDecoder1['Cmd2Flag'] == 'Value') {
-		$insteon_message .= sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."\n";
-		$insteon_message .= sprintf("%28s: (",'Cmd 2').$cmd2.") ".$cmdDecoder1['Cmd2Name']."\n";
-		 if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n";
-	} elseif( $cmdDecoder1['Cmd2Flag'] == 'NA') {
-		$insteon_message .= sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."\n";
-		$insteon_message .= sprintf("%28s: ",'Cmd 2').$cmd2."\n";
-		 if( $extended) $insteon_message .= sprintf("%28s: ",'D1-D14').$Data."\n";
-	} else {
-		$insteon_message .= "Parse database has Undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
-	}
-
-	return $insteon_message;
-}
-private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data) {
 
 	$result = Array();
 	//$cmdDecoder1='';
@@ -996,6 +876,10 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 	#lookup 1st without using Cmd2
 	if (array_key_exists($cmdLookup.$cmd1,self::$insteonCmd)) $cmdDecoder1 = self::$insteonCmd[$cmdLookup.$cmd1];
 
+	// echo "here 3: "."".$cmdLookup.$cmd1.CRLF;
+	// print_r($cmdDecoder1);
+
+	
 	if(!isset($cmdDecoder1)) {
 		#lookup failed, if this is an ACK/NACK retry w/ direct version
 		if( $cmdLookup == 'SDA') {
@@ -1007,10 +891,10 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 		}
 		if(!isset($cmdDecoder1)) {
 			#still not found so quit trying to decode
-			$result['extdata'] = sprintf("%s: ",'Cmd 1').$cmd1." Insteon command not decoded";
+			// $result['length'] = ERROR_UNKNOWN_MESSAGE;
+			$result['length'] = -6;
 			$result['commandID'] = COMMAND_UNKNOWN;
 			$result['data'] = $cmd2;
-			if( $extended) 	$result['extdata']  .= $Data;
 			return $result;
 		}
 	}
@@ -1031,28 +915,30 @@ private function insteon_decode_cmd_r($cmdLookup, $cmd1, $cmd2, $extended, $Data
 		}
 		if(!isset($cmdDecoder2)) {
 			#still not found so don't decode
-			$result['extdata'] = sprintf("%s: ",'Cmd 1').$cmd1." Insteon command not decoded";
+			// $result['length'] = ERROR_UNKNOWN_MESSAGE;
+			$result['length'] = -7;
 			$result['commandID'] = COMMAND_UNKNOWN;
 			$result['data'] = $cmd2;
-			if( $extended) 	$result['extdata'] .= $Data ;
 		} else {
 			$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder2['Cmd1Name']."";
 			$result['commandID'] = $cmdDecoder2['commandID'];
 			$result['data'] = $cmdDecoder2['Cmd2Name'];
-			if( $extended) $result['extdata'] = $Data;
 		}
 	} elseif( $cmdDecoder1['Cmd2Flag'] == 'Value') {
 		$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."";
 		$result['commandID'] = $cmdDecoder1['commandID'];
 		$result['commandvalue'] = hexdec($cmd2);
-		if( $extended) $result['extdata'] = $Data;
+	} elseif( $cmdDecoder1['Cmd2Flag'] == 'Status') {
+		$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."";
+		$result['commandID'] = $cmdDecoder1['commandID'];
+		$result['status'] = (hexdec($cmd2) == 0 ? STATUS_OFF : STATUS_ON);
 	} elseif( $cmdDecoder1['Cmd2Flag'] == 'NA') {
 		$result['command'] = sprintf("%28s: (",'Cmd 1').$cmd1.") ".$cmdDecoder1['Cmd1Name']."";
 		$result['commandID'] = $cmdDecoder1['commandID'];
 		$result['data'] = $cmd2;
-		if( $extended) $result['extdata'] = $Data;
 	} else {
-		$result['extdata'] = "Parse database has Undefined Cmd2Flag: ".$cmdDecoder1['Cmd2Flag'];
+		// $result['length'] = ERROR_UNKNOWN_MESSAGE;
+		$result['length'] = -8;
 	}
 
 	return $result;

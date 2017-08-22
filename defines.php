@@ -160,6 +160,7 @@ define("RECORDING_TYPE_CONTINUOUS", 99);
 // Insteon Decoder Errors
 define("ERROR_STX_MISSING", -1);
 define("ERROR_MESSAGE_TO_SHORT", -2);
+define("ERROR_UNKNOWN_MESSAGE", -3);
 
 // Query replacement devices
 define("DEVICE_SOMEONE_HOME", 157);
