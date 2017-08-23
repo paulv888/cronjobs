@@ -24,9 +24,6 @@ class InsteonCoder
 	 '0258' => array ('name' => 'all_link_clean_status', 'len' => array (3, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 '025C' => array ('name' => 'insteon_something', 'len' => array (11, 11), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
 	 '0260' => array ('name' => 'plm_info', 'len' => array (2, 9), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
-	 
-	 
-	 
 	 '0261' => array ('name' => 'all_link_send', 'len' => array (5, 6), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_NONE),
 	 '0262' => array ('name' => 'insteon_send', 'len' => array (9, 9 ), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_NONE),
 	 '0263' => array ('name' => 'x10_send', 'len' => array (5, 5), 'inout' => COMMAND_IO_SEND, 'loglevel' => LOGLEVEL_COMMAND),
@@ -42,16 +39,12 @@ class InsteonCoder
 	 '026D' => array ('name' => 'plm_led_on', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
 	 '026E' => array ('name' => 'plm_led_off', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
 	 '026F' => array ('name' => 'all_link_manage_rec', 'len' => array (11, 12), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_NONE),
-	 
-	 
 	 '0270' => array ('name' => 'insteon_nak', 'len' => array (3, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 	 '0271' => array ('name' => 'insteon_ack', 'len' => array (4, 5), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),
 	 '0272' => array ('name' => 'rf_sleep', 'len' => array (2, 3), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
 	 '0273' => array ('name' => 'plm_get_config', 'len' => array (6, 6), 'inout' => COMMAND_IO_BOTH, 'loglevel' => LOGLEVEL_COMMAND),
 	 '027A' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_NONE) ,
 	 '027F' => array ('name' => 'insteon_something', 'len' => array (4, 4), 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_NONE)
-
-
 );
 
  // '' => array ('name' => '', 'len' => 10, 'inout' => COMMAND_IO_RECV, 'loglevel' => LOGLEVEL_COMMAND),

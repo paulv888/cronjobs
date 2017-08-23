@@ -23,12 +23,7 @@ include_once 'Classes/OAuth.php';
 include_once 'Classes/thermo_lib.php';
 include_once 'Classes/RestClient.class.php';
 include_once 'Classes/TCPClient.php';
-include_once 'Classes/insteon_hub.class.php';
 include_once 'Classes/insteon_decoder.class.php';
 include_once 'Classes/sockettransport.class.php';
-
-// include_once 'Classes/Orders.class.php';
-// include_once 'Classes/Position.class.php';
 include_once 'includesPushbullet.php';
-// include_once 'includes/yahoostreamer.php';
 ?>
