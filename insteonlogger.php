@@ -37,11 +37,13 @@ if (!DEBUG_MODE) {
 		}
 	}
 
+	declare(ticks=1); // PHP internal, make signal handling work
+
 	pcntl_signal(SIGTERM, "signal_handler");
 	pcntl_signal(SIGHUP, "signal_handler");
 	pcntl_signal(SIGINT, "signal_handler");
 
-	pcntl_signal_dispatch();
+//	pcntl_signal_dispatch();
 	console::log("Signal dispatched");
 
 }
@@ -75,7 +77,7 @@ try {
 
 	$inst_coder = new InsteonCoder();
 	
-	while (true){
+	while (true) {
 		
 		usleep(250000);
 			// if (DEBUG_MODE) echo $this->url.CRLF;
@@ -126,29 +128,29 @@ try {
 				$last_result = $tmpresult;
 				
 				//
-				// Lets decode some of the result
+				// Lets decode all of the result (if possible, reset or keep if not)
 				//
 				do {
 					$plm_decode_result = $inst_coder->plm_decode($mybuffer);
 					
 					// check for to short for PLM message, if so save result for rest
-					// if (!array_key_exists("extdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
-					echo date("Y-m-d H:i:s")." +++plm_decode_result\n";
-					echo json_encode($plm_decode_result)."\n";
-					echo date("Y-m-d H:i:s")." ===end plm_decode_result\n";
+					// if (!array_key_exists("etdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
+					echo date("Y-m-d H:i:s")." \e[32mplm_decode_result\e[39;49m\n";
+					print_r($plm_decode_result);
+					echo date("Y-m-d H:i:s")." \e[32mend plm_decode_result\e[39;49m\n";
 					if ($plm_decode_result['length'] == ERROR_MESSAGE_TO_SHORT) {  							// leave result and wait for more
-						echo "ERROR_MESSAGE_TO_SHORT"." Empty mybuffer, refill from buffer"."\n";
+						echo "\e[31mERROR_MESSAGE_TO_SHORT"." Empty mybuffer, refill from buffer\e[39;49m"."\n";
 						$mybuffer = "";
 						// Need to make sure to not get stuck, retry and discard input buffer
 						//exit;
 
 					} elseif ($plm_decode_result['length'] == ERROR_STX_MISSING) {									// basically to short as well
-						echo "ERROR_STX_MISSING"." Start nibbling to catch up"."\n";
+						echo "\e[31mERROR_STX_MISSING"." Start nibbling to catch up\e[39;49m"."\n";
 						// $mybuffer = "";									// Clear result padding
 						// Need to handle these as they arrise
 						exit;
 					} elseif ($plm_decode_result['length'] <= -3) {									// basically to short as well
-						echo "ERROR_UNKNOWN_MESSAGE"." Do something :)"."\n";
+						echo "\e[31mERROR_UNKNOWN_MESSAGE"." Do something\e[39;49m"."\n";
 						// $mybuffer = "";									// Clear result padding
 						//
 						//
@@ -156,7 +158,6 @@ try {
 						exit;
 					} else {
 						// if ($plm_decode_result['loglevel'] != LOGLEVEL_NONE)  $addMessage($plm_decode_result);
-						// echo "All good storing!!! ".$plm_decode_result['plm_message']." ".$plm_decode_result['insteon']['command']." Len: ".$plm_decode_result['length']."\n\n";
 						storeMessage($plm_decode_result);
 						$processed .= substr($mybuffer, $end_buffer_len, $plm_decode_result['length']);	
 						$mybuffer = substr($mybuffer,$plm_decode_result['length']);	
@@ -164,10 +165,12 @@ try {
 					}
 				} while ($plm_decode_result['length']>0 && strlen($mybuffer>0));
 			}
-		}
-	}
-}	
-catch (Exception $e) {
+		} // end else process successful/ call
+		// Update My Link 
+		if (timeExpired($last, 15)) echo updateDLink(MY_DEVICE_ID);
+	} // End while (true)
+} catch (Exception $e) {
+// This is not retrying...
 	$errors = $errors + 1;
 	echo "Retry: ".$errors." ".$e->getMessage();
 	unset ($inst_hub);
@@ -176,89 +179,69 @@ catch (Exception $e) {
 
 
 function storeMessage($plm_decode_result) {
-	// if (array_key_exists("x10_nothandle",$plm_decode_result)) {		// handle x10 message
-		// $x10 = $plm_decode_result['x10'];
-		// if (!array_key_exists("commandID",$x10)) {   		// Enqueue incomplete messages and exit
-			// //Complete messages and push 
-			// $incompl ['code'] = $x10['code'];
-			// $incompl ['unit'] = $x10['unit'];
-			// $incompl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
-			// $incompl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
-			// // $this->incompl_messages->enqueue($incompl); 
-			// return ;								
-		// } else {													// Complete messages and push				
-			// unset ($newincompl);
-			// foreach ($this->incompl_messages as $incompl) {			// Handle many addresses with 1 command
-				// if ($incompl['code'] == $x10['code'] && ($incompl['plmcmdID'] == $plm_decode_result['plmcmdID'] || $x10['commandID'] == COMMAND_STATUSON || $x10['commandID'] == COMMAND_STATUSOFF)) {
-					// $message = $incompl;
-					// $message['commandID'] = $x10['commandID'];
-					// $message['inout'] = $plm_decode_result['inout'];
-					// $message ['plmcmdID'] = $plm_decode_result['plmcmdID'];
-					// $message ['message'] .= "\n".$plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
-					// $message ['loglevel'] = $plm_decode_result['loglevel'];
-					// // $this->messages->enqueue($message);
-					// //if (DEBUG_INSTEON) print_r($message);
-					// if ($message['commandID'] == 5) {			// Push extra message for status request response (does not have an Unit Code)
-						// $newincompl ['code'] = $message['code'];
-						// $newincompl ['unit'] = $message['unit'];
-						// $newincompl ['plmcmdID'] = $plm_decode_result['plmcmdID'];
-						// $newincompl ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
-					// }
-				// } 			
-				// $this->incompl_messages->dequeue(); // dequeue , different code or handled message  
-				// // Should only trow old ones away... 
-			// }
-			// // if (isset($newincompl)) $this->incompl_messages->enqueue($newincompl); 
-			// //echo "3pushing newincompl".$this->incompl_messages->count()."\n";
-		// }
-	// } else {
-		$message['inout'] = $plm_decode_result['inout'];
-		$message['code'] = "I";
-		if (array_key_exists("from",$plm_decode_result)) {
-			$message['unit'] = strtoupper($plm_decode_result['from']);
-		} elseif (array_key_exists("to",$plm_decode_result)) {
-			$message['unit']  = strtoupper($plm_decode_result['to']);
-		} else {
-			$message['unit'] = NULL;
-		}
-		if (array_key_exists("insteon",$plm_decode_result)) {
-			$insteon = $plm_decode_result['insteon'];
-			if (array_key_exists("commandvalue",$insteon )) $message['commandvalue'] = $insteon['commandvalue'];
-			if (array_key_exists("data",$insteon )) $message['data'] = $insteon['data'];
-			// if (array_key_exists("extdata",$insteon )) $message['extdata'] = $insteon['extdata'];
-			$message['commandID'] = $insteon['commandID'];
-			if (array_key_exists('status', $insteon )) $message['status'] = $insteon['status'];
-		}
-		$message ['plmcmdID'] = $plm_decode_result['plmcmdID'];
-		$message ['message'] = $plm_decode_result['plm_string']."\n".$plm_decode_result['plm_message'];
-		$message ['loglevel'] = $plm_decode_result['loglevel'];
-		// $this->messages->enqueue($compl);
-	// }
+
+        $exectime = -microtime(true);
+
+	$message['inout'] = $plm_decode_result['inout'];
+	$message['code'] = "I";
+	if (array_key_exists("from",$plm_decode_result)) {
+		$message['unit'] = strtoupper($plm_decode_result['from']);
+	} elseif (array_key_exists("to",$plm_decode_result)) {
+		$message['unit']  = strtoupper($plm_decode_result['to']);
+	} else {
+		$message['unit'] = NULL;
+	}
+	if (array_key_exists("insteon",$plm_decode_result)) {
+		$insteon = $plm_decode_result['insteon'];
+		if (array_key_exists("commandvalue",$insteon )) $message['commandvalue'] = $insteon['commandvalue'];
+		if (array_key_exists("data",$insteon )) $message['data'] = $insteon['data'];
+		// if (array_key_exists("extdata",$insteon )) $message['extdata'] = $insteon['extdata'];
+		$message['commandID'] = $insteon['commandID'];
+		if (array_key_exists('status', $insteon )) $message['status'] = $insteon['status'];
+	}
+	$message ['plmcmdID'] = $plm_decode_result['plmcmdID'];
+	$message ['commandstr'] = $plm_decode_result['plm_string'];
+	$message ['loglevel'] = $plm_decode_result['loglevel'];
 	//
 	// Better make sure this is all quick, need to get the next buffer
 	//
-	
 	$message['callerID'] = MY_DEVICE_ID;
-	if (is_null($deviceID = setDeviceID($message))) { 		// No device founds so use my_id as deviceID
-		$message['deviceID'] = MY_DEVICE_ID;
+	if ($message['plmcmdID'] == '027F') { 		// If 027F (Hub keep alive?)
+		$message['deviceID'] = INSTEON_HUB_DEVICE;
 	}
-	echo date("Y-m-d H:i:s")."\t+++Storing: message\n\t";
-	print_r($message);
-	echo date("Y-m-d H:i:s")."\t===Logger: message\n";
+	if (is_null($deviceID = setDeviceID($message))) { 		// No device founds so use my_id as deviceID
+//		$message['deviceID'] = MY_DEVICE_ID;
+	}
+
+	echo date("Y-m-d H:i:s")." \e[32mStoring message: \e[39;49m\n";
 	if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
+
+	print_r($message);
+	$message ['message'] = $plm_decode_result['plm_message'];
+
 	$properties = Array();
 	if (array_key_exists('commandvalue',$message)) {
 		$properties['Level']['value'] = round(100/255*$message['commandvalue']);
 		unset($message['commandvalue']);
 	}
-	logEvent($message);
+
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
 		$properties['Link']['value'] = LINK_UP;
 		$device['properties'] = $properties;
-		echo date("Y-m-d H:i:s").": ".'Update Status: '.json_encode(updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 
-				'commandID' => $message['commandID'], 'device' => $device, 'caller' => $message)),JSON_UNESCAPED_SLASHES)."</br>\n";
+		$result = updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'],'commandID' => $message['commandID'], 
+			'device' => $device, 'caller' => $message));
+		echo date("Y-m-d H:i:s").": ".'Update Properties: '."\n";
+//		print_r($result);
 	}
+
+        $exectime += microtime(true);
+	$message['result'] = $result;
+	$message['exectime'] = $exectime;
+	echo date("Y-m-d H:i:s")." \e[32mEnd storing message\e[39;49m\n";
+
+	logEvent($message);
+
 
 	return;
 }
@@ -285,9 +268,7 @@ function signal_handler($signo){
 }
 
 function cleanup(){
-	global $inst_hub;
 	echo "Cleaning up\n";
-	unset ($inst_hub);
 	exit (1);
 }
 ?>
