@@ -244,7 +244,8 @@ function handleTriggers($params, $propertyID, $triggertype) {
 			$thiscommand['caller'] = $params['caller'];
 			$result = sendCommand($thiscommand); 
 			$feedback['Trigger:'.$trigger['id']] = $result;
-			logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($trigger['schemeID']), 'result' => $result ));
+			logEvent(array('inout' => COMMAND_IO_BOTH, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 
+				'commandID' => COMMAND_RUN_SCHEME, 'data' => getSchemeName($trigger['schemeID']), 'result' => $result, 'loglevel' => $thiscommand['loglevel'] ));
 		}
 	}
 	return $feedback;
@@ -528,7 +529,7 @@ function logEvent($log) {
 	if (!array_key_exists('inout', $log)) $log['inout'] = COMMAND_IO_NOT;
 	if (!array_key_exists('callerID', $log)) $log['callerID'] = 0;
 	if (!array_key_exists('data', $log)) $log['data'] = Null;
-	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = 0;
+	if (!array_key_exists('loglevel', $log)) $log['loglevel'] = LOGLEVEL_COMMAND;
 	if (!array_key_exists('message', $log)) $log['message'] = Null;
 	if (!array_key_exists('result', $log)) $log['result'] = Null;
 	if (!array_key_exists('commandstr', $log)) $log['commandstr']=Null;
