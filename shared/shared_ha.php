@@ -755,7 +755,7 @@ function checkConditions($rows) {
 		switch ($rowcond['cond_operator'])
 		{
 		case CONDITION_GREATER:
-			if ($testvalue[0] <= $testvalue[1]) {
+			if ($testvalue[0] < $testvalue[1]) {
 				if (DEBUG_COND) echo 'Fail: "'.$testvalue[0].'" > "'.$testvalue[1].'"'.CRLF;
 				$feedback['message'] = 'Programme skipped, '.$message.' greater than '.$message2;
 				if (DEBUG_COND) echo "Exit executeMacro</pre>".CRLF;
@@ -763,7 +763,7 @@ function checkConditions($rows) {
 			}
 			break;
 		case CONDITION_LESS:
-			if ($testvalue[0] >= $testvalue[1]) {
+			if ($testvalue[0] > $testvalue[1]) {
 				if (DEBUG_COND) echo 'Fail: "'.$testvalue[0].'" < "'.$testvalue[1].'"'.CRLF;
 				$feedback['message'] = 'Programme skipped, '.$message.' less than '.$message2;
 				if (DEBUG_COND) echo "Exit executeMacro</pre>".CRLF;
