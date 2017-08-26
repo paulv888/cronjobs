@@ -191,13 +191,17 @@ function storeMessage($plm_decode_result) {
 	} else {
 		$message['unit'] = NULL;
 	}
+	$properties = Array();
 	if (array_key_exists("insteon",$plm_decode_result)) {
 		$insteon = $plm_decode_result['insteon'];
-		if (array_key_exists("commandvalue",$insteon )) $message['commandvalue'] = $insteon['commandvalue'];
 		if (array_key_exists("data",$insteon )) $message['data'] = $insteon['data'];
-		// if (array_key_exists("extdata",$insteon )) $message['extdata'] = $insteon['extdata'];
 		$message['commandID'] = $insteon['commandID'];
-		if (array_key_exists('status', $insteon )) $message['status'] = $insteon['status'];
+		if (array_key_exists('status', $insteon )) {
+			$properties['Status']['value'] = ($insteon['status'] == "0" ? STATUS_OFF : STATUS_ON);
+		}
+		if (array_key_exists("commandvalue",$insteon )) {
+			$properties['Level']['value'] = round(100/255*$insteon['commandvalue']);
+		}
 	}
 	$message ['plmcmdID'] = $plm_decode_result['plmcmdID'];
 	$message ['commandstr'] = $plm_decode_result['plm_string'];
@@ -219,12 +223,9 @@ function storeMessage($plm_decode_result) {
 	print_r($message);
 	$message ['message'] = $plm_decode_result['plm_message'];
 
-	$properties = Array();
-	if (array_key_exists('commandvalue',$message)) {
-		$properties['Level']['value'] = round(100/255*$message['commandvalue']);
-		unset($message['commandvalue']);
-	}
 
+
+	$result = array();
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
 		$properties['Link']['value'] = LINK_UP;
