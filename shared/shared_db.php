@@ -27,13 +27,14 @@ function openDB() {
 		{
 			try
 			{
-				$pdo = new PDO('mysql:host=vlosite;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES, false));
+				$pdo = new PDO('mysql:host=vlosite;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
 				$retries = 0;
 				return $pdo;
 			}
 			catch (PDOException $e)
 			{
 				echo ".";
+				error_log($e->getMessage());
 				$retries--;
 				sleep(1);
 			}
