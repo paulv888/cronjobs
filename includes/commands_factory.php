@@ -1,4 +1,8 @@
 <?php
+// define( 'DEBUG_GRAPH', TRUE );
+if (!defined('DEBUG_GRAPH')) define( 'DEBUG_GRAPH', FALSE );
+define( 'MAX_DATAPOINTS', 1000 );
+
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
 //
 //	Command in:
@@ -1059,7 +1063,7 @@ function graphCreate($params) {
 		//return $result;
 		$result = listDeviceProperties($devices);
 		$result = array_unique($result, SORT_NUMERIC);
-		//if (DEBUG_GRAPH) print_r($result);
+		if (DEBUG_GRAPH) print_r($result);
 		$properties = implode(",", $result);
 	} else {
 		$properties = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['1']);

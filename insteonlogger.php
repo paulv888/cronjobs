@@ -226,7 +226,7 @@ function storeMessage($plm_decode_result) {
 
 
 	$result = array();
-	if ($message['inout'] == COMMAND_IO_RECV) {
+	if ($message['inout'] == COMMAND_IO_RECV && array_key_exists('deviceID', $message)) {
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
 		$properties['Link']['value'] = LINK_UP;
 		$device['properties'] = $properties;

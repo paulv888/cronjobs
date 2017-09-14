@@ -1,9 +1,4 @@
 <?php
-//define( 'DEBUG_GRAPH', TRUE );
-if (!defined('DEBUG_GRAPH')) define( 'DEBUG_GRAPH', FALSE );
-
-define( 'MAX_DATAPOINTS', 1000 );
-
 function getPath(){
 	$str = $_SERVER['SCRIPT_FILENAME'];
 	$chunks = explode('/', $str);

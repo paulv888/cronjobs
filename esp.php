@@ -11,15 +11,15 @@ define("MY_DEVICE_ID", 272);
 	 2) Fields matching the above query
 	 // 8/9/2015 Now receiving for Axis Cam
  */
-//$file = 'esp.log';
-//$current = file_get_contents($file);
-//if (empty($sdata)) {
-  //$current .= date("Y-m-d H:i:s").":Get ".json_encode($_GET)."\n";
-  //$sdata = json_encode($_GET);
-//} else {
-  //$current .= date("Y-m-d H:i:s").":Post ".$sdata."\n";
-//}
-//file_put_contents($file, $current);
+$file = 'esp.log';
+$current = file_get_contents($file);
+if (empty($sdata)) {
+  $current .= date("Y-m-d H:i:s").":Get ".json_encode($_GET)."\n";
+  $sdata = json_encode($_GET);
+} else {
+  $current .= date("Y-m-d H:i:s").":Post ".$sdata."\n";
+}
+file_put_contents($file, $current);
 $sdata = $_GET;
 // esp.php?device=270&param=Temperature&value=26.00
 // esp.php?device=291&param=Status&value=0
