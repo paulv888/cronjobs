@@ -113,7 +113,6 @@ function setDevicePropertyValue($params, $propertyName) {
 			}
 		}
 		$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
-		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 	} else {
 		$feedback['!Monitor'] = $deviceproperty;
 		if ($deviceproperty['propertyID'] == "243") {
@@ -137,6 +136,7 @@ function setDevicePropertyValue($params, $propertyName) {
 		// echo "<pre>Updateing:";
 		// print_r($deviceproperty);
 		// echo "</pre>Updateing:";
+		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 		$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
 	}

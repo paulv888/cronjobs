@@ -1129,7 +1129,6 @@ function graphCreate($params) {
 
 		if (DEBUG_GRAPH) {echo "RowsProps:"; print_r($rowsprops);}
 
-		if (DEBUG_GRAPH) echo "</pre>";
 		$feedback['message'] .= '<caption>'.implode(", ",$caption).'</caption>';
 		$feedback['message'] .= '<thead><tr class="fabrik___heading">';
 		foreach($rows[0] as $header=>$value){
@@ -1172,8 +1171,10 @@ function graphCreate($params) {
 		$feedback['message'] .= '</tr></thead>';
 		$feedback['message'] .= '<tbody>';
 		$x=0;
+		if (DEBUG_GRAPH) echo "</pre>";
+
 		foreach($rows as $key=>$row) {
-			$feedback['message'] .= '<tr id="'.$tablename.'row_'.$row['id'].'">';
+			$feedback['message'] .= '<tr id="'.$tablename.'_row_'.$row['id'].'">';
 			foreach($row as $key2=>$value2){
 				if ($key2 != "id") {
 					if ($value2 != " ") {
