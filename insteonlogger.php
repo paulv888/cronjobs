@@ -14,7 +14,7 @@ if (isset($argv)) {
 	}
 }
 
-//define( 'DEBUG_INSTEON', TRUE );
+define( 'DEBUG_INSTEON', TRUE );
 if (!defined('DEBUG_INSTEON')) define( 'DEBUG_INSTEON', FALSE );
 
 if (isset($_GET['DEBUG'])) {
@@ -49,11 +49,13 @@ if (!DEBUG_MODE) {
 }
 
 $errors = 0;
-try {
+
+while (true) {
 
 	$last = strtotime(date("Y-m-d H:i:s"));
 	echo updateDLink(MY_DEVICE_ID);
-
+	echo "Initialize...\n";
+	
 	if ($device = getDevice(INSTEON_HUB_DEVICE)) {
 
 		$page = 'buffstatus.xml';
@@ -74,12 +76,11 @@ try {
 
 	// Clear buffer for a fresh start
 	$curl = restClient::get($clearurl,null, null, 1);
-
 	$inst_coder = new InsteonCoder();
 	
 	while (true) {
 		
-		usleep(250000);
+		usleep(250000); // 250ms
 			// if (DEBUG_MODE) echo $this->url.CRLF;
 		$curl = restClient::get($url,null, null, 1);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
@@ -87,34 +88,38 @@ try {
 			echo $curl->getresponsecode().": ".$curl->getresponse();
 		} else {
 			preg_match('#<BS>(.*?)</BS>#', $curl->getresponse(), $matches);
-			$tmpresult = substr($matches[0],  4, strlen($matches[0]) -9 );
-			$buff_len = hexdec(substr($tmpresult, -2));
-			if ( $tmpresult != $last_result) {		// Something changed, content or length
+			$inbuffer = substr($matches[0],  4, strlen($matches[0]) -9 );
+			$buff_len = hexdec(substr($inbuffer, -2));
+			if ( $inbuffer != $last_result) {		// Something changed, content or length
 				
 				//
 				// Sub what we already processed, cannot rely on counter bc auto empty
 				//
-				if (DEBUG_INSTEON) echo "tmpresult:".$tmpresult."\n";
-				if (DEBUG_INSTEON) echo "left temp:".substr($tmpresult, 0, strlen($processed))."\n";
-				if (DEBUG_INSTEON) echo "processed:".$processed."\n";
-				if (substr($tmpresult, 0, strlen($processed)) == $processed) {							 // Start position or received additional 
-					$mybuffer .= substr($tmpresult, strlen($processed), $buff_len - strlen($processed)); // Left part the same, cut off
+				if (DEBUG_INSTEON) echo "Input buffer         :".$inbuffer."\n";
+				if (DEBUG_INSTEON) echo "Left Processed length:".substr($inbuffer, 0, strlen($processed))."\n";
+				if (DEBUG_INSTEON) echo "Actual processed     :".$processed."\n";
+				if (substr($inbuffer, 0, strlen($processed)) == $processed) {							  // Start position or received additional 
+					$mybuffer .= substr($inbuffer, strlen($processed), $buff_len - strlen($processed));   // Left part the same, cut off
 					$end_buffer_len = 0;
+				if (DEBUG_INSTEON) echo "Left = Proc, Remaindr:".$mybuffer."\n";
 				} else {
 					// 2 Scenario's 
 					//		Normal circle -> grab end and beginning
 					//		A command was send and we want to ignore and since f.cking insteon reset our buffer
 						
 					// Normal 
-					if (substr($tmpresult, strlen($processed)  , 2) == "02" ) {
-						$mybuffer .= substr($tmpresult, strlen($processed) , $max_buff_len - strlen($processed) - 2 );
+					if (substr($inbuffer, strlen($processed)  , 2) == "02" ) {
+						$mybuffer .= substr($inbuffer, strlen($processed) , $max_buff_len - strlen($processed) - 2 );
 						$end_buffer_len = $max_buff_len - strlen($processed) - 2 ;
-
 					}
+				if (DEBUG_INSTEON) echo "Left <> Proc, grab end:".$mybuffer."\n";
+
 					//= preg_replace('/^00+/', '02', $mybuffer);
 					if (DEBUG_INSTEON) echo "end_buffer_len: $end_buffer_len\n";
-					$mybuffer .= substr($tmpresult, 0 , $buff_len );
+					$mybuffer .= substr($inbuffer, 0 , $buff_len );
 					$processed = "";
+
+				if (DEBUG_INSTEON) echo "Left <> Prc, add start:".$mybuffer."\n";
 
 					// Was command send and do we only want to get the start
 					//  Remove leading zero's
@@ -125,7 +130,7 @@ try {
 				if (DEBUG_INSTEON) echo "Buffer Length:".$buff_len."\n";
 				if (DEBUG_INSTEON) echo "->".$mybuffer."\n";
 				$last_buff_len = $buff_len;
-				$last_result = $tmpresult;
+				$last_result = $inbuffer;
 				
 				//
 				// Lets decode all of the result (if possible, reset or keep if not)
@@ -143,19 +148,18 @@ try {
 						$mybuffer = "";
 						// Need to make sure to not get stuck, retry and discard input buffer
 						//exit;
-
 					} elseif ($plm_decode_result['length'] == ERROR_STX_MISSING) {									// basically to short as well
 						echo "\e[31mERROR_STX_MISSING"." Start nibbling to catch up\e[39;49m"."\n";
 						// $mybuffer = "";									// Clear result padding
-						// Need to handle these as they arrise
-						exit;
+						// Need to handle these, for now start over
+						continue 3;
 					} elseif ($plm_decode_result['length'] <= -3) {									// basically to short as well
 						echo "\e[31mERROR_UNKNOWN_MESSAGE"." Do something\e[39;49m"."\n";
 						// $mybuffer = "";									// Clear result padding
 						//
 						//
-						// Need to handle these as they arrise
-						exit;
+						// Need to handle these, for now start over
+						continue 3;
 					} else {
 						// if ($plm_decode_result['loglevel'] != LOGLEVEL_NONE)  $addMessage($plm_decode_result);
 						storeMessage($plm_decode_result);
@@ -169,12 +173,6 @@ try {
 		// Update My Link 
 		if (timeExpired($last, 15)) echo updateDLink(MY_DEVICE_ID);
 	} // End while (true)
-} catch (Exception $e) {
-// This is not retrying...
-	$errors = $errors + 1;
-	echo "Retry: ".$errors." ".$e->getMessage();
-	unset ($inst_hub);
-	sleep(30 * $errors);
 }
 
 

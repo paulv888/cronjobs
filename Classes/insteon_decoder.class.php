@@ -486,6 +486,7 @@ private static $x10_house_codes_enc;
 	$FSM = 0;
 	$abort = 0;
 	$finished = 0;
+	$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 	if (strlen($plm_string) < 4) {
 		$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 		$abort = 1;
@@ -723,7 +724,6 @@ private static $x10_house_codes_enc;
 	} #while(!$abort)
 	$plm_decode_result['inout'] = COMMAND_IO_NOT;
 	//$plm_decode_result['length'] = ERROR_UNKNOWN_MESSAGE;
-	$plm_decode_result['length'] = ERROR_MESSAGE_TO_SHORT;
 	if (!$abort) {
 		$plm_decode_result['plm_message'] = preg_replace('/(?!\n)\s+/', ' ', $plm_message);
 		$plm_decode_result['loglevel'] = self::$plmcmd[$plmcmdID]['loglevel'];
