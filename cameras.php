@@ -34,7 +34,7 @@ function readCameras() {
 		$cameras[getLastKey($cameras)]['previous_properties'] = getDeviceProperties(Array('deviceID' => $cam['deviceID']));
 	}
 	//
-	// print_r($cameras);
+//	print_r($cameras);
 	return $cameras;
 }
 
@@ -49,22 +49,28 @@ function movePictures($camera) {
 	if ($handle = opendir($dir)) {
 		while (false !== ($file = readdir($handle))) {
 			$file_parts = mb_pathinfo($file);
-			if ($file != "." && $file != ".." && !is_dir($dir.$file) && $file_parts['extension']=='jpg') {
-				$files[] = $file;
-				$filetimes[] = filemtime($dir.$file);
+			if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
+				if (filesize($dir.$file) == 0) {
+					echo "Delete file (size 0): ".$dir.$file."\n";
+					unlink($dir.$file);
+				} else {
+					$files[] = $file;
+					$filetimes[] = filemtime($dir.$file);
+				}
 			}
 		}
 		closedir($handle);
+
 
 		if (count($files) == 0) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Nothing to do.".CRLF;
 			return $camera;
 		}
 		
- // echo '<pre>';
- // print_r($files);
- // print_r($filetimes);
- // echo '</pre>';
+//  echo '<pre>';
+//  print_r($files);
+//  print_r($filetimes);
+//  echo '</pre>';
 
 		array_multisort($filetimes, $files); 
 		//echo '<pre>';
@@ -282,7 +288,7 @@ function uploadPictures($camera) {
 	if ($handle = opendir($dir.$targetdir)) {
 		while (false !== ($file = readdir($handle))) {
 			$file_parts = mb_pathinfo($file);
-			if ($file != "." && $file != ".." && !is_dir($dir.$file) && $file_parts['extension']=='jpg') {
+			if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
 				$files[] = $file;
 				//$filetimes[] = filemtime($dir.$file);
 			}
