@@ -291,8 +291,8 @@ function uploadPictures($camera) {
 		closedir($handle);
 	}
 	$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-	for ($i = 2; $i <= 4; $i++) {
-		$pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
+	for ($i = 1; $i <= 3; $i++) {
+		if (array_key_exists($i, $files)) $pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
 	}
 
 }
