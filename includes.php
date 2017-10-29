@@ -1,4 +1,5 @@
 <?php 
+include 'cj_configuration.php' ;
 include 'logins.php' ;
 include_once 'defines.php';
 include_once 'includes/remote.php';

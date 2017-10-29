@@ -27,7 +27,7 @@ function openDB() {
 		{
 			try
 			{
-				$pdo = new PDO('mysql:host=vlosite;dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+				$pdo = new PDO('mysql:host='.HA_DB_SERVER.';dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
 				$retries = 0;
 				return $pdo;
 			}
@@ -243,7 +243,7 @@ function PDOError($e, $function, $mysql) {
 	echo "<pre>";
 	echo "PDOError:".print_r($e);
 	echo CRLF."MySql: ".$mysql.CRLF;
-	print_r($values);
+	// print_r($values);
 	echo "</pre>";
 	// }
 	return;

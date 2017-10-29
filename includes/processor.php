@@ -15,7 +15,7 @@ if (!defined('DEBUG_COMMANDS')) define( 'DEBUG_COMMANDS', FALSE );
 
 // Private
 function sendCommand(&$thiscommand) { 
-	// echo "<pre>";
+	// echo "<pre>Enter sendCommand";
 	// print_r($thiscommand);
 	$exittrap=false;
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());

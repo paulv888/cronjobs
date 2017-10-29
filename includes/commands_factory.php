@@ -335,11 +335,11 @@ function setSessionVar(&$params) {
 	ini_set('session.cache_limiter', null);	
 	session_start();
 	$_SESSION['properties'][$tarr[0]]['value'] = $text;
-	$feedback['result'] = $_SESSION['properties'];
 	session_write_close();
 
+	$feedback['result'] = $_SESSION['properties'];
 	$feedback['Name'] = $tarr[0];
-	// print_r($_SESSION);
+	print_r($_SESSION);
 	return $feedback;
 }
 
@@ -393,7 +393,7 @@ function getNowPlaying(&$params) {
 		$properties['File']['value'] = '*';
 		$properties['Artist']['value'] = '*';
 		$properties['Title']['value'] =  '*';
-		$properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+		$properties['Thumbnail']['value'] = HOME."images/headers/offline.png?t=".rand();
 		$properties['PlayingID']['value'] =  '0';
 		$params['device']['properties'] = $properties;
 		$feedback['error']='Error - Nothing playing';
@@ -422,7 +422,7 @@ function getNowPlaying(&$params) {
 			$properties['File']['value'] = '*';
 			$properties['Artist']['value'] = '*';
 			$properties['Title']['value'] =  '*';
-			$properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+			$properties['Thumbnail']['value'] = HOME."images/headers/offline.png?t=".rand();
 			$properties['PlayingID']['value'] =  '0';
 			$params['device']['properties'] = $properties;
 			$feedback['error']='Error - Nothing playing';
@@ -439,12 +439,6 @@ function moveToRecycle($params) {
 	$feedback['result'] = array();
 	// echo "<pre>".$feedback['Name'].CRLF;
 	// print_r($params);
-
-	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
-	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
-	
-	//		smb://SRVMEDIA/media/My Music Videos/Popular/_Assorted/Milk And Honey - Didi.avi
-	// 		  /home/www/vlohome/data/musicvideos/Popular/_Assorted/Milk And Honey - Didi.avi
 
 	$cmvfile = mv_toLocal($params['commandvalue']);
 	//$result = stat($infile);
@@ -693,7 +687,7 @@ function sendEmail(&$params) {
 	$feedback['Name'] = 'sendmail';
 	$feedback['result'] = array();
 	$to = $params['device']['previous_properties']['Address']['value'];
-	$fromname = 'VloHome'; 
+	$fromname = SITE_NAME; 
 
 	$headers = 'MIME-Version: 1.0' . "\r\n".
     'From: '.$fromname. "\r\n" .
@@ -1210,7 +1204,7 @@ function sendEchoBridge($params) {
 			WHERE(((d.id) = '.$vcID.') AND active = 1) ORDER BY u.url_type';
 
 
-		$vlosite = "http://192.168.2.101/process.php?";
+		$vlosite = VLO_SITE."process.php?";
 		if ($in_commands = FetchRows($mysql)) {
 		// print_r($in_commands);
 			unset($send_params);
@@ -1453,4 +1447,70 @@ function executeQuery($params) {
 	return $feedback;
 	
 }
+
+function readFlashAir(&$params) {
+
+	$feedback['Name'] = 'readFlashAir';
+	$feedback['result'] = array();
+	$feedback['message'] = '';
+	$feedback['error'] = "Error copying: ";
+	
+	// echo "<pre>***".$feedback['Name'].CRLF;
+	// print_r($params);
+
+	// Cannot use sessionVar ?No cookies?
+	// User callerID instead
+	$params['deviceID'] = $params['caller']['callerID'];
+	
+	$params['commandID'] = COMMAND_GET_LIST;
+	$liststr = sendCommand($params)['result'][0]; 
+	$list1 = explode("\n", $liststr);
+	foreach($list1 as $value) {
+		$split = explode(',', $value);
+		if (array_key_exists('1',$split)) {
+			$list[] = $split;
+		}
+	}
+
+	// print_r($list);
+	$numfiles = 0;
+	$feedback['commandstr'] = "php cp";
+	foreach($list as $file) {
+		if ($file[1] > $params['device']['previous_properties']['Last File']['value']) {		// Ok copy this one
+			$url = setURL($params, $dummy);
+			$infile = $url.urlencode($file[0].'/'.$file[1]);
+			$tofile = CAMERAS_ROOT.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
+			//echo "cp ".$infile.' '.$tofile.CRLF;
+			if (!copy($infile, $tofile)) {
+				$feedback['error'] .= $infile.' '.$tofile.", ";
+			} else {
+				$feedback['result'][] = $infile.' '.$tofile;
+				if (!($numfiles % 3)) {
+				//http://weird:sparkle@192.168.2.35/axis-cgi/jpg/image.cgi?t={calculate___rand()}|/home/www/vlohome/images/lastimage/O-StairsLarge.jpg
+				copy($tofile,'/home/www/vlohome/images/lastimage/'.$params['device']['description'].'.jpg');
+				//Motion Detected|On deck stairs camera|https://vlohome.no-ip.org/images/lastimage/O-StairsLarge.jpg?t={calculate___rand()}
+				$command = array('callerID' => $params['caller']['callerID'], 
+					'caller'  => $params['caller'],
+					'deviceID' => $params['deviceID'], 
+					'commandID' => COMMAND_RUN_SCHEME,
+					'schemeID' => SCHEME_ALERT_KODI,
+					'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.'https://192.168.2.11/'.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
+					// 'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.HOME.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
+					$feedback['result'][] = sendCommand($command);
+				}
+				$numfiles++;
+			}
+			if ($file[1] > $lastfile) $lastfile = $file[1];
+		}
+	}
+	// if () $feedback['error'] = "Not so good";
+    if ($feedback['error'] == "Error copying: ") unset($feedback['error']);
+	if ($numfiles) {
+		$params['device']['properties']['Last File']['value'] = $lastfile;
+	}
+	// $feedback['result'][] = $params;
+	$feedback['message'] = $numfiles." pictures copied";
+	return $feedback;
+	// echo "</pre>";	
+} 
 ?>

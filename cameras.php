@@ -1,15 +1,15 @@
 #!/usr/bin/php
 <?php
+require_once 'includes.php';
+
 //define( 'DEBUG_CAMERAS', TRUE );
 if (!defined('DEBUG_CAMERAS')) define( 'DEBUG_CAMERAS', FALSE );
 
 define("MY_DEVICE_ID", 215);
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
-define("MOTION_URL1","https://vlohome.no-ip.org/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
-define("MOTION_URL2","https://vlohome.no-ip.org/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=527");
-
-require_once 'includes.php';
+define("MOTION_URL1",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
+define("MOTION_URL2",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=527");
 
 $cameras = readCameras();
 
@@ -21,7 +21,7 @@ while (1) {
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(5);
-        echo updateDLink(MY_DEVICE_ID);
+    echo updateDLink(MY_DEVICE_ID);
 }
 
 function readCameras() {
@@ -50,13 +50,8 @@ function movePictures($camera) {
 		while (false !== ($file = readdir($handle))) {
 			$file_parts = mb_pathinfo($file);
 			if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
-				if (filesize($dir.$file) == 0) {
-					echo "Delete file (size 0): ".$dir.$file."\n";
-					unlink($dir.$file);
-				} else {
-					$files[] = $file;
-					$filetimes[] = filemtime($dir.$file);
-				}
+				$files[] = $file;
+				$filetimes[] = filemtime($dir.$file);
 			}
 		}
 		closedir($handle);
@@ -81,7 +76,7 @@ function movePictures($camera) {
 		$numfiles = 0;
 
 		// Sleep .5 second before moving...
-		usleep(500000);
+		sleep(10);
 		foreach ($files as $index => $file) {
 			$filetime = $filetimes[$index];		// Time of currently handled file
 			// echo ">$file<".CRLF;

@@ -660,7 +660,7 @@ function HelpIntent($request, $session, $response) {
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 
 	
-    $response->respond("You can ask for the status of Vlohome devices, recent alert" .
+    $response->respond("You can ask for the status of ".SITE_NAME." devices, recent alert" .
         "For example, is the front door locked or what the temperature in the coop. " .
         "Now, what can I help you with?")
      ->reprompt("<speak> I'm sorry I didn't understand that. You can say things like, " .

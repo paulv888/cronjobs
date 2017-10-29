@@ -69,7 +69,11 @@ function loadRemoteDiv($divid, $params) {
 	for ($myycell = 1; $myycell <= $myymax; $myycell++) {
 		echo '<tr class="keysrow">';
 		for ($myxcell = 1; $myxcell <= $myxmax; $myxcell++) {
-			$mysql = ("SELECT * FROM ha_remote_keys where remotediv =".$divid." AND xpos =".$myxcell." AND ypos =".$myycell." ORDER BY remotediv DESC");
+			$mysql = ('SELECT r.*, d.id as d__deviceID , t.booticon as type___booticon
+			           FROM ha_remote_keys r 
+			           LEFT JOIN ha_mf_devices d ON r.deviceID = d.id 
+					   LEFT JOIN ha_mf_device_types t ON d.typeID = t.id 
+					   WHERE remotediv ='.$divid.' AND xpos ='.$myxcell.' AND ypos ='.$myycell.' AND (inuse = 1 OR inuse IS NULL)  ORDER BY remotediv DESC');
 			$rowremotekeys = FetchRow($mysql);
 			if ($rowremotekeys) {
 				$status = '';
@@ -79,36 +83,24 @@ function loadRemoteDiv($divid, $params) {
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (!empty($rowremotekeys['deviceID'])) {
 					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_CURRENT_SESSION ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
-					$mysql = 'SELECT ha_mf_devices.id, ha_mf_device_types.id, inuse, booticon FROM ha_mf_devices ' .
-							' LEFT JOIN ha_mf_device_types ON ha_mf_devices.typeID = ha_mf_device_types.id WHERE ha_mf_devices.id ='.$deviceID;
-					if  ($rowdevices = FetchRow($mysql)) {
+					if  (!empty($deviceID)) {
 					// echo "<pre>$myycell $myxcell ";
 					// print_r($rowdevices);
 					// echo "</pre>";
-						if  ($rowdevices['inuse'] == "1") {
-							if  ($rowremotekeys['type_image'] == 1 || $rowremotekeys['type_image'] == 2) {
-								if ($rowdevices) {
-									$booticon = $rowdevices['booticon'] ;
-								} else {
-									$booticon = null;
-								}
-							}
-							// Really should read all at once
-							$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
-							if (array_key_exists('Status',$statuslink)) {
-								$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
-										($statuslink['Status'] == STATUS_OFF ? 'off' : 
-										($statuslink['Status'] == STATUS_UNKNOWN ? 'unknown' : 
-										($statuslink['Status'] == STATUS_ERROR ? 'error' : 
-										  'undefined'))));
-							}
-							if (array_key_exists('Link',$statuslink)) {
-								$link = ($statuslink['Link'] == LINK_UP ? '' : ($statuslink['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
-							}
-						} else {
-							echo '<td style="width:'.$tdwidth.'%" class="keyscellempty">'.'</td>';
-							continue;
+						$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
+						if (array_key_exists('Status',$statuslink)) {
+							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
+									($statuslink['Status'] == STATUS_OFF ? 'off' : 
+									($statuslink['Status'] == STATUS_UNKNOWN ? 'unknown' : 
+									($statuslink['Status'] == STATUS_ERROR ? 'error' : 
+									  'undefined'))));
 						}
+						if (array_key_exists('Link',$statuslink)) {
+							$link = ($statuslink['Link'] == LINK_UP ? '' : ($statuslink['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
+						}
+					} else {
+						echo '<td style="width:'.$tdwidth.'%" class="keyscellempty">'.'</td>';
+						continue;
 					}
 				}
 				echo '<td class="keyscell"';
@@ -141,6 +133,8 @@ function loadRemoteDiv($divid, $params) {
 				if  ($rowremotekeys['type_image'] == 1 || $rowremotekeys['type_image'] == 2) {
 					if ($rowremotekeys['booticon'] != null) {
 						$booticon = $rowremotekeys['booticon'];
+					} else {
+						$booticon = $rowremotekeys['type___booticon'];
 					}
 				}
 				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display") {

@@ -57,6 +57,7 @@ define("COMMAND_SET_PROPERTY_VALUE", 314);
 define("COMMAND_VOICE", 324);
 define("COMMAND_GET_PROPERTIES", 325);
 define("COMMAND_LOG_EVENT", 378);
+define("COMMAND_GET_LIST", 444);
 
 define("SCHEME_ALERT_KODI", 224);
 
@@ -196,18 +197,6 @@ define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
-
-define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos/");
-define("LOCAL_MYDOCS", "/home/www/vlohome/data/mydocs/");
-define("LOCAL_MUSIC_VIDEOS", "/home/www/vlohome/data/musicvideos/");
-define("ADD_MOVE_TO", "/home/www/vlohome/data");
-define("LOCAL_PLAYLISTS", LOCAL_MYDOCS."My Playlists/");
-define("LOCAL_RECYCLE", "_XXX_recyclebin/");
-define("LOCAL_IMPORT", "_XXX_import/");
-
-define("LASTIMAGEDIR", "/mnt/data/cameras/lastimage");
-
-define("PUSH_CHANNEL", "vlohome");
 
 define("CRLF", "</br>\n");
 ?>

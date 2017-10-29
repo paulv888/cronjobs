@@ -14,7 +14,7 @@ function getWeather($params) {
 	$deviceID = $params['deviceID'];
 
 	$feedback['Name'] = 'getWeather';
-	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/35244.json";
+	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/".MY_ZIP.".json";
 	$feedback['result'] = array();
 	// $args = array();
 	// $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
