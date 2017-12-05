@@ -99,7 +99,7 @@ var t_ident_b = window[identifier+'_b'];
 	vsig_dom(topimg).title = t_ident[6];
 	vsig_dom(topimg).setAttribute('data-thumbid',thumbidx);
 	var t =  t_ident[0].split(/[\s.]+/);
-	vsig_dom('currenttime').innerHTML= t[1].substr(0, 2)+':'+t[1].substr(2, 2)+':'+t[1].substr(4, 2)+t[1].substr(6);
+	vsig_dom('currenttime').innerHTML= t[1].substr(0, 2)+':'+t[1].substr(2, 2)+':'+t[1].substr(4, 2)+t[1].substr(6,3);
 }
 
 //switch set
@@ -138,7 +138,7 @@ function switchset(s_ident, s_start, s_number) {
 				var b = parseInt(s_start + a - 1, 10);
 				var obj = vsig_dom('thb' + s_ident + '_' + a);
 				obj.style.visibility = "visible";
-				obj.getElementsByTagName("img")[0].src = ev_identb[0] + ev_identb[1] + ev_ident[b][7];
+				obj.getElementsByTagName("img")[0].src = ev_identb[0] + ev_ident[b][7];
 				obj.getElementsByTagName("img")[0].alt = ev_ident[b][6];
 				obj.getElementsByTagName("a")[0].title = ev_ident[b][6];
 				obj.getElementsByTagName("a")[0].href = ev_identb[3].replace(/&amp;/g, "&") + b;

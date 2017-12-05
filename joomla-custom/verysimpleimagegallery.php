@@ -391,14 +391,14 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 							$cur_alt = plgContentVerysimpleimagegalleryHelper::beKickQuotes($cur_alt);
 
 							//check_existence_of/create img
-							//$theimage = plgContentVerysimpleimagegalleryHelper::beResizeImg($path_absolute.$path_imgroot.$_images_dir_.$images[$a]['filename'],$folder_images,$_im_area_,$therealimageheight,'keep','no',$_imquality_);
+							$theimage = plgContentVerysimpleimagegalleryHelper::beResizeImg($path_absolute.$path_imgroot.$_images_dir_.$images[$a]['filename'],$folder_thumbs,$_im_area_,$therealimageheight,'keep','no',$_imquality_);
 
 							// echo "<pre>";
 							// echo $images[$a]['filename'];
 							// print_r($theimage);
 							// echo "</pre>";
 							
-							$theimage[1]= $images[$a]['filename'];
+							//$theimage[1]= $images[$a]['filename'];
 							//prepare and encode webpath main image#######
 							$cur_webpath=$path_site.$path_imgroot.$_images_dir_.$folder_images."/".$theimage[1];
 
@@ -428,7 +428,7 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 							$thethumb = plgContentVerysimpleimagegalleryHelper::beResizeImg($path_absolute.$path_imgroot.$_images_dir_.$images[$a]['filename'],$folder_thumbs,$_width_,$_height_,$_keep_,'no',$_quality_);
 
 							//prepare and encode webpath thumbs#######
-							$cur_thumb_webpath=$path_site.$path_imgroot.$_images_dir_.$folder_thumbs.'/'.$thethumb[1];
+							$cur_thumb_webpath=$path_site.$path_imgroot.$_images_dir_.$thethumb[1];
 
 							//check if sets are used and if the current thumb belongs to the current set
 							if(!$_sets_use_||($a>=($_sets_use_*$_sets_current_-$_sets_use_)&&$a<=($_sets_use_*$_sets_current_-1)&&$_sets_use_>=2)){
@@ -450,13 +450,13 @@ class plgContentVerysimpleimagegallery extends JPlugin {
 							//array for javascript; name: identifier+prefix
 							if($_usescript_){
 							$vsig_script.="vsig_".$identifier."[".$a."]=new Array(";	
-							$vsig_script.="'".$theimage[1]."',";		//0-image-url
+							$vsig_script.="'".$theimage[1]."',";	//0-image-url
 							$vsig_script.="'".$cur_cap_js[0]."',";	//1-captitle
 							$vsig_script.="'".$cur_cap_js[1]."',";	//2-captext
 							$vsig_script.="'".$cur_link_js[0]."',";	//3-linkhref
 							$vsig_script.="'".$cur_link_js[1]."',";	//4-linktitle
 							$vsig_script.="'".$cur_link_js[2]."',";	//5-linktarget
-							$vsig_script.="'".$cur_alt_js."',";			//6-alt-txt
+							$vsig_script.="'".$cur_alt_js."',";		//6-alt-txt
 							$vsig_script.="'".$thethumb[1]."');\n";	//7-thumb-url
 							}
 						}
