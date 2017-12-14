@@ -8,8 +8,8 @@ if (!defined('DEBUG_CAMERAS')) define( 'DEBUG_CAMERAS', FALSE );
 define("MY_DEVICE_ID", 215);
 define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
-define("MOTION_URL1",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
-define("MOTION_URL2",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=527");
+define("MOTION_URL_DESKTOP",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
+define("MOTION_URL_PHONE",HOME."index.php?option=com_content&view=article&id=238&Itemid=527");
 
 $cameras = readCameras();
 
@@ -161,7 +161,7 @@ function openGroup($camera) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
 			if (DEBUG_CAMERAS) print_r($camera);
 
-			$htmllong='<a href="'.MOTION_URL1.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
+			$htmllong='<a href="'.MOTION_URL_DESKTOP.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
 			// update device
 			$params['callerID'] = MY_DEVICE_ID;
@@ -204,8 +204,8 @@ function closeGroup($camera) {
 			if (DEBUG_CAMERAS) print_r($camera);
 
 			// update device
-			$htmlshort=MOTION_URL2.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
-			$htmllong='<a href="'.MOTION_URL1.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
+			$htmlshort=MOTION_URL_PHONE.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
+			$htmllong='<a href="'.MOTION_URL_DESKTOP.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
 			$params['callerID'] = MY_DEVICE_ID;
 			$params['device'] = $camera;
