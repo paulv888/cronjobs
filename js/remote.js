@@ -432,7 +432,7 @@ if(!window.scriptRemoteHasRun) {
 			if (index == 'error') {
 				showError(item);
 			}
-			jQuery('[data-remotekey=' + item.remotekey + ']').each(function(index){
+			jQuery('[data-remotekey="' + item.remotekey + '"]').each(function(index){
 				jQuery(this).removeClass("link-warning");
 				jQuery(this).removeClass("link-down");
 				if (typeof item.status !== 'undefined') {
