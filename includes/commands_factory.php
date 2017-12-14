@@ -104,7 +104,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				operator as cond_operator, value as cond_value 
 				FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID.' ORDER BY SORT';
 	if ($rows = FetchRows($mysql)) {
-		$feedback = checkConditions($rows);
+		$feedback = checkConditions($rows, $params);
 		// echo "<pre>Check cond result".CRLF;
 		// print_r($rows);
 		// print_r($feedback);
@@ -157,7 +157,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 			// echo "<pre>Check cond result".CRLF;
 			// print_r(array($step));
-			$result = checkConditions(array($step));
+			$result = checkConditions(array($step, $params));
 			// print_r($result);
 			// echo "</pre>Check cond result".CRLF;
 // echo '<pre>';
@@ -1457,12 +1457,11 @@ function readFlashAir(&$params) {
 	$feedback['message'] = '';
 	$feedback['error'] = "Error copying: ";
 	
-	// echo "<pre>***".$feedback['Name'].CRLF;
-	// print_r($params);
+	echo "<pre>***".$feedback['Name'].CRLF;
+	print_r($params);
 
-	// Cannot use sessionVar ?No cookies?
 	// User callerID instead
-	$params['deviceID'] = $params['caller']['callerID'];
+	//$params['deviceID'] = $params['caller']['callerID'];
 	
 	$params['commandID'] = COMMAND_GET_LIST;
 	$liststr = sendCommand($params)['result'][0]; 

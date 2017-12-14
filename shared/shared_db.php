@@ -135,11 +135,10 @@ function PDOupdate($table, $fields, $where){
 
 	$values = array_values($fields);
 	$cols = array_keys($fields);
-	
 	$numItems = count($values);
 	// print_r($cols);
 	// print_r($values);
-	
+
 	$mysql = 'UPDATE '. $table . ' SET ';
 	$i = 0;
 	while (list($key, $value) = each($fields)) {
@@ -157,9 +156,8 @@ function PDOupdate($table, $fields, $where){
 		if(++$i < $numItems) {
 			$mysql .= ", ";
 		}
-    }
-  
-  
+    	}
+
 	$mysql .= ' WHERE ';
 	$i = 0;
 	while (list($key, $value) = each($where)) {
@@ -169,8 +167,8 @@ function PDOupdate($table, $fields, $where){
 		$i++;
 	}
 
-	// echo "mysql sofar: ". $mysql.CRLF;
-	// print_r($values);
+//	 echo $mysql.CRLF;
+//	 print_r($values);
 
 	$result = false;
 
@@ -185,6 +183,7 @@ function PDOupdate($table, $fields, $where){
 		return false;
 	}
 
+//	echo $stmt->rowCount().CRLF;
 	return $result;
 }
 

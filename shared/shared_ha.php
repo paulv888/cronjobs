@@ -651,7 +651,7 @@ function doFilter(&$arr, $nodefilter, &$filter, &$result) {
     return;
 }
 
-function checkConditions($rows) {
+function checkConditions($rows, $params) {
 
 	$feedback = array();
 	$feedback['result'] = array( false );
@@ -663,8 +663,9 @@ function checkConditions($rows) {
 		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE_AS_STEP: 									
 			if (DEBUG_COND) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
 			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
-			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $rowcond['cond_deviceID']))['value'];
-			$message = getProperty($rowcond['cond_propertyID'])['description']." of device ".getDevice($rowcond['cond_deviceID'])['description']." "." is not";
+        		$deviceID = ($rowcond['cond_deviceID'] == DEVICE_CALLER_ID ? $params['caller']['callerID'] : $rowcond['cond_deviceID']);
+			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $deviceID))['value'];
+			$message = getProperty($rowcond['cond_propertyID'])['description']." of device ".getDevice($deviceID)['description']." "." is not";
 			$savedeviceID = $rowcond['cond_deviceID'];
 			// echo "<pre>";
 			// print_r(getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $rowcond['cond_deviceID'])));

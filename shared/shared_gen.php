@@ -292,8 +292,8 @@ function prettyPrint( $json ) {
 
 function setURL($params, &$commandstr) {
 
-// echo "<pre>SETURL";
-// print_r($params);
+//echo "<pre>SETURL";
+//print_r($params);
 
 	$connect = $params['device']['connection'];
 	if (empty($connect['targetaddress'])) {
@@ -310,8 +310,8 @@ function setURL($params, &$commandstr) {
 		$url = str_replace('//','//'.$connect['username'].':'.$connect['password'].'@', $url);
 		$commandstr = str_replace('//','//'.'***:***@', $commandstr);
 	}
-	// echo $commandstr.CRLF;
-	// echo "<pre>";
+// echo $commandstr.CRLF;
+// echo "<pre>";
 	return $url;
 }
 

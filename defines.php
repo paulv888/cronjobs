@@ -173,6 +173,7 @@ define("DEVICE_REMOTE", 164);
 define("DEVICE_KODI", 233);
 define("DEVICE_CURRENT_SESSION", 260);
 define("DEVICE_DEFAULT_PLAYER", DEVICE_KODI);
+define("DEVICE_CALLER_ID", 315);
 
 define("TIME_DAWN", 90);
 define("TIME_DUSK", 91);
@@ -193,7 +194,6 @@ define("PRIORITY_HIDE", 99);
 define("REPEAT_EVERY_RUN", -1);
 define("REPEAT_ONCE_DAY", 0);
 
-define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
