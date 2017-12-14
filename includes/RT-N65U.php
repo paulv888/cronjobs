@@ -367,11 +367,12 @@ if(networkmap_fullscan == 1) genClientList();
 								"ha_alerts___v4" => $ip);
 				print_r(executeCommand($params));
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
-					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", `last_list_date` = NOW() WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
+					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", 
+					`last_list_date` = "'.date("Y-m-d H:i:s").'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				//echo $mysql;
 				PDOExec($mysql);	
 			} else {
-				PDOUpdate('ha_mf_device_ipaddress',array('last_list_date' => 'NOW()'),array('id' => $rowdevice['id']));	
+				PDOUpdate('ha_mf_device_ipaddress',array('last_list_date' => date("Y-m-d H:i:s")),array('id' => $rowdevice['id']));	
 			}
 		}	else {				// New MAC
 			$params = array('callerID' => MY_DEVICE_ID, 
