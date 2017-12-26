@@ -157,7 +157,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 			// echo "<pre>Check cond result".CRLF;
 			// print_r(array($step));
-			$result = checkConditions(array($step, $params));
+			$result = checkConditions(array($step), $params);
 			// print_r($result);
 			// echo "</pre>Check cond result".CRLF;
 // echo '<pre>';
@@ -1103,10 +1103,70 @@ function graphCreate($params) {
 		$hidden = (DEBUG_GRAPH ? '' : ' hidden ');
 
 		if (count($rows)> MAX_DATAPOINTS) {
-			$rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
-			$s = $rows[0]['Date'];
-			$e = $rows[count($rows)-1]['Date'];
-			$feedback['message'] .= '<p class="badge badge-info">Too much data; Showing: '.count($rows).' from '.$s.' through '.$e.'<p>';
+		//
+		// Average datapoint 
+		// 		Average point 
+// echo "<pre>";
+// echo count($rows)."   ".round(count($rows)/MAX_DATAPOINTS);
+// print_r($rows);
+			$average_count = round(count($rows)/MAX_DATAPOINTS);
+			$avg_loop = 0;
+			$avg_temp = array();
+			foreach($rows as $item)
+			{
+				if ($avg_loop < $average_count) {	// Store value
+					$avg_temp[] = $item;
+					$avg_loop++;
+				} else {							// Average and add to output
+// print_r($avg_temp);
+					$avgArray = array();
+					foreach ($avg_temp as $k=>$subArray) {		// Sum in $avgArray
+						foreach ($subArray as $key=>$value) {
+							if ($key == 'id') {
+								$avgArray[$key] = $value;
+								$avgCount[$key] = 0;
+							} elseif ($key == 'Date') {
+								$avgArray[$key] = $value;
+								$avgCount[$key] = 0;
+							} else {
+								if (strlen(trim($value))) {			// Non empty 
+									if (array_key_exists($key, $avgArray)) {
+											$avgArray[$key] = $avgArray[$key] + $value;
+											$avgCount[$key]++;
+									} else {
+										$avgArray[$key] = $value;
+										$avgCount[$key] = 1;
+									}
+								} else {
+									if (!array_key_exists($key, $avgArray)) {		// if first one found then store space
+										$avgArray[$key] = $value;
+										$avgCount[$key] = 0;
+									}
+								}
+							}
+						}
+					}
+					foreach ($avgArray as $key=>$value) {
+						if ($avgCount[$key]==0) {
+							$avgArray[$key] = $value;
+						} else {
+							$avgArray[$key] = ($value/$avgCount[$key]);
+						}
+					}
+// print_r($avgArray);
+// print_r($avgCount);
+					$avg_rows[] = $avgArray;
+					$avg_temp = array();
+					$avg_loop = 0;
+				}
+			}
+// print_r($avg_rows);
+// echo "</pre>";
+			// $rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
+			// $s = $rows[0]['Date'];
+			// $e = $rows[count($rows)-1]['Date'];
+			$feedback['message'] .= '<p class="badge badge-info">Too much data; Averaging over: '.$average_count.' rows<p>';
+			$rows = $avg_rows;
 		}
 		$s = $rows[0]['Date'];
 		$e = $rows[count($rows)-1]['Date'];
@@ -1459,12 +1519,17 @@ function readFlashAir(&$params) {
 	
 	echo "<pre>***".$feedback['Name'].CRLF;
 	print_r($params);
+	$lastfile="";
 
 	// User callerID instead
 	//$params['deviceID'] = $params['caller']['callerID'];
 	
 	$params['commandID'] = COMMAND_GET_LIST;
-	$liststr = sendCommand($params)['result'][0]; 
+	$result =sendCommand($params);
+	if (array_key_exists("error", $result)) {
+		 $feedback['error'] .= $result['error']; 
+	} else {
+	$liststr = $result['result'][0]; 
 	$list1 = explode("\n", $liststr);
 	foreach($list1 as $value) {
 		$split = explode(',', $value);
@@ -1475,15 +1540,16 @@ function readFlashAir(&$params) {
 
 	// print_r($list);
 	$numfiles = 0;
-	$feedback['commandstr'] = "php cp";
+	$feedback['commandstr'] = "MyCopy";
 	foreach($list as $file) {
 		if ($file[1] > $params['device']['previous_properties']['Last File']['value']) {		// Ok copy this one
 			$url = setURL($params, $dummy);
 			$infile = $url.urlencode($file[0].'/'.$file[1]);
 			$tofile = CAMERAS_ROOT.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
-			//echo "cp ".$infile.' '.$tofile.CRLF;
-			if (!copy($infile, $tofile)) {
-				$feedback['error'] .= $infile.' '.$tofile.", ";
+			echo "cp ".$infile.' '.$tofile.CRLF;
+			if (!mycopy($infile, $tofile)) {
+				$feedback['error'] .= $infile.' '.$tofile.", Aborting";
+				break;
 			} else {
 				$feedback['result'][] = $infile.' '.$tofile;
 				if (!($numfiles % 3)) {
@@ -1504,6 +1570,8 @@ function readFlashAir(&$params) {
 			if ($file[1] > $lastfile) $lastfile = $file[1];
 		}
 	}
+
+}
 	// if () $feedback['error'] = "Not so good";
     if ($feedback['error'] == "Error copying: ") unset($feedback['error']);
 	if ($numfiles) {
@@ -1514,4 +1582,31 @@ function readFlashAir(&$params) {
 	return $feedback;
 	// echo "</pre>";	
 } 
+
+function mycopy($infile, $tofile) {
+
+//Get the file
+if (!$content = file_get_contents($infile)) {
+ echo "MyCopy Error: reading $infile\n";
+ return false;
+} else {
+   if (strlen($content) < 300) {
+      echo "MyCopy Error: size ".strlen($content)." < 300\n";
+     return false;
+   } else {
+      //Store in the filesystem.
+      if (!$fp = fopen($tofile, "w")) {
+        echo "MyCopy Error: Cannot open $tofile for write\n";
+      } else {
+         if ($bytes = !fwrite($fp, $content)) {
+            echo "MyCopy Error: Cannot write $tofile\n";
+            return false;
+         }
+         fclose($fp);
+     }
+  }
+}
+//echo $bytes."\n";
+return true;
+}
 ?>
