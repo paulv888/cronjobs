@@ -244,7 +244,13 @@ function PDOError($e, $function, $mysql) {
 	echo CRLF."MySql: ".$mysql.CRLF;
 	// print_r($values);
 	echo "</pre>";
-	// }
+        $command = array(
+                'callerID' => 164,
+                'messagetypeID' => MESS_TYPE_SCHEME,
+                'schemeID'=>SCHEME_ALERT_PDO,
+                'commandvalue'=> $mysql.'|'.'<pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
+        );
+        $feedback['result'][] = executeCommand($command);
 	return;
 }
 ?>

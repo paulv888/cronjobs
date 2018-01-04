@@ -59,6 +59,7 @@ define("COMMAND_GET_PROPERTIES", 325);
 define("COMMAND_LOG_EVENT", 378);
 define("COMMAND_GET_LIST", 444);
 
+define("SCHEME_ALERT_PDO", 309);
 define("SCHEME_ALERT_KODI", 224);
 
 // Triggers
