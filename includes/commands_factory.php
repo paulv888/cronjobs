@@ -1486,7 +1486,7 @@ function checkSyslog(&$params) {
 				// echo "<pre>".$feedback['Name'].' Props: '; print_r($props); echo "</pre>";
 				if (array_key_exists('Critical Alert Items',$props) && $row['sum']>$props['Critical Alert Items']['value']) {	// Critical
 					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
-				} else if (array_key_exists('High Alert',$props) && $row['sum']>$props['High Alert']['value']) {	// High
+				} else if (array_key_exists('High Alert Items',$props) && $row['sum']>$props['High Alert']['value']) {	// High
 					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - High syslog messages: '.$row['sum']));
 				} 
 			}
