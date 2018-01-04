@@ -127,7 +127,7 @@ function getWeather($params) {
 				} elseif ($row['severity'] == SEVERITY_INFO) {
 					$array['class'] = SEVERITY_INFO_CLASS;
 				}
-				PDOupsert("ha_weather_alerts", $array, array('mdate' => $array['mdate'], 'code' => $array['code']));
+				PDOupsert("ha_weather_alerts", $array, array('expires' => $array['expires'], 'code' => $array['code']));
 			}
 			
 			if (DEBUG_WEATHER) print_r($result->{'sun_phase'});
