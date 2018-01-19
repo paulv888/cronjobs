@@ -9,7 +9,6 @@ class Card {
 	public $image = Array("smallImageUrl" => HOME."images/menus/home_108.png",
 					"largeImageUrl" => HOME."images/menus/home_512.png");
 
-	
 	public function render() {
 		return [
 			'type' => $this->type,

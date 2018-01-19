@@ -170,8 +170,8 @@ function openGroup($camera) {
 			$params['caller'] = $params;
 			$properties['Pictures']['value'] = $camera['numfiles'];
 			$properties['Lastest Recording']['value'] = $htmllong;
-			$properties['Recording']['value'] = STATUS_ON; 
-			$params['device']['properties'] = $properties;			
+			$properties['Recording']['value'] = STATUS_ON;
+			$params['device']['properties'] = $properties;
 
 //			echo sendCommand($params); cannot with resend recording command
 
@@ -192,7 +192,6 @@ function openGroup($camera) {
 			unset($recording['id']);
 			PDOinsert('ha_cam_recordings', $recording);
 
-			
 	return $camera;
 }
 
@@ -216,27 +215,30 @@ function closeGroup($camera) {
 			$properties['Last File Time']['value'] = date("H:i:s",$camera['lastfiletime']); 
 
 
-			if ($camera['updatetype']) {		// Previous old group closed, do no update type again
+			if ($camera['updatetype']) {		// Temp group closing at the end of moving files 
 				$properties['Recording']['value'] = STATUS_OFF;
+
+
+				// Only handle alarm at this point, do not want to generate old alarm form previous group and in meanwhile $alarm1 = on
+				$alarm1on = getDeviceProperties(Array('deviceID' => DEVICE_ALARM_ZONE1, 'description' => 'Status'))['value'] == "1";
+
+				if ($alarm1on && !$camera['criticalalert'] && !empty($camera['previous_properties']['Cam Pics Critical Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics Critical Alert']['value'])  {
+					echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
+					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+					$camera['criticalalert'] = true;
+					$camera['highalert'] = true;
+					$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
+					uploadPictures($camera);
+				} elseif ($alarm1on && !$camera['highalert'] && !empty($camera['previous_properties']['Cam Pics High Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics High Alert']['value'])  {
+					echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
+					//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
+					$camera['highalert'] = true;
+					$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
+					uploadPictures($camera);
+				}
 			}
 
-			$alarm1on = getDeviceProperties(Array('deviceID' => DEVICE_ALARM_ZONE1, 'description' => 'Status'))['value'] == "1";
-			
-			if ($alarm1on && !$camera['criticalalert'] && !empty($camera['previous_properties']['Critical Alert Items']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Critical Alert Items']['value'])  {
-				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Critical Alert.".CRLF;
-				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
-				$camera['criticalalert'] = true;
-				$camera['highalert'] = true;
-				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
-				uploadPictures($camera);
-			} elseif ($alarm1on && !$camera['highalert'] && !empty($camera['previous_properties']['High Alert Items']['value']) && $camera['numfiles'] >= $camera['previous_properties']['High Alert Items']['value'])  {
-				echo date("Y-m-d H:i:s").": ".$camera['description']." Creating High Alert.".CRLF;
-				//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
-				executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
-				$camera['highalert'] = true;
-				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
-				uploadPictures($camera);
-			}
 
 			$params['device']['properties'] = $properties;
 			// Be careful any triggers will be executed on changed properties
@@ -249,7 +251,7 @@ function closeGroup($camera) {
 			$recording['criticalalert'] =  $camera['criticalalert'];
 			$recording['highalert'] = $camera['highalert'];
 			PDOupdate("ha_cam_recordings", $recording, array('folder' => $camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir']));
-			
+
 	return $camera;
 }
 

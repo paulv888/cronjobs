@@ -1,6 +1,4 @@
 <?php
-// define( 'DEBUG_ALX', TRUE );
-if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
 require_once 'includes.php';
 require_once 'includesAlexa.php';
 
@@ -243,8 +241,8 @@ function AnySecurityOpenIntent($request, $session, $response) {
 		$mysql = 'SELECT id as deviceID, typeID FROM `ha_mf_devices` WHERE typeID IN ('.$typeID.') and inuse = 1'; // Handle multiple matches?
 		$devices = FetchRows($mysql);
 		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
-		foreach ($devices as $key => $deviceID) {
-			$results[] = getStatusLink(array('deviceID'=>$deviceID, 'propertyID'=>$propertyID));
+		foreach ($devices as $key => $row) {
+			$results[] = getStatusLink(array('deviceID'=>$row['deviceID'], 'propertyID'=>$propertyID));
 		}
 		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
 	} else {
