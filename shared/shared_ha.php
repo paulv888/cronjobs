@@ -659,8 +659,10 @@ function checkConditions($rows, $params) {
 		$testvalue = array();
 		switch ($rowcond['cond_type'])
 		{
-		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE: 									
-		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE_AS_STEP: 									
+		case SCHEME_CONDITION_DEVICE_PROPERTY_STATUS_VALUE_AS_STEP:
+		case SCHEME_CONDITION_DEVICE_PROPERTY_LINK_VALUE_AS_STEP:
+			$rowcond['cond_propertyID'] = $rowcond['cond_type']; // Set property to Status or Link
+		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE:
 			if (DEBUG_COND) echo "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE".CRLF;
 			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
         		$deviceID = ($rowcond['cond_deviceID'] == DEVICE_CALLER_ID ? $params['caller']['callerID'] : $rowcond['cond_deviceID']);
@@ -797,6 +799,12 @@ $status_feedback = array (
 	array("not seen","detected"),
 	array("off","running")
 );
+
+        if  (!getDevice($deviceID)) {
+                echo "<pre>";
+                echo "Unknown/in-active device: $deviceID";
+                echo "</pre>";
+        }
 
 	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
 	

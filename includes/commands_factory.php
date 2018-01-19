@@ -118,8 +118,9 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
-				st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID,st.sort,st.alert_textID,
-				st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, "123" as cond_propertyID, st.cond_operator, st.cond_value,
+				st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID, st.sort, st.alert_textID,
+				st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, 
+				"123" as cond_propertyID, st.cond_operator, st.cond_value,
 				s2.runasync as step_async 
 				FROM ha_remote_schemes sh
 				JOIN ha_remote_scheme_steps st ON sh.id = st.schemesID 
@@ -155,11 +156,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		foreach ($rowshemesteps as $step) {
 			$result = Array();
 
-			// echo "<pre>Check cond result".CRLF;
-			// print_r(array($step));
+//			echo "<pre>Check cond result".CRLF;
+//			print_r(array($step));
 			$result = checkConditions(array($step), $params);
-			// print_r($result);
-			// echo "</pre>Check cond result".CRLF;
+//			print_r($result);
+//			echo "</pre>Check cond result".CRLF;
 // echo '<pre>';
 			if ($result['result'][0]) {
 				$text =  $step['value'];
@@ -1466,28 +1467,30 @@ function checkSyslog(&$params) {
 		echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
 	}
 
-	$devs = getDeviceProperties(array('description' => "Syslog Name"));
+	//$devs = getDeviceProperties(array('description' => "Syslog Name"));
 	
 	// echo "<pre>".$feedback['Name'].': '; print_r($devs); echo "</pre>";
 
 
         $mysql = 'SELECT m.`deviceID`, s.`period`, s.`host`, sum(`sum`) as sum FROM `net_syslog_mapping` m 
                   RIGHT JOIN `net_syslog_stats` s ON s.host = m.fromhost 
-                  WHERE DATE(s.`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY m.`deviceID` ';
+                  WHERE DATE(s.`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY m.`deviceID`,s.`period`,s.`host` ';
 
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
+			$feedback['result']['debug'][]=$row;
 			// $dev = search_array_key_value($devs, 'value', $row['host']);
 			// echo "<pre>".$feedback['Name'].': '; print_r($dev); echo "</pre>";
 			if (empty($row['deviceID'])) {		// Not found
 				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>290, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
 			} else {
 				$props = getDeviceProperties(array('deviceID' => $row['deviceID'])); 
+				$feedback['result']['debug'][]=$props;
 				// echo "<pre>".$feedback['Name'].' Props: '; print_r($props); echo "</pre>";
-				if (array_key_exists('Critical Alert Items',$props) && $row['sum']>$props['Critical Alert Items']['value']) {	// Critical
-					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
-				} else if (array_key_exists('High Alert Items',$props) && $row['sum']>$props['High Alert']['value']) {	// High
-					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>288, 'commandvalue'=>' - High syslog messages: '.$row['sum']));
+				if (array_key_exists('Log Entries Critical Alert',$props) && $row['sum']>$props['Log Entries Critical Alert']['value']) {	// Critical
+					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>SCHEME_ALERT_CRITICAL, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
+				} else if (array_key_exists('Log Entries High Alert',$props) && $row['sum']>$props['Log Entries High Alert']['value']) {	// High
+					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>SCHEME_ALERT_HIGH, 'commandvalue'=>' - High syslog messages: '.$row['sum']));
 				} 
 			}
 		}
