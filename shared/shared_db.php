@@ -18,7 +18,6 @@ function openDB() {
 		}
 	} else {
 		$connected = false;
-		
 	}
 
 	$retries = 60;
@@ -39,7 +38,7 @@ function openDB() {
 				sleep(1);
 			}
 		}
-        die($e->getMessage());
+	        die($e->getMessage());
 	}
 	return $pdo;
 }
