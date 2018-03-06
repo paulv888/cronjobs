@@ -6,7 +6,6 @@ require_once 'includes.php';
 if (!defined('DEBUG_CAMERAS')) define( 'DEBUG_CAMERAS', FALSE );
 
 define("MY_DEVICE_ID", 215);
-define("CAMERASDIR", "/mnt/data/cameras");
 define("MAX_FILES_DIR", 1202);
 define("MOTION_URL_DESKTOP",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
 define("MOTION_URL_PHONE",HOME."index.php?option=com_content&view=article&id=238&Itemid=527");

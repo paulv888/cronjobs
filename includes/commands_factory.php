@@ -1612,4 +1612,74 @@ if (!$content = file_get_contents($infile)) {
 //echo $bytes."\n";
 return true;
 }
+
+function extractVids($params) {
+
+	$feedback['Name'] = 'extractVids';
+	$feedback['commandstr'] = "readDir";
+
+//	echo "<pre>".CRLF;
+//	echo $params['commandvalue'].CRLF;
+
+//        print_r($params);
+
+        $dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$params['device']['previous_properties']['Directory']['value'].'/';
+//	echo "dir: $dir".CRLF;
+
+	$params['importprocess'] = true;
+	$result = readDirs($dir.LOCAL_IMPORT, $params['importprocess']);
+        $feedback['result']['files'] = $result['result'];
+
+//	print_r($files);
+
+        foreach ($feedback['result']['files'] as $index => $file) {
+		if (strtolower($file['extension'])=='mp4') {
+//	 		print_r($file);
+			$oldname = $file['dirname'].$file['basename'];
+			$newname = $dir.'vids/'.$file['basename'];
+//			echo "oldname: $oldname".CRLF;
+//			echo "newname: $newname".CRLF;
+
+			$fp = fopen($oldname, "r+");
+			if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
+			    if ($wouldblock) {
+				$feedback['error'] = "Warning: $oldname is still locked";
+			    } else {
+				$feedback['error'] = "Warning: $oldname couldn't lock for another reason, e.g. no such file";
+			    }
+	  		   fclose($fp);
+			} else {    // lock obtained
+				fclose($fp);
+				//
+				// None of this detects any files being written to
+				//
+				// Use ftpwho? shell, capture output search for filename
+				//
+				sleep(10);
+				$copy = copy($oldname, $newname) ;
+				if ($copy) {
+					$unlink = unlink($oldname);
+					if ($copy && $unlink) {
+						$feedback['result']['rename'] =  "Renamed from: $oldname to: $newname";
+						// ffmpeg -i ARC20180204205454.mp4 -vf fps=3 out-%03d.jpg
+						$cmd = 'nohup nice -n 10 /usr/bin/ffmpeg  -i '.$newname.' -vf fps=3 '.$dir.$file['basename'].'-%03d.jpg'; 
+						$outputfile=  tempnam( sys_get_temp_dir(), 'ffm' );
+						$pidfile=  tempnam( sys_get_temp_dir(), 'ffm' );
+						exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+						$feedback['message'] = "Initiated extraction".' sequence. Log: '.$outputfile;
+	        			} else {
+						unlink($newname);   // removed copied file
+						$feedback['error'] = "Error during rename from: $oldname to: $newname";
+					}
+					break;	// Only 1 per run 
+				}
+			}
+		}
+	}
+
+//	print_r($feedback);
+//	echo "<pre>".CRLF;
+
+	return $feedback;
+}
 ?>

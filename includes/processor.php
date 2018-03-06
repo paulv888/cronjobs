@@ -232,11 +232,12 @@ function sendCommand(&$thiscommand) {
 	// Check for errors first?
 	if  (array_key_exists('error', $feedback)) {
 		$thiscommand['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
+		$thiscommand['loglevel'] = LOGLEVEL_OVERWRITE;
 	} elseif (array_key_exists('message', $feedback)) {
 		$thiscommand['commandvalue'] = $feedback['message'];
 	} elseif (array_key_exists('Name', $feedback)) {
 		$thiscommand['commandvalue'] = $feedback['Name'];
-	}	
+	}
 	$exectime += microtime(true);
 
 	if  (!array_key_exists('commandstr', $feedback)) $feedback['commandstr'] ="Not set.";

@@ -23,7 +23,7 @@ define("LOGLEVEL_DEBUG", 10);
 define("LOGLEVEL_MONITOR", 20);
 define("LOGLEVEL_COMMAND", 30);
 define("LOGLEVEL_MACRO", 40);
-define("LOGLEVEL_ALARMS", 50);
+define("LOGLEVEL_OVERWRITE", 50);
 
 // Log whether command was (or can) send or received
 define("COMMAND_IO_NOT", 0 );    // Not in use
