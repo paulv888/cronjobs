@@ -15,8 +15,9 @@ Currently interfacing to:
        D-Link          DCS-932L         IP Camera               MJPeg
        EDIMax          3115W            IP Camera               MJPeg
        Axis            P5532            PTZ Camera              Get/Html (MJPeg)
-       Keebox          IPC1000WI        IP Camera               Post/Html
-       Foscam          Clone            PTZ Camera              Get/Html
+       Keebox          IPC1000WI        IP Camera               Post/Html (MJPeg)
+       Foscam          Clone            PTZ Camera              Get/Html (MJPeg)
+       Wansview        W2               IP Camera               Get/JSON (MJPeg)
        Irrigation
        Caddy           IC-W1 V2         Irrigation              Post/Html
        Wink            HUB V1           Wink Hub                JSON/JSON
@@ -33,5 +34,5 @@ Currently interfacing to:
        Yahoo           API              Dusk/Dawn Info          Get/JSON
        Yahoo           Streamer-API     Stock-Ticks             Get/JSON
        IB              API              Stock ORders            Get/JSON
-       Amazon          FireTV Stick     Media Player            ADB
+       Amazon          FireTV Stick     Media Player            ADB`
        Amazon          Alexa            Voice Service           Post/JSON
