@@ -1088,7 +1088,7 @@ function graphCreate($params) {
 	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(DEBUG_GRAPH ? 1 : 0).');';
 	if (DEBUG_GRAPH) echo $mysql.CRLF;
 	$feedback['result'] = array();
-	$feedback['message'] = '';
+	$feedback['message'] = '</div>';	// close system message frame
 	if ($rows = FetchRows($mysql)) {
 		//print_r($rows);
 

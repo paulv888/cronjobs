@@ -87,7 +87,8 @@ function loadRemoteDiv($divid, $params) {
 					// echo "<pre>$myycell $myxcell ";
 					// print_r($rowdevices);
 					// echo "</pre>";
-						$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
+						//$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
+						$statuslink = array();
 						if (array_key_exists('Status',$statuslink)) {
 							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 
 									($statuslink['Status'] == STATUS_OFF ? 'off' : 

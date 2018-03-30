@@ -14,13 +14,17 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#B7CFE4"/>
 <link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
-<script src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/jquery.min.js"></script>
-<!--script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/tabs-state.js"></script-->
-<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/bootstrap.min.js"></script>
-<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.js"></script>
+<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script>
+<noscript>
+    <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
+                height: 100%; width: 100%; background-color: #B7CFE4">
+        <p style="margin-left: 10px">JavaScript is not enabled.</p>
+    </div>
+</noscript>
 </head>
-<body style="padding:0px">
+<body style="padding:0px;">
    <div id='system-message-container'></div>
 <?php
    require_once 'includes.php'; 
