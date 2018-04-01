@@ -63,13 +63,15 @@ function movePictures($camera) {
 		
 //  echo '<pre>';
 //  print_r($files);
-//  print_r($filetimes);
+//print_r($filetimes);
 //  echo '</pre>';
 
-		array_multisort($filetimes, $files); 
+		//array_multisort($filetimes, $files); 
+		asort($files);
 		//echo '<pre>';
 		//print_r($files);
 		//print_r($filetimes);
+//echo "</pre>";
 		$seq = 0;
 		$group_dir = null;
 		$numfiles = 0;
