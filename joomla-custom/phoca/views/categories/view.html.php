@@ -121,6 +121,7 @@ class PhocaGalleryViewCategories extends JViewLegacy
 		
 		// Masonry effect
 		if ($this->tmpl['diff_thumb_height'] == 2) {
+			JHtml::_('jquery.framework');
 			$document->addScript(JURI::base(true).'/components/com_phocagallery/assets/masonry/masonry.min.js');
 			$document->addScript(JURI::base(true).'/components/com_phocagallery/assets/masonry/masonry.initialize.js');
 		}
