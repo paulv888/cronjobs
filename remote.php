@@ -16,6 +16,7 @@ if (isset($_GET['name'])) {
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#B7CFE4"/>
 <link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/templates/protostar-remote/css/woffs.css" type="text/css" media="screen" /> 
 <script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script>
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
