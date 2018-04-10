@@ -166,6 +166,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				$text =  $step['value'];
 				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
 				if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
+				if (DEBUG_PARAMS) echo 'last___result: '.(array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent').CRLF;
 				$params['deviceID'] =  $step['deviceID'];
 				$params['commandID'] = $step['commandID'];
 				if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
@@ -215,7 +216,10 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				// echo "****";var_dump($result).CRLF;
 				if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
 				if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
+				if (array_key_exists('result',$result) && array_key_exists('0',$result['result'])) $params['last___result'] = $result['result']['0'];
+				if (array_key_exists('error',$result)) $params['last___result'] = $result['error'];
 				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
+				if (DEBUG_PARAMS) echo 'Loaded last___result: >'.(array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent').'<'.CRLF;
 				if (DEBUG_PARAMS) echo '</pre>';
 			} 
 			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
