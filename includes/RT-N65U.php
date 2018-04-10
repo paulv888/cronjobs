@@ -253,20 +253,6 @@ function ImportSessions() {
 function GetDeviceList($showlist = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
-	
-	$get = RestClient::get('http://icanhazip.com/');
-
-    if ($get->getresponsecode() == 200) {
-		$myip = trim($get->getresponse());
-		//echo ">".$myip."<";
-		$mysql='UPDATE `ha_mf_device_ipaddress` SET ip = "'.$myip.'" WHERE name="PublicIP"';  
-		PDOExec($mysql);
-		//exit;
-	} else {
-		echo "Could not connect to http://icanhazip.com/".CRLF;
-	}
-
-	
 	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 //echo $response;
