@@ -285,7 +285,7 @@ if(!window.scriptRemoteHasRun) {
 				clearInterval(VloRemote.timer);
 			} else {
 				// Show user we are refreshing
-				refreshDiv(true);
+				refreshDiv(true, false);
 				VloRemote.timer = startTimer();
 			}
 			}
@@ -295,12 +295,12 @@ if(!window.scriptRemoteHasRun) {
 		  if( document[hidden] !== undefined )
 			onchange({type: document[hidden] ? "blur" : "focus"});
 		})();
-		
+
 		VloRemote.timer = startTimer();
-		
+
 	});
 
-	function refreshDiv (showSpin, force = false) {
+	function refreshDiv (showSpin, force) {
 
 		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
 			var keys = [];
@@ -423,7 +423,7 @@ if(!window.scriptRemoteHasRun) {
 
 	function startTimer() {
 		timer = window.setInterval(function(){
-			refreshDiv(false);
+			refreshDiv(false, false);
 		}, 6000);
 		return timer;
 	}

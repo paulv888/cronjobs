@@ -4,6 +4,9 @@ if (isset($_GET['name'])) {
 } else {
 	$remoteID=1;
 }
+// header("Link: </templates/protostar-remote/css/template.css>; rel=preload; as=style");
+// header("Link: </media/com_fabrik/images/ajax-loader.gif>; rel=preload; as=image", false);
+ob_start("ob_gzhandler");
 ?>
 <!DOCTYPE html>
 <!--  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> -->
@@ -17,7 +20,11 @@ if (isset($_GET['name'])) {
 <meta name="theme-color" content="#B7CFE4"/>
 <link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
 <link rel="stylesheet" href="/templates/protostar-remote/css/woffs.css" type="text/css" media="screen" /> 
-<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script>
+<script src="/media/jui/js/jquery.min.js"></script>
+<script src="/media/jui/js/bootstrap.min.js"></script>
+<script async src="/media/jui/js/jquery.min.js"></script>
+<script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.min.js"></script>
+<!--script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script-->
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
                 height: 100%; width: 100%; background-color: #B7CFE4">
@@ -37,3 +44,4 @@ if (isset($_GET['name'])) {
 	</div>
 </body>
 </html>
+<?php ob_end_flush();?>
