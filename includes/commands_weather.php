@@ -16,13 +16,8 @@ function getWeather($params) {
 	$feedback['Name'] = 'getWeather';
 	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/".MY_ZIP.".json";
 	$feedback['result'] = array();
-	// $args = array();
-	// $args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
-	// $args["diagnostics"] = "true";
-	// $args["debug"] = "true";
-	// $args["format"] = "json";
 
-	$get = RestClient::get($feedback['commandstr'],null,null,30);
+	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']),30);
 
 	if (DEBUG_WEATHER) echo "<pre>";
 	$error = false;

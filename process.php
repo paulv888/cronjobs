@@ -6,7 +6,7 @@ if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 
 if (DEBUG_INPUT) {
 	$input = file_get_contents('php://input');
-	ob_start();
+	// ob_start();
 	var_dump($input);
 	$result = ob_get_clean();
 	$file = 'process.log';
@@ -76,8 +76,8 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 //		print_r($result);
 		echo "ok";
 	else
-		ob_start("ob_gzhandler");
+		// ob_start("ob_gzhandler");
 		echo $result;
-		ob_end_flush();
+		// ob_end_flush();
 }
 ?>
