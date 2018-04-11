@@ -2,7 +2,7 @@
 HOST='192.168.2.1'
 USER=$1
 PASSWD=$2
-CMD='cat /proc/net/ip_conntrack'
+CMD=$3
 
 (
 echo open "$HOST"
