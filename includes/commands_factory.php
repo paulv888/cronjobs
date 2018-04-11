@@ -245,8 +245,8 @@ function getDuskDawn(&$params) {
 
 	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='YAHOO'");
 	$credentials['method'] = $row['method'];
-	$credentials['client_id'] = $row['clientID'];
-	$credentials['secret'] = $row['secret'];
+	$credentials['username'] = $row['clientID'];
+	$credentials['password'] = $row['secret'];
 
 	$url = "https://query.yahooapis.com/v1/yql";
 	$args = array();
@@ -795,7 +795,7 @@ function sendInsteonCommand(&$params) {
 	$url=setURL($params, $feedback['commandstr']);
 	$feedback['commandstr'] .= $tcomm.'=I=3';
 	if (DEBUG_DEVICES) echo $url.CRLF;
-	$curl = restClient::get($url.$tcomm.'=I=3',null, null, $params['device']['connection']['timeout']);
+	$curl = restClient::get($url.$tcomm.'=I=3',null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 	else
@@ -851,7 +851,7 @@ function sendX10Command(&$params) {
 		$url=setURL($params, $feedback['commandstr']);
 		$feedback['commandstr'] .= $command.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
-		$curl = restClient::get($url.$command.'=I=3');
+		$curl = restClient::get($url.$command.'=I=3',null,setAuthentication($params['device']));
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -908,19 +908,19 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
 			$feedback['commandstr'] .= ' '.htmlentities($tcomm);
-			$curl = restClient::post($url, $tcomm, null, "text/plain", $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
 			$feedback['commandstr'] .= ' '.$tcomm;
-			$curl = restClient::post($url, $tcomm, null, "application/x-www-form-urlencoded", $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "application/x-www-form-urlencoded", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
 			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] .= ' '.$postparams;
-			$curl = restClient::post($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] .= $tcomm;
-			$curl = restClient::post($url.$tcomm ,"" ,null ,"" ,$params['device']['connection']['timeout']);
+			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -940,7 +940,7 @@ function sendGenericHTTP(&$params) {
 		$url=setURL($params, $feedback['commandstr']);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
 		$feedback['commandstr'] .= implode('/', array_map('rawurlencode', explode('/', $tcomm)));;
-		$curl = restClient::get($url.$tcomm, array(), null, $params['device']['connection']['timeout']);
+		$curl = restClient::get($url.$tcomm, array(), setAuthentication($params['device']), $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -1331,7 +1331,7 @@ Update - Put
 		if (!empty($send_params['id'])) {		// Update - PUT
 			$url .= '/'.$send_params['id'];
 			if (DEBUG_DEVICES) echo $url." PUT-Params: ".htmlentities($postparams).CRLF;
-			$curl = restClient::put($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
+			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() == 200 || $curl->getresponsecode() == 201) {
 				$result = $curl->getresponse();
 				$feedback['result'][] = $result;
@@ -1344,7 +1344,7 @@ Update - Put
 		} 
 		if (empty($send_params['id'])) {				// Add - Post
 			if (DEBUG_DEVICES) echo $url." POST-Params: ".htmlentities($postparams).CRLF;
-			$curl = restClient::post($url, $postparams, null, "application/json" , $params['device']['connection']['timeout']);
+			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			} else {

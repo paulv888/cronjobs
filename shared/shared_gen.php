@@ -306,13 +306,25 @@ function setURL($params, &$commandstr) {
 	$commandstr = $url;
 	
 	// echo $commandstr.CRLF;
-	if (!empty($connect['username']) && !empty($connect['password'])) {
-		$url = str_replace('//','//'.$connect['username'].':'.$connect['password'].'@', $url);
-		$commandstr = str_replace('//','//'.'***:***@', $commandstr);
-	}
+	// if (!empty($connect['username']) && !empty($connect['password'])) {
+		// $url = str_replace('//','//'.$connect['username'].':'.$connect['password'].'@', $url);
+		// $commandstr = str_replace('//','//'.'***:***@', $commandstr);
+	// }
 // echo $commandstr.CRLF;
 // echo "<pre>";
 	return $url;
+}
+
+function setAuthentication($device) {
+
+// echo "<pre>SET authentication";
+// print_r($device);
+//array( "method" => "BASIC", "username" => "john", "password" => "doe"
+	if ($device['connection']['authentication'] == "NONE") return null;
+	$authentication['method'] = $device['connection']['authentication'];
+	$authentication['username'] = $device['connection']['username'];
+	$authentication['password'] = $device['connection']['password'];
+	return $authentication;
 }
 
 function getDawn() {

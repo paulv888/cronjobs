@@ -79,14 +79,14 @@ while (true) {
 	$mybuffer = "";
 
 	// Clear buffer for a fresh start
-	$curl = restClient::get($clearurl,null, null, 1);
+	$curl = restClient::get($clearurl,null, setAuthentication($device), $device['connection']['timeout']);
 	$inst_coder = new InsteonCoder();
 	
 	while (true) {
 		
 		usleep(250000); // 250ms
 			// if (DEBUG_MODE) echo $this->url.CRLF;
-		$curl = restClient::get($url,null, null, 1);
+		$curl = restClient::get($url,null, setAuthentication($device),  $device['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
 			// handle error?
 			echo $curl->getresponsecode().": ".$curl->getresponse();

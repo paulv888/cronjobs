@@ -213,8 +213,8 @@ class RestClient {
       * Set the Credentials for BASIC Authentication
       * @param Array (
 			'method' = "BASIC"/"OAUTH1"/"OAUTH2"
-			'username' (client_id)
-			'password' (secret)
+			'username' 
+			'password' 
       * @param string $pass
       * @return RestClient
       */
@@ -225,8 +225,8 @@ class RestClient {
 				curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
 			}
 		} elseif ($credentials['method'] == "OAUTH1") {
-			if($credentials['client_id'] != null) {
-				$consumer = new OAuthConsumer($credentials['client_id'], $credentials['secret']);  
+			if($credentials['username'] != null) {
+				$consumer = new OAuthConsumer($credentials['username'], $credentials['password']);  
 				$request = OAuthRequest::from_consumer_and_token($consumer, NULL,$method , $url, $body);  
 				$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);  
 				curl_setopt($this->curl, CURLOPT_HTTPHEADER, array($request->to_header()));  
