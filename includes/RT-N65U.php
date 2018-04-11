@@ -56,7 +56,8 @@ function GetSessions() {
 		exit; 
 	}
 	//echo "MyIP:".$myip.CRLF;
-    $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD);
+	$cmd = 'cat /proc/net/ip_conntrack';
+    $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD.' '.'"'.$cmd.'"');
     
     $sessions_raw = explode("\n", $output); 
     // unset($sess[0]);
@@ -253,6 +254,13 @@ function ImportSessions() {
 function GetDeviceList($showlist = false) {
 	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
 
+	
+	$cmd = 'cat /proc/net/ip_conntrack';
+    $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD.' '.'"'.$cmd.'"');
+	echo "<pre>";
+	echo $output;
+	echo "</pre>";
+	exit;
 	$post = RestClient::get("http://192.168.2.1/update_clients.asp",null,Array( 'method' => "BASIC", 'username' => FIREWALL_USER ,'password' => FIREWALL_PASSWORD));
 	$response= $post->getResponse();
 //echo $response;
