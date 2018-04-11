@@ -6,7 +6,7 @@ if (isset($_GET['name'])) {
 }
 // header("Link: </templates/protostar-remote/css/template.css>; rel=preload; as=style");
 // header("Link: </media/com_fabrik/images/ajax-loader.gif>; rel=preload; as=image", false);
-ob_start("ob_gzhandler");
+//ob_start("ob_gzhandler");
 ?>
 <!DOCTYPE html>
 <!--  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> -->
@@ -44,4 +44,4 @@ ob_start("ob_gzhandler");
 	</div>
 </body>
 </html>
-<?php ob_end_flush();?>
+<?php //ob_end_flush();?>
