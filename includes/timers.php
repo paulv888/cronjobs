@@ -113,10 +113,10 @@ function runTimerSteps($params) {
 			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
 			$step['loglevel'] = $params['loglevel'];
 			if ($timer['runasync']) {
-				$getparams = http_build_query($step, '',' ');
+				$getparams = http_build_query($step, '',' '); 
 				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
-				$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
-				$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+				$outputfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-o-' );
+				$pidfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-p-' );
 				echo "***".sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile)."****".CRLF;
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
