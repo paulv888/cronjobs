@@ -290,7 +290,7 @@ function prettyPrint( $json ) {
     return $result;
 }
 
-function setURL($params, &$commandstr) {
+function setURL($params, $morepage = null) {
 
 //echo "<pre>SETURL";
 //print_r($params);
@@ -303,7 +303,8 @@ function setURL($params, &$commandstr) {
 	}
 	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'].'/';
 	if (!empty($connect['page'])) $url .= $connect['page'];
-	$commandstr = $url;
+	if (!empty($morepage)) $url .= $morepage;
+	// $commandstr = $url;
 	
 	// echo $commandstr.CRLF;
 	// if (!empty($connect['username']) && !empty($connect['password'])) {

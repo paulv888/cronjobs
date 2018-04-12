@@ -1,5 +1,5 @@
 <?php
-// define('DEBUG_PHOLDERS', TRUE);
+//define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($result, $params) {

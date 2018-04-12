@@ -792,8 +792,8 @@ function sendInsteonCommand(&$params) {
 	$params['commandvalue'] = $cv_save;
 
 	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
-	$url=setURL($params, $feedback['commandstr']);
-	$feedback['commandstr'] .= $tcomm.'=I=3';
+	$url = setURL($params);
+	$feedback['commandstr'] = $url.$tcomm.'=I=3';
 	if (DEBUG_DEVICES) echo $url.CRLF;
 	$curl = restClient::get($url.$tcomm.'=I=3',null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -849,7 +849,7 @@ function sendX10Command(&$params) {
 	foreach ($commands as $command) {
 		//$url=$params['device']['connection']['targetaddress'].":".$params['device']['connection']['targetport'].$params['device']['connection']['page'].$command.'=I=3';
 		$url=setURL($params, $feedback['commandstr']);
-		$feedback['commandstr'] .= $command.'=I=3';
+		$feedback['commandstr'] = $url.$command.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
 		$curl = restClient::get($url.$command.'=I=3',null,setAuthentication($params['device']));
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -895,31 +895,28 @@ function sendGenericHTTP(&$params) {
 		if (DEBUG_DEVICES) echo $targettype."</p>";
 		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$tmp1 = explode('?', $tcomm);
+		$morepage = null;
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
-			$params['device']['connection']['page'] .= $tmp1[0];
+			$morepage = $tmp1[0];
 			array_shift($tmp1);
 			$tcomm = implode('?',$tmp1);
-			// echo "<pre>";
-			// print_r($tmp1);
-			// echo "******".$tcomm;
-			// echo "</pre>";
 		} 
-		$url=setURL($params, $feedback['commandstr']);
+		$url = setURL($params, $morepage);
 		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
-			$feedback['commandstr'] .= ' '.htmlentities($tcomm);
+			$feedback['commandstr'] = $url.' '.htmlentities($tcomm);
 			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
-			$feedback['commandstr'] .= ' '.$tcomm;
+			$feedback['commandstr'] = $url.' '.$tcomm;
 			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "application/x-www-form-urlencoded", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
 			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
-			$feedback['commandstr'] .= ' '.$postparams;
+			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
-			$feedback['commandstr'] .= $tcomm;
+			$feedback['commandstr'] = $url.$tcomm;
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
@@ -937,10 +934,10 @@ function sendGenericHTTP(&$params) {
 	case "GET":          // Sony Cam at the moment
 		if (DEBUG_DEVICES) echo "GET</p>";
 		$tcomm = replaceCommandPlaceholders($params['command'],$params);
-		$url=setURL($params, $feedback['commandstr']);
+		$url= setURL($params);
 		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-		$feedback['commandstr'] .= implode('/', array_map('rawurlencode', explode('/', $tcomm)));;
-		$curl = restClient::get($url.$tcomm, array(), setAuthentication($params['device']), $params['device']['connection']['timeout']);
+		$feedback['commandstr'] = $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));;
+		$curl = restClient::get($url.$tcomm, null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -949,8 +946,8 @@ function sendGenericHTTP(&$params) {
 	case "TCP":              // iTach (Only \r)
 		if (DEBUG_DEVICES) echo "TCP_IR</p>";
 		//print_r($params);
-		$url = setURL($params, $feedback['commandstr']);
-		$feedback['commandstr'] .= $params['command']."\r";
+		$url = setURL($params);
+		$feedback['commandstr'] = $url.$params['command']."\r";
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
@@ -989,7 +986,7 @@ function sendGenericHTTP(&$params) {
 		// open a client connection
 //		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
 		//decodeTPLink(base64_decode($feedback['commandstr']));
-		$feedback['commandstr'] = "tcp://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command'];
+		$feedback['commandstr'] = "tcp64://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command'];
 		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
 //		print_r($feedback['result']);
@@ -1325,7 +1322,7 @@ Update - Put
 		$url=setURL($params, $feedback['commandstr']);
 
 		$postparams = json_encode($send_params,JSON_UNESCAPED_SLASHES);
-		$feedback['commandstr'] .= ' '.$postparams;
+		$feedback['commandstr'] = $url.' '.$postparams;
 
 		
 		if (!empty($send_params['id'])) {		// Update - PUT
@@ -1512,7 +1509,7 @@ function executeQuery($params) {
 	$mysql=str_replace("{DEVICE_DARK_OUTSIDE}",DEVICE_DARK_OUTSIDE,$mysql);
 	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
 
-	$feedback['result'] =  PDOExec($mysql) ." Rows affected";
+	$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
 	return $feedback;
 	
 }
@@ -1632,7 +1629,7 @@ function extractVids($params) {
 
 	$params['importprocess'] = true;
 	$result = readDirs($dir.LOCAL_IMPORT, $params['importprocess']);
-        $feedback['result']['files'] = $result['result'];
+	$feedback['result']['files'] = $result['result'];
 
 //	print_r($files);
 
