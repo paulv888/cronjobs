@@ -494,7 +494,7 @@ if(networkmap_fullscan == 1) genClientList();
 
 
 // echo "<pre>";
-	if (DEBUG_DEVICES) $feedback['result']['devicelist'] = $deviceslist;
+	$feedback['result']['devicelist'] = $deviceslist;
 // echo "</pre>";
 
 	usort($deviceslist, function($a, $b) {

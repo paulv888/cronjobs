@@ -143,9 +143,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$values['schemeID'] = $schemeID;
 			$getparams = http_build_query($values, '',' ');
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
-
-			$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
-			$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
+			$outputfile=  tempnam( sys_get_temp_dir(), 'async-M'.$schemeID.'-o-' );
+			$pidfile=  tempnam( sys_get_temp_dir(), 'async-M'.$schemeID.'-p-' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['message'] = "Initiated ".current($rowshemesteps)['name'].' sequence. Log: '.$outputfile;
 			$feedback['commandstr'] = $cmd;
