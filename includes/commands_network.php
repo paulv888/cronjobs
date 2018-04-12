@@ -1,4 +1,7 @@
 <?php
+define("ALERT_NETWORK_DEVICE_CHANGE", 218);
+define("ALERT_NEW_NETWORK_DEVICE", 219);
+define("ALERT_UNKNOWN_IP_FOUND", 217);
 // define( 'DEBUG_GRAPH', TRUE );
 
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
@@ -28,41 +31,6 @@
 	// }
 	// return $feedback;
 // }
-//define("ALERT_NETWORK_DEVICE_CHANGE", 218);
-//define("ALERT_NEW_NETWORK_DEVICE", 219);
-//define("ALERT_UNKNOWN_IP_FOUND", 217);
-function example(&$params) {
-
-
-        $feedback['result'] = array();
-
-        // calculateProperty($params) ;
-
-        $tarr = explode("___",$params['commandvalue']);
-        $text = $tarr[1];
-        $text = replacePropertyPlaceholders($text, Array('deviceID' => $params['deviceID']));
-        if (strtoupper($text) == "TOGGLE") {            // Toggle
-                if ($params['device']['previous_properties'][$tarr[0]]['value'] == STATUS_ON)
-                        $text = STATUS_OFF;
-                else
-                        $text = STATUS_ON;
-        }
-
-        ini_set('session.use_only_cookies', false);
-        ini_set('session.use_cookies', false);
-        ini_set('session.use_trans_sid', false);
-        ini_set('session.cache_limiter', null);
-        session_start();
-        $_SESSION['properties'][$tarr[0]]['value'] = $text;
-        session_write_close();
-
-        $feedback['result'] = $_SESSION['properties'];
-        $feedback['Name'] = $tarr[0];
-        print_r($_SESSION);
-        return $feedback;
-}
-
-
 function MoveHistory1() {
     $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
 	$result = PDOExec($mysql);
@@ -261,12 +229,15 @@ function ImportSessions1() {
 	return $sessionsimported;
 }
 
-function getDeviceListNew(&$params) {
+function getDeviceList(&$params) {
+
+	$showlist=false;
+	if ($params['caller']['callerID'] == DEVICE_REMOTE) $showlist=true; 
 
 	$feedback['Name'] = 'GetDeviceList';
 	$feedback['result'] = array();
 
-echo  "<pre>";
+// echo  "<pre>";
 //print_r($params);
 
 	$device = $params['device'];
@@ -278,78 +249,95 @@ echo  "<pre>";
 	//
 	//curl -v -L -c c.txt "http://192.168.2.1/login.cgi"  -H "Content-Type: application/x-www-form-urlencoded"  -H "Referer: http://192.168.2.1/Main_Login.asp" 
 	//--data "login_authorization=YWRtaW46S2xvb3R6YWswMQ=="	
-	$url="http://192.168.2.1/login.cgi";
-	$url_r="http://192.168.2.1/Main_Login.asp";
-
+	$url = setURL(array('device' => $device), '/login.cgi');
+	$url_r = setURL(array('device' => $device), '/Main_Login.asp');
+// echo $url.CRLF;
+// echo $url_r.CRLF;
 	$fields = array(
-                'login_authorization' => base64_encode($device['connection']['username'].":".$device['connection']['password']),
+		'login_authorization' => base64_encode($device['connection']['username'].":".$device['connection']['password']),
 	);
-        $fields_string = "";
-        foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
-        rtrim($fields_string, '&');
+	$fields_string = "";
+	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
+	rtrim($fields_string, '&');
 
 	$cookie_file_path = $_SERVER['DOCUMENT_ROOT'].'/tmp/cookies.txt';
 
 	$ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, count($fields));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-        curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-        curl_setopt($ch, CURLOPT_VERBOSE, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-        curl_setopt($ch, CURLOPT_REFERER, $url_r);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_POST, count($fields));
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
+	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
+	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
+	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
 
 
-        $response=curl_exec ($ch);
+	$tmpresponse=curl_exec ($ch);
 	$information = curl_getinfo($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $feedback['result']['Login']= $response;
-        curl_close ($ch);
+	if ($httpcode != 200 && $httpcode != 204) {
+		$feedback['error'] = $httpcode.": ".curl_error($ch);
+		return $feedback;
+	}
+	if (DEBUG_DEVICES) $feedback['result']['curl']['Login']= $information;
+	curl_close ($ch);
 
-echo "code:".$httpcode;
-echo "info".CRLF;
-print_r($information);
-echo "response".CRLF;
-print_r($response);
+// echo "code:".$httpcode;
+// echo "info".CRLF;
+// print_r($information);
+// echo "response".CRLF;
+// print_r($tmpresponse);
 
 	//
 	// Scrape device list
 	//
 	//curl -v -b c.txt "http://192.168.2.1/update_clients.asp" -H "Referer: http://192.168.2.1/index.asp"
-        $url="http://192.168.2.1/update_clients.asp";
-        $url_r="http://192.168.2.1/index.asp";
+	$url = setURL(array('device' => $device), '/update_clients.asp');
+	$url_r = setURL(array('device' => $device), '/index.asp');
+// echo $url.CRLF;
+// echo $url_r.CRLF;
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, false);
-        curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-        curl_setopt($ch, CURLOPT_VERBOSE, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-        curl_setopt($ch, CURLOPT_REFERER, $url_r);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-
-        $response=curl_exec ($ch);
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
+	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
+	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
+	curl_setopt($ch, CURLOPT_REFERER, $url_r);
+	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
+	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
+	
+	$response=curl_exec ($ch);
 	$information = curl_getinfo($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $feedback['result']['Network']= $response;
-        curl_close ($ch);
+	if ($httpcode != 200 && $httpcode != 204) {
+		$feedback['error'] = $httpcode.": ".curl_error($ch);
+		return $feedback;
+	}
+	if (DEBUG_DEVICES) $feedback['result']['curl']['Network']= $information;
+	curl_close ($ch);
 
-echo "code:".$httpcode;
-echo "info".CRLF;
-print_r($information);
-echo "response".CRLF;
-print_r($response);
+// echo "code:".$httpcode;
+// echo "info".CRLF;
+// print_r($information);
+// echo "response".CRLF;
+// print_r($response);
+// exit;
+
 
 	//
 	// Add traffic_warning_0 cookie
@@ -367,8 +355,9 @@ print_r($response);
 	//curl -v -b c.txt "http://192.168.2.1/apply.cgi" -H "Content-Type: application/x-www-form-urlencoded" -H "Accept: text/html" 
 	//-H "Referer: http://192.168.2.1/device-map/clients.asp" --data "action_mode=refresh_networkmap&action_script=&action_wait=5&
 	//current_page=device-map/clients.asp&next_page=device-map/clients.asp"
-	$url="http://192.168.2.1/apply.cgi";
-	$url_r="http://192.168.2.1/device-map/clients.asp";
+	$url = setURL(array('device' => $device), '/apply.cgi');
+	$url_r = setURL(array('device' => $device), '/device-map/clients.asp');
+// echo $url.CRLF;
 
 	$fields = array(
 		'action_mode' => 'refresh_networkmap',
@@ -377,59 +366,83 @@ print_r($response);
 		'current_page' => 'device-map/clients.asp',
 		'next_page' => 'device-map/clients.asp'
 	);
-        $fields_string = "";
-        foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
-        rtrim($fields_string, '&');
+	$fields_string = "";
+	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
+	rtrim($fields_string, '&');
 
 	$ch = curl_init();
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, count($fields));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-        curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-        curl_setopt($ch, CURLOPT_VERBOSE, 1);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded','Accept: text/html'));
-        curl_setopt($ch, CURLOPT_REFERER, $url_r);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_POST, count($fields));
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
+	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
+	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded','Accept: text/html'));
+	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
+	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
 
-        $response=curl_exec ($ch);
+	$tmpresponse=curl_exec ($ch);
 	$information = curl_getinfo($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $feedback['result']['Refresh']= $response;
-        curl_close ($ch);
+	if ($httpcode != 200 && $httpcode != 204) {
+		$feedback['error'] = $httpcode.": ".curl_error($ch);
+	}
+	if (DEBUG_DEVICES) $feedback['result']['curl']['Refresh']= $information;
+	curl_close ($ch);
 
-echo "code:".$httpcode;
-echo "info".CRLF;
-print_r($information);
-echo "response".CRLF;
-print_r($response);
+// echo "code:".$httpcode;
+// echo "info".CRLF;
+// print_r($information);
+// echo "response".CRLF;
+// print_r($tmpresponse);
 
 
 	//
 	// Logout
 	//
-	$page = 'Logout.asp';
-	$device['connection']['page'] = $page;
-	$url = setURL(array('device' => $device), $page);
+	$url = setURL(array('device' => $device), '/Logout.asp');
+	$url_r = setURL(array('device' => $device), '/index.asp');
+// echo $url.CRLF;
+// echo $url_r.CRLF;
 
-	$curl = RestClient::get($url);
-	if ($curl->getResponseCode() != 200 && $curl->getResponseCode() != 204) {
-		$feedback['error'] = $curl->getresponseCode().": ".$curl->getResponse();
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
+	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
+	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
+	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
+	curl_setopt($ch, CURLOPT_REFERER, $url_r);
+	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
+	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
+	
+	$tmpresponse=curl_exec ($ch);
+	$information = curl_getinfo($ch);
+	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	if ($httpcode != 200 && $httpcode != 204) {
+		$feedback['error'] = $httpcode.": ".curl_error($ch);
 		return $feedback;
 	}
-	$response= $curl->getResponse();
-	$feedback['result']['Logout']=$reponse;
+	if (DEBUG_DEVICES) $feedback['result']['curl']['Logout']= $information;
+	curl_close ($ch);
 
-echo "************".CRLF;
-echo $response;
-echo  "</pre>";
-exit;
-
+// echo "code:".$httpcode;
+// echo "info".CRLF;
+// print_r($information);
+// echo "tmpresponse".CRLF;
+// print_r($response);
+// exit;
 
 	$pattern = "/fromNetworkmapd: '(.*?)'./si";
 
@@ -465,7 +478,8 @@ if(networkmap_fullscan == 1) genClientList();
         $t1 = explode("<", $matches[1][0]);
     } else {
     	echo $response;
-		return -1;
+		$feedback['error'] = "Error: No devices found";
+		return $feedback;
     } 
    	
 	unset($t1[0]);
@@ -479,16 +493,18 @@ if(networkmap_fullscan == 1) genClientList();
 	}
 
 
-//echo "<pre>";
-//print_r($deviceslist);
-//echo "</pre>";
+// echo "<pre>";
+	if (DEBUG_DEVICES) $feedback['result']['devicelist'] = $deviceslist;
+// echo "</pre>";
 
 	usort($deviceslist, function($a, $b) {
 	    return ip2long($a[2]) - ip2long($b[2]);
 	});
 
+	$newmacs=0;
+	$changedips=0;
 	$devicesimported=0;
-        if ($showlist) echo "<pre><table><thead><tr><th>Name</th><th>IP</th><th>Connection</th><th>Mac</th></tr></thead><tbody>";
+    if ($showlist) $feedback['message']="<pre><table><thead><tr><th>Name</th><th>IP</th><th>Connection</th><th>Mac</th></tr></thead><tbody>";
 	foreach ($deviceslist as $device) {
 		$name = $device[1];
 		$ip = $device[2];
@@ -498,9 +514,9 @@ if(networkmap_fullscan == 1) genClientList();
 				" FROM  `ha_mf_device_ipaddress`" .  
 				" WHERE mac='".$mac."'";  
 		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
-                        if ($showlist) {
-                                echo "<tr><td>$name</td><td>$ip</td><td>$connection</td><td>$mac</td></tr>";
-                        }
+			if ($showlist) {
+					$feedback['message'] .= "<tr><td>$name</td><td>$ip</td><td>$connection</td><td>$mac</td></tr>";
+			}
  		// does not work anymore on name, names are empty
 			if (strlen($name) == 0) $name = $rowdevice['name'];
 //			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
@@ -509,7 +525,7 @@ if(networkmap_fullscan == 1) genClientList();
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
 				if ($rowdev = FetchRow($mysql)) $deviceID = $rowdev['id']; else $deviceID = 0;
-				$params = array('callerID' => MY_DEVICE_ID, 
+				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
 								'schemeID' => ALERT_NETWORK_DEVICE_CHANGE,
@@ -520,26 +536,30 @@ if(networkmap_fullscan == 1) genClientList();
 								"ha_alerts___v1" => $rowdevice['name'],
 								"ha_alerts___v2" => $name, 
 								"ha_alerts___v3" => $rowdevice['ip'],
-								"ha_alerts___v4" => $ip);
-				print_r(executeCommand($params));
+								"ha_alerts___v4" => $ip,
+								"commandvalue" => $rowdevice['friendly_name']);
+				$feedback['result']['Changed'][] = executeCommand($command);
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", 
 					`last_list_date` = "'.date("Y-m-d H:i:s").'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
 				//echo $mysql;
 				PDOExec($mysql);	
+				$changedips++;
 			} else {
 				PDOUpdate('ha_mf_device_ipaddress',array('last_list_date' => date("Y-m-d H:i:s")),array('id' => $rowdevice['id']));	
+				$devicesimported++;
 			}
 		}	else {				// New MAC
-			$params = array('callerID' => MY_DEVICE_ID, 
-							'deviceID' => MY_DEVICE_ID, 
+			$command = array('callerID' => $params['caller']['callerID'], 
+							'deviceID' => $params['caller']['callerID'], 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
 							'schemeID' => ALERT_NEW_NETWORK_DEVICE,
 							"ha_alerts___v1" => $mac, 
 							"ha_alerts___v2" => $name, 
 							"ha_alerts___v3" => $ip, 
-							"ha_alerts___v4" => $connection);
-			print_r(executeCommand($params));
+							"ha_alerts___v4" => $connection,
+							'commandvalue'   => $rowdevice['name']."\n".$ip);
+			$feedback['result']['New MAC'][] = executeCommand($command);
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,
 						`mac` ,
@@ -555,7 +575,7 @@ if(networkmap_fullscan == 1) genClientList();
 						'"0");';
 		
 				PDOExec($mysql);	
-				$devicesimported++;
+				$newmacs++;
 		}
 		//
 		//		Release duplicate IP's
@@ -565,11 +585,15 @@ if(networkmap_fullscan == 1) genClientList();
 				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
 		PDOExec($mysql);
     }
-    if ($showlist) echo "</tbody></table>";
-
+    if ($showlist) 
+		$feedback['message'] .= "</tbody></table>";
+	else
+		$feedback['message'] = "Devices found: $devicesimported, New MACs: $newmacs, Changed IP's: $changedips";
 
     //echo "</pre>";
-	return $devicesimported;
+	
+	return $feedback;
+;
 
 }
 ?>
