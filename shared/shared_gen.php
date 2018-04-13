@@ -301,18 +301,10 @@ function setURL($params, $morepage = null) {
 	} else {
 		$url = $connect['targetaddress'];
 	}
-	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'].'/';
-	if (!empty($connect['page'])) $url .= $connect['page'];
+	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'];
+	if (!empty($connect['page'])) $url .= '/'.ltrim($connect['page'],'/');
 	if (!empty($morepage)) $url .= $morepage;
-	// $commandstr = $url;
-	
-	// echo $commandstr.CRLF;
-	// if (!empty($connect['username']) && !empty($connect['password'])) {
-		// $url = str_replace('//','//'.$connect['username'].':'.$connect['password'].'@', $url);
-		// $commandstr = str_replace('//','//'.'***:***@', $commandstr);
-	// }
-// echo $commandstr.CRLF;
-// echo "<pre>";
+
 	return $url;
 }
 

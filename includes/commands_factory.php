@@ -847,7 +847,7 @@ function sendX10Command(&$params) {
 	//
 	foreach ($commands as $command) {
 		//$url=$params['device']['connection']['targetaddress'].":".$params['device']['connection']['targetport'].$params['device']['connection']['page'].$command.'=I=3';
-		$url=setURL($params, $feedback['commandstr']);
+		$url=setURL($params);
 		$feedback['commandstr'] = $url.$command.'=I=3';
 		if (DEBUG_DEVICES) echo $url.CRLF;
 		$curl = restClient::get($url.$command.'=I=3',null,setAuthentication($params['device']));
