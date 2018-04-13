@@ -490,11 +490,12 @@ if(networkmap_fullscan == 1) genClientList();
 	$deviceslist = array();
 	foreach($t1 as $row) {
 		$deviceslist[] = explode(">", $row);
+		$deviceslog[] = json_encode(explode(">", $row));
 	}
 
 
 // echo "<pre>";
-	$feedback['result']['devicelist'] = $deviceslist;
+	$feedback['result']['devicelist'] = $deviceslog;
 // echo "</pre>";
 
 	usort($deviceslist, function($a, $b) {

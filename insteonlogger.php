@@ -60,7 +60,7 @@ while (true) {
 
 		$page = 'buffstatus.xml';
 		$device['connection']['page'] = $page;
-		$url = setURL(array('device' => $device), $page);
+		$url = setURL(array('device' => $device));
 
 		$page = '/1?XB=M=1';
 		$device['connection']['page'] = $page;
