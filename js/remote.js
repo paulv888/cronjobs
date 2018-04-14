@@ -243,6 +243,7 @@ if(!window.scriptRemoteHasRun) {
 			jQuery("#autorefresh").bind(eventname, function(event){
 				if (jQuery(this).hasClass('active')) {
 					clearInterval(VloRemote.timer);
+					VloRemote.timer = false;
 				} else {
 					VloRemote.timer = startTimer();
 				}
@@ -282,12 +283,13 @@ if(!window.scriptRemoteHasRun) {
 			else {
 			  document.body.className = this[hidden] ? "hidden" : "visible";
 			  if (this[hidden]) {
-				clearInterval(VloRemote.timer);
-			} else {
-				// Show user we are refreshing
-				refreshDiv(true, false);
-				VloRemote.timer = startTimer();
-			}
+					clearInterval(VloRemote.timer);
+					VloRemote.timer = false;
+				} else {
+					// Show user we are refreshing
+					refreshDiv(true, false);
+					VloRemote.timer = startTimer();
+				}
 			}
 		  }
 
