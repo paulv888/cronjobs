@@ -14,7 +14,7 @@ define("MIN_ACCURACY", 100);
  */
 
 
-$file = 'gpslogger.log';
+$file = 'log/gpslogger.log';
 $current = file_get_contents($file);
 if (!empty($_GET)) {
   $current .= date("Y-m-d H:i:s").":Get ".json_encode($_GET)."\n";

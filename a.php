@@ -22,7 +22,7 @@ if (isset($_GET["Message"])) {
 	$sdata = file_get_contents("php://input");
 }
 
-$file = 'arduino.log';
+$file = 'log/arduino.log';
 $current = file_get_contents($file);
 $current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 file_put_contents($file, $current);
