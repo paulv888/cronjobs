@@ -19,7 +19,7 @@ include_once 'shared/simple_html_dom.php';
 include_once 'includes/monitor_devices.php';
 include_once 'includes/commands_thermo.php';
 include_once 'includes/thermo_common.php';
-include_once 'includes/media_library_commands.php';
+include_once 'includes/commands_media.php';
 
 include_once 'Classes/OAuth.php';
 include_once 'Classes/thermo_lib.php';

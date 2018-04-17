@@ -562,7 +562,7 @@ function moveMusicVideo($params) {
 			}
 		}
 	}
-	$file = 'mv_videos.log';
+	$file = 'log/mv_videos.log';
 	$log = file_get_contents($file);
 	if (array_key_exists('error', $feedback)) 
 		$log .= date("Y-m-d H:i:s").": Error: ".$feedback['error'];
@@ -602,11 +602,11 @@ function addToFavorites(&$params) {
 //echo "</pre>";	
 } 
 
-function rebootFireTV($params) {
+function fireTVreboot($params) {
 
-	$feedback['Name'] = 'rebootFireTV';
+	$feedback['Name'] = 'fireTVreboot';
 	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'/rebootFireTV.sh';
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVreboot.sh';
 	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -619,7 +619,7 @@ function fireTVnetflix($params) {
 
         $feedback['Name'] = 'fireTVnetflix';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -632,7 +632,7 @@ function fireTVkodi($params) {
 
         $feedback['Name'] = 'fireTVkodi';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -645,7 +645,7 @@ function fireTVcamera($params) {
 
         $feedback['Name'] = 'fireTVcamera';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -658,7 +658,7 @@ function fireTVsleep($params) {
 
         $feedback['Name'] = 'fireTVsleep';
         $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/fireTVsleep.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
+        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVsleep.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
         $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
         $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
         exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -1482,7 +1482,7 @@ function checkSyslog(&$params) {
 			// $dev = search_array_key_value($devs, 'value', $row['host']);
 			// echo "<pre>".$feedback['Name'].': '; print_r($dev); echo "</pre>";
 			if (empty($row['deviceID'])) {		// Not found
-				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>290, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>SCHEME_ALERT_NORMAL, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
 			} else {
 				$props = getDeviceProperties(array('deviceID' => $row['deviceID'])); 
 				$feedback['result']['debug'][]=$props;
