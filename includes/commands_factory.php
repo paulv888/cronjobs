@@ -1433,7 +1433,7 @@ function getStereoSettings(&$params) {
 		// $properties['File']['value'] = '*';
 		// $properties['Artist']['value'] = '*';
 		// $properties['Title']['value'] =  '*';
-		// $properties['Thumbnail']['value'] = "https://vlohome.no-ip.org/images/headers/offline.png?t=".rand();
+		// $properties['Thumbnail']['value'] = "https://xxxx/images/headers/offline.png?t=".rand();
 		// $properties['PlayingID']['value'] =  '0';
 		// $params['device']['properties'] = $properties;
 		// $feedback['error']='Error - Nothing playing';
@@ -1556,9 +1556,7 @@ function readFlashAir(&$params) {
 			} else {
 				$feedback['result'][] = $infile.' '.$tofile;
 				if (!($numfiles % 3)) {
-				//http://weird:sparkle@192.168.2.35/axis-cgi/jpg/image.cgi?t={calculate___rand()}|/home/www/vlohome/images/lastimage/O-StairsLarge.jpg
 				copy($tofile,'/home/www/vlohome/images/lastimage/'.$params['device']['description'].'.jpg');
-				//Motion Detected|On deck stairs camera|https://vlohome.no-ip.org/images/lastimage/O-StairsLarge.jpg?t={calculate___rand()}
 				$command = array('callerID' => $params['caller']['callerID'], 
 					'caller'  => $params['caller'],
 					'deviceID' => $params['deviceID'], 
