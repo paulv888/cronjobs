@@ -217,7 +217,7 @@ function sendCommand(&$thiscommand) {
 	if (DEBUG_RETURN) print_r($thiscommand);
 	if (DEBUG_RETURN) echo "</pre>".CRLF;
 
-	if (!is_null($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') {
+	if (!is_null($thiscommand['commandvalue']) && !is_array($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') {
 		$text =  $thiscommand['commandvalue'];
 		if (DEBUG_PARAMS) echo 'Text: '.$text.CRLF;
 		if (array_key_exists('result',  $feedback))			// Still have functions not returning $result['result']

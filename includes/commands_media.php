@@ -983,7 +983,7 @@ function createThumbNail($file, $importprocess) {
 	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
 
 	$params = '"'.$file['dirname'].'" "'.$file['filename'].'" "'.$file['extension'].'"';
-	$cmd = getPath().'bin/createThumb.sh '.$params;
+	$cmd = getPath().'/bin/createThumb.sh '.$params;
 	$outputfile=  tempnam( sys_get_temp_dir(), 'thumb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'thumb' );
 	exec(sprintf("%s > %s 2>&1 echo $! >> %s", $cmd, $outputfile, $pidfile));
