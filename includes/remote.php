@@ -125,11 +125,12 @@ function loadRemoteDiv($divid, $params) {
 				}
 				if ($rowremotekeys['inputtype']=="display") {
 						$fieldtype = "div";
-							$fieldclass = $rowremotekeys['inputtype'];
+						$fieldclass = $rowremotekeys['inputtype'];
 				}
-				if ($rowremotekeys['inputtype']=="button") { 
+				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="link") { 
 						$fieldtype = "button";
-						$fieldclass = "btn btn-block button ". $clicks;
+						$fieldclass = "btn btn-block button ";
+						if ($rowremotekeys['inputtype']=="button") $fieldclass .= $clicks;
 				} 
 				if  ($rowremotekeys['type_image'] == 1 || $rowremotekeys['type_image'] == 2) {
 					if ($rowremotekeys['booticon'] != null) {
@@ -138,7 +139,7 @@ function loadRemoteDiv($divid, $params) {
 						$booticon = $rowremotekeys['type___booticon'];
 					}
 				}
-				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display") {
+				if ($rowremotekeys['inputtype']=="button" || $rowremotekeys['inputtype']=="display" || $rowremotekeys['inputtype']=="link") {
 					$text = getDisplayText($rowremotekeys);
 					echo '<'.$fieldtype.' class="'.$fieldclass;
 					if (strlen($status)>1) echo ' '.$status;
@@ -156,6 +157,8 @@ function loadRemoteDiv($divid, $params) {
 						echo '</i>';
 					} 
 					if (isset($deviceID))$text = replacePropertyPlaceholders($text, Array('deviceID' => $deviceID));
+					//<a href="/index.php/outside" class="btn btn-block button">Outside</a>
+					if ($rowremotekeys['inputtype']=="link") $text = '<a target="_blank" href="'.$rowremotekeys['inputoptions'].'" class="buttontext">'.$rowremotekeys['name'].'</a>';
 					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
 					echo "</td>\n\r";

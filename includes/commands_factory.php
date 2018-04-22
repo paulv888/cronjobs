@@ -891,6 +891,7 @@ function sendGenericHTTP(&$params) {
 	case "POSTTEXT":         // Yahama AV & IrrigationCaddy at the moment
 	case "POSTURL":          // Web Arduino/ESP8266
 	case "JSON":             // Wink
+	case "PUT":              // Dexa
 		if (DEBUG_DEVICES) echo $targettype."</p>";
 		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$tmp1 = explode('?', $tcomm);
@@ -914,11 +915,18 @@ function sendGenericHTTP(&$params) {
 			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
+		} elseif ($targettype == "PUT") {
+			//parse_str($tcomm, $params);
+			$postparams = $tcomm;
+			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			//echo $url." Params: ".$postparams.CRLF;
+			$feedback['commandstr'] = $url.' '.$postparams;
+			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] = $url.$tcomm;
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
-		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
 			if ($targettype == "JSON") {
@@ -999,11 +1007,10 @@ function sendGenericHTTP(&$params) {
 	foreach ($feedback['result'] as $key => $value) {	
 		if (!is_array($value) && strtoupper($value) == "OK") $feedback['result'][$key]= "";
 	}
-	// echo "<pre>";
-	// echo "***";
-	// print_r($feedback);
-	// echo "</pre>";
-	
+//	 echo "<pre>";
+//	 echo "***";
+//	 print_r($feedback);
+//	 echo "</pre>";
 	
 	if (array_key_exists('result', $feedback)) {
 		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
@@ -1679,5 +1686,175 @@ function extractVids($params) {
 //	echo "<pre>".CRLF;
 
 	return $feedback;
+
 }
+
+function importDexas(&$params) {
+//	Command in:
+// 		$params
+//
+//  Command out:
+//		$feedback type Array
+//			with keys: 
+//						'Name'   		(String)	-> Name of executed command						REQUIRED
+//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
+//						'message' 		(String)	-> To display on remote
+//						'commandstr' 	(String)	-> for eventlog, actual command send
+//      if error then	'error'			(String)	-> Error description
+//						Nothing else allowed 
+// function templateFunction(&$params) {
+
+	// $feedback['Name'] = 'templateFunction';
+	// $feedback['commandstr'] = "I send this";
+	// $feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	// if (DEBUG_COMMANDS) {
+		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	// }
+	// return $feedback;
+// }
+
+	$feedback['Name'] = 'importDexas';
+	$feedback['commandstr'] = json_encode($params);
+	$feedback['result'] = array();
+	$feedback['message'] = "all good";
+
+
+	// if (DEBUG_COMMANDS) {
+		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	// }
+
+	$deviceID = $params['deviceID'];
+        $thiscommand['loglevel'] = LOGLEVEL_COMMAND;
+        $thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
+        $thiscommand['caller'] = $params['caller'];
+        $thiscommand['commandID'] = 1;
+        $thiscommand['deviceID'] = $params['deviceID'];
+        $thiscommand['device']['id'] =  $deviceID;
+        $feedback['SendCommand']=sendCommand($thiscommand);
+ //     echo "<pre>+++GetDexas";
+ //     print_r($feedback);
+
+	if (array_key_exists(0,$feedback['SendCommand']['result'])) {
+		$dexaResponse = json_decode($feedback['SendCommand']['result'][0], true);
+
+
+//print_r($dexaResponse);
+ //     echo "</pre>===GetDexas";
+
+
+        $dexasimported=0;
+        $mysql = "TRUNCATE `pg_dexas`;";
+        PDOExec($mysql);
+        $mysql = "TRUNCATE `pg_configurations`;";
+        PDOExec($mysql);
+        $mysql = "TRUNCATE `pg_configurations_details`;";
+        PDOExec($mysql);
+
+	$dexas = $dexaResponse['data'];
+        foreach ($dexas  as $dexa) {
+                PDOinsert('pg_dexas', $dexa);
+
+                $dexasimported++;
+
+        }
+	}
+	$feedback['message'] = $dexasimported." Dexas imported";
+		
+        return $feedback;
+
+}
+function putDexas(&$params) {
+//	Command in:
+// 		$params
+//
+//  Command out:
+//		$feedback type Array
+//			with keys: 
+//						'Name'   		(String)	-> Name of executed command						REQUIRED
+//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
+//						'message' 		(String)	-> To display on remote
+//						'commandstr' 	(String)	-> for eventlog, actual command send
+//      if error then	'error'			(String)	-> Error description
+//						Nothing else allowed 
+// function templateFunction(&$params) {
+
+	// $feedback['Name'] = 'templateFunction';
+	// $feedback['commandstr'] = "I send this";
+	// $feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	// if (DEBUG_COMMANDS) {
+		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	// }
+	// return $feedback;
+// }
+
+	$feedback['Name'] = 'importDexas';
+	$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+	$feedback['message'] = "all good";
+
+//echo "<pre>";
+//print_r($params);
+//echo "</pre>";
+
+//exit;
+
+	// if (DEBUG_COMMANDS) {
+		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
+	// }
+        $dexasput=0;
+//        $mysql = "TRUNCATE `pg_dexas`;";
+//        PDOExec($mysql);
+
+	$dexas = $params['commandvalue'];
+        foreach ($dexas  as $dexa) {
+		$deviceID = $params['deviceID'];
+ 	       	$thiscommand['loglevel'] = LOGLEVEL_COMMAND;
+        	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
+	        $thiscommand['caller'] = $params['caller'];
+        	$thiscommand['commandID'] = 7;
+	        $thiscommand['deviceID'] = $params['deviceID'];
+        	$thiscommand['device']['id'] =  $deviceID;
+	        $feedback['SendCommand']=sendCommand($thiscommand);
+        }
+
+	return $feedback;
+ //     echo "<pre>+++GetDexas";
+ //     print_r($feedback);
+}
+
+
+function reloadConfgss(&$params) {
+//echo "<pre>";
+$origData = $formModel->getOrigData()[0];
+//print_r($origData);
+//echo $origData->{'pg_dexas___dexaId'};
+
+$result = executeCommand(Array('callerID'=>264,'messagetypeID'=>"MESS_TYPE_COMMAND",'deviceID' => 264, 'commandID'=>2,'commandvalue' => $origData->{'pg_dexas___dexaId'}));
+
+//    echo "<pre>";
+//    print_r($result);
+//exit;
+if (array_key_exists('error',$result['SendCommand'][0])) {
+  JFactory::getApplication()->enqueueMessage($result['SendCommand'][0]['error'], 'error');
+} elseif (array_key_exists(0,$result['SendCommand'][0]['result'])) {
+  $dexaResponse = json_decode($result['SendCommand'][0]['result'][0], true);
+//print_r($dexaResponse);
+ //     echo "</pre>===GetDexas";
+  $dexasimported=0;
+  $configs = $dexaResponse['data'];
+  foreach ($configs as $config) {
+    PDOupsert('pg_configurations', $config, array('configurationId' => $config['configurationId']));
+    $dexasimported++;
+  }
+}
+
+JFactory::getApplication()->enqueueMessage($dexasimported." Configurations upserted");
+}
+
 ?>

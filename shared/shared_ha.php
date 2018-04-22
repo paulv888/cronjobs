@@ -359,7 +359,7 @@ function getDeviceProperties($deviceproperty){
 					) */
 // If DeviceID given, then only that device, (or deviceList) 
 
-	if (array_key_exists('description', $deviceproperty)) {
+	if (array_key_exists('description', $deviceproperty)) {			// Find property ID if description given
 		$propertyName = $deviceproperty['description'];
 		$deviceproperty['propertyID'] = getProperty($deviceproperty['description'])['id'];
 		unset($deviceproperty['description']);  //
@@ -439,7 +439,7 @@ function getStatusLink($devprop) {
 			$feedback['Status'] = $property['value'];
 			$feedback['PropertyID'] =$devprop['propertyID'];
 		}
-		if ($link = FetchRow('SELECT ln FROM `ha_vw_monitor_link_status` WHERE active > 1 AND deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['ln'];
+		if ($link = FetchRow('SELECT ln FROM `ha_vw_monitor_link_status` WHERE active = 1 AND deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['ln'];
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
 		$feedback['DeviceID'] = $devprop['deviceID'];
 	}
