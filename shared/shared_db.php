@@ -104,7 +104,7 @@ function PDOExec($mysql) {
 	
 }
 
-function PDOupsert($table, $fields, $where) {
+function PDOupsert($table, $fields, $where, $debug=false) {
 
 
 	$i=0;
@@ -118,10 +118,13 @@ function PDOupsert($table, $fields, $where) {
 		$i++;
 	}
 
+	// print_r(FetchRow($sql));
 	if (FetchRow($sql)) {
+	// echo "update";
 		PDOupdate($table, $fields, $where);
 	} else {
-		PDOinsert($table, $fields, true);
+	// echo "insert";
+		PDOinsert($table, $fields, $debug);
 	}
 }
 
@@ -186,18 +189,19 @@ function PDOupdate($table, $fields, $where){
 	return $result;
 }
 
-function PDOinsert($table, $fields){
+function PDOinsert($table, $fields, $debug = false){
 	$pdo = openDB();
 
     $placeholder = array();
 	$values = array_values($fields);
 	$cols = array_keys($fields);
-	
+
     for ($i = 0; $i < count($values); $i++) $placeholder[] = '?';
 
-	//echo "count".count($values);
-	//print_r($cols);
-	//print_r($values);
+	// echo "count".count($values);
+	// print_r($cols);
+	// print_r($values);
+
 	
 	foreach ($values AS $key => $value) {
 //		echo "Key: $key; Value: $value<br />\n";
@@ -216,7 +220,9 @@ function PDOinsert($table, $fields){
     $mysql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
     $mysql.= 'VALUES (' . implode(", ", $placeholder) . ')';
 
-	// print_r($values);
+	// echo($mysql);
+
+ // if ($debug) exit;
 	
  	try
 	{
