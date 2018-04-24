@@ -47,7 +47,10 @@ $params = $_POST;
 if (DEBUG_INPUT) {echo "<pre>Params:  ";print_r($params);echo "</pre>";}
 
 if (!headers_sent()) {
-	session_start();
+  if(!isset($_SESSION)) 
+    { 
+        session_start(); 
+    } 
 	// unset($_SESSION['PARAMS']);
 	if (DEBUG_INPUT) {echo '<pre>Prev Session Params '; print_r($_SESSION);echo '</pre>';}
 	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
@@ -72,9 +75,10 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 	if (DEBUG_INPUT) {echo "<pre>before executeCommand ";print_r($params);echo "</pre>";}
 	
 	$result = executeCommand($params);
-	if (is_array($result)) 
+	if (is_array($result)) {
 //		print_r($result);
 		echo "ok";
+	}
 	else
 		// ob_start("ob_gzhandler");
 		echo $result;

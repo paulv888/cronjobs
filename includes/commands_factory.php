@@ -929,7 +929,7 @@ function sendGenericHTTP(&$params) {
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
-			if ($targettype == "JSON") {
+			if ($targettype == "JSON" || $targettype == "PUT") {
 				$feedback['result'] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();

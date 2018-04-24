@@ -14,7 +14,7 @@ function getWeather($params) {
 	$deviceID = $params['deviceID'];
 
 	$feedback['Name'] = 'getWeather';
-	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/".MY_ZIP.".json";
+	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/pws:".MY_STATION.".json";
 	$feedback['result'] = array();
 
 	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']),30);
