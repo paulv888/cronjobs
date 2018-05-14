@@ -317,7 +317,7 @@ class RestClient {
       * @return RestClient
       */
      public static function delete($url,array $params=null,$credentials=null,$timeout=null) {
-         return self::call("DELETE",$url,$params,$credentials,$timeout);
+         return self::call("DELETE",$url,$params,$credentials, null,$timeout);
      }
 
      /**

@@ -393,9 +393,9 @@ function executeCommand($callerparams) {
 
 function RemoteKeys($in, $params) {
 
- // echo "<pre>";
- // print_r($params);
- // print_r($in);
+// echo "<pre>";
+// print_r($params);
+// print_r($in);
 	if ($in['show_result']) {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);

@@ -218,7 +218,7 @@ function PDOinsert($table, $fields, $debug = false){
 
 	
     $mysql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
-    $mysql.= 'VALUES (' . implode(", ", $placeholder) . ')';
+    $mysql.= 'VALUES (' . implode(", ", $placeholder) . ');';
 
 	// echo($mysql);
 
