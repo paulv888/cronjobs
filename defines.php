@@ -1,6 +1,6 @@
 <?php
 // process configuration
-define("INSTEON_SLEEP_MICRO", 300000); // 500mS
+define("INSTEON_SLEEP_MICRO", 100000); // 500mS
 
 define("SEVERITY_NONE", 0);
 define("SEVERITY_DANGER", 1);

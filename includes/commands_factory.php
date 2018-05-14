@@ -891,7 +891,8 @@ function sendGenericHTTP(&$params) {
 	case "POSTTEXT":         // Yahama AV & IrrigationCaddy at the moment
 	case "POSTURL":          // Web Arduino/ESP8266
 	case "JSON":             // Wink
-	case "PUT":              // Dexa
+	case "PUT":           // Dexa
+	case "DELETE":           // Dexa
 		if (DEBUG_DEVICES) echo $targettype."</p>";
 		$tcomm = replaceCommandPlaceholders($params['command'],$params);
 		$tmp1 = explode('?', $tcomm);
@@ -922,6 +923,13 @@ function sendGenericHTTP(&$params) {
 			//echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
+		} elseif ($targettype == "DELETE") {
+			//parse_str($tcomm, $params);
+			$postparams = $tcomm;
+			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			//echo $url." Params: ".$postparams.CRLF;
+			$feedback['commandstr'] = $url.' '.$postparams;
+			$curl = restClient::delete($url, null, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] = $url.$tcomm;
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
@@ -1325,7 +1333,7 @@ Update - Put
 			$params['device']['connection']['page'] .= $tmp1[0];
 			$tcomm = $tmp1[1];
 		} 
-		$url=setURL($params, $feedback['commandstr']);
+		$url=setURL($params);
 
 		$postparams = json_encode($send_params,JSON_UNESCAPED_SLASHES);
 		$feedback['commandstr'] = $url.' '.$postparams;

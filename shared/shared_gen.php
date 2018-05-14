@@ -305,7 +305,7 @@ function setURL($params, $morepage = null) {
 	if (!empty($connect['page'])) $url .= '/'.ltrim($connect['page'],'/');
 	if (!empty($morepage)) $url .= $morepage;
 
-	return $url;
+	return trim($url);
 }
 
 function setAuthentication($device) {
