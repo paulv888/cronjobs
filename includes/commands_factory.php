@@ -770,6 +770,10 @@ function sendInsteonCommand(&$params) {
 	$feedback['Name'] = 'sendInsteonCommand';
 	$feedback['result'] = array();
 
+//echo "<pre>";
+//print_r($params);
+//echo "</pre>";
+
 	global $inst_coder;
 	if ($inst_coder instanceof InsteonCoder) {
 	} else {
@@ -794,12 +798,33 @@ function sendInsteonCommand(&$params) {
 	$url = setURL($params);
 	$feedback['commandstr'] = $url.$tcomm.'=I=3';
 	if (DEBUG_DEVICES) echo $url.CRLF;
+
+
+
+	$numberOfAttempts = 10;
+	$retry = 0;
+	do {
+        	if (PDOUpdate('ha_mi_connection', array('semaphore' => 1) , array('id' => $params['device']['connection']['id']))) {         // 1 = success got it
+                	//echo "Got semaphore, get out".CRLF;
+	                break;
+	        } else {        // 0 = busy
+	        	//echo "No semaphore, retry".CRLF;
+        	        usleep(INSTEON_SLEEP_MICRO);
+	                $retry ++;
+	        }
+	} while( $retry < $numberOfAttempts);
+
+	// Send it anyway
+    usleep(INSTEON_SLEEP_MICRO);
 	$curl = restClient::get($url.$tcomm.'=I=3',null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 	else
 		$feedback['result'][] = $curl->getresponse();
-	usleep(INSTEON_SLEEP_MICRO);
+
+	// reset SEMAPHORE
+        PDOUpdate('ha_mi_connection', array('semaphore' => 0) , array('id' => $params['device']['connection']['id']));
+
 
 	if (array_key_exists('error', $feedback)) {
 		if ($params['dimmable'] == "YES") {
