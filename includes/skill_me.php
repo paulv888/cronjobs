@@ -1,6 +1,6 @@
 <?php
-require_once 'includes.php';
-require_once 'includesAlexa.php';
+//define( 'DEBUG_ALX', TRUE );
+if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
 
 define("MY_DEVICE_ID", 283);
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
@@ -30,6 +30,7 @@ $commandMap = [
 	"SessionEndedRequest"   =>       "421",
 	"AlertsIntent"   =>              "422",
 	"YesIntent"   =>                 "423",
+	"ReportIntent"   =>              "446",
 	"NoIntent"   =>                  "424"
 ];
 
@@ -148,6 +149,7 @@ function ShortAnswerIntent($request, $session, $response) {
 			$request->intentName = $orgIntent;
 			break;
 		case "DeviceStatusIntent":
+		case "DeviceReportIntent":
 			$request->slots->Device = $findelse;
 			$request->intentName = $orgIntent;
 			break;
@@ -280,14 +282,16 @@ function AnySecurityOpenIntent($request, $session, $response) {
 function LocationStatusIntent($request, $session, $response) {
 
 	global $log;
-	$feedback['Name'] = 'DeviceStatusIntent';
+	$feedback['Name'] = 'LocationStatusIntent';
 
 	$responses = array ("The %s is %s", "The status of the %s is %s.");
 
-	$findDevice = strtolower(isset($request->slots->Device) ? $request->slots->Device : "system");
+	// print_r($request);
+	
+	$findDevice = strtolower(isset($request->slots->Location) ? $request->slots->Location : "system");
 	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
 	$findProperty = "Status";
-	$log['data'] = "Device: ".$findDevice;
+	$log['data'] = "Location: ".$findDevice;
 
 	if ($findDevice == "home" || $findDevice == "system") {
 		$feedback['result'] = homeStatus($request, $session, $response);
@@ -301,7 +305,7 @@ function LocationStatusIntent($request, $session, $response) {
 	} else {
 		$response->respond("Sorry which device you want?")
 		 ->reprompt("Sorry which device you want?");
-		$response->sessionAttributes(Array("intentSequence"=>"DeviceStatusIntent"));
+		$response->sessionAttributes(Array("intentSequence"=>"LocationStatusIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "Cannot find device";
 		return $feedback;
@@ -358,7 +362,7 @@ function DeviceStatusIntent($request, $session, $response) {
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
+//	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
 
 	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
 	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
@@ -376,6 +380,77 @@ function DeviceStatusIntent($request, $session, $response) {
 	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
 
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
+	$response->respond($answer)->withCard(strip_tags($answer));
+	$feedback['message'] = $answer;
+	$feedback['result'] = $response->tell();
+	return $feedback;
+
+}
+
+function DeviceReportIntent($request, $session, $response) {
+
+	global $log;
+	$feedback['Name'] = 'DeviceReportIntent';
+
+	$responses = array ("<speak>Here is a full report on the %s");
+	$responseProperty = "%s is %s";
+
+	$findDevice = strtolower(isset($request->slots->Device) ? $request->slots->Device : "system");
+	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
+	$log['data'] = "Device: ".$findDevice;
+
+	$found = findDeviceByName($findDevice);
+	if (DEBUG_ALX) { print_r($found);}
+	if (!empty($found)) { 
+		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
+	} else {
+		$response->respond("Sorry which device you want?")
+		 ->reprompt("Sorry which device you want?");
+		$response->sessionAttributes(Array("intentSequence"=>"DeviceReportIntent"));
+		$feedback['result'] = $response->ask();
+		$feedback['error'] = "Cannot find device";
+		return $feedback;
+	}
+
+	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
+//	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
+
+
+	$answer = ["" , ""];
+
+	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID));
+
+	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
+	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
+
+	if ($deviceProperties[$found]['invertstatus'] == "0") {  
+		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
+			$deviceProperties[$found]['value'] == STATUS_ON;
+		} else if ($deviceProperties[$found]['value'] == STATUS_ON) {
+			$deviceProperties[$found]['value'] == STATUS_OFF;
+		}
+	}
+	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
+	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
+	$answer .= " <break time=\"0.2s\" /> ";
+	$answer .= sprintf($responseProperty, $found , $status);
+
+	while ($found = findByKeyValue($deviceProperties, 'report_status' , "1")) {
+		$answer .= "<break time=\"0.2s\" />";
+		if ($deviceProperties[$found]['invertstatus'] == "0") {  
+			if ($deviceProperties[$found]['value'] == STATUS_OFF) {
+				$deviceProperties[$found]['value'] == STATUS_ON;
+			} else if ($deviceProperties[$found]['value'] == STATUS_ON) {
+				$deviceProperties[$found]['value'] == STATUS_OFF;
+			}
+		}
+		$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
+		$answer .= sprintf($responseProperty, $found , $status);
+		$deviceProperties[$found]['report_status'] = 0; // Do not find again
+	}
+
+	$answer .= "</speak>";
+	
 	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
@@ -501,8 +576,8 @@ function homeStatus($request, $session, $response) {
 		$devices = FetchRows($mysql);
 		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
 		$feedback = array();
-		foreach ($devices as $key => $deviceID) {
-			$feedback[] = getStatusLink(array('deviceID'=>$deviceID, 'propertyID'=>$propertyID));
+		foreach ($devices as $row) {
+			$feedback[] = getStatusLink(array('deviceID'=>$row['deviceID'], 'propertyID'=>$propertyID));
 		}
 
 		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
@@ -769,8 +844,7 @@ function SessionEndedRequest($request, $session, $response) {
 }
 
 function defaultFeedbackName($deviceID) {
-		$mysql = 'SELECT LOWER(description) as description FROM `ha_voice_names` WHERE default_feedback = 1 and deviceID ='.$deviceID; 
-		if ($row = FetchRow($mysql)) {
+		if ($row = FetchRow('SELECT LOWER(description) as description FROM `ha_voice_names` WHERE default_feedback = 1 and deviceID ='.$deviceID)) {
 			return $row['description'];
 		} else if ($row = FetchRow('SELECT LOWER(description) as description FROM `ha_voice_names` WHERE deviceID ='.$deviceID)) {
 				return $row['description'];		
@@ -819,7 +893,7 @@ function findDeviceByName($find) {
 	$mysql = 'SELECT deviceID, LOWER(description) as description FROM `ha_voice_names` WHERE deviceID > 0 and LOWER(description) LIKE "%'.$find.'%"'; 
 	$found = FetchRows($mysql);
 	if (empty($found)) {		//		Try by description
-		$mysql = 'SELECT id, LOWER(description) as description FROM `ha_mf_devices` WHERE LOWER(description) LIKE "%'.$find.'%" OR LOWER(shortdesc) LIKE "%'.$find.'%"'; 
+		$mysql = 'SELECT id as deviceID, LOWER(description) as description FROM `ha_mf_devices` WHERE LOWER(description) LIKE "%'.$find.'%" OR LOWER(shortdesc) LIKE "%'.$find.'%"'; 
 		$found = FetchRows($mysql);
 	}
 	return $found;
