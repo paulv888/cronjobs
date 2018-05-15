@@ -178,6 +178,7 @@ function PDOupdate($table, $fields, $where){
 	{
 		$stmt = $pdo->prepare($mysql);
 		$result = $stmt->execute($values);
+		if ($result) $result = $stmt->rowCount();
 	}
 	catch( Exception $e )
 	{

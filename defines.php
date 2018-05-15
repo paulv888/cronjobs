@@ -1,6 +1,6 @@
 <?php
 // process configuration
-define("INSTEON_SLEEP_MICRO", 100000); // 500mS
+define("INSTEON_SLEEP_MICRO", 300000); // 300mS
 
 define("SEVERITY_NONE", 0);
 define("SEVERITY_DANGER", 1);
@@ -92,6 +92,11 @@ define ("COMMAND_CLASS_X10_INSTEON", 10);
 define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
 define ("COMMAND_CLASS_BULLET", 28);
+
+// Properties
+define ("PROPERTY_STATUS", 123);
+define ("PROPERTY_LINK", 225);
+define ("PROPERTY_SEMAPHORE", 376);
 
 
 // Special X10_INSTEON dim handling
