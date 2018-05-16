@@ -718,8 +718,10 @@ function sendBullet(&$params) {
 	$feedback['Name'] = 'sendBullet';
 	$feedback['result'] = array();
 
-	// print_r($params);
-	
+// echo "<pre>";
+// print_r($params);
+// echo "</pre>";	
+
 	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
 		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any

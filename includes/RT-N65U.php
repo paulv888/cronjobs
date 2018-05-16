@@ -30,16 +30,16 @@ function trHost() {
 function MoveHistory() {
     $mysql='UPDATE `net_sessions` SET `remote_domain`=if(`remote_name`=`remote_address`, `remote_name`, SUBSTRING_INDEX(`remote_name`, ".", -2))   WHERE `remote_domain` IS Null';
 	PDOExec($mysql);
-    $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
+    $mysql='INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;';
 	$result = PDOExec($mysql);
-    $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
+    $mysql = 'DELETE FROM `net_sessions` WHERE active=0;';
 	PDOExec($mysql);
 	return $result;
 }
 
 function GetSessions() {
 
-		// Get myIP
+	// Get myIP
 	if (!($myip = FetchRow('SELECT ip FROM `ha_mf_device_ipaddress`  WHERE name="PublicIP"')['ip'])) {
 		echo "Could not find 'PublicIP'";
 		exit; 
