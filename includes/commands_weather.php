@@ -14,10 +14,10 @@ function getWeather($params) {
 	$deviceID = $params['deviceID'];
 
 	$feedback['Name'] = 'getWeather';
-	$feedback['commandstr'] = "http://api.wunderground.com/api/".WU_API."/alerts/forecast/astronomy/conditions/q/pws:".MY_STATION.".json";
+	$feedback['commandstr'] = setURL($params);
 	$feedback['result'] = array();
 
-	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']),30);
+	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']),$params['device']['connection']['timeout']);
 
 	if (DEBUG_WEATHER) echo "<pre>";
 	$error = false;

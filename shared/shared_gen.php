@@ -292,8 +292,8 @@ function prettyPrint( $json ) {
 
 function setURL($params, $morepage = null) {
 
-//echo "<pre>SETURL";
-//print_r($params);
+// echo "<pre>SETURL";
+// print_r($params);
 
 	$connect = $params['device']['connection'];
 	if (empty($connect['targetaddress'])) {

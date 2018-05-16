@@ -255,6 +255,7 @@ function getDevice($deviceID){
 	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse = 1';
 	if ($rowdevice = FetchRow($mysql)) {
 		$mysql='SELECT * FROM ha_mi_connection where id ='.$rowdevice['connectionID'];
+		$mysql='SELECT `id`, `name`, `targetaddress`, `targetport`, `targettype`, `page`, `timeout`, `video_link`, `admin_page`, `authentication`, `username`,  cast(aes_decrypt(`password`, "'.SECRET.'") as char(100)) as password, `semaphore`, `notes`, `pingport`, `updatedate` FROM `ha_mi_connection` WHERE `id` ='.$rowdevice['connectionID'];
 		if ($rowconn = FetchRow($mysql)) {
 			$rowdevice['connection'] = $rowconn;
 		}

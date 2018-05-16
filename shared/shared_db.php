@@ -26,7 +26,7 @@ function openDB() {
 		{
 			try
 			{
-				$pdo = new PDO('mysql:host='.HA_DB_SERVER.';dbname=homeautomation;charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+				$pdo = new PDO('mysql:host='.HA_DB_SERVER.';dbname='.HA_DATABASE.';charset=utf8',HA_USER,HA_PASSWORD, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
 				$retries = 0;
 				return $pdo;
 			}
