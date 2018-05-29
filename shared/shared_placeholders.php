@@ -116,7 +116,7 @@ function replacePropertyPlaceholders($mess_subject, $params){
 //		out: return
 //
 
-	//echo "replacePlaceholder in: ".$mess_subject.CRLF;
+//	echo "replacePlaceholder in: ".$mess_subject.CRLF;
 	$mess_text = Null;
 	if (preg_match("/\{property.*\}/", $mess_subject, $matches)) {
 
@@ -167,6 +167,13 @@ function replaceText(&$params){
 //		in:  $params['mess_subject'], $params['mess_text']
 //		out: $params['mess_subject'], $params['mess_text']
 //
+//echo "replaceText in: ".CRLF;
+//echo  $params['mess_subject'].CRLF;
+//echo  $params['mess_text'].CRLF;
+//echo "<pre>";
+//print_r($params);
+//echo "</pre>";
+
 	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
 	
 	$mess_subject = (array_key_exists('mess_subject',$params) ? $params['mess_subject'] : "");
@@ -189,18 +196,20 @@ function replaceText(&$params){
 		}
 	}
 	
-	// echo "<pre>";
-	// print_r($params);
-	// echo 'var_dump(array_flatten($params, 1));'."\n";
+//	 echo "<pre>";
+//	 print_r($params);
+//	 echo 'var_dump(array_flatten($params, 1));'."\n";
 	$params['now'] = date("Y-m-d H:i:s");
 
 	$flat_params = array_flatten($params, 1);
 
-	// print_r($flat_params);
-	// echo "</pre>";
+//	 print_r($flat_params);
+//	 echo "</pre>";
 
 	replaceFields($mess_subject, $mess_text, $flat_params);
-
+  
+//        echo "<pre>mess_text after replaceFields"; echo $mess_text; echo "</pre>";
+  
 	// if (isset($callerparams)) {
 		// $callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : 'NULL');
 		// $mess_subject = str_replace("{caller___", "{", $mess_subject); // Now replace all {caller___ha_table___field} to (ha_table___field}
@@ -208,9 +217,10 @@ function replaceText(&$params){
 		// replaceFields($mess_subject, $mess_text, $callerparams);
 	// }
 
-	$params['mess_subject'] = $mess_subject;
+ 	$params['mess_subject'] = $mess_subject;
 	$params['mess_text'] = $mess_text;
 	// $params['caller'] = $callerparams;
+	return; 
 }
 
 function replaceFields(&$mess_subject, &$mess_text, $params){
@@ -243,7 +253,7 @@ function replaceFields(&$mess_subject, &$mess_text, $params){
 			unset ($pattern);
 			foreach ($params as $key => $value) {
 				if (is_array($value)) unset($params[$key]);
-				$pattern[$key]="/\{".strtolower($key)."\}/";
+				$pattern[$key]="/\{".strtolower(str_replace(" ","_",$key))."\}/";
 			}
 
 			if (DEBUG_PHOLDERS) {
@@ -251,19 +261,20 @@ function replaceFields(&$mess_subject, &$mess_text, $params){
 				echo "<pre>Param Values "; echo "PATTERN-3:"; print_r ($pattern); echo "</pre>";
 			}
 
-			// Why whole array, lest just do on base, be
-			// $mess_subject = preg_replace_array($pattern, $params, $mess_subject);
-			// if ($mess_text != Null) $mess_text = preg_replace_array($pattern, $params, $mess_text); 
 			$mess_subject = preg_replace($pattern, $params, $mess_subject);
-			if ($mess_text != Null) $mess_text=preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
-
+			if (!empty($mess_text)) $mess_text = preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
 		}
 
 		// Clean up any left over fields
 		$mess_subject = trim(preg_replace('/\{.*?\}/', '' , $mess_subject));
-		if ($mess_text != Null) $mess_text = trim(preg_replace('/\{.*?\}/', '', $mess_text)); // twice to support tag in tag
+		if (!empty($mess_text)) $mess_text = trim(preg_replace('/\{.*?\}/', '', $mess_text)); // twice to support tag in tag
 //	}
 
+	if (DEBUG_PHOLDERS) {
+		echo "<pre> Replace Fields Results "; echo "</pre>";
+		echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
+		echo "<pre>Message: "; echo $mess_text.CRLF; echo "</pre>";
+	}
 	return true;
 }
 

@@ -76,6 +76,7 @@ function createAlert($params) {
 	}
 	$feedback['commandstr'] = 'PDOInsert...';
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
+	$feedback['result']['params'] = json_encode($params);
 	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	if ($params['priorityID'] <= PRIORITY_HIGH) $feedback['result'][] = sendBullet($params);
 	return $feedback;
@@ -688,8 +689,13 @@ function storeCamImage($params) {
 
 function sendEmail(&$params) {
 
+//echo "<pre>Email ";
+//print_r($params);
+//echo "</pre>";
+
 	$feedback['Name'] = 'sendmail';
 	$feedback['result'] = array();
+	$feedback['result']['params'] = json_encode($params);
 	$to = $params['device']['previous_properties']['Address']['value'];
 	$fromname = SITE_NAME; 
 

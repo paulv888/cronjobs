@@ -207,5 +207,5 @@ define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
 
-define("CRLF", "</br>\n");
+define("CRLF", "<br>\n");
 ?>
