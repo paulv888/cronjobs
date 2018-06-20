@@ -432,8 +432,9 @@ function RemoteKeys($in, $params) {
 				if (array_key_exists('groupselect', $res)) $node = 'groupselect';
 				if (isset($node) && array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
-					//$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? $res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
-					$deviceStr = $res[$node]['DeviceID'];
+					// 06/19/18 Next line was commented out, so broke something. This is needed for updating remote keys with current_player as device
+					$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? $res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
+					//$deviceStr = $res[$node]['DeviceID'];
 					// echo "<pre>";
 					// var_dump($deviceStr);
 					// echo "</pre>";
