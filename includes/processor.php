@@ -220,10 +220,6 @@ function sendCommand(&$thiscommand) {
 	if (!is_null($thiscommand['commandvalue']) && !is_array($thiscommand['commandvalue']) && trim($thiscommand['commandvalue'])!=='') {
 		$text =  $thiscommand['commandvalue'];
 		if (DEBUG_PARAMS) echo 'Text: '.$text.CRLF;
-		if (array_key_exists('result',  $feedback))			// Still have functions not returning $result['result']
-			$thiscommand['commandvalue'] = replaceResultPlaceholders($text, $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
-
-			if (DEBUG_PARAMS) echo 'Text: '.$thiscommand['commandvalue'].CRLF;
 	}
 
 	if ($rowcommands['need_device']) {

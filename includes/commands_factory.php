@@ -12,7 +12,8 @@ define( 'MAX_DATAPOINTS', 1000 );
 //		$feedback type Array
 //			with keys: 
 //						'Name'   		(String)	-> Name of executed command						REQUIRED
-//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
+//						'result'		(Array)		-> Feedback nested calls						REQUIRED
+//						'result_raw'	(Array)		-> result (Raw result for parsing last_result)
 //						'message' 		(String)	-> To display on remote
 //						'commandstr' 	(String)	-> for eventlog, actual command send
 //      if error then	'error'			(String)	-> Error description
@@ -58,7 +59,7 @@ function monitorDevicesTimeout($params) {
 				$properties['Link']['value'] = LINK_TIMEDOUT;
 				$params['device']['properties'] = $properties;
 				// print_r($params);
-				$feedback['result'][] = updateDeviceProperties($params);
+				$feedback['result'] = updateDeviceProperties($params);
 			}
 		}
 	}
@@ -154,19 +155,26 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		
 		foreach ($rowshemesteps as $step) {
-			$result = Array();
+			//$result = Array();
 
 //			echo "<pre>Check cond result".CRLF;
 //			print_r(array($step));
-			$result = checkConditions(array($step), $params);
+			$check_result = checkConditions(array($step), $params);
 //			print_r($result);
 //			echo "</pre>Check cond result".CRLF;
 // echo '<pre>';
-			if ($result['result'][0]) {
-				$text =  $step['value'];
-				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$text.CRLF;
+			if ($check_result['result'][0]) {
+				$stepValue =  $step['value'];
+				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$stepValue.CRLF;
 				if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
-				if (DEBUG_PARAMS) echo 'last___result: '.(array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent').CRLF;
+				if (DEBUG_PARAMS) {
+					if (array_key_exists('last___result', $params)) {
+						echo 'last___result';
+						var_dump($params['last___result']); 
+					} else {
+						echo 'last___result: Non-existent'.CRLF;
+					}
+				}
 				$params['deviceID'] =  $step['deviceID'];
 				$params['commandID'] = $step['commandID'];
 				if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
@@ -183,11 +191,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
 				}
 
-				$text = replacePropertyPlaceholders($text, $params);		// Replace placeholders in commandvalue
-				if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$text.CRLF;
+				$stepValue = replacePropertyPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
+				if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$stepValue.CRLF;
 
-				$text = replaceCommandPlaceholders($text, $params);		// Replace placeholders in commandvalue
-				$params['commandvalue'] = $text;
+				$stepValue = replaceCommandPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
+				$params['commandvalue'] = $stepValue;
 				splitCommandvalue($params);
 				if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
 				if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split"))).CRLF;
@@ -206,23 +214,30 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
 					$pidfile=  tempnam( sys_get_temp_dir(), 'async' );
 					exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-					$result['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
-					$result['commandstr'] = $cmd;
+					$step_feedback['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
+					$step_feedback['commandstr'] = $cmd;
 					if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
 				} else {
-					$result = SendCommand($params);
+					$step_feedback = SendCommand($params);
 				}
 				// echo "****";print_r($params).CRLF;
-				// echo "****";var_dump($result).CRLF;
-				if (array_key_exists('message',$result)) $params['last___message'] = $result['message'];
-				if (array_key_exists('error',$result)) $params['last___message'] = $result['error'];
-				if (array_key_exists('result',$result) && array_key_exists('0',$result['result'])) $params['last___result'] = $result['result']['0'];
-				if (array_key_exists('error',$result)) $params['last___result'] = $result['error'];
+				//echo "****";print_r($step_feedback).CRLF;
+				if (array_key_exists('message',$step_feedback)) $params['last___message'] = $step_feedback['message'];
+				if (array_key_exists('error',$step_feedback)) $params['last___message'] = $step_feedback['error'];
+				if (array_key_exists('result_raw',$step_feedback)) $params['last___result'] = $step_feedback['result_raw'];
+				if (array_key_exists('error',$step_feedback)) $params['last___result'] = $step_feedback['error'];
 				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
-				if (DEBUG_PARAMS) echo 'Loaded last___result: >'.(array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent').'<'.CRLF;
+				if (DEBUG_PARAMS) {
+					if (array_key_exists('last___result', $params)) {
+						echo 'Loaded last___result';
+						var_dump($params['last___result']); 
+					} else {
+						echo 'Non-existent'.CRLF;
+					}
+				}
 				if (DEBUG_PARAMS) echo '</pre>';
 			} 
-			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $result;
+			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $step_feedback;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
@@ -971,7 +986,8 @@ function sendGenericHTTP(&$params) {
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
 			if ($targettype == "JSON" || $targettype == "PUT") {
-				$feedback['result'] = json_decode($curl->getresponse(), true);
+				$feedback['result_raw'] = json_decode($curl->getresponse(), true);
+				$feedback['result'][] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();
 				$feedback['result'][] = htmlentities($feedback['result_raw']);
@@ -989,6 +1005,7 @@ function sendGenericHTTP(&$params) {
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
+			$feedback['result_raw'] = $curl->getresponse();
 			$feedback['result'][] = $curl->getresponse();
 		break;
 	case "TCP":              // iTach (Only \r)
@@ -1006,7 +1023,7 @@ function sendGenericHTTP(&$params) {
 		$client = stream_socket_client('tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
 		if ($client === false) {
 			echo $errno.' '.$errorMessage;
-			$result['error'] = "Failed to connect: $errorMessage";
+			$feedback['error'] = "Failed to connect: $errorMessage";
 		} else {
 			stream_set_timeout($client, $params['device']['connection']['timeout']);
 			if ($targettype == "TCP") { 
@@ -1053,12 +1070,6 @@ function sendGenericHTTP(&$params) {
 //	 print_r($feedback);
 //	 echo "</pre>";
 	
-	if (array_key_exists('result', $feedback)) {
-		// if (!preg_match('/[\[\]$*}{@#~><>|=_+¬]/', $feedback['result'])) $feedback['message'] = $feedback['result'];
-//			$feedback['message'] = $feedback['result'];
-//			$feedback['message'] = preg_replace('/\s+/',' ',preg_replace('~\n~',' ',strip_tags($feedback['result'])));
-
-	}
 	return $feedback;
 }
 
@@ -1464,10 +1475,10 @@ function getStereoSettings(&$params) {
 	$command['callerparams'] = $params;
 	$command['deviceID'] = $params['deviceID']; 
 	$command['commandID'] = COMMAND_GET_VALUE;
-	$result[] = sendCommand($command); 
+	$result = sendCommand($command); 
 	
 	// echo "<pre>";	
-   	$main = new SimpleXMLElement($result[0]['result_raw']);
+   	$main = new SimpleXMLElement($result['result_raw']);
 
     
 	// if (!is_numeric((string)$flexresponse->code)) {

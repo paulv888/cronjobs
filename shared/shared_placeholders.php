@@ -1,111 +1,112 @@
 <?php
-//define('DEBUG_PHOLDERS', TRUE);
+// define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
-function replaceCommandPlaceholders($result, $params) {
+function replaceCommandPlaceholders($stepValue, $params) {
 //
 //  For outgoing command strings and macro stepvalues
-//		in: $result
+//		in: $stepValue
 //		out: return
 
-	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; echo $result.CRLF; print_r ($params); echo "</pre>";}
+	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; echo $stepValue.CRLF; print_r ($params); echo "</pre>";}
 
-	if (strpos($result, "{mycommandID}") !== false) $result = str_replace("{mycommandID}",trim($params['commandID']),$result);
-	if (strpos($result, "{deviceID}") !== false) $result = str_replace("{deviceID}",trim($params['deviceID']),$result);
-	if (strpos($result, "{unit}") !== false) $result = str_replace("{unit}",trim($params['device']['unit']),$result);
+	if (strpos($stepValue, "{mycommandID}") !== false) $stepValue = str_replace("{mycommandID}",trim($params['commandID']),$stepValue);
+	if (strpos($stepValue, "{deviceID}") !== false) $stepValue = str_replace("{deviceID}",trim($params['deviceID']),$stepValue);
+	if (strpos($stepValue, "{unit}") !== false) $stepValue = str_replace("{unit}",trim($params['device']['unit']),$stepValue);
 	// Not tested
 	if (strpos($params['commandvalue'],'|') !== false) {
 		$cvs = explode('|', $params['commandvalue']);
 		foreach ($cvs as $key => $value) {
-			 $result = str_replace('{commandvalue'.$key.'}', $value, $result);
+			 $stepValue = str_replace('{commandvalue'.$key.'}', $value, $stepValue);
 		}
 	}
 
-	if (strpos($result,"{port}") !== false) {
+	if (strpos($stepValue,"{port}") !== false) {
 		$port = getProperty($params['propertyID'])['port'];
 		if (is_null($port)) {
 			echo "Empty Port found!!!";
 			exit;
 		}
-		$result = str_replace("{port}",$port,$result);
+		$stepValue = str_replace("{port}",$port,$stepValue);
 //		echo "******port:"; print_r($port);
 	}
-	if (strpos($result, "{macro___commandvalue}") !== false) $result = 
-			str_replace("{macro___commandvalue}", (array_key_exists('macro___commandvalue', $params) ? trim($params['macro___commandvalue']) : ""),$result);
-	if (strpos($result, "{last___message}") !== false) $result = 
-			str_replace("{last___message}", (array_key_exists('last___message', $params) ? trim($params['last___message']) : ""),$result);
-	if (strpos($result, "{last___result}") !== false) $result = 
-			str_replace("{last___result}", (array_key_exists('last___result', $params) ? trim($params['last___result']) : ""),$result);
-	if (strpos($result, "{commandvalue}") !== false) $result = str_replace("{commandvalue}",trim($params['commandvalue']),$result);
-	if (strpos($result, "{value}") !== false) $result = str_replace("{value}",trim($params['value']),$result);
-	if (strpos($result, "{timervalue}") !== false) $result = str_replace("{timervalue}",trim($params['timervalue']),$result);
-	if (preg_match("/\{calculate___(.*?)\}/", $result,$matches)) {
+	if (strpos($stepValue, "{macro___commandvalue}") !== false) $stepValue = 
+			str_replace("{macro___commandvalue}", (array_key_exists('macro___commandvalue', $params) ? trim($params['macro___commandvalue']) : ""),$stepValue);
+	if (strpos($stepValue, "{last___message}") !== false) $stepValue = 
+			str_replace("{last___message}", (array_key_exists('last___message', $params) ? trim($params['last___message']) : ""),$stepValue);
+	if (strpos($stepValue, "{last___result___") !== false) $stepValue = parseLastResult($params['last___result'], $stepValue);
+	if (strpos($stepValue, "{commandvalue}") !== false) $stepValue = str_replace("{commandvalue}",trim($params['commandvalue']),$stepValue);
+	if (strpos($stepValue, "{value}") !== false) $stepValue = str_replace("{value}",trim($params['value']),$stepValue);
+	if (strpos($stepValue, "{timervalue}") !== false) $stepValue = str_replace("{timervalue}",trim($params['timervalue']),$stepValue);
+	if (preg_match("/\{calculate___(.*?)\}/", $stepValue,$matches)) {
 		if (DEBUG_COMMANDS) {echo "<pre> calculate "; print_r ($matches); echo "</pre>";}
 		$calcvalue = eval('return '.$matches[1].';');
-		$result = str_replace($matches[0], $calcvalue, $result);
+		$stepValue = str_replace($matches[0], $calcvalue, $stepValue);
 	}
 
-	if (array_key_exists('mess_subject',$params)) $result = str_replace("{mess_subject}",trim($params['mess_subject']),$result);
-	if (array_key_exists('mess_text',$params)) $result = str_replace("{mess_text}",trim($params['mess_text']),$result);
+	if (array_key_exists('mess_subject',$params)) $stepValue = str_replace("{mess_subject}",trim($params['mess_subject']),$stepValue);
+	if (array_key_exists('mess_text',$params)) $stepValue = str_replace("{mess_text}",trim($params['mess_text']),$stepValue);
 
-	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders result"; echo($result); echo "</pre>";}
-	return $result;
+	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders stepValue: "; echo($stepValue); echo "</pre>";}
+	return $stepValue;
 }
 
 function splitCommandvalue(&$params) {
 //
 //  For macro stepvalues
 //		in: $params
+//		in: $params
 //		out: add cvs array to $params
 
-	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue "; print_r($params); print_r ($params); echo "</pre>";}
+	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue "; print_r($params);  echo "</pre>";}
 
 	if (strpos($params['commandvalue'],'|') !== false) {
 		$cvs = explode('|', $params['commandvalue']);
 		$params['cvs']= $cvs;
 	}
 	
-	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue result"; print_r($params); print_r ($params); echo "</pre>";}
+	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue result "; print_r($params); echo "</pre>";}
 	return;
 }
-function replaceResultPlaceholders($mess_subject, &$params, $resultin){
+function parseLastResult($resultin, $stepValue){
+
+//	$thiscommand['commandvalue'] = replaceResultPlaceholders($text (result___postion), $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
+
+
+	if (!is_array($resultin)) return $resultin;
 
 	if (DEBUG_PHOLDERS) {
-		echo "<pre> replaceResultPlaceholders "; print_r ($resultin); echo "</pre>";
-		echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
+		echo "<pre> stepValue: "; echo $stepValue.CRLF; echo "</pre>";
+		echo "<pre> parseLastResult "; print_r ($resultin); echo "</pre>";
 	}	
 
 	// Do an array search for the value to replace {postion}
 	// execute before clobbering input
-	preg_match('/\{result___(.*?)\}/', $mess_subject, $output);
-	if (!empty($output)) {	// Found me some
-		$resultin['deviceID'] = $params['deviceID'];
+	preg_match('/\{last___result___(.*?)\}/', $stepValue, $output);
+
+	// var_dump($output);
+	$flat_resultin = array_flatten($resultin, 1);
+
+	// print_r($flat_resultin);
+
+	$feedback = false;
+	if (array_key_exists(1,$output)) {	// Result found
+
+	// print_r($output);
+		$findKey = $output[1];
 		if (DEBUG_PHOLDERS) {
-			echo "<pre>Search Array for Key "; echo "DATA0:"; print_r ($params); echo "</pre>";
-			echo "<pre>Search Array for Key "; echo "PATTERN0:"; print_r ($output); echo "</pre>";
+			echo "<pre>Search Array for Key "; echo "findKey: ".$findKey; echo "</pre>";
 		}
-
-		$filterkeep = array( $output[1] => 1);
-		doFilter($resultin, array(), $filterkeep, $result);
-
-		// echo "Filtered: >";
-		// print_r($result);
-
-		if (is_array($result)) {
-			// echo "res0.out1:".$result[0][$output[1]].CRLF;	
-			$mess_subject = str_replace($output[0], trim($result[0][$output[1]]), $mess_subject);
-			$propname = str_replace('result___', '', $output[1]);
-			$params['device']['properties'][$propname]['value']= $result[0][$output[1]];
-			//if ($mess_text != Null) $mess_text=preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
-		}
-		
-		if (DEBUG_PHOLDERS) {
-			echo "<pre>Props:"; print_r($params['device']['properties']); echo "</pre>";
-		}	
+		if (array_key_exists($findKey, $flat_resultin)) {	
+			
+			if (DEBUG_PHOLDERS) {
+				echo "<pre>Value found: "; echo $flat_resultin[$findKey]; echo "</pre>";
+			}	
+			$feedback = trim(str_replace("{last___result___".$findKey."}", $flat_resultin[$findKey], $stepValue));
+		} 
 	}
+	return $feedback;
 	
-	//echo "return replacePlaceholder in: ".$mess_subject.CRLF;
-	return $mess_subject;
 }
 
 
@@ -148,8 +149,8 @@ function replacePropertyPlaceholders($mess_subject, $params){
 					$newprops[$value['description']]=$value['value'];
 				}
 				if (DEBUG_PHOLDERS) {
-					echo "<pre>Device Properties "; echo "DATA-2:"; print_r ($newprops); echo "</pre>";
-					echo "<pre>Device Properties "; echo "PATTERN-2:"; print_r ($pattern); echo "</pre>";
+					echo "<pre>Device Properties "; echo "DATA:"; print_r ($newprops); echo "</pre>";
+					echo "<pre>Device Properties "; echo "PATTERN:"; print_r ($pattern); echo "</pre>";
 				}
 				//$mess_subject = str_replace("{property___", "{", $mess_subject);
 				$mess_subject = preg_replace($pattern, $newprops, $mess_subject);
@@ -208,18 +209,8 @@ function replaceText(&$params){
 
 	replaceFields($mess_subject, $mess_text, $flat_params);
   
-//        echo "<pre>mess_text after replaceFields"; echo $mess_text; echo "</pre>";
-  
-	// if (isset($callerparams)) {
-		// $callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : 'NULL');
-		// $mess_subject = str_replace("{caller___", "{", $mess_subject); // Now replace all {caller___ha_table___field} to (ha_table___field}
-		// $mess_text = str_replace("{caller___", "{", $mess_text); 	// Now replace all {caller___ha_table___field} to (ha_table___field}
-		// replaceFields($mess_subject, $mess_text, $callerparams);
-	// }
-
  	$params['mess_subject'] = $mess_subject;
 	$params['mess_text'] = $mess_text;
-	// $params['caller'] = $callerparams;
 	return; 
 }
 
@@ -257,8 +248,8 @@ function replaceFields(&$mess_subject, &$mess_text, $params){
 			}
 
 			if (DEBUG_PHOLDERS) {
-				echo "<pre>Param Values "; echo "DATA-3:"; print_r ($params); echo "</pre>";
-				echo "<pre>Param Values "; echo "PATTERN-3:"; print_r ($pattern); echo "</pre>";
+				echo "<pre>Param Values "; echo "DATA:"; print_r ($params); echo "</pre>";
+				echo "<pre>Param Values "; echo "PATTERN:"; print_r ($pattern); echo "</pre>";
 			}
 
 			$mess_subject = preg_replace($pattern, $params, $mess_subject);
