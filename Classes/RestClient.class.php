@@ -231,10 +231,99 @@ class RestClient {
 				$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);  
 				curl_setopt($this->curl, CURLOPT_HTTPHEADER, array($request->to_header()));  
 			}
-		}
-		return $this;
-     }
+		} elseif ($credentials['method'] == "OAUTH2") {
+			if($credentials['username'] != null) {
+//
+//  Get token here
+//
+$baseURL='https://o7xvo6j2e2.execute-api.us-east-2.amazonaws.com/v0';
+//$scopes=urlencode('708f8c17-1d0e-4647-95fe-f16cf2abd82f 8ef2cf6a-dfa3-43ed-8661-0c7a00e2274a 26fdf438-46e0-442a-aa07-9b91074f4136 589fb94e-c524-48ad-bd6f-ab9fcec84b08 4719cd61-155f-4203-808d-42b9cbf4e651 7f44a19b-8545-4408-a442-490c76d2b016');
+//$url = $baseURL.'/auth/tokens?grantTypeCode=CLIENT_CREDENTIALS&tokenTypeCode=JWT&state=ACTIVE&tokenAccessTypeCode=AUTHZ&scopes='.$scopes;
 
+// Authorizations
+$consoleClientId = '430e7b34-164a-11e8-b642-0ed5f89f718b';
+$url = $baseURL.'/auth/authorizations?clientId='.$consoleClientId.'&responseTypeCode=TOKEN&state=xyz&requestedScope=CompanyScope';
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_POST, false);
+curl_setopt($ch,CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType, "client.auth.response.use-redirect: false"));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+//curl_setopt($ch, CURLOPT_POSTFIELDS, array());
+$data = curl_exec($ch);
+//echo "<pre>";
+//var_dump($data);
+//echo "</pre>";
+$json_data= json_decode($data);
+//$token=$json_data->data->accessToken;
+$sessionId=$json_data->data->sessionId;
+curl_close($ch);
+
+// Session Login
+$url = $baseURL.'/auth/sessions/'.$sessionId;
+$ch = curl_init();
+$params = json_encode(array (
+	"userDefinedId" => $credentials['username'] ,
+	"userPassword" => $credentials['password'] ,
+	"deviceFingerprint" => "111",
+	"statusCode" => "ACTIVE", 
+	"state" => "validstate", 
+	"sessionTypeCode" => "IMPLICIT_AUTHN",
+	"clientId" => $consoleClientId
+));
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType, "client.auth.response.use-redirect: false"));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+$data = curl_exec($ch);
+if (curl_error($ch)) {
+    $error_msg = curl_error($ch);
+}
+echo "<pre>";
+var_dump($data);
+echo "</pre>";
+$json_data= json_decode($data);
+$initialToken=$json_data->data->token;
+$userId=$json_data->data->userId;
+curl_close($ch);
+
+// Session Login
+$url = $baseURL.'/auth/tokens/exchanges';
+$ch = curl_init();
+$params = json_encode(array (
+	"userId" => $userId ,
+	"tenantId" =>  "c8dacbcf-b04e-4d9b-a26e-266b69e9adf2"
+));
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType, "Authorization: ". $initialToken));
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
+$data = curl_exec($ch);
+if (curl_error($ch)) {
+    $error_msg = curl_error($ch);
+}
+echo "<pre>";
+var_dump($data);
+echo "</pre>";
+$json_data= json_decode($data);
+$jwtToken=$json_data->data->accessToken;
+curl_close($ch);
+curl_setopt($this->curl,CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType, "Authorization: ".$jwtToken, "client.unique-transaction.id: "."hello-there"));
+
+
+
+
+                        }
+                }
+                return $this;
+     }
 
      /**
       * Set the Request HTTP Method
@@ -282,7 +371,7 @@ class RestClient {
       * @return RestClient
       */
 //   public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
-     public static function post($url,$params=null,$credentials=null,$contentType="application/x-www-form-urlencoded", $timeout=null) {
+     public static function post($url,$params=null,$credentials=null,$contentType="application/json", $timeout=null) {
          return self::call("POST",$url,$params,$credentials,$contentType,$timeout);
      }
 
@@ -294,7 +383,7 @@ class RestClient {
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function put($url,$body,$credentials=null,$contentType=null,$timeout=null) {
+     public static function put($url,$body,$credentials=null,$contentType="application/json",$timeout=null) {
          return self::call("PUT",$url,$body,$credentials,$contentType,$timeout);
      }
 
@@ -306,7 +395,7 @@ class RestClient {
       * @return RestClient
       */
      public static function get($url,array $params=null,$credentials=null, $timeout=null) {
-         return self::call("GET",$url,$params,$credentials,"",$timeout);
+         return self::call("GET",$url,$params,$credentials,"application/json",$timeout);
      }
 
      /**
@@ -317,7 +406,7 @@ class RestClient {
       * @return RestClient
       */
      public static function delete($url,array $params=null,$credentials=null,$timeout=null) {
-         return self::call("DELETE",$url,$params,$credentials, null,$timeout);
+         return self::call("DELETE",$url,$params,$credentials, "application/json",$timeout);
      }
 
      /**
@@ -329,13 +418,13 @@ class RestClient {
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function call($method,$url,$body,$credentials,$contentType=null,$timeout=null) {
+     public static function call($method,$url,$body,$credentials,$contentType="application/json",$timeout=null) {
 
          return self::createClient($url)
              ->setParameters($body)
+             ->setContentType($contentType)
              ->setMethod($method)
              ->setCredentials($credentials, $method, $url, $body)
-             ->setContentType($contentType)
              ->setTimeout($timeout)
              ->execute()
              ->close();
