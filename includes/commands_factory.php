@@ -418,9 +418,9 @@ function getNowPlaying(&$params) {
 		$params['device']['properties'] = $properties;
 		$feedback['error']='Error - Nothing playing';
 	} else {
-// echo "<pre>";
-// print_r($result);
-		$result = $result['result'];
+ // echo "<pre>";
+ // print_r($result['result_raw']);
+ 		$result = $result['result_raw'];
 		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
 		} else {
