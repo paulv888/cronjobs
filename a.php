@@ -1,4 +1,4 @@
-<?php
+ <?php
 require_once 'includes.php';
 
 define("MY_DEVICE_ID", 214);
