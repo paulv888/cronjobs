@@ -22,7 +22,7 @@ $commandMap = [
 	"WhatsBedtimeIntent" =>          "413",
 	"WhatsPlayingIntent" =>          "414",
 	"DoingIntent" =>                 "415",
-	"homeStatus" =>                  "416",
+	"SystemReportIntent" =>          "416",
 	"HelpIntent" =>                  "417",
 	"StopIntent" =>                  "418",
 	"CancelIntent" =>                "419",
@@ -279,59 +279,20 @@ function AnySecurityOpenIntent($request, $session, $response) {
 
 }
 
-function LocationStatusIntent($request, $session, $response) {
+function SystemReportIntent($request, $session, $response) {
 
 	global $log;
-	$feedback['Name'] = 'LocationStatusIntent';
+	$feedback['Name'] = 'SystemReportIntent';
 
 	$responses = array ("The %s is %s", "The status of the %s is %s.");
 
 	// print_r($request);
 	
-	$findDevice = strtolower(isset($request->slots->Location) ? $request->slots->Location : "system");
+	$findDevice = "system";
 	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
 	$findProperty = "Status";
-	$log['data'] = "Location: ".$findDevice;
 
-	if ($findDevice == "home" || $findDevice == "system") {
-		$feedback['result'] = homeStatus($request, $session, $response);
-		return $feedback;
-	}
-	
-	$found = findDeviceByName($findDevice);
-	if (DEBUG_ALX) { print_r($found);}
-	if (!empty($found)) { 
-		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
-	} else {
-		$response->respond("Sorry which device you want?")
-		 ->reprompt("Sorry which device you want?");
-		$response->sessionAttributes(Array("intentSequence"=>"LocationStatusIntent"));
-		$feedback['result'] = $response->ask();
-		$feedback['error'] = "Cannot find device";
-		return $feedback;
-	}
-
-	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
-
-	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
-	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
-	
- 
-	if ($deviceProperties[$found]['invertstatus'] == "0") {  
-		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
-			$deviceProperties[$found]['value'] == STATUS_ON;
-		} else if ($deviceProperties[$found]['value'] == STATUS_ON) {
-			$deviceProperties[$found]['value'] == STATUS_OFF;
-		}
-	}
-	
-	
-	$status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
-	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), $status);
-	$response->respond($answer)->withCard(strip_tags($answer));
-	$feedback['message'] = $answer;
-	$feedback['result'] = $response->tell();
+	$feedback['result'] = homeStatus($request, $session, $response);
 	return $feedback;
 
 }
