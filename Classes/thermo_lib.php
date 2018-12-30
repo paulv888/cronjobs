@@ -32,6 +32,7 @@ class Stat
 				 $t_heat =	null,
 				 $t_cool =	null,
 				 $tstate =	null,
+				 $isrunning =	null,
 				 $fstate =	null,
 				 $day =	null,
 				 $time =	null,
@@ -41,7 +42,7 @@ class Stat
 				 $here_heat = null,
 				 $away_cool = null,
 				 $here_cool = null,
-				 $ttemp = null;
+				 $setpoint = null;
 				 
 	public $runTimeCool = null,
 				 $runTimeHeat = null,
@@ -67,9 +68,9 @@ class Stat
 				 $ipgw = null,
 				 $rssi = null;
 
-	public function __construct( $thermostatRec )
+	public function __construct( $device )
 	{
-		$this->URL = $thermostatRec['targetaddress'];
+		$this->URL = $device['connection']['targetaddress'];
 		$this->ch = curl_init();
 		curl_setopt( $this->ch, CURLOPT_USERAGENT, 'A' );
 		curl_setopt( $this->ch, CURLOPT_RETURNTRANSFER, 1 );
@@ -78,7 +79,7 @@ class Stat
 
 		// Stat variables initialization
 		$this->temp = 0;
-		$this->tmode = 0;
+		$this->tmode = $device['type']['internal_type'];
 		$this->fmode = 0;
 		$this->override = 0;
 		$this->hold = 0;
@@ -86,6 +87,7 @@ class Stat
 		$this->t_heat = 0;
 		$this->tstate = 0;
 		$this->fstate = 0;
+		$isrunning = 0;
 		$this->day = 0;
 		$this->time = 0;
 		$this->t_type_post = 0;
@@ -115,10 +117,10 @@ class Stat
 		$this->IPgw = 0;
 		$this->rssi = 0;
 
-		$this->away_heat = to_fahrenheit($thermostatRec['away_heat_temp_c']);
-		$this->here_heat = to_fahrenheit($thermostatRec['here_temp_heat_c']);
-		$this->away_cool = to_fahrenheit($thermostatRec['away_cool_temp_c']);
-		$this->here_cool = to_fahrenheit($thermostatRec['here_temp_cool_c']);
+		$this->away_heat = to_fahrenheit($device['thermostat']['away_heat_temp_c']);
+		$this->here_heat = to_fahrenheit($device['thermostat']['here_temp_heat_c']);
+		$this->away_cool = to_fahrenheit($device['thermostat']['away_cool_temp_c']);
+		$this->here_cool = to_fahrenheit($device['thermostat']['here_temp_cool_c']);
 
 		// Cloud variables
 
@@ -261,16 +263,13 @@ class Stat
 		*/
 		for ($i=1; $i<=5; $i++)
 		{
-		$outputs = $this->getStatData( '/tstat' );
-		// {"temp":80.50,"tmode":2,"fmode":0,"override":0,"hold":0,"t_cool":80.00,"tstate":2,"fstate":1,"time":{"day":2,"hour":18,"minute":36},"t_type_post":0}
-		$obj = json_decode( $outputs );
+			$outputs = $this->getStatData( '/tstat' );
+			// {"temp":80.50,"tmode":2,"fmode":0,"override":0,"hold":0,"t_cool":80.00,"tstate":2,"fstate":1,"time":{"day":2,"hour":18,"minute":36},"t_type_post":0}
+			$obj = json_decode( $outputs );
 
-			if( !$this->containsTransient( $obj ) )
-			{
+			if( !$this->containsTransient( $obj ) ) {
 				break;
-			}
-			else
-			{
+			} else {
 				if( $i == 5 )
 				{
 					throw new Thermostat_Exception( 'Too many thermostat transient failures' );
@@ -281,40 +280,42 @@ class Stat
 				}
 			}
 
-		if( empty( $obj ) )
-		{
-			throw new Thermostat_Exception( 'No output from thermostat' );
-		}
+			if( empty( $obj ) ) {
+				throw new Thermostat_Exception( 'No output from thermostat' );
+			}
 		}
 
 		// Move fetched data to internal data structure
 		$this->temp = $obj->{'temp'};						 // Present temp in deg F (or C depending on thermostat setting)
-		$this->tmode = $obj->{'tmode'};					 // Present t-stat mode
-		$this->fmode = $obj->{'fmode'};					 // Present fan mode
-		$this->override = $obj->{'override'};		 // Present override status 0 = off, 1 = on
+		$this->tmode = $obj->{'tmode'};					 	// Present t-stat mode
+		$this->fmode = $obj->{'fmode'};					 	// Present fan mode
+		$this->override = $obj->{'override'};		 		// Present override status 0 = off, 1 = on
 		$this->hold = $obj->{'hold'};						 // Present hold status 0 = off, 1 = on
 
-		if( $this->tmode == 1 )
-		{ // mode 1 is heat
+		if( $this->tmode == 1 )	{ // mode 1 is heat
 			$this->t_heat = $obj->{'t_heat'};			 // Present heat target temperature in deg F
-		}
-		else {
-			if( $this->tmode == 2 )
-			{ // mode 2 is cool
+			$this->setpoint = $this->t_heat;
+		} else {
+			if( $this->tmode == 2 )	{ // mode 2 is cool
 				$this->t_cool = $obj->{'t_cool'};			 // Present cool target temperature in deg F
+				$this->setpoint = $this->t_cool;
 			}
 		}
 		
 		$this->tstate = $obj->{'tstate'};				 // Present heater/compressor state 0 = off, 1 = heating, 2 = cooling
 		$this->fstate = $obj->{'fstate'};				 // Present fan state 0 = off, 1 = on
-
+		$this->isrunning = ($this->tstate > 0 ? 1 : 0);
+		
 		$var1 = $obj->{'time'};									 // Present time
 		$this->day = $var1->{'day'};
-//		$this->time = sprintf(' %2d:%02d %s',($var1->{'hour'} % 13) + floor($var1->{'hour'} / 12), $var1->{'minute'} ,$var1->{'hour'}>=12 ? 'PM':'AM');
 		$this->time = sprintf(' %2d:%02d',($var1->{'hour'}), $var1->{'minute'} );
 
 		$this->t_type_post = $obj->{'t_type_post'};
 
+// echo "<pre>";
+// print_r($this);
+// echo "</pre>";
+		
 		return;
 	}
 
@@ -361,7 +362,6 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getFMode()
 	{
 		$outputs = $this->getStatData( '/tstat/fmode' );
@@ -382,7 +382,6 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getHold()
 	{
 		$outputs = $this->getStatData( '/tstat/hold' );
@@ -431,7 +430,6 @@ $this->debug = false;
 	}
 
 
-	// Essentially a duplicate function, but it works
 	public function getOverride()
 	{
 		$outputs = $this->getStatData( '/tstat/override' );
@@ -480,18 +478,17 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
-	public function setTemp($ttemp)
+	public function setTemp($setpoint)
 	{
 
-		$ttemp=(float)$ttemp;
+		$setpoint=(float)$setpoint;
 		
 		if ($this->tmode == 1) {
-			if ($ttemp > 75) return array('error'=> 'Temp greater than 24C/75F limit'); 							// Set protection limit, for voice misinterpretation
-			$value = array ('t_heat'=>$ttemp);
+			if ($setpoint > 75) return array('error'=> 'Temp greater than 24C/75F limit'); 							// Set protection limit, for voice misinterpretation
+			$value = array ('t_heat'=>$setpoint);
 		} else {
-			if ($ttemp < 64) return array('error'=> 'Temp less than 18C/64F limit');    							// Set protection limit, for voice misinterpretation
-			$value = array ('t_cool'=>$ttemp);
+			if ($setpoint < 64) return array('error'=> 'Temp less than 18C/64F limit');    							// Set protection limit, for voice misinterpretation
+			$value = array ('t_cool'=>$setpoint);
 		}
 		
 		if ($this->tmode == 0) return 32;
@@ -505,8 +502,8 @@ $this->debug = false;
 		$result = json_decode( $outputs, TRUE );
 		
 		if (array_key_exists("success", $result)) {
-			$this->ttemp=$ttemp;
-			return array('result'=>$ttemp);
+			$this->setpoint=$setpoint;
+			return array('result'=>$setpoint);
 		} else
 			return array('error'=>$result);
 	}
@@ -516,6 +513,7 @@ $this->debug = false;
 	{
 
 		if ($this->tmode == 0) return STATUS_OFF;
+		$this->getTTemp();
 
 		if ($this->tmode == 1) {											// Heating Mode
 		//            19      >=     21 - 2   (if target > 20) then on
@@ -528,7 +526,6 @@ $this->debug = false;
 		//              target between 16.5 & .19
 				return STATUS_UNKNOWN;										// IDK
 			}
-			$value = array ('t_heat'=>$temp);
 		} else {															// Cooling mode
 //			echo "this->t_cool".$this->t_cool."</br>";
 //			echo "this->here_cool".$this->here_cool."</br>";
@@ -550,12 +547,12 @@ $this->debug = false;
 	{
 		if ($this->tmode == 0) return 32;
 		if ($this->tmode == 1) {											// Heating Mode
-			$ttemp = $this->t_heat + $addTemp;							 	// Toggle Off
+			$setpoint = $this->t_heat + $addTemp;							 	// Toggle Off
 		} else {												
-			$ttemp= $this->t_cool + $addTemp;								// Toggle Off
+			$setpoint= $this->t_cool + $addTemp;								// Toggle Off
 		}
 
-		return $this->setTemp($ttemp);
+		return $this->setTemp($setpoint);
 	}
 	
 	// Getting current status from device /tstat has to be called before
@@ -572,37 +569,36 @@ $this->debug = false;
 
 		if ($commandID == COMMAND_OFF) { 								// Target is set for Here
 			if ($this->tmode == 1) {									// Heating Mode
-				$ttemp = $this->away_heat;							 	// Toggle Off
+				$setpoint = $this->away_heat;							 	// Toggle Off
 				$status = STATUS_OFF;
 			} else {												
-				$ttemp = $this->away_cool;								// Toggle Off
+				$setpoint = $this->away_cool;								// Toggle Off
 				$status = STATUS_OFF;
 			}
 		} elseif ($commandID == COMMAND_ON) {	 						// Target is set for Away
 			if ($this->tmode == 1) {									// Heating Mode
-				$ttemp = $this->here_heat;								// Toggle On
+				$setpoint = $this->here_heat;								// Toggle On
 				$status = STATUS_ON;
 			} else {													// Target is set somewhere in the middle, not sure what to do switch OFF
-				$ttemp = $this->here_cool;								// Toggle On
+				$setpoint = $this->here_cool;								// Toggle On
 				$status = STATUS_ON;
 			}
 		} else {
 			if ($this->tmode == 1) {									// Heating Mode
-				$ttemp = $this->away_heat;							 	// Toggle Off
+				$setpoint = $this->away_heat;							 	// Toggle Off
 				$status = STATUS_OFF;
 			} else {													// Target is set somewhere in the middle, not sure what to do switch OFF
-				$ttemp=$this->away_cool;								// Toggle Off
+				$setpoint=$this->away_cool;								// Toggle Off
 				$status = STATUS_OFF;
 			}
 		}
-//		echo "ttemp:".$ttemp."</br>";
+//		echo "ttemp:".$setpoint."</br>";
 
-		$ttemp=$this->setTemp($ttemp);
+		$this->setTemp($setpoint);
 		
 		return $status;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getTemp()
 	{
 		$outputs = $this->getStatData( '/tstat/temp' );
@@ -612,7 +608,16 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
+	public function getTTemp()
+	{
+		$outputs = $this->getStatData( '/tstat/ttemp' );
+		$obj = json_decode( $outputs );
+		$this->t_heat = $obj->{'t_heat'};						 // Heat setpoint
+		$this->t_cool = $obj->{'t_cool'};						 // Heat setpoint
+
+		return;
+	}
+
 	public function getTimeDay()
 	{
 		$outputs = $this->getStatData( '/tstat/time/day' );
@@ -621,7 +626,6 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getTimeHour()
 	{
 		$outputs = $this->getStatData( '/tstat/time/hour' );
@@ -630,7 +634,6 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getTimeMinute()
 	{
 		$outputs = $this->getStatData( '/tstat/time/minute' );
@@ -639,7 +642,6 @@ $this->debug = false;
 		return;
 	}
 
-	// Essentially a duplicate function, but it works
 	public function getTime()
 	{
 		$outputs = $this->getStatData( '/tstat/time' );

@@ -4,8 +4,6 @@ if (!defined('DEBUG_PROP')) define( 'DEBUG_PROP', FALSE );
 
 function updateGeneric(&$params, $propertyName) {
 //
-//		This is the actual runtime, while status is on,
-//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
 //
 	$feedback=Array();
 	if (DEBUG_PROP) {
@@ -99,7 +97,7 @@ function updateStatus(&$params, $propertyName) {
 function updateRuntime(&$params, $propertyName) {
 //
 //		This is the actual runtime, while status is on,
-//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
+//		We are only getting total and logging once/hour 
 //
 	$feedback=Array();
 	if (DEBUG_PROP) {
@@ -142,8 +140,7 @@ function updateRuntime(&$params, $propertyName) {
 
 function updateIsRunning(&$params, $propertyName) {
 //
-//		This is the actual runtime, while status is on,
-//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
+//		Is currently heating/cooling, insert new cycle on toggle
 //
 	$feedback=Array();
 	if (DEBUG_PROP) {
@@ -168,7 +165,8 @@ function updateIsRunning(&$params, $propertyName) {
 			$coolStatus = $newvalue == 1;
 		}
 		updateStatusCycle($params['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-		updateDailyRuntime($params['deviceID']);
+		// Do not do this here, is updated directly from thermostat in getThermoSettings
+		//	updateDailyRuntime($params['deviceID']);
 	}	// Force create Runtime on status change
 
 	$feedback['DeviceID'] = $params['deviceID'];
@@ -180,8 +178,7 @@ function updateIsRunning(&$params, $propertyName) {
 
 function updateLastRecordingType(&$params, $propertyName) {
 //
-//		This is the actual runtime, while status is on,
-//		Within the hour it can flip and accumulate as much as it want, but we are only getting total and logging once/hour 
+//
 //
 	$feedback=Array();
 	if (DEBUG_PROP) {
@@ -214,8 +211,8 @@ function updateLink(&$params,  $propertyName) {
 	*				-> POLL(2) runs every minute, Either up or down, if Down check warning/Timeout
 	*
 	*	3 stats UP/DOWN/WARNING/ 
-	*	If inUP   	-> UP
-	*	if inDOWN 	-> Warning exp -> Warning
+	*	If isUP   	-> UP
+	*	if isDOWN 	-> Warning exp -> Warning
 	*			 	-> Timeout exp   -> Down
 	*
 	*	LINK_TIMEDOUT ? go check if timed out
@@ -223,6 +220,7 @@ function updateLink(&$params,  $propertyName) {
 	*   If link transition then run triggers
 	* 		WARNING, consider as up, cannot go from DOWN to WARNING 
 	* 		UP->WARNING->DOWN
+	* 		UP->DOWN->WARNING
 	* 		UP->DOWN
 	*		DOWN->UP
 	*

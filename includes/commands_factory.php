@@ -363,37 +363,6 @@ function setSessionVar(&$params) {
 	return $feedback;
 }
 
-function getDevicePropertiesCommand___delete($params) {
-//getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value']
-//getDeviceProperties(Array('propertyID' => $rowcond['propertyID'], 'deviceID' => $rowcond['deviceID']))['value']
-//getDeviceProperties(Array('deviceID' => $deviceID))
-	$feedback['result'] = array();
-
-	if (array_key_exists('propertyID', $params)) $devprop['propertyID'] = $params['propertyID'];
-	$devprop['deviceID'] = $params['deviceID'];
-	$feedback['result'] = Array();
-	if (!empty($devprop['deviceID'])) {
-		if ($properties  = getDeviceProperties($devprop)) {
-			if (array_key_exists('propertyID', $params)) { // Returning different format
-				$feedback['result'][$properties['propertyID']]['updateStatus']['Status'] = $properties['value'];
-				$feedback['result'][$properties['propertyID']]['updateStatus']['PropertyID'] =$properties['propertyID'];
-				$feedback['result'][$properties['propertyID']]['updateStatus']['DeviceID'] = $properties['deviceID'];
-				$feedback['result'][$properties['propertyID']]['updateStatus']['Datatype'] = $properties['datatype'];
-			} else {
-				foreach ($properties as $property) {
-					$feedback['result'][$property['propertyID']]['updateStatus']['Status'] = $property['value'];
-					$feedback['result'][$property['propertyID']]['updateStatus']['PropertyID'] =$property['propertyID'];
-					$feedback['result'][$property['propertyID']]['updateStatus']['DeviceID'] = $property['deviceID'];
-					$feedback['result'][$property['propertyID']]['updateStatus']['Datatype'] = $property['datatype'];
-				}
-			}
-		}
-		// if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Link')))) $feedback['Link'] = $property['value'];
-		// if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
-	}
-	return $feedback;
-}
-
 function getNowPlaying(&$params) {
 
 	$feedback['Name'] = 'getNowPlaying';
