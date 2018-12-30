@@ -101,6 +101,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	if ($monitor) {
 	
 		$func = 'update'.str_replace(' ','',$propertyName);
+		$feedback['Monitor'] = $deviceproperty;
 		if (function_exists ($func)) {
 			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
 				$feedback['!Fail'] = 'Factory returned false, exit';
@@ -262,6 +263,12 @@ function getDevice($deviceID){
 		$mysql = 'SELECT * FROM `ha_mf_device_types` WHERE id = '.$rowdevice['typeID'];
 		if ($rowtype = FetchRow($mysql)) {
 			$rowdevice['type'] = $rowtype;
+		}
+		if ($rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_HEAT || $rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_COOL  || $rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_OFF) {
+			$mysql = 'SELECT * FROM `ha_mf_devices_thermostat` WHERE `deviceID` = '.$deviceID; 
+			if ($rowthermostat = FetchRow($mysql)) {
+				$rowdevice['thermostat'] = $rowthermostat;
+			}
 		}
 		if (!empty($rowdevice['ipaddressID'])) {
 			$mysql = 'SELECT * FROM `ha_mf_device_ipaddress` WHERE id = '.$rowdevice['ipaddressID'];
@@ -596,12 +603,6 @@ function listDeviceProperties($devices){
 		return $result;
 	}
 	return false ;
-}
-
-function updateThermType($deviceID, $typeID){
-
-	PDOUpdate('ha_mf_devices', array('typeID' => $typeID), array('id' => $deviceID ));
-	return true;
 }
 
 function setTrend($new, $old) {
