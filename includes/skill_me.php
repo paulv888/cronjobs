@@ -2,65 +2,43 @@
 //define( 'DEBUG_ALX', TRUE );
 if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
 
-define("MY_DEVICE_ID", 283);
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 
 
-if (isset($_GET["Message"])) {
-	$sdata=$_GET["Message"];
-} else {
-	$sdata = file_get_contents("php://input");
-}
 
 $log = array();
 
-$commandMap = [ 
-	"ShortAnswerIntent" =>           "409",
-	"WhatsTemperatureIntent" =>      "410",
-	"AnySecurityOpenIntent" =>       "411",
-	"DeviceStatusIntent" =>          "412",
-	"WhatsBedtimeIntent" =>          "413",
-	"WhatsPlayingIntent" =>          "414",
-	"DoingIntent" =>                 "415",
-	"SystemReportIntent" =>          "416",
-	"HelpIntent" =>                  "417",
-	"StopIntent" =>                  "418",
-	"CancelIntent" =>                "419",
-	"LaunchRequest" =>               "420",
-	"SessionEndedRequest"   =>       "421",
-	"AlertsIntent"   =>              "422",
-	"YesIntent"   =>                 "423",
-	"ReportIntent"   =>              "446",
-	"NoIntent"   =>                  "424"
-];
+function handleRequest($alexaRequest) {
 
-$file = 'skill_me.log';
-$current = file_get_contents($file);
-$current .= date("Y-m-d H:i:s").": ".$sdata."\n";
-file_put_contents($file, $current);
+	global $log;
 
-if (!($sdata=="")) { 					//import_event
+	$commandMap = [ 
+		"ShortAnswerIntent" =>           "409",
+		"WhatsTemperatureIntent" =>      "410",
+		"AnySecurityOpenIntent" =>       "411",
+		"DeviceStatusIntent" =>          "412",
+		"WhatsBedtimeIntent" =>          "413",
+		"WhatsPlayingIntent" =>          "414",
+		"DoingIntent" =>                 "415",
+		"SystemReportIntent" =>          "416",
+		"HelpIntent" =>                  "417",
+		"StopIntent" =>                  "418",
+		"CancelIntent" =>                "419",
+		"LaunchRequest" =>               "420",
+		"SessionEndedRequest"   =>       "421",
+		"AlertsIntent"   =>              "422",
+		"YesIntent"   =>                 "423",
+		"ReportIntent"   =>              "446",
+		"NoIntent"   =>                  "424"
+	];
 
 	$feedback = array();
 	$exectime = -microtime(true); 
 	
-	$rcv_message = json_decode($sdata);
-
-	$alexaRequest = \Alexa\Request\Request::fromData($rcv_message);
-
 	$log['callerID'] = MY_DEVICE_ID;
-	$log['message'] = $sdata;
 	$log['inout'] = COMMAND_IO_RECV;
 	
 	
-	try {
-	  $alexaRequest->validate(APP_ID);
-	} catch(Exception $e) {
-	  echo 'Message: ' .$e->getMessage();
-	  // Log something
-	  exit;
-	}
-
 	// print_r($alexaRequest);
  	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
 		$log['commandID'] = (array_key_exists($alexaRequest->intentName, $commandMap) ? $commandMap[$alexaRequest->intentName] : COMMAND_UNKNOWN);

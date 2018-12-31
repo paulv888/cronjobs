@@ -37,10 +37,10 @@ abstract class Request {
 		return $request;
 	}
 
-	public function validate($appID) {
-		if (DEBUG_ALX) echo "validate".CRLF;
+	public function validate($appIDs) {
+		if (DEBUG_ALX) echo "Validate".CRLF;
 		//$this->validateTimestamp();
-		$this->validateApplicationID($appID);
+		$this->validateApplicationID($appIDs);
 	}
 
 	private function validateTimestamp() {
@@ -52,9 +52,13 @@ abstract class Request {
 		}
 	}
 
-	private function validateApplicationID($appID) {
-		if ($appID != $this->applicationId) {
-			throw new InvalidArgumentException('Application ID not matching');
+	private function validateApplicationID($appIDs) {
+		foreach ($appIDs as $appID) {
+			$found = true;
+			if ($appID == $this->applicationId) {
+				$found = true;
+			}
 		}
+		if (!$found) throw new InvalidArgumentException('Application ID not matching');
 	}
 }

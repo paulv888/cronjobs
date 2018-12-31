@@ -1,70 +1,38 @@
 <?php
-// define( 'DEBUG_ALX', TRUE );
-if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
-require_once 'includes.php';
-require_once 'includesAlexa.php';
 
-define("MY_DEVICE_ID", 295);
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 define ("SOUND_DEVICE_ID", 241);
 
-
-if (isset($_GET["Message"])) {
-	$sdata=$_GET["Message"];
-} else {
-	$sdata = file_get_contents("php://input");
-}
-
 $log = array();
 
-$commandMap = [ 
-	"ShortAnswerIntent" 	=>          "409",
-	"PlayArtistIntent" 		=> 		    "431",
-	"WhatsPlayingIntent" 	=> 			"414",
-	"PlayPreviousSongIntent" =>         "433",
-	"PlayNextSongIntent" 	=>          "432",
-	"PlayLoudIntent" 		=>          "434",
-	"PlayExtraLoudIntent" 	=>          "435",
-	"StartPlaylistIntent" 	=>          "436",
-	"PlaySongIntent" 		=>          "437",
-	"HelpIntent" 			=>          "417",
-	"StopIntent" 			=>          "418",
-	"CancelIntent" 			=>          "419",
-	"LaunchRequest" 		=>          "420",
-	"SessionEndedRequest"   =>  	    "421",
-	"AlertsIntent"   		=>          "422",
-	"YesIntent"   			=>          "423",
-	"NoIntent"   			=>           "424"
-];
-
-$file = 'skill_kodi_echo.log';
-$current = file_get_contents($file);
-$current .= date("Y-m-d H:i:s").": ".$sdata."\n";
-file_put_contents($file, $current);
-
-if (!($sdata=="")) { 					//import_event
+function handleRequest($alexaRequest) {
+	$commandMap = [ 
+		"ShortAnswerIntent" 	=>          "409",
+		"PlayArtistIntent" 		=> 		    "431",
+		"WhatsPlayingIntent" 	=> 			"414",
+		"PlayPreviousSongIntent" =>         "433",
+		"PlayNextSongIntent" 	=>          "432",
+		"PlayLoudIntent" 		=>          "434",
+		"PlayExtraLoudIntent" 	=>          "435",
+		"StartPlaylistIntent" 	=>          "436",
+		"PlaySongIntent" 		=>          "437",
+		"HelpIntent" 			=>          "417",
+		"StopIntent" 			=>          "418",
+		"CancelIntent" 			=>          "419",
+		"LaunchRequest" 		=>          "420",
+		"SessionEndedRequest"   =>  	    "421",
+		"AlertsIntent"   		=>          "422",
+		"YesIntent"   			=>          "423",
+		"NoIntent"   			=>           "424"
+	];
 
 	$feedback = array();
 	$exectime = -microtime(true); 
 	
-	$rcv_message = json_decode($sdata);
-
-	$alexaRequest = \Alexa\Request\Request::fromData($rcv_message);
-
 	$log['callerID'] = MY_DEVICE_ID;
-	$log['message'] = $sdata;
 	$log['inout'] = COMMAND_IO_RECV;
 	
 	
-	try {
-	  $alexaRequest->validate(APP_ID);
-	  // $alexaRequest->validate("amzn1.ask.skill.e2fac8c8-3bff-4f1f-8424-ddd647a28ee4");
-	} catch(Exception $e) {
-	  echo 'Message: ' .$e->getMessage();
-	  // Log something
-	  exit;
-	}
-
 	// print_r($alexaRequest);
  	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
 		$log['commandID'] = (array_key_exists($alexaRequest->intentName, $commandMap) ? $commandMap[$alexaRequest->intentName] : COMMAND_UNKNOWN);
