@@ -10,6 +10,7 @@ function handleRequest($alexaRequest) {
 		"ShortAnswerIntent" 	=>          "409",
 		"PlayArtistIntent" 		=> 		    "431",
 		"WhatsPlayingIntent" 	=> 			"414",
+		"ShowIntent" 			=> 			"448",
 		"PlayPreviousSongIntent" =>         "433",
 		"PlayNextSongIntent" 	=>          "432",
 		"PlayLoudIntent" 		=>          "434",
@@ -90,6 +91,7 @@ function ShortAnswerIntent($request, $session, $response) {
 	$findartist = strtolower((isset($request->slots->Artist) ? $request->slots->Artist : ""));
 	$findsong = strtolower((isset($request->slots->Song) ? $request->slots->Song : (isset($request->slots->Artist) ? $request->slots->Artist : (isset($request->slots->CatchAll) ? $request->slots->CatchAll : ""))));;
 	$findelse = strtolower((isset($request->slots->CatchAll) ? $request->slots->CatchAll : ""));
+	$showwhat = strtolower((isset($request->slots->ShowWhat) ? $request->slots->ShowWhat : ""));
 	$orgIntent = "NotFound";
 	if (!$session->new && isset($session->attributes) && isset($session->attributes->intentSequence)) {
 		$orgIntent = $session->attributes->intentSequence;
@@ -114,6 +116,10 @@ function ShortAnswerIntent($request, $session, $response) {
 			break;
 		case "PlaySongIntent":
 			$request->slots->Song = $findsong;
+			$request->intentName = $orgIntent;
+			break;
+		case "ShowIntent":
+			$request->slots->ShowWhat = $showwhat;
 			$request->intentName = $orgIntent;
 			break;
 		case "WhatsPlayingIntent":
@@ -409,6 +415,34 @@ function WhatsPlayingIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	return $feedback;
+
+}
+
+function ShowIntent($request, $session, $response) {
+
+	global $log;
+	
+	$feedback['Name'] = 'ShowIntent';
+	
+	$responses = array("<speak>Please check the T.V. for a image off the Run Camera</speak>");
+
+//	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
+	$deviceProperties = getDeviceProperties(array(259));
+	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
+	
+	if (DEBUG_ALX) { print_r($deviceProperties); }
+	
+	$answer = sprintf($responses[rand(0,count($responses)-1)]);
+	$response->respond($answer);
+	$feedback['message'] = $answer;
+	$feedback['result']['tell'] = $response->tell();
+
+	$feedback['result']['display'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>315));
+
+	//return $result;
+	
 	return $feedback;
 
 }

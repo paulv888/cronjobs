@@ -104,7 +104,7 @@ function runTimerSteps($params) {
 			LEFT JOIN ha_mf_commands c ON st.commandID = c.id) 
 		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
 		
-	$feedback['result'] = "";
+	//$feedback['result'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
 			$description = $step['description'];
