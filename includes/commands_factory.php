@@ -659,6 +659,8 @@ function storeCamImage($params) {
 
         echo "<pre>";
 		print_r($params['cvs']);
+		//echo getcwd() ;
+		//echo $_SERVER['DOCUMENT_ROOT'];
         echo "</pre>";
 		// copy(getPath().'/includes/offline.jpg', LASTIMAGEDIR. );
 		if (!copy($params['cvs'][0], $params['cvs'][1])) {

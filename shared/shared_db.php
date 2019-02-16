@@ -108,7 +108,7 @@ function PDOupsert($table, $fields, $where, $debug=false) {
 
 
 	$i=0;
-	while (list($key, $value) = each($where)) {
+	foreach( $where as $key => $value ){
 		if ($i==0) {
 			$sql = 'SELECT '.$key.' FROM '.$table.' WHERE  ';
 		} else {
@@ -143,7 +143,7 @@ function PDOupdate($table, $fields, $where){
 
 	$mysql = 'UPDATE '. $table . ' SET ';
 	$i = 0;
-	while (list($key, $value) = each($fields)) {
+	foreach( $fields as $key => $value ){
 //		echo "Key: $key; Value: $value<br />\n";
 		if (is_array($value)) $value = json_encode($value,JSON_UNESCAPED_SLASHES);
 		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
@@ -162,7 +162,7 @@ function PDOupdate($table, $fields, $where){
 
 	$mysql .= ' WHERE ';
 	$i = 0;
-	while (list($key, $value) = each($where)) {
+	foreach( $where as $key => $value ){
 		if ($i>0) $mysql.= " AND ";
 		$mysql.= "`".$key."` = ?";
 		$values[] = $value;
