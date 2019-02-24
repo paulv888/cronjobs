@@ -1,4 +1,9 @@
 <?php
+function isCLI()
+{
+    return (php_sapi_name() === 'cli');
+}
+
 function getPath(){
 	$str = $_SERVER['SCRIPT_FILENAME'];
 	$chunks = explode('/', $str);
@@ -304,7 +309,9 @@ function setURL($params, $morepage = null) {
 	if (!empty($connect['targetport'])) $url .= ":".$connect['targetport'];
 	if (!empty($connect['page'])) $url .= '/'.ltrim($connect['page'],'/');
 	if (!empty($morepage)) $url .= $morepage;
-
+	
+	$url = str_replace('//', '/', $url);
+	
 	return trim($url);
 }
 

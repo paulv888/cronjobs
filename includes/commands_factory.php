@@ -652,16 +652,16 @@ function fireTVsleep($params) {
 
 }
 
-function storeCamImage($params) {
+function copyFile($params) {
 
-        $feedback['Name'] = 'storeCamImage';
+        $feedback['Name'] = 'copyFile';
         $feedback['result'] = array();
 
-        echo "<pre>";
-		print_r($params['cvs']);
+        // echo "<pre>";
+		// print_r($params['cvs']);
 		//echo getcwd() ;
 		//echo $_SERVER['DOCUMENT_ROOT'];
-        echo "</pre>";
+        // echo "</pre>";
 		// copy(getPath().'/includes/offline.jpg', LASTIMAGEDIR. );
 		if (!copy($params['cvs'][0], $params['cvs'][1])) {
 			$errors= error_get_last();
@@ -670,6 +670,47 @@ function storeCamImage($params) {
 
         $feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
         return $feedback;
+
+}
+
+function storeCamImage($params) {
+
+
+	$feedback['result'] = array();
+    $feedback['Name'] = 'storeCamImage';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = COMMAND_SNAPSHOT;
+	$feedback['result'] = sendCommand($command); 
+	
+	if (isCLI()) {
+		$offline = LASTIMAGEDIR.'/offline.jpg';
+		$file = LASTIMAGEDIR.'/'.$params['device']['description'].'.jpg';
+	} else {
+		$offline = SERVER_LASTIMAGEDIR.'/offline.jpg';
+		$file = SERVER_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
+		$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
+	}
+
+	// echo "<pre>";
+	// echo $public_file;
+	// // echo $feedback['result']['result_raw'];
+	// echo "</pre>";
+	copy($offline,$file);
+
+	if (file_put_contents($file, $feedback['result']['result_raw']) === false) {
+		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];	
+	}
+    $feedback['result_raw'] = array('filename' => $public_file);
+    $feedback['message'] = "Copy ".$params['command']['command'].' to '.$file;
+	unset($feedback['result']['result'][0]);
+	unset($feedback['result']['result_raw']);
+	// echo "<pre>";
+	// print_r($feedback);
+	// // // echo $feedback['result']['result_raw'];
+	// echo "</pre>";
+    return $feedback;
 
 }
 
@@ -785,7 +826,7 @@ function sendInsteonCommand(&$params) {
 	$params['commandvalue'] = dec2hex($params['commandvalue'],2);
 	if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
 
-	$tcomm = replaceCommandPlaceholders($params['command'],$params);
+	$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 	$params['commandvalue'] = $cv_save;
 
 	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
@@ -828,67 +869,11 @@ function sendInsteonCommand(&$params) {
 	return $feedback;
 }
 
-function sendX10Command(&$params) {
-
-	$feedback['Name'] = 'sendX10Command';
-	$feedback['result'] = array();
-
-	global $inst_coder;
-	if ($inst_coder instanceof InsteonCoder) {
-	} else {
-		$inst_coder = new InsteonCoder();
-	}
-	$tcomm = str_replace("{mycommandID}",$params['commandID'],$params['command']);
-	if ($params['dimmable'] == "YES") {
-		$dims = 0;
-		if ($params['commandvalue']>0 && $params['commandvalue'] < 100) $dims=(integer)round(10-10/100*$params['commandvalue']);
-		if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
-		if (DEBUG_DEVICES) echo "dims ".$dims.CRLF;
-		while($dims > 0) {
-			$tcomm .= COMMAND_DIM_CLASS_X10_INSTEON_DIMM;
-			$dims--;
-		}
-		$tcomm = COMMAND_DIM_CLASS_X10_INSTEON_OFF.$tcomm; 	// Add off in front
-	} else {
-		$params['commandvalue'] = 100;
-	}
-	if ($params['commandvalue']>100) $params['commandvalue']=100;
-	if ($params['commandvalue']!=100 && $params['commandID'] == COMMAND_ON) $params['commandvalue'] = $params['onlevel'];
-	if ($params['commandvalue'] == NULL && $params['commandID'] == COMMAND_ON) $params['commandvalue']=100;		// Special case so satify the replace in on command
-//		$tcomm .={code}a80=I=3;	$tcomm .={code}b80=I=3 $tcomm .= "|{code}{unit}00=I=3"; $tcomm .= "|{code}a80=I=3";	$tcomm .= "|0b80=I=3";
-//		$tcomm .= "|{code}480=I=3";			// dim 480  $tcomm .= "|a780=I=3";	$tcomm .= "|0b80=I=3";
-	$tcomm = str_replace("{code}",$inst_coder->x10_code_encode($params['device']['code']),$tcomm);
-	$tcomm = str_replace("{unit}",$inst_coder->x10_unit_encode($params['device']['unit']),$tcomm);
-	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
-	$commands=explode("|", $tcomm);
-	//
-	// handle dimming, cannot give commandvalue so dimming lots of times
-	//
-	foreach ($commands as $command) {
-		//$url=$params['device']['connection']['targetaddress'].":".$params['device']['connection']['targetport'].$params['device']['connection']['page'].$command.'=I=3';
-		$url=setURL($params);
-		$feedback['commandstr'] = $url.$command.'=I=3';
-		if (DEBUG_DEVICES) echo $url.CRLF;
-		$curl = restClient::get($url.$command.'=I=3',null,setAuthentication($params['device']));
-		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
-			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-		else 
-			$feedback['result'][] = $curl->getresponse();
-		usleep(INSTEON_SLEEP_MICRO);
-	}
-	if (!array_key_exists('error', $feedback)){
-		if ($params['dimmable'] == "YES") {
-			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
-		}
-	}
-	return $feedback;
-}
-
 function sendGenericPHP(&$params) {
 // TODO: Result not arrays?
 	//$feedback['result'] = array();
 
-	$func = $params['command'];
+	$func = $params['command']['command'];
 	if ($func == "sleep") {
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
@@ -904,6 +889,29 @@ function sendGenericHTTP(&$params) {
 	$feedback['Name'] = 'sendGenericHTTP - '.$targettype;
 	$feedback['result'] = array();
 
+	if (DEBUG_COMMANDS) echo "<pre>Generic HTTP >";
+	if (DEBUG_COMMANDS) print_r($params);
+	if (DEBUG_COMMANDS) echo "</pre>".CRLF;
+
+	switch ($params['command']['http_verb'])
+	{
+	case "GET": 
+		$targettype = "GET";
+		break;
+	case "PUT": 
+		$targettype = "PUT";
+	case "POST":
+		break;
+	case "PATCH":
+		$targettype = "PUT";
+	case "DELETE":
+		$targettype = "DELETE";
+		break;
+	default: 
+		break;
+	}		
+	
+	
 	switch ($targettype)
 	{
 	case "POSTAPP":          // PHP - vlosite
@@ -912,8 +920,8 @@ function sendGenericHTTP(&$params) {
 	case "JSON":             // Wink
 	case "PUT":           // Dexa
 	case "DELETE":           // Dexa
-		if (DEBUG_DEVICES) echo $targettype."</p>";
-		$tcomm = replaceCommandPlaceholders($params['command'],$params);
+		if (DEBUG_COMMANDS) echo $targettype."</p>";
+		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 		$tmp1 = explode('?', $tcomm);
 		$morepage = null;
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
@@ -922,7 +930,7 @@ function sendGenericHTTP(&$params) {
 			$tcomm = implode('?',$tmp1);
 		} 
 		$url = setURL($params, $morepage);
-		if (DEBUG_DEVICES) echo $url." Params: ".htmlentities($tcomm).CRLF;
+		if (DEBUG_COMMANDS) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
 			$feedback['commandstr'] = $url.' '.htmlentities($tcomm);
 			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "text/plain", $params['device']['connection']['timeout']);
@@ -932,20 +940,20 @@ function sendGenericHTTP(&$params) {
 		} elseif ($targettype == "JSON") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} elseif ($targettype == "PUT") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
 			//echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} elseif ($targettype == "DELETE") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_DEVICES) echo $url." Params: ".$postparams.CRLF;
+			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
 			//echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
 			$curl = restClient::delete($url, null, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
@@ -967,11 +975,14 @@ function sendGenericHTTP(&$params) {
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 		break;
 	case "GET":          // Sony Cam at the moment
-		if (DEBUG_DEVICES) echo "GET</p>";
-		$tcomm = replaceCommandPlaceholders($params['command'],$params);
+		if (DEBUG_COMMANDS) echo "GET</p>";
+		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 		$url= setURL($params);
-		if (DEBUG_DEVICES) echo $url.$tcomm.CRLF;
-		$feedback['commandstr'] = $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));;
+		if (DEBUG_COMMANDS) echo $url.$tcomm.CRLF;
+		$feedback['commandstr'] = $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));
+		// echo "<pre>";
+		// echo $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));
+		// echo "</pre>";
 		$curl = restClient::get($url.$tcomm, null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -980,16 +991,16 @@ function sendGenericHTTP(&$params) {
 			$feedback['result'][] = $curl->getresponse();
 		break;
 	case "TCP":              // iTach (Only \r)
-		if (DEBUG_DEVICES) echo "TCP_IR</p>";
+		if (DEBUG_COMMANDS) echo "TCP_IR</p>";
 		//print_r($params);
 		$url = setURL($params);
-		$feedback['commandstr'] = $url.$params['command']."\r";
+		$feedback['commandstr'] = $url.$params['command']['command']."\r";
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		if (DEBUG_COMMANDS) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
 		// open a client connection
 		$client = stream_socket_client('tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
 		if ($client === false) {
@@ -1012,24 +1023,24 @@ function sendGenericHTTP(&$params) {
 		//if ($feedback['result'] != "ERR", or busy...
 		break;
 	case "TCP64":          // TP-Link
-		if (DEBUG_DEVICES) echo "TP-Link</p>";
+		if (DEBUG_COMMANDS) echo "TP-Link</p>";
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		if (DEBUG_DEVICES) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$params['command'].CRLF;
+		if (DEBUG_COMMANDS) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$params['command']['command'].CRLF;
 		// open a client connection
 //		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
 		//decodeTPLink(base64_decode($feedback['commandstr']));
-		$feedback['commandstr'] = "tcp64://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command'];
-		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command'], $params['device']['connection']['timeout']);
+		$feedback['commandstr'] = "tcp64://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command']['command'];
+		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command']['command'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
 //		print_r($feedback['result']);
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
-		if (DEBUG_DEVICES) echo "DOING NOTHING</p>";
+		if (DEBUG_COMMANDS) echo "DOING NOTHING</p>";
 		break;
 	}
 	
@@ -1342,7 +1353,7 @@ Update - Put
 =9&messagetypeID=MESS_TYPE_COMMAND&commandID=17"}
 */
 
-		$tcomm = replaceCommandPlaceholders($params['command'],$params);
+		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 		$tmp1 = explode('?', $tcomm);
 		if (array_key_exists('1', $tmp1)) { 	// found '?' inside command then take page from command string and add to url
 			$params['device']['connection']['page'] .= $tmp1[0];
