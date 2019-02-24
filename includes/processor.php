@@ -1,7 +1,7 @@
 <?php 
 // define( 'DEBUG_FLOW', TRUE );
 // define( 'DEBUG_DEVICES', TRUE );
-// define( 'DEBUG_PARAMS', TRUE );
+//define( 'DEBUG_PARAMS', TRUE );
 // define( 'DEBUG_COMMANDS', TRUE );
 // define( 'DEBUG_RETURN', TRUE );
 if (isset($_POST['DEBUG_FLOW'])) define( 'DEBUG_FLOW', TRUE );
@@ -165,8 +165,8 @@ function sendCommand(&$thiscommand) {
 			return $feedback;			// error abort
 		}
 	}
-	$thiscommand['command'] = $rowcommands['command'];
-	$thiscommand['value'] = $rowcommands['value'];
+	$thiscommand['command'] = $rowcommands;
+	//$thiscommand['value'] = $rowcommands['value'];
 
 	// Load Message Template
 	if (!empty($thiscommand['alert_textID'])) {
@@ -183,7 +183,7 @@ function sendCommand(&$thiscommand) {
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandID ".$thiscommand['commandID'].CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandclassID ".$commandclassID.CRLF;
 	if (DEBUG_FLOW || DEBUG_DEVICES) echo "commandvalue ".$thiscommand['commandvalue'].CRLF;
-	if (DEBUG_FLOW || DEBUG_DEVICES) echo "command ".$thiscommand['command'].CRLF;
+	if (DEBUG_FLOW || DEBUG_DEVICES) echo "command ".$thiscommand['command']['command'].CRLF;
 
 	switch ($commandclassID)
 	{
@@ -200,7 +200,7 @@ function sendCommand(&$thiscommand) {
 	case COMMAND_CLASS_EMAIL:
 	case COMMAND_CLASS_BULLET:
 		if (DEBUG_DEVICES) echo "COMMAND_CLASS_GENERIC/COMMAND_CLASS_3MFILTRETE/EMAIL</p>";
-		if ($thiscommand['command'] == "exit") 
+		if ($thiscommand['command']['command'] == "exit") 
 			$exittrap=true;
 		else {
 			$feedback = sendGenericPHP($thiscommand);

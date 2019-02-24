@@ -109,12 +109,14 @@ class RestClient {
 		$this->headers['code'] = $reg[1];
 		$this->headers['message'] = $reg[2];
 		$this->response = "";
+		
 		for($i=1;$i<count($parts);$i++) {//This make sure that exploded response get back togheter
 			if($i > 1) {
 				$this->response .= "\n\r";
 			}
 			$this->response .= $parts[$i];
 		}
+		$this->response = ltrim($this->response,"\n");
      }
 
      /*
