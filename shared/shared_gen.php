@@ -3,13 +3,13 @@ function isCLI()
 {
     return (php_sapi_name() === 'cli');
 }
-
-function getPath(){
-	$str = $_SERVER['SCRIPT_FILENAME'];
-	$chunks = explode('/', $str);
-	unset($chunks[count($chunks)-1]);
-	if (empty($chunks)) return "/home/pvloon/php";
-	return implode('/', $chunks);
+ 
+function getPath($public = false) {
+	$url = ($public ? $_SERVER['SCRIPT_NAME'] : $_SERVER['SCRIPT_FILENAME']);
+	$parts = explode('/',$url);
+	array_pop($parts);
+	if (empty($parts)) return "/home/pvloon/php";
+	return implode('/', $parts);
 }
 
 function to_celcius($f) {

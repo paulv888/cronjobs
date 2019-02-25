@@ -79,7 +79,7 @@ function refreshAllVideos(&$params = null) {
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
 		$dir = ucwords(rtrim($params['commandvalue'], '/') . '/');
 	} 
-	$params['directory'] = LOCAL_MUSIC_VIDEOS.$dir;
+	$params['directory'] = LOCAL_MUSIC_VIDEOS.'/'.$dir;
 	$params['importprocess'] = false;
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	// $params['refreshvideooptions'] = REFRESH_NFO;
@@ -98,7 +98,7 @@ function findDuplicateVideos(&$params = null) {
 		$dir = ucwords(rtrim($params['commandvalue'], '/') . '/');
 	} 
 
-	$params['directory'] = LOCAL_MUSIC_VIDEOS.$dir;
+	$params['directory'] = LOCAL_MUSIC_VIDEOS.'/'.$dir;
 	$params['importprocess'] = false;
 	$params['refreshvideooptions'] = REFRESH_CHECK_DUPLICATES;
 	$feedback = refreshVideos($params);
@@ -118,7 +118,7 @@ function findDuplicateVideos(&$params = null) {
 function importVideos(&$params) {
 	header('Content-Type: text/html; charset=utf-8');
 
-	$params['directory'] = LOCAL_MUSIC_VIDEOS.LOCAL_IMPORT;
+	$params['directory'] = LOCAL_IMPORT.'/';
 	$params['importprocess'] = true;
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	$feedback = refreshVideos($params);
@@ -143,7 +143,7 @@ function import1Video(&$params) {
 	//.': '; print_r($params);echo "</pre>";
 
 	$params['importprocess'] = true;
-	$result = readDirs(LOCAL_MUSIC_VIDEOS.LOCAL_IMPORT, $params['importprocess']); 
+	$result = readDirs(LOCAL_IMPORT, $params['importprocess']); 
 	$files = $result['result'];
 	// print_r($files);
 	$params['refreshvideooptions'] = REFRESH_ALL;
@@ -657,7 +657,7 @@ function cleanName($fname) {
 }
 
 function cmp($a, $b) {
-		return $a["filename"] - $b["filename"];
+	return strcmp($a["filename"],$b["filename"]);
 }
 
 function clearUTF___delete($s)
@@ -875,7 +875,7 @@ function getGenre($dirname) {
 
 function findBestMatch(&$file, $mvids) {
 
-	$file['moveto'] = ADD_MOVE_TO.$mvids[0]['strPath'];
+	$file['moveto'] = VLOSITE_DATA.$mvids[0]['strPath'];
 	$paths = array();
 	foreach($mvids as $mvid) {	// count occurences?
 		// [0] => Array
@@ -903,11 +903,11 @@ function findBestMatch(&$file, $mvids) {
 	// echo "<pre>";
 	arsort($paths);
 	// print_r($paths);
-	$file['moveto'] = ADD_MOVE_TO.key($paths);
+	$file['moveto'] = VLOSITE_DATA.key($paths);
 	// echo "mfrequent: ". $file['moveto'].CRLF; 
 	foreach($paths as $key => $value) {	// try to find non asorted
 		if (strpos($key, ASSORTED_DIR) === false) {
-			$file['moveto'] = ADD_MOVE_TO.$key;
+			$file['moveto'] = VLOSITE_DATA.$key;
 			// echo "improved: ". $file['moveto'].CRLF; 
 			break;
 		}
@@ -955,7 +955,7 @@ function findMoveTo(&$file, $importprocess) {
 		} else {								// Must be new artist -> going to assorted for input genre
 			if (($key = array_search($file['genre'], $genres)) !== false) {
 				$key = array_search($file['genre'], $genres);
-				$file['moveto'] = ADD_MOVE_TO.$genrefolders[$key].ASSORTED_DIR;
+				$file['moveto'] = VLOSITE_DATA.$genrefolders[$key].ASSORTED_DIR;
 				// echo "<pre> New Artist".': '; print_r($mvids); echo "</pre>";
 			} else {
 				$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;

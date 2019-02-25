@@ -183,7 +183,7 @@ function PlaySongIntent($request, $session, $response) {
 		}
 		
 		$playlistname = 'AlexaList';
-		$playlist = LOCAL_PLAYLISTS.$playlistname.'.m3u';
+		$playlist = LOCAL_PLAYLISTS.'/'.$playlistname.'.m3u';
 		file_put_contents($playlist, $songs);
 		
 		
@@ -280,7 +280,7 @@ $playLists = [
 			}
 			
 			$playlistname = 'AlexaList';
-			$playlist = LOCAL_PLAYLISTS.$playlistname.'.m3u';
+			$playlist = LOCAL_PLAYLISTS.'/'.$playlistname.'.m3u';
 			file_put_contents($playlist, $songs);
 			
 			

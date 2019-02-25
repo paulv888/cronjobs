@@ -120,6 +120,7 @@ function runTimerSteps($params) {
 				echo "***".sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile)."****".CRLF;
 				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 				$feedback['Name'] = $description;
+				if 	(!array_key_exists('result', $feedback)) $feedback['result'] = "";
 				$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'result' => $feedback['result'] ));
 				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
