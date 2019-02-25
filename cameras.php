@@ -43,7 +43,7 @@ function movePictures($camera) {
  
 	$files = array();
 	$filetimes = array();
-	$dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$camera['previous_properties']['Directory']['value'].'/';
+	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
 	$lastfiletime = $camera['lastfiletime'];
 	if ($handle = opendir($dir)) {
 		while (false !== ($file = readdir($handle))) {
@@ -140,10 +140,10 @@ function movePictures($camera) {
 			$numfiles++;
 		}	// Handled all file in old to new order
 		echo date("Y-m-d H:i:s").": ".$camera['description']." Creating Thumbnail.".CRLF;
-		if (!file_exists(LASTIMAGEDIR)) {
-			mkdir(LASTIMAGEDIR);
+		if (!file_exists(LOCAL_LASTIMAGEDIR)) {
+			mkdir(LOCAL_LASTIMAGEDIR);
 		}
-		$thumbname = LASTIMAGEDIR.'/'.$camera['description'].'.jpg';
+		$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($camera['description']).'_small.jpg';
 		createthumb($newfilename,$thumbname,200,200, date('Y-m-d H:i:s'));
 
 		// Close group (for now)
@@ -281,7 +281,7 @@ function findLastGroupDir($dir) {
 
 function uploadPictures($camera) {
 
-	$dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$camera['previous_properties']['Directory']['value'].'/';
+	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
 	$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
 
 	$files = array();

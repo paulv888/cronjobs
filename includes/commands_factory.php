@@ -464,7 +464,7 @@ function moveMusicVideo($params) {
 	$file = $params['file'];
 	if ($params['movetorecycle']) {
 		$rand = rand(100000,999999);
-		$file['moveto'] = LOCAL_MUSIC_VIDEOS.LOCAL_RECYCLE;
+		$file['moveto'] = LOCAL_RECYCLE.'/';
 		$file['newname'] = $file['filename'].' ('.$rand.')';
 	}
 	if ($params['createbatchfile']) {
@@ -565,7 +565,7 @@ function addToFavorites(&$params) {
 	$feedback['Name'] = 'addToFavorites';
 	$feedback['result'] = array();
  
-	$file = LOCAL_PLAYLISTS.$params['macro___commandvalue'].'.m3u';
+	$file = LOCAL_PLAYLISTS.'/'.$params['macro___commandvalue'].'.m3u';
 	$error = "";
 	if (($playlist = file_get_contents($file)) !== false) {
 		$playingfile = $params['device']['previous_properties']['File']['value'];
@@ -662,7 +662,6 @@ function copyFile($params) {
 		//echo getcwd() ;
 		//echo $_SERVER['DOCUMENT_ROOT'];
         // echo "</pre>";
-		// copy(getPath().'/includes/offline.jpg', LASTIMAGEDIR. );
 		if (!copy($params['cvs'][0], $params['cvs'][1])) {
 			$errors= error_get_last();
 			$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];
@@ -684,14 +683,10 @@ function storeCamImage($params) {
 	$command['commandID'] = COMMAND_SNAPSHOT;
 	$feedback['result'] = sendCommand($command); 
 	
-	if (isCLI()) {
-		$offline = LASTIMAGEDIR.'/offline.jpg';
-		$file = LASTIMAGEDIR.'/'.$params['device']['description'].'.jpg';
-	} else {
-		$offline = SERVER_LASTIMAGEDIR.'/offline.jpg';
-		$file = SERVER_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
-		$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
-	}
+	$offline = LOCAL_LASTIMAGEDIR.'/offline.jpg';
+	$file = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
+	$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
+
 
 	// echo "<pre>";
 	// echo $public_file;
@@ -1589,7 +1584,7 @@ function readFlashAir(&$params) {
 		if ($file[1] > $params['device']['previous_properties']['Last File']['value']) {		// Ok copy this one
 			$url = setURL($params, $dummy);
 			$infile = $url.urlencode($file[0].'/'.$file[1]);
-			$tofile = CAMERAS_ROOT.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
+			$tofile = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
 			echo "cp ".$infile.' '.$tofile.CRLF;
 			if (!mycopy($infile, $tofile)) {
 				$feedback['error'] .= $infile.' '.$tofile.", Aborting";
@@ -1653,7 +1648,9 @@ return true;
 }
 
 function extractVids($params) {
-
+//
+//	Extract pictures from video (Not is use, was Wansview camera
+//
 	$feedback['Name'] = 'extractVids';
 	$feedback['commandstr'] = "readDir";
 
@@ -1662,7 +1659,7 @@ function extractVids($params) {
 
 //        print_r($params);
 
-        $dir = $_SERVER['DOCUMENT_ROOT'].CAMERASDIR.$params['device']['previous_properties']['Directory']['value'].'/';
+        $dir = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/';
 //	echo "dir: $dir".CRLF;
 
 	$params['importprocess'] = true;
@@ -1722,173 +1719,4 @@ function extractVids($params) {
 	return $feedback;
 
 }
-
-function importDexas(&$params) {
-//	Command in:
-// 		$params
-//
-//  Command out:
-//		$feedback type Array
-//			with keys: 
-//						'Name'   		(String)	-> Name of executed command						REQUIRED
-//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
-//						'message' 		(String)	-> To display on remote
-//						'commandstr' 	(String)	-> for eventlog, actual command send
-//      if error then	'error'			(String)	-> Error description
-//						Nothing else allowed 
-// function templateFunction(&$params) {
-
-	// $feedback['Name'] = 'templateFunction';
-	// $feedback['commandstr'] = "I send this";
-	// $feedback['result'] = array();
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-	// return $feedback;
-// }
-
-	$feedback['Name'] = 'importDexas';
-	$feedback['commandstr'] = json_encode($params);
-	$feedback['result'] = array();
-	$feedback['message'] = "all good";
-
-
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-
-	$deviceID = $params['deviceID'];
-        $thiscommand['loglevel'] = LOGLEVEL_COMMAND;
-        $thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
-        $thiscommand['caller'] = $params['caller'];
-        $thiscommand['commandID'] = 1;
-        $thiscommand['deviceID'] = $params['deviceID'];
-        $thiscommand['device']['id'] =  $deviceID;
-        $feedback['SendCommand']=sendCommand($thiscommand);
- //     echo "<pre>+++GetDexas";
- //     print_r($feedback);
-
-	if (array_key_exists(0,$feedback['SendCommand']['result'])) {
-		$dexaResponse = json_decode($feedback['SendCommand']['result'][0], true);
-
-
-//print_r($dexaResponse);
- //     echo "</pre>===GetDexas";
-
-
-        $dexasimported=0;
-        $mysql = "TRUNCATE `pg_dexas`;";
-        PDOExec($mysql);
-        $mysql = "TRUNCATE `pg_configurations`;";
-        PDOExec($mysql);
-        $mysql = "TRUNCATE `pg_configurations_details`;";
-        PDOExec($mysql);
-
-	$dexas = $dexaResponse['data'];
-        foreach ($dexas  as $dexa) {
-                PDOinsert('pg_dexas', $dexa);
-
-                $dexasimported++;
-
-        }
-	}
-	$feedback['message'] = $dexasimported." Dexas imported";
-		
-        return $feedback;
-
-}
-function putDexas(&$params) {
-//	Command in:
-// 		$params
-//
-//  Command out:
-//		$feedback type Array
-//			with keys: 
-//						'Name'   		(String)	-> Name of executed command						REQUIRED
-//						'result'		(Array)		-> result (Going to log (Update Props or ...)	REQUIRED
-//						'message' 		(String)	-> To display on remote
-//						'commandstr' 	(String)	-> for eventlog, actual command send
-//      if error then	'error'			(String)	-> Error description
-//						Nothing else allowed 
-// function templateFunction(&$params) {
-
-	// $feedback['Name'] = 'templateFunction';
-	// $feedback['commandstr'] = "I send this";
-	// $feedback['result'] = array();
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-	// return $feedback;
-// }
-
-	$feedback['Name'] = 'importDexas';
-	$feedback['commandstr'] = "I send this";
-	$feedback['result'] = array();
-	$feedback['message'] = "all good";
-
-//echo "<pre>";
-//print_r($params);
-//echo "</pre>";
-
-//exit;
-
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-        $dexasput=0;
-//        $mysql = "TRUNCATE `pg_dexas`;";
-//        PDOExec($mysql);
-
-	$dexas = $params['commandvalue'];
-        foreach ($dexas  as $dexa) {
-		$deviceID = $params['deviceID'];
- 	       	$thiscommand['loglevel'] = LOGLEVEL_COMMAND;
-        	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
-	        $thiscommand['caller'] = $params['caller'];
-        	$thiscommand['commandID'] = 7;
-	        $thiscommand['deviceID'] = $params['deviceID'];
-        	$thiscommand['device']['id'] =  $deviceID;
-	        $feedback['SendCommand']=sendCommand($thiscommand);
-        }
-
-	return $feedback;
- //     echo "<pre>+++GetDexas";
- //     print_r($feedback);
-}
-
-
-function reloadConfgss(&$params) {
-//echo "<pre>";
-$origData = $formModel->getOrigData()[0];
-//print_r($origData);
-//echo $origData->{'pg_dexas___dexaId'};
-
-$result = executeCommand(Array('callerID'=>264,'messagetypeID'=>"MESS_TYPE_COMMAND",'deviceID' => 264, 'commandID'=>2,'commandvalue' => $origData->{'pg_dexas___dexaId'}));
-
-//    echo "<pre>";
-//    print_r($result);
-//exit;
-if (array_key_exists('error',$result['SendCommand'][0])) {
-  JFactory::getApplication()->enqueueMessage($result['SendCommand'][0]['error'], 'error');
-} elseif (array_key_exists(0,$result['SendCommand'][0]['result'])) {
-  $dexaResponse = json_decode($result['SendCommand'][0]['result'][0], true);
-//print_r($dexaResponse);
- //     echo "</pre>===GetDexas";
-  $dexasimported=0;
-  $configs = $dexaResponse['data'];
-  foreach ($configs as $config) {
-    PDOupsert('pg_configurations', $config, array('configurationId' => $config['configurationId']));
-    $dexasimported++;
-  }
-}
-
-JFactory::getApplication()->enqueueMessage($dexasimported." Configurations upserted");
-}
-
 ?>

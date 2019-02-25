@@ -1,7 +1,7 @@
 <?php 
-include 'cj_configuration.php' ;
+include 'config.php' ;
 include 'logins.php' ;
-include_once 'defines.php';
+include_once 'constants.php';
 include_once 'includes/remote.php';
 include_once 'shared/shared_db.php';
 include_once 'shared/shared_file.php';
