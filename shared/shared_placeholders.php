@@ -1,5 +1,5 @@
 <?php
-// define('DEBUG_PHOLDERS', TRUE);
+//define('DEBUG_PHOLDERS', TRUE);
 if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
 
 function replaceCommandPlaceholders($stepValue, $params) {
@@ -117,7 +117,9 @@ function replacePropertyPlaceholders($mess_subject, $params){
 //		out: return
 //
 
-//	echo "replacePlaceholder in: ".$mess_subject.CRLF;
+// echo "<pre>";
+// print_r($params);
+// echo "replacePlaceholder in: ".$mess_subject.CRLF;
 	$mess_text = Null;
 	if (preg_match("/\{property.*\}/", $mess_subject, $matches)) {
 
@@ -129,12 +131,14 @@ function replacePropertyPlaceholders($mess_subject, $params){
 		//		From caller? Ie.. Insteonlog
 		//		From current properties? 
 		//
-		if ((array_key_exists('deviceID',$params) && $params['deviceID'] != null)) 
+		if ((array_key_exists('deviceID',$params) && $params['deviceID'] != null)) {
 			$deviceID = $params['deviceID'];
-		elseif (array_key_exists('caller',$params) && array_key_exists('deviceID',$params['caller']) && $params['caller']['deviceID'] != null) 
+		} 
+		if (array_key_exists('caller',$params) && array_key_exists('deviceID',$params['caller']) && $params['caller']['deviceID'] != null) {
 			$deviceID = $params['caller']['deviceID'];
+		}
 		
-		//echo "************".$deviceID."  ".$mess_subject.CRLF.CRLF;
+		// echo "************".$deviceID."  ".$mess_subject.CRLF.CRLF;
 		if (!is_null($deviceID)) {
 			
 			$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
@@ -159,6 +163,8 @@ function replacePropertyPlaceholders($mess_subject, $params){
 
 
 	}
+// echo "replacePlaceholder Result: ".$mess_subject.CRLF;
+// echo "</pre>";
 	return $mess_subject;
 }
 
