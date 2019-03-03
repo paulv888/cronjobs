@@ -38,8 +38,6 @@ abstract class Request {
 	}
 
 	public function validate($appIDs) {
-		if (DEBUG_ALX) echo "Validate".CRLF;
-		//$this->validateTimestamp();
 		$this->validateApplicationID($appIDs);
 	}
 

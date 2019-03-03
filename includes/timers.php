@@ -1,11 +1,7 @@
 <?php
-define( 'DEBUG_TIMERS', TRUE );
-if (!defined('DEBUG_TIMERS')) define( 'DEBUG_TIMERS', FALSE );
 if (!defined('ASYNC_THREAD')) define( 'ASYNC_THREAD', false);
 
 function RunTimers(){
-
-
 // Check Active Timers
 // Check If I should run, date - time
 // Check If my interval is up (Every Run - Bad) / 1 Hour / 1 Day
@@ -25,15 +21,14 @@ function RunTimers(){
 
 	foreach ($timers as $timer) {
 		// check if we are ready to generate
-		if (DEBUG_TIMERS) echo CRLF.date("Y-m-d H:i:s").": "."Timer: ".$timer['id']."<B>".$timer['description']."</B>".CRLF;
+		debug($timer['id']." ".$timer['description'], 'Timer:');
 		$date = getdate();
 		if (is_int(strpos($timer['generate_days'],(string)$date["wday"])) === true) {								// Check Day
-			if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Run Today".CRLF;
+			debug("Run Today", 'Run Today');
 			if (checktime($timer['generate_start'],$timer['generate_end'], $timer['generate_offset'])) {			// Between Hours
-
-				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Last Run ".$timer['last_run_date'].CRLF;
-				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Right Time".CRLF;
-				if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Repeat ".$timer['repeat'].CRLF;
+				debug($timer['last_run_date'], 'Last Ran');
+				debug("Right Time", 'Right Time');
+				debug($timer['repeat'], 'Repeat');
 
 				$doit = false;
 				$last = strtotime($timer['last_run_date']);
@@ -56,9 +51,8 @@ function RunTimers(){
 				}
 				if ($doit) {																	// Still good doit
 					$runcount++;
-					var_dump($timer['priorityID']);
-					var_dump($timer['priorityID']);
-					if (!DEBUG_TIMERS) ob_start();
+					// var_dump($timer['priorityID']);
+					if (!isset($GLOBALS['debug'])) ob_start();
 					if ($timer['priorityID'] != PRIORITY_HIDE) {
 						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_MACRO)); 
 						// logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 
@@ -66,10 +60,10 @@ function RunTimers(){
 					} else {
 						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_NONE));
 					}
-					if (!DEBUG_TIMERS) $result = ob_get_clean();
+					if (!isset($GLOBALS['debug'])) $result = ob_get_clean();
 					$mysql="UPDATE `ha_timers` ".
 						" SET last_run_date = '". date("Y-m-d H:i:00")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
-					if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": ".$mysql.CRLF;
+					debug($mysql, 'mysql');
 					executeQuery(array( 'commandvalue' => $mysql));
 				}
 				
@@ -81,7 +75,7 @@ function RunTimers(){
 
 
 function runTimerSteps($params) {
-
+	debug($params, params);
 
 	if (!array_key_exists('timer',$params))	{ // Called directly from remote from form
 		$timer['runasync'] = false;
@@ -89,8 +83,6 @@ function runTimerSteps($params) {
 		$timer['description'] = "";
 		$timerID = $params['commandvalue'];
 	} else {
-		if (DEBUG_TIMERS) echo "<pre>".CRLF;
-		if (DEBUG_TIMERS) print_r($params);
 		$timer = $params['timer'];
 		$timerID = $params['timer']['id'];
 	}
@@ -98,8 +90,7 @@ function runTimerSteps($params) {
 	$deviceID = $params['callerID'];
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT st.id, t.description, st.deviceID, c.description as commandName,
-		st.commandID, st.value as commandvalue, st.runschemeID as schemeID ,
-		st.alert_textID 
+		st.commandID, st.value as commandvalue, st.runschemeID as schemeID 
 		FROM (ha_timers t INNER JOIN ha_remote_scheme_steps st ON t.id = st.timerID
 			LEFT JOIN ha_mf_commands c ON st.commandID = c.id) 
 		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
@@ -112,6 +103,7 @@ function runTimerSteps($params) {
 			$step['callerID'] = $params['callerID'];
 			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
 			$step['loglevel'] = $params['loglevel'];
+			$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 			if ($timer['runasync']) {
 				$getparams = http_build_query($step, '',' '); 
 				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
@@ -123,7 +115,6 @@ function runTimerSteps($params) {
 				if 	(!array_key_exists('result', $feedback)) $feedback['result'] = "";
 				$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
 				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'result' => $feedback['result'] ));
-				if (DEBUG_FLOW) echo "Exit Spawn Timer</pre>".CRLF;
 			} else {
 				$feedback['Name'] = $description;
 				$feedback['result']['runTimerSteps:'.$step['id'].'_'.$step['commandName']] = executeCommand($step);
@@ -158,19 +149,18 @@ function checkTime ($setupstart,$setupend, $offset) {
 		$end = strtotime("today $end hours $offset minutes");
 	}
 	
-	if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."Start: ".date("Y-m-d H:i:s", $start).CRLF;
-	if (DEBUG_TIMERS) echo date("Y-m-d H:i:s").": "."End  : ".date("Y-m-d H:i:s", $end).CRLF;
-	
+	debug($start, 'start');
+	debug($end, 'end');
 	return  time() >= $start AND time() < $end; ;
 	
 }
 
 function updateTimers($params) {
-// PHP Command Dummy parm
+	debug($params, 'params');
 
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Timer Date", "Timer Value", "Timer Remaining")));
-	if (DEBUG_TIMERS) print_r($devs);
-	
+	debug($devs, 'devs');
+
 	$feedback = array();
 	foreach ($devs as $key => $device) {
 		if (!array_key_exists('Timer Date', $device)) $devs[$key]['Timer Date']['value']="1970-01-01";

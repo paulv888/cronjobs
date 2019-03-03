@@ -1,7 +1,4 @@
 <?php
-//define( 'DEBUG_DB', TRUE );
-if (!defined('DEBUG_DB')) define( 'DEBUG_DB', FALSE );
-
 function openDB() {
 
 	static $pdo = null;
@@ -47,7 +44,7 @@ function FetchRow($mysql) {
 
 	$pdo = openDB();
 
-	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
+	debug($mysql, 'mysql');
  	try
 	{
 		$res_row = $pdo->query($mysql);
@@ -59,7 +56,7 @@ function FetchRow($mysql) {
 		return false;
 	}
 
-	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
+	debug($rows, 'rows');
 	return (!empty($rows) ? $rows : false);
 }
 
@@ -67,7 +64,7 @@ function FetchRows($mysql) {
 
 	$pdo = openDB();
 
-	if (DEBUG_DB) echo "Fetching: ".$mysql."</br>";
+	debug($mysql, 'mysql');
 	$result = array();
 
  	try
@@ -81,12 +78,14 @@ function FetchRows($mysql) {
 		return false;
 	}
 
-	if (DEBUG_DB) echo "Fetched: ".$numrows." row(s)</br>";
+	debug($rows, 'rows');
 	return (!empty($rows) ? $rows : false);
 
 }
 
 function PDOExec($mysql) {
+
+	debug($mysql, 'mysql');
 
 	$pdo = openDB();		
 
@@ -100,36 +99,43 @@ function PDOExec($mysql) {
 		return false;
 	}
 
+	debug($rowCount, 'rowCount');
 	return $rowCount;
 	
 }
 
-function PDOupsert($table, $fields, $where, $debug=false) {
+function PDOupsert($table, $fields, $where) {
 
+	debug($fields, $table.' fields');
+	debug($where, $table.' where');
+
+	$pdo = openDB();
 
 	$i=0;
 	foreach( $where as $key => $value ){
 		if ($i==0) {
-			$sql = 'SELECT '.$key.' FROM '.$table.' WHERE  ';
+			$mysql = 'SELECT '.$key.' FROM '.$table.' WHERE  ';
 		} else {
-			$sql.= " AND ";
+			$mysql.= " AND ";
 		}
-		$sql.= '`'.$key.'` = "'.$value.'"';
+		$mysql.= '`'.$key.'` = "'.$value.'"';
 		$i++;
 	}
 
-	// print_r(FetchRow($sql));
-	if (FetchRow($sql)) {
-	// echo "update";
+	debug($mysql, 'mysql');
+	
+	if (FetchRow($mysql)) {
 		PDOupdate($table, $fields, $where);
 	} else {
-	// echo "insert";
-		PDOinsert($table, $fields, $debug);
+		PDOinsert($table, $fields);
 	}
 }
 
 
 function PDOupdate($table, $fields, $where){
+
+	debug($fields, $table.' fields');
+	debug($where, $table.' where');
 
 	$pdo = openDB();
 
@@ -169,8 +175,8 @@ function PDOupdate($table, $fields, $where){
 		$i++;
 	}
 
-//	 echo $mysql.CRLF;
-//	 print_r($values);
+	debug($mysql, 'mysql');
+	debug($values, 'values');
 
 	$result = false;
 
@@ -186,11 +192,13 @@ function PDOupdate($table, $fields, $where){
 		return false;
 	}
 
-//	echo $stmt->rowCount().CRLF;
 	return $result;
 }
 
-function PDOinsert($table, $fields, $debug = false){
+function PDOinsert($table, $fields){
+
+	debug($fields, $table.' fields');
+
 	$pdo = openDB();
 
     $placeholder = array();
@@ -199,31 +207,18 @@ function PDOinsert($table, $fields, $debug = false){
 
     for ($i = 0; $i < count($values); $i++) $placeholder[] = '?';
 
-	// echo "count".count($values);
-	// print_r($cols);
-	// print_r($values);
-
-	
 	foreach ($values AS $key => $value) {
-//		echo "Key: $key; Value: $value<br />\n";
 		if (is_array($value)) $values[$key] = json_encode($value, JSON_UNESCAPED_SLASHES);
 		if (is_null($value)) {
 			$values[$key]='NULL';
 		} 
-		// if (is_String($value) && strlen($value)==0) {
-			// echo '>'.$value.'<'.CRLF;
-			// $values[$key] = $pdo->quote($value);
-			// echo '>'.$value.'<'.CRLF;
-		// }
-	}
-
+	}	
 	
     $mysql = 'INSERT INTO '. $table . ' (`' . implode("`, `", $cols) . '`) ';
     $mysql.= 'VALUES (' . implode(", ", $placeholder) . ');';
 
-	// echo($mysql);
-
- // if ($debug) exit;
+	debug($mysql, 'mysql');
+	debug($values, 'values');
 	
  	try
 	{
@@ -241,14 +236,10 @@ function PDOinsert($table, $fields, $debug = false){
 
 function PDOError($e, $function, $mysql) {
 
-	// if ($e->errorInfo['1'] == 2006) {
-		// $pdo = openDB();
-		// return;
-	// } else {
 	echo "<pre>";
 	echo "PDOError:".print_r($e);
+	echo "\nPDO::errorCode(): ", $dbh->errorCode();
 	echo CRLF."MySql: ".$mysql.CRLF;
-	// print_r($values);
 	echo "</pre>";
         $command = array(
                 'callerID' => 164,

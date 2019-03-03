@@ -1,7 +1,4 @@
 <?php
-//define( 'DEBUG_ALX', TRUE );
-if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
-
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 
 $to_person = null;
@@ -82,12 +79,14 @@ function handleRequest($alexaRequest) {
 	$exectime += microtime(true);
 	$log['exectime'] = $exectime;
 	logEvent($log);
-	if (DEBUG_ALX) print_r($alexaRequest);
-
+	debug($alexaRequest, 'alexaRequest');
 	return;
 }
 
 function ShortAnswerIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -141,13 +140,14 @@ function ShortAnswerIntent($request, $session, $response) {
 			$response->respond("Sorry, I did not understand, please start over.");
 			$feedback['result'] = $response->tell();
 			$feedback['error'] = "Restart it";
+			debug($feedback, 'feedback');
 			return $feedback;
 	}
 	
-	if (DEBUG_ALX) { print_r($request);}
 	$fname= $request->intentName;
 	$feedback['result'] = $fname($request, $session, $response);
 
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
@@ -155,6 +155,9 @@ function ShortAnswerIntent($request, $session, $response) {
 
 
 function RepeatIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	global $to_person;
@@ -174,11 +177,15 @@ function RepeatIntent($request, $session, $response) {
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function HelpIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	global $to_person;
@@ -199,10 +206,14 @@ function HelpIntent($request, $session, $response) {
 
 	$feedback['message'] = "Help";
 	$feedback['result'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function NoIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -219,11 +230,15 @@ function NoIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function StopIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -233,10 +248,14 @@ function StopIntent($request, $session, $response) {
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 
 	$feedback['result'] = CancelIntent($request, $session, $response);
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function CancelIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -256,10 +275,14 @@ function CancelIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function LaunchRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	global $to_person;
@@ -280,11 +303,15 @@ function LaunchRequest($request, $session, $response) {
 
 	$feedback['message'] = "Launch Prompt";
 	$feedback['result'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function SessionEndedRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -295,6 +322,7 @@ function SessionEndedRequest($request, $session, $response) {
 	$log['data'] = $request->reason;
 	echo "{}";
 	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 

@@ -1,9 +1,8 @@
 <?php
-define("ALERT_NETWORK_DEVICE_CHANGE", 218);
-define("ALERT_NEW_NETWORK_DEVICE", 219);
-define("ALERT_UNKNOWN_IP_FOUND", 217);
-// define( 'DEBUG_GRAPH', TRUE );
-
+//$GLOBALS['debug'] = 10;
+define("MACRO_NETWORK_DEVICE_CHANGE", 218);
+define("MACRO_NEW_NETWORK_DEVICE", 219);
+define("MACRO_UNKNOWN_IP_FOUND", 217);
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
 //
 //	Command in:
@@ -26,9 +25,6 @@ define("ALERT_UNKNOWN_IP_FOUND", 217);
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
 	// return $feedback;
 // }
 function MoveHistory1() {
@@ -161,9 +157,8 @@ function findLocalName1($ip, $sendAlert = false) {
 			$params = array('callerID' => MY_DEVICE_ID, 
 							'deviceID' => MY_DEVICE_ID, 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
-							'schemeID' => ALERT_UNKNOWN_IP_FOUND,
-							'ha_alerts___l1' => 'IP Address', 
-							'ha_alerts___v1' => $ip);
+							'schemeID' => MACRO_UNKNOWN_IP_FOUND,
+							'commandvalue' => 'IP Address'.' '.$ip);
 			print_r(executeCommand($params));
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 				`ip` ,
@@ -236,14 +231,7 @@ function getDeviceList(&$params) {
 
 	$feedback['Name'] = 'GetDeviceList';
 	$feedback['result'] = array();
-
-// echo  "<pre>";
-//print_r($params);
-
 	$device = $params['device'];
-//print_r($device);
-
-
 	//
 	//	Login
 	//
@@ -273,7 +261,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
 	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
 	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
 	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
@@ -288,14 +276,8 @@ function getDeviceList(&$params) {
 		$feedback['error'] = $httpcode.": ".curl_error($ch);
 		return $feedback;
 	}
-	if (DEBUG_DEVICES) $feedback['result']['curl']['Login']= $information;
+	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Login']= $information;
 	curl_close ($ch);
-
-// echo "code:".$httpcode;
-// echo "info".CRLF;
-// print_r($information);
-// echo "response".CRLF;
-// print_r($tmpresponse);
 
 	//
 	// Scrape device list
@@ -314,7 +296,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
 	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
 	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
 	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
@@ -328,7 +310,7 @@ function getDeviceList(&$params) {
 		$feedback['error'] = $httpcode.": ".curl_error($ch);
 		return $feedback;
 	}
-	if (DEBUG_DEVICES) $feedback['result']['curl']['Network']= $information;
+	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Network']= $information;
 	curl_close ($ch);
 
 // echo "code:".$httpcode;
@@ -381,7 +363,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
 	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
 	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded','Accept: text/html'));
 	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
@@ -394,7 +376,7 @@ function getDeviceList(&$params) {
 	if ($httpcode != 200 && $httpcode != 204) {
 		$feedback['error'] = $httpcode.": ".curl_error($ch);
 	}
-	if (DEBUG_DEVICES) $feedback['result']['curl']['Refresh']= $information;
+	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Refresh']= $information;
 	curl_close ($ch);
 
 // echo "code:".$httpcode;
@@ -420,7 +402,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
 	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
 	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (DEBUG_DEVICES) curl_setopt($ch, CURLOPT_VERBOSE, 1);
+	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
 	curl_setopt($ch, CURLOPT_REFERER, $url_r);
 	curl_setopt($ch, CURLOPT_HEADER, true);
@@ -434,7 +416,7 @@ function getDeviceList(&$params) {
 		$feedback['error'] = $httpcode.": ".curl_error($ch);
 		return $feedback;
 	}
-	if (DEBUG_DEVICES) $feedback['result']['curl']['Logout']= $information;
+	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Logout']= $information;
 	curl_close ($ch);
 
 // echo "code:".$httpcode;
@@ -529,16 +511,8 @@ if(networkmap_fullscan == 1) genClientList();
 				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
-								'schemeID' => ALERT_NETWORK_DEVICE_CHANGE,
-								"ha_alerts___l1" => $mac, 
-								"ha_alerts___l2" => $rowdevice['connection'], 
-								"ha_alerts___l3" => $connection, 
-								"ha_alerts___l4" => $deviceID, 
-								"ha_alerts___v1" => $rowdevice['name'],
-								"ha_alerts___v2" => $name, 
-								"ha_alerts___v3" => $rowdevice['ip'],
-								"ha_alerts___v4" => $ip,
-								"commandvalue" => $rowdevice['friendly_name']);
+								'schemeID' => MACRO_NETWORK_DEVICE_CHANGE,
+								"commandvalue" => $rowdevice['friendly_name'].' MAC:'.$mac.' Old Name:'.$rowdevice['name'].' New Name'.$name.' Old IP'.$rowdevice['ip'].' New IP'.$ip);
 				$feedback['result']['Changed'][] = executeCommand($command);
 				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
 					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", 
@@ -554,12 +528,8 @@ if(networkmap_fullscan == 1) genClientList();
 			$command = array('callerID' => $params['caller']['callerID'], 
 							'deviceID' => $params['caller']['callerID'], 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
-							'schemeID' => ALERT_NEW_NETWORK_DEVICE,
-							"ha_alerts___v1" => $mac, 
-							"ha_alerts___v2" => $name, 
-							"ha_alerts___v3" => $ip, 
-							"ha_alerts___v4" => $connection,
-							'commandvalue'   => $rowdevice['name']."\n".$ip);
+							'schemeID' => MACRO_NEW_NETWORK_DEVICE,
+							'commandvalue'   => 'MAC'.$mac.' IP'.$ip);
 			$feedback['result']['New MAC'][] = executeCommand($command);
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 						`ip` ,

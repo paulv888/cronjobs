@@ -23,7 +23,7 @@ if (isset($_GET['name'])) {
 <script src="/media/jui/js/jquery.min.js"></script>
 <script src="/media/jui/js/bootstrap.min.js"></script>
 <script async src="/media/jui/js/jquery.min.js"></script>
-<script async src="<?php echo getPath(true);?>/js/remote.min.js"></script>
+<script async src="<?php echo getPath(true);?>/js/remote.js"></script>
 <!--script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script-->
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
@@ -42,6 +42,7 @@ if (isset($_GET['name'])) {
    <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
 	</div>
+	<div id="myDebug" class="debug" style="none"></div>
 </body>
 </html>
 <?php //ob_end_flush();?>

@@ -11,8 +11,6 @@ class IntentRequest extends Request {
 
 		$this->intentName = str_replace('AMAZON.', '', $data->request->intent->name);
 
-		if (DEBUG_ALX) echo "IntentRequest".CRLF;
-
 		if (isset($data->request->intent->slots)) {
 			foreach ($data->request->intent->slots as $slot) {
 				if (isset($slot->value)) {

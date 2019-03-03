@@ -1,27 +1,13 @@
 <?php 
 require_once 'includes.php';
-//define( 'DEBUG_INPUT', TRUE );
-if (isset($_POST['DEBUG_INPUT'])) define( 'DEBUG_INPUT', TRUE );
-if (!defined('DEBUG_INPUT')) define( 'DEBUG_INPUT', FALSE );
 
-if (DEBUG_INPUT) {
-	$input = file_get_contents('php://input');
-	// ob_start();
-	var_dump($input);
-	$result = ob_get_clean();
-	$file = 'process.log';
-	$current = file_get_contents($file);
-	$headers = apache_request_headers();
-	foreach ($headers as $header => $value) {
-		$current .= "$header: $value <br />\n";
-	}
-	$current .= date("Y-m-d H:i:s").": ".$result."\n";
-	$current .= date("Y-m-d H:i:s").": ".print_r($_POST,true)."\n";
-	file_put_contents($file, $current);
+if (isset($_GET['callerID'])) {
+	$_POST=$_GET;
 }
 
+
 if (isset($argv)) {
-	var_dump($argv);
+	// var_dump($argv);
 	foreach ($argv as $arg) {
 		$e=explode("=",$arg);
         if(count($e)==2) {
@@ -35,16 +21,25 @@ if (isset($argv)) {
 		}
 	}
 }
-
-if (isset($_GET['callerID'])) {
-	$_POST=$_GET;
+if (isset($_POST['debug'])) {
+	define( 'DEBUG', TRUE );
+	$GLOBALS['debug'] = $_POST['debug'];
 }
+debug($_POST, 'POST');
 
-if (DEBUG_INPUT) echo json_encode($_POST,JSON_UNESCAPED_SLASHES);
-if (DEBUG_INPUT) echo (array_key_exists('CONTENT_TYPE', $_SERVER) ? json_encode($_SERVER["CONTENT_TYPE"],JSON_UNESCAPED_SLASHES) : "");
+$input = file_get_contents('php://input');
+// ob_start();
+// var_dump($input);
+// $result = ob_get_clean();
+$current = "";
+$headers = apache_request_headers();
+foreach ($headers as $header => $value) {
+	$current .= "$header: $value".CRLF;
+}
+debug($current, 'headers');
 
 $params = $_POST;
-if (DEBUG_INPUT) {echo "<pre>Params:  ";print_r($params);echo "</pre>";}
+debug($params, 'params');
 
 if (!headers_sent()) {
   if(!isset($_SESSION)) 
@@ -52,7 +47,7 @@ if (!headers_sent()) {
         session_start(); 
     } 
 	// unset($_SESSION['PARAMS']);
-	if (DEBUG_INPUT) {echo '<pre>Prev Session Params '; print_r($_SESSION);echo '</pre>';}
+	debug($_SESSION, 'Prev Session _SESSION');
 	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
 		// last request was more than 30 minutes ago
 		session_unset();     // unset $_SESSION variable for the run-time 
@@ -72,7 +67,7 @@ session_write_close();
 
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
 
-	if (DEBUG_INPUT) {echo "<pre>before executeCommand ";print_r($params);echo "</pre>";}
+	debug($params, 'params');
 	
 	$result = executeCommand($params);
 	if (is_array($result)) {

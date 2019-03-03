@@ -31,9 +31,34 @@ if(!window.scriptRemoteHasRun) {
 		}
 	};
 
+
+	jQuery(document).on('click', '.myDebugOutputTitle', function(event){
+		jQuery(this).next().toggleClass('myDebugHidden')
+	});	
+
 	jQuery(document).ready(function(){
 
 		refreshDiv(true, true);
+
+		
+		// window.addEvent('domready', function() {
+			// document.getElements('.myDebugOutputTitle').each(function (title) {
+				// title.addEvent('click', function (e) {
+					// title.getNext().toggleClass('myDebugHidden');
+				// });
+			// });
+		// })
+		// jQuery('.myDebugOutputTitle').bind('click', function(event){
+			// // event.preventDefault()
+			// // event.stopImmediatePropagation()
+			// getNext().toggleClass('myDebugHidden');
+		// });	
+			// jQuery(this).on('click', function(event){
+			// // event.preventDefault()
+			// // event.stopImmediatePropagation()
+				// console.log('clicked');
+				// jQuery(this).next().toggleClass('myDebugHidden')
+			// });	
 
 		// regular down when up as well (cam move)
 		eventname = isMobile.any() ? "touchstart" : "mousedown";
@@ -324,6 +349,10 @@ if(!window.scriptRemoteHasRun) {
 				jQuery('#system-message-container').html ('');
 				jQuery('#spinner').show();
 		}
+		
+		var debug = getUrlParameter('debug');
+		params.debug = debug;
+		
 		var keysRequest = jQuery.ajax({
 				dataType: "json",
 				url: 	VloRemote.url,
@@ -337,9 +366,9 @@ if(!window.scriptRemoteHasRun) {
 				},
 				error: function(xhr, textStatus, error)
 				{
-					showError(textStatus+' '+error+'</br>'+xhr.responseText);
+					showError(textStatus+' '+error ,xhr.responseText);
 					if (showSpin) jQuery('#spinner').hide();
-				},
+				}
 			}
         );
 	};
@@ -348,7 +377,11 @@ if(!window.scriptRemoteHasRun) {
 	
 		jQuery('#system-message-container').html ('');
 		jQuery('#spinner').show();
-       var keysRequest = jQuery.ajax({
+		
+		var debug = getUrlParameter('debug');
+		params.debug = debug;
+		
+		var keysRequest = jQuery.ajax({
 				dataType: "json",
 				url: 	VloRemote.url,
 				method: 'post',
@@ -362,9 +395,9 @@ if(!window.scriptRemoteHasRun) {
 				},
 				error: function(xhr, textStatus, error)
 				{
-					showError(textStatus+' '+error+'</br>'+xhr.responseText);
+					showError(textStatus+' '+error ,xhr.responseText);
 					jQuery('#spinner').hide();
-				},
+				}
 			}
         );
 	};
@@ -375,7 +408,17 @@ if(!window.scriptRemoteHasRun) {
 		}
 	}
 
-	function showError(message) {
+	function showError(error, message) {
+		if (message.length > 0) {
+			if (message.indexOf('myDebugOutputTitle') > 0) {
+				jQuery('#myDebug').html(message);
+			} else {
+				jQuery('#system-message-container').html('<div class="alert alert-error"><a data-dismiss="alert" class="close" href="#">&times</a>'+error+'<br />'+message+'</div>');
+			}
+		}
+	}
+
+	function showErrorMessage(message) {
 		if (message.length > 0) {
 			jQuery('#system-message-container').html('<div class="alert alert-error"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 		}
@@ -388,7 +431,7 @@ if(!window.scriptRemoteHasRun) {
 				showMessage(item);
 			}
 			if (index == 'error') {
-				showError(item);
+				showErrorMessage(item);
 			}
 			jQuery('[data-remotekey="' + item.remotekey + '"]').each(function(index){
 				jQuery(this).removeClass("link-warning");
@@ -429,4 +472,19 @@ if(!window.scriptRemoteHasRun) {
 		}, 6000);
 		return timer;
 	}
+	
+	var getUrlParameter = function getUrlParameter(sParam) {
+		var sPageURL = window.location.search.substring(1),
+			sURLVariables = sPageURL.split('&'),
+			sParameterName,
+			i;
+
+		for (i = 0; i < sURLVariables.length; i++) {
+			sParameterName = sURLVariables[i].split('=');
+
+			if (sParameterName[0] === sParam) {
+				return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+			}
+		}
+	};
 }

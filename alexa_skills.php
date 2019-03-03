@@ -1,7 +1,5 @@
 <?php
-//define( 'DEBUG_ALX', TRUE );
-if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
-
+//$GLOBALS['debug'] = 10;
 define("MY_DEVICE_ID", 283);
 
 require_once 'includes.php';

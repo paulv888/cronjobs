@@ -369,4 +369,102 @@ function get_string_between($string, $start, $end, $occ = 1){
     $len = strpos($string, $end, $ini) - $ini;
     return substr($string, $ini, $len);
 }
+
+function data_uri($file, $mime) 
+{  
+  $contents = file_get_contents($file);
+  $base64   = base64_encode($contents); 
+  return ('data:' . $mime . ';base64,' . $base64);
+}
+if( !function_exists('apache_request_headers') ) {
+///
+	function apache_request_headers() {
+	  $arh = array();
+	  $rx_http = '/\AHTTP_/';
+	  foreach($_SERVER as $key => $val) {
+		if( preg_match($rx_http, $key) ) {
+		  $arh_key = preg_replace($rx_http, '', $key);
+		  $rx_matches = array();
+		  // do some nasty string manipulations to restore the original letter case
+		  // this should work in most cases
+		  $rx_matches = explode('_', $arh_key);
+		  if( count($rx_matches) > 0 and strlen($arh_key) > 2 ) {
+			foreach($rx_matches as $ak_key => $ak_val) $rx_matches[$ak_key] = ucfirst($ak_val);
+			$arh_key = implode('-', $rx_matches);
+		  }
+		  $arh[$arh_key] = $val;
+		}
+	  }
+	  return( $arh );
+	}
+///
+}
+///
+
+/**
+ * Add a debug out put section
+ *
+ * @param   mixed  $content String/object
+ * @param   string $title   Debug title
+ *
+ * @return  void
+ */
+function debug($content, $title = 'output:') {
+
+if (isset($GLOBALS['debug'])) {
+		// echo "<pre>";
+		// print_r(debug_backtrace());
+		// echo "</pre>";
+// date("Y-m-d H:i:s").": ".
+		
+		$function = "";
+		$trace = array_reverse(debug_backtrace());
+		foreach ($trace as $key => $level) {
+			if ($key > $GLOBALS['debug']) return;
+			if ($level['function'] == 'sendCommand') {
+				$mysql = 'SELECT description FROM ha_mf_commands WHERE id = '.$level['args'][0]['commandID']; 
+				$pdo = openDB();
+				$found = true;
+				try	{
+					$res_row = $pdo->query($mysql);
+					$rows = $res_row->fetch(PDO::FETCH_ASSOC);
+				} catch( Exception $e )	{
+					$found = false;
+				}
+				if ($found) 
+					$function .=  $level['function'].'('.$rows['description'].')->';
+				else
+					$function .= $level['function'].'->';
+			} elseif ($level['function'] == 'setDevicePropertyValue') {
+				$mysql = 'SELECT description FROM ha_mi_properties WHERE id = '.$level['args'][0]['propertyID']; 
+				$pdo = openDB();
+				$found = true;
+				try	{
+					$res_row = $pdo->query($mysql);
+					$rows = $res_row->fetch(PDO::FETCH_ASSOC);
+				} catch( Exception $e )	{
+					$found = false;
+				}
+				if ($found) 
+					$function .=  $level['function'].'('.$rows['description'].')->';
+				else
+					$function .= $level['function'].'->';
+			} else {
+				$function .= ($level['function'] != 'debug' ? $level['function'].'->' : '');
+			}
+		}
+
+		echo (!isCLI() ? '<div class="myDebugOutputTitle">' .$function.$title . '</div>' : $function.$title."\n");
+		if (!isCLI()) echo '<div class="myDebugOutput myDebugHidden">';
+
+		if (is_object($content) || is_array($content)) {
+			echo (!isCLI() ? '<pre>' . htmlspecialchars(print_r($content, true)) . '</pre>' : htmlspecialchars(print_r($content, true)));
+		} else {
+			// Remove any <pre> tags provided by e.g. JQuery::dump
+			$content = preg_replace('/(^\s*<pre( .*)?>)|(<\/pre>\s*$)/i', '', $content);
+			echo nl2br(htmlspecialchars($content));
+		}
+		if (!isCLI()) echo '</div>';
+	}
+}
 ?>
