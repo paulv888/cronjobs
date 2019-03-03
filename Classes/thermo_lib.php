@@ -1,13 +1,11 @@
 <?php
 
-/**
-	* API Class to connect to Radio Thermostat
-	*
-	*/
+/*
+*
+* API Class to connect to Radio Thermostat
+*
+*/
 
-//define( 'DEBUG_THERMO', TRUE );
-if (!defined('DEBUG_THERMO')) define( 'DEBUG_THERMO', FALSE );
-	
 class Thermostat_Exception extends Exception
 {
 }
@@ -18,9 +16,6 @@ class Stat
 
 	protected $ch,
 						$IP;	// Most likley an URL and port number rather than a strict set of TCP/IP octets.
-
-	private $debug = DEBUG_THERMO;
-
 
 	// Would prefer these to be private/protected and have get() type functions to return value.
 	// But for now, public will do because I'm lazy.
@@ -75,7 +70,7 @@ class Stat
 		curl_setopt( $this->ch, CURLOPT_USERAGENT, 'A' );
 		curl_setopt( $this->ch, CURLOPT_RETURNTRANSFER, 1 );
 
-		$this->debug = DEBUG_THERMO;
+		$this->debug = isset($GLOBALS['debug']);
 
 		// Stat variables initialization
 		$this->temp = 0;

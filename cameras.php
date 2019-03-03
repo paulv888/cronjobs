@@ -2,13 +2,12 @@
 <?php
 require_once 'includes.php';
 
-//define( 'DEBUG_CAMERAS', TRUE );
-if (!defined('DEBUG_CAMERAS')) define( 'DEBUG_CAMERAS', FALSE );
+//$GLOBALS['debug'] = 10;
 
 define("MY_DEVICE_ID", 215);
-define("MAX_FILES_DIR", 1202);
-define("MOTION_URL_DESKTOP",HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
-define("MOTION_URL_PHONE",HOME."index.php?option=com_content&view=article&id=238&Itemid=527");
+define("MAX_FILES_DIR", 1000);
+define("MOTION_URL_DESKTOP",SERVER_HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
+define("MOTION_URL_PHONE",SERVER_HOME."index.php?option=com_content&view=article&id=238&Itemid=527");
 
 $cameras = readCameras();
 
@@ -89,9 +88,9 @@ function movePictures($camera) {
 					echo date("Y-m-d H:i:s").": Existing directory ".$targetdir.CRLF;
 					$numfiles  = iterator_count(new DirectoryIterator($targetdir)) - 2;
 					$mysql = 'SELECT * FROM `ha_cam_recordings` WHERE folder ="'.$camera['previous_properties']['Directory']['value'].'/'.$datedir.'/'.$group_dir.'"';
-					if (DEBUG_CAMERAS) echo $mysql.CRLF;
+					debug($mysql, 'mysql');
 					$recording = FetchRow($mysql);
-					if (DEBUG_CAMERAS) print_r($recording);
+					debug($recording, 'recording');
 					$camera['criticalalert'] = $recording['criticalalert'];
 					$camera['highalert'] = $recording['highalert'];
 					$camera['lastfiletime'] = strtotime($recording['lastfiletime']);
@@ -160,7 +159,7 @@ function movePictures($camera) {
 function openGroup($camera) {
 
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Create new group directory.".CRLF;
-			if (DEBUG_CAMERAS) print_r($camera);
+			debug($camera, 'camera');
 
 			$htmllong='<a href="'.MOTION_URL_DESKTOP.'&amp;folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'">Recording</a>';
 
@@ -179,7 +178,7 @@ function openGroup($camera) {
 			// Be careful any triggers will be executed on changed properties
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
 			//logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
-			if (DEBUG_CAMERAS) print_r($feedback);
+			debug($feedback, 'feedback');
 
 			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value'])) {
 				$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
@@ -201,7 +200,7 @@ function closeGroup($camera) {
 			echo date("Y-m-d H:i:s").": ".$camera['description']." Closing directory.".($camera['updatetype'] ? "Update True" : "Update False").CRLF;
 			echo 'numfiles: '.$camera['numfiles'].CRLF;
 
-			if (DEBUG_CAMERAS) print_r($camera);
+			debug($camera, 'camera');
 
 			// update device
 			$htmlshort=MOTION_URL_PHONE.'&folder='.$camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir'].'"';
@@ -245,7 +244,7 @@ function closeGroup($camera) {
 			// Be careful any triggers will be executed on changed properties
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
 			//logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
-			if (DEBUG_CAMERAS) print_r($feedback);
+			debug($feedback, 'feedback');
 
 			$recording['count'] = $camera['numfiles'];
 			$recording['lastfiletime'] = date("H:i:s",$camera['lastfiletime']);
@@ -281,7 +280,11 @@ function findLastGroupDir($dir) {
 
 function uploadPictures($camera) {
 
+//Send through create alert
+
 	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
+	if (array_key_exists('Send Pushbullet on Alert', $camera['previous_properties']) && $camera['previous_properties']['Send Pushbullet on Alert']['value'] != 'Y') return;
+
 	$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
 
 	$files = array();

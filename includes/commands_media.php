@@ -1,6 +1,4 @@
 <?php
-//define( 'DEBUG_MEDIA', TRUE );
-if (!defined('DEBUG_MEDIA')) define( 'DEBUG_MEDIA', FALSE );
 define("EXCLUDE_EXTENTSIONS", "nfo|tbn|txt|db");
 define("ASSORTED_DIR", "_Assorted/");
 define("REFRESH_RENAME", 0x01);
@@ -66,13 +64,12 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	// $feedback['message'] = "all good";
 	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
 	
-	// if (DEBUG_MEDIA) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
+// debug($feedback, 'feedback');
 	// return $feedback;
 // }
 
 function refreshAllVideos(&$params = null) {
+	debug($params, 'params');
 	header('Content-Type: text/html; charset=utf-8');
 	echo "<pre>";
 	$dir = '';
@@ -84,6 +81,7 @@ function refreshAllVideos(&$params = null) {
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	// $params['refreshvideooptions'] = REFRESH_NFO;
 	$feedback = refreshVideos($params);
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
@@ -91,6 +89,7 @@ function findDuplicateVideos(&$params = null) {
 //
 // TODO:: export results to table, and allow fixing from there
 //
+	debug($params, 'params');
 	header('Content-Type: text/html; charset=utf-8');
 	echo "<pre>";
 	$dir = '';
@@ -112,10 +111,12 @@ function findDuplicateVideos(&$params = null) {
 		print_r($feedback['findDuplicateByArtistTitle']);
 	}
 	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function importVideos(&$params) {
+	debug($params, 'params');
 	header('Content-Type: text/html; charset=utf-8');
 
 	$params['directory'] = LOCAL_IMPORT.'/';
@@ -127,10 +128,12 @@ function importVideos(&$params) {
 	echo "<pre>";
 	print_r($feedback['result']);
 	echo "</pre>";
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function import1Video(&$params) {
+	debug($params, 'params');
 
 	$feedback['Name'] = 'import1Video';
 
@@ -163,10 +166,12 @@ function import1Video(&$params) {
 		print_r($files);
 	}
 	// print_r($feedback);
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function refreshVideos(&$params) {
+	debug($params, 'params');
 
 	//mb_internal_encoding("UTF-8");
 
@@ -223,15 +228,13 @@ function refreshVideos(&$params) {
 	// if () $feedback['error'] = "Not so good";
 	
 	
-	if (DEBUG_MEDIA) {
-	//	 echo "<pre>".$feedback['Name'].': '; print_r($feedback); echo "</pre>";
-	}
-
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 
 function refreshVideo(&$params) {
+	debug($params, 'params');
 
 
 	$feedback['Name'] = 'refreshVideo';
@@ -269,8 +272,6 @@ function refreshVideo(&$params) {
 	$params['file']['newname'] = $result['result'][0];
 	$feedback[] = $result;
 
-	if (DEBUG_MEDIA) { echo "After clean",CRLF;print_r($params['file']); }
-	
 	//
 	// Get Artist/Title
 	//
@@ -278,6 +279,7 @@ function refreshVideo(&$params) {
 	if (array_key_exists('error',$result)) {
 		echo "<pre>Error on: ".$result['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
 		$feedback[] = $result;
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	$params['file']['artist'] = $result['result']['artist'];
@@ -285,8 +287,6 @@ function refreshVideo(&$params) {
 	if (array_key_exists('sidekicks', $result['result'])) $params['file']['sidekicks'] = $result['result']['sidekicks'];
 	$feedback[] = $result;
 
-	if (DEBUG_MEDIA) { echo "After Artist title",CRLF;print_r($params['file']); }
-	
 	//
 	// Get Genre
 	//
@@ -294,11 +294,10 @@ function refreshVideo(&$params) {
 	$feedback[] = $result;
 	if (array_key_exists('error',$result)) {
 		echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	$params['file']['genre'] = $result['result']['genre'];
-	
-	if (DEBUG_MEDIA) { echo "After Genre",CRLF;print_r($params['file']); }
 	
 	//
 	// Find Dir to move to
@@ -313,11 +312,10 @@ function refreshVideo(&$params) {
 	}
 	if (array_key_exists('error',$result)) {
 		echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	$params['file']['moveto'] = $result['result']['moveto'];
-	if (DEBUG_MEDIA) { echo "After Move-To",CRLF;print_r($params['file']); }
-	
 	
 	//
 	// Check for old version and move to recycle, immediate
@@ -328,7 +326,6 @@ function refreshVideo(&$params) {
 			//	Just use find dups for now
 			//$feedback[] = findDuplicateByArtistTitle($params);
 	}
-	if (DEBUG_MEDIA) { echo "After Remove Old/Dups",CRLF; print_r($params['file']); }
 
 	//
 	// Create NFO
@@ -339,10 +336,10 @@ function refreshVideo(&$params) {
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
 			echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+			debug($feedback, 'feedback');
 			return $feedback;
 		}
 	}
-	if (DEBUG_MEDIA) { echo "After Create NFO",CRLF; print_r($params['file']); }
 
 	//
 	// Create Thumbnail
@@ -354,10 +351,10 @@ function refreshVideo(&$params) {
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
 			echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+			debug($feedback, 'feedback');
 			return $feedback;
 		}
 	}
-	if (DEBUG_MEDIA) { echo "After Create Thumb",CRLF; print_r($params['file']); }
 
 	//
 	// Now move it
@@ -385,7 +382,6 @@ function refreshVideo(&$params) {
 			file_put_contents($file, $batch . $batchfile);
 		}
 	}
-	if (DEBUG_MEDIA) { echo "After Moving",CRLF; print_r($params['file']); }
 
 	$feedback['result'] = $params['file'];
 	if (array_key_exists('error', $feedback) && empty(trim($feedback['error']))) unset($feedback['error']);
@@ -413,11 +409,13 @@ function refreshVideo(&$params) {
 	if (array_key_exists('result', $feedback)) unset($feedback['result']);
 
 	
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function findDuplicateByArtistTitle(&$params) {
+	debug($params, 'params');
 
 	$feedback['Name'] = 'findDuplicateByArtistTitle';
 	$feedback['result'] = array();
@@ -425,6 +423,7 @@ function findDuplicateByArtistTitle(&$params) {
 	$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($params['file']['dirname'].$params['file']['basename']).'";'; 
 	if (!($thismvid = FetchRow($mysql)['id'])) {
 		$feedback['error'] = "Error - Abort, could not find myID for : ".$params['file']['dirname'].$params['file']['basename'];
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	$params['mvid'] = $thismvid;
@@ -466,10 +465,12 @@ function findDuplicateByArtistTitle(&$params) {
 			}
 		}
 	}
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function checkDuplicates($newnames) {
+	debug($newnames, 'newnames');
 
 	$feedback['Name'] = 'checkDuplicates';
 	// Find duplicates
@@ -478,57 +479,48 @@ function checkDuplicates($newnames) {
 	foreach(array_count_values($newnames) as $val => $c) {
 		if($c > 1) $dups[] = $val;
 	}
+	debug($dups, 'dups');
 	return $dups;
 }
 
 function readDirs($main, $importprocess){
- //echo "Entry: ".$main.CRLF;
- $feedback['result'] = array();
- if (strpos($main, LOCAL_RECYCLE) !== false) return $feedback;
- if (!$importprocess && strpos($main, LOCAL_IMPORT) !== false) return $feedback;
-	
- $dirHandle = opendir($main);
-  $files = array();
-  while($file = readdir($dirHandle)){
-	// echo $main.$file.CRLF;
-    if (is_dir($main.$file) && $file != '.' && $file != '..') {
-	   $files = array_merge ( $files, readDirs($main.$file.'/', $importprocess)['result']);
-    } else {
-		// echo $file.CRLF;
-		$file_parts = mb_pathinfo($file);
-		// print_r($file_parts);
-		$file_parts['dirname'] = rtrim($main, '/') . '/';
-		if (substr($file, 0, 1) != "." && $file != ".." && strpos(EXCLUDE_EXTENTSIONS, $file_parts['extension']) === false) {
-			$files[] = $file_parts;
+	debug($main, 'main');
+	//echo "Entry: ".$main.CRLF;
+	$feedback['result'] = array();
+	if (strpos($main, LOCAL_RECYCLE) !== false) {
+		debug($feedback, 'feedback');
+		return $feedback;
+	}
+	if (!$importprocess && strpos($main, LOCAL_IMPORT) !== false) {
+		debug($feedback, 'feedback');
+		return $feedback;
+	}
+	$dirHandle = opendir($main);
+	$files = array();
+	while($file = readdir($dirHandle)){
+		// echo $main.$file.CRLF;
+		if (is_dir($main.$file) && $file != '.' && $file != '..') {
+			$files = array_merge ( $files, readDirs($main.$file.'/', $importprocess)['result']);
+		} else {
+			// echo $file.CRLF;
+			$file_parts = mb_pathinfo($file);
+			// print_r($file_parts);
+			$file_parts['dirname'] = rtrim($main, '/') . '/';
+			if (substr($file, 0, 1) != "." && $file != ".." && strpos(EXCLUDE_EXTENTSIONS, $file_parts['extension']) === false) {
+				$files[] = $file_parts;
+			}
 		}
-    }
-  }
-  $feedback['result'] = $files;
-  return $feedback;
-}
+	}
+	$feedback['result'] = $files;
+	debug($feedback, 'feedback');
+	return $feedback;
+	}
 
 function cleanName($fname) {
-
-	// $feedback['Name'] = 'templateFunction';
-	// $feedback['commandstr'] = "I send this";
-	// $feedback['result'] = array();
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-	
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-
+	debug($fname, 'fname');
 	$feedback['message'] = '';
-//	$feedback['error'] = '';
-//	$fname = strtolower($fname);
 	$fname = mb_convert_case($fname, MB_CASE_LOWER, 'UTF-8');
 	
-//	$fname = clearUTF($fname);
-	// Html Decode?
-	// fname = str_replace(, , fname);%A_Space%amp%A_Space%,%A_Space%&%A_Space%,All 
-	// fname = str_replace(, , fname);%A_Space%quot%A_Space%, %A_Space%-%A_Space% ,All 
-
 	$pattern[] = '/"/';							$replace[] = '';
 	$pattern[] = '/full1080p/'; 				$replace[] = '';
 	$pattern[] = '/_/'; 						$replace[] = '';
@@ -636,22 +628,9 @@ function cleanName($fname) {
 		$feedback['message'] .= "Info - Ft replaced from: >$savname< "."to: >$fname< </br>";
 	}
 	
-
-	// ; specials
-	// fname = str_replace('', '', fname);Ne - Yo,Ne-Yo,All 
-	// fname = str_replace('', '', fname);Don T,Don't,All 
-	// fname = str_replace('', '', fname);%A_Space%S%A_Space%,'s%A_Space%
-	// fname = str_replace('', '', fname);%A_Space%i%A_Space%m%A_Space%,%A_Space%I'm%A_Space%
 	$feedback['Name'] = 'cleanName';
-	// $feedback['commandstr'] = "I send this";
 	$feedback['result'][] =  trim($fname);
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-	
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }	
-	
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
@@ -660,29 +639,8 @@ function cmp($a, $b) {
 	return strcmp($a["filename"],$b["filename"]);
 }
 
-function clearUTF___delete($s)
-{
-// echo mb_internal_encoding();
-// Not being used
-	mb_internal_encoding("UTF-8");
-	$special = Array ();
-
-    $r = '';
-	// echo $s."<br>";
-    $s1 = iconv('UTF-8', 'ASCII//TRANSLIT', $s);
-	// echo $s1."<br>";
-    for ($i = 0; $i < strlen($s1); $i++)
-    {
-        $ch1 = $s1[$i];
-        $ch2 = mb_substr($s, $i, 1);
-			
-        $r .= $ch1=='?' ? $ch2 : $ch1;
-    }
-	// echo $r."<br>";
-    return $r;
-}
-
 function createNFO($file, $importprocess) {
+	debug($file, 'file');
 
     // GetArtist $base
     // GetSong $base
@@ -723,10 +681,7 @@ function createNFO($file, $importprocess) {
 		file_put_contents($file['dirname'].$file['filename'].'.nfo', $data);
 	}
 		
-	// if (DEBUG_MEDIA) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-
+	debug($feedback, 'feedback');
 	return $feedback;
 
 /*	
@@ -792,18 +747,12 @@ function createNFO($file, $importprocess) {
 }
 
 function getArtistTitle($fname) {
+	debug($fname, 'fname');
 
 	// Expecting correct format "
 	//              Artist1 & Artist2 - Name-Song Ft Sidekick 1 Sidekick2"
 
 	$feedback['Name'] = 'getArtistTitle';
-	if (DEBUG_MEDIA) {
-		//echo "<pre>".$feedback['Name'].': '; echo $fname.CRLF; //echo "</pre>";
-	}
-
-
-	//$feedback['commandstr'] = "I send this";
-	
 	$result = preg_match( '/^.*? & .*? -/', $fname, $m);	// Found & -
 	if ($result) {
 		$result = preg_match( '/^.*? & /', $fname, $m);	// Found BOL to & part
@@ -842,15 +791,12 @@ function getArtistTitle($fname) {
 	// $feedback['message'] = "";
 	// if () $feedback['error'] = "Not so good";
 	
-	if (DEBUG_MEDIA) {
-		//echo "<pre>".$feedback['Name'].': '; 
-		//print_r($feedback); echo "</pre>";
-	}
-	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function getGenre($dirname) {
+	debug($dirname, 'dirname');
 
 	global $genres;
 	$feedback['Name'] = 'getGenre';
@@ -864,16 +810,12 @@ function getGenre($dirname) {
 		$feedback['result']['genre'] = reset($result);
 	}
 
-	//$feedback['commandstr'] = "I send this";
-	// $feedback['message'] = "";
-	//if () $feedback['error'] = "Not so good";
-	if (DEBUG_MEDIA) {
-//		echo "<pre>".$feedback['Name'].': '; print_r($feedback); echo "</pre>";
-	}
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function findBestMatch(&$file, $mvids) {
+	debug($file, 'file');
 
 	$file['moveto'] = VLOSITE_DATA.$mvids[0]['strPath'];
 	$paths = array();
@@ -913,11 +855,13 @@ function findBestMatch(&$file, $mvids) {
 		}
 	}
 	
+	debug($file, 'file');
 	return;
 	// echo "<pre> Same Genre".': '; print_r($mvids); echo "</pre>";
 }
 
 function findMoveTo(&$file, $importprocess) {
+	debug($file, 'file');
 
 	global $genres;
 	global $genrefolders;
@@ -965,49 +909,34 @@ function findMoveTo(&$file, $importprocess) {
 
 	$feedback['result'] = $file;
 	
-	if (DEBUG_MEDIA) {
-		//echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	}
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function createThumbNail($file, $importprocess) {
+	debug($file, 'file');
 
 	$feedback['Name'] = 'createThumb';
 	$feedback['result'] = array();
 	$feedback['message'] = "No thumbnails created, kick of on srvmedia: </br>sudo ~/bin/spawn_create_thumbs";
 	if (!$importprocess) return $feedback; 
-
-
-	// $feedback['message'] = "all good";
-	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
-
 	$params = '"'.$file['dirname'].'" "'.$file['filename'].'" "'.$file['extension'].'"';
 	$cmd = getPath().'/bin/createThumb.sh '.$params;
 	$outputfile=  tempnam( sys_get_temp_dir(), 'thumb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'thumb' );
 	exec(sprintf("%s > %s 2>&1 echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Created Thumbnail ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+	debug($feedback, 'feedback');
 	return $feedback;		// GET OUT
 
-	// if (DEBUG_MEDIA) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-	// return $feedback;
-	// }
 }
 
 function parseSideKicks($sidekickstr) {
+	debug($sidekickstr, 'sidekickstr');
 
 	$feedback['Name'] = 'parseSideKicks';
 	$feedback['result'] = array();
-//	$feedback['message'] = "No thumbnails created, kick of on srvmedia: </br>sudo ~/bin/spawn_create_thumbs";
-//	if (!$importprocess) return $feedback; 
 
-
-	// $feedback['message'] = "all good";
-	// $feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
-	
 	// First/Last
 	$sidekicks = array();
 	do {
@@ -1062,20 +991,9 @@ function parseSideKicks($sidekickstr) {
 		}
 		// echo strlen($sidekickstr).CRLF;
 	} while($len != strlen($sidekickstr));
-
-
-
-	// skip non-found guys
-	// echo "<pre>".$feedback['Name'].': '; print_r($sidekicks); echo "</pre>";
-
 		
+	debug($sidekicks, 'sidekicks');
 	return $sidekicks;
-
-	// if (DEBUG_MEDIA) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
-	// return $feedback;
-	// }
 }
 
 function mv_toLocal($filename) {

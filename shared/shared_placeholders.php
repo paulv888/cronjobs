@@ -1,15 +1,14 @@
 <?php
-//define('DEBUG_PHOLDERS', TRUE);
-if (!defined('DEBUG_PHOLDERS')) define( 'DEBUG_PHOLDERS', FALSE );
-
 function replaceCommandPlaceholders($stepValue, $params) {
 //
 //  For outgoing command strings and macro stepvalues
 //		in: $stepValue
 //		out: return
 
-	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders "; echo $stepValue.CRLF; print_r ($params); echo "</pre>";}
+	debug($stepValue, 'stepValue');
+	debug($params, 'params');
 
+	if (strpos($stepValue, "{SERVER_HOME}") !== false) $stepValue = str_replace("{SERVER_HOME}",SERVER_HOME,$stepValue);
 	if (strpos($stepValue, "{mycommandID}") !== false) $stepValue = str_replace("{mycommandID}",trim($params['commandID']),$stepValue);
 	if (strpos($stepValue, "{deviceID}") !== false) $stepValue = str_replace("{deviceID}",trim($params['deviceID']),$stepValue);
 	if (strpos($stepValue, "{unit}") !== false) $stepValue = str_replace("{unit}",trim($params['device']['unit']),$stepValue);
@@ -28,7 +27,6 @@ function replaceCommandPlaceholders($stepValue, $params) {
 			exit;
 		}
 		$stepValue = str_replace("{port}",$port,$stepValue);
-//		echo "******port:"; print_r($port);
 	}
 	if (strpos($stepValue, "{macro___commandvalue}") !== false) $stepValue = 
 			str_replace("{macro___commandvalue}", (array_key_exists('macro___commandvalue', $params) ? trim($params['macro___commandvalue']) : ""),$stepValue);
@@ -39,7 +37,8 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (strpos($stepValue, "{value}") !== false) $stepValue = str_replace("{value}",trim($params['value']),$stepValue);
 	if (strpos($stepValue, "{timervalue}") !== false) $stepValue = str_replace("{timervalue}",trim($params['timervalue']),$stepValue);
 	if (preg_match("/\{calculate___(.*?)\}/", $stepValue,$matches)) {
-		if (DEBUG_COMMANDS) {echo "<pre> calculate "; print_r ($matches); echo "</pre>";}
+		debug($matches, 'calculate->matches');
+
 		$calcvalue = eval('return '.$matches[1].';');
 		$stepValue = str_replace($matches[0], $calcvalue, $stepValue);
 	}
@@ -47,7 +46,12 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (array_key_exists('mess_subject',$params)) $stepValue = str_replace("{mess_subject}",trim($params['mess_subject']),$stepValue);
 	if (array_key_exists('mess_text',$params)) $stepValue = str_replace("{mess_text}",trim($params['mess_text']),$stepValue);
 
-	if (DEBUG_PHOLDERS) {echo "<pre> replaceCommandPlaceholders stepValue: "; echo($stepValue); echo "</pre>";}
+	$dummy="";
+	$flat_params = array_flatten($params, 1);
+	replaceFields($stepValue, $dummy, $flat_params);
+	
+	debug($stepValue, 'stepValue');
+
 	return $stepValue;
 }
 
@@ -58,14 +62,15 @@ function splitCommandvalue(&$params) {
 //		in: $params
 //		out: add cvs array to $params
 
-	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue "; print_r($params);  echo "</pre>";}
+	debug($params, 'params');
 
 	if (strpos($params['commandvalue'],'|') !== false) {
 		$cvs = explode('|', $params['commandvalue']);
 		$params['cvs']= $cvs;
 	}
 	
-	if (DEBUG_PHOLDERS) {echo "<pre> splitCommandvalue result "; print_r($params); echo "</pre>";}
+	debug($params, 'resultParams');
+
 	return;
 }
 function parseLastResult($resultin, $stepValue){
@@ -75,10 +80,9 @@ function parseLastResult($resultin, $stepValue){
 
 	if (!is_array($resultin)) return $resultin;
 
-	if (DEBUG_PHOLDERS) {
-		echo "<pre> stepValue: "; echo $stepValue.CRLF; echo "</pre>";
-		echo "<pre> parseLastResult "; print_r ($resultin); echo "</pre>";
-	}	
+	debug($stepValue, 'stepValue');
+	debug($resultin, 'resultin');
+
 
 	// Do an array search for the value to replace {postion}
 	// execute before clobbering input
@@ -87,21 +91,16 @@ function parseLastResult($resultin, $stepValue){
 	// var_dump($output);
 	$flat_resultin = array_flatten($resultin, 1);
 
-	// print_r($flat_resultin);
-
 	$feedback = false;
 	if (array_key_exists(1,$output)) {	// Result found
 
-	// print_r($output);
 		$findKey = $output[1];
-		if (DEBUG_PHOLDERS) {
-			echo "<pre>Search Array for Key "; echo "findKey: ".$findKey; echo "</pre>";
-		}
+		debug($findKey, 'Search Array for Key->findKey');
+
 		if (array_key_exists($findKey, $flat_resultin)) {	
 			
-			if (DEBUG_PHOLDERS) {
-				echo "<pre>Value found: "; echo $flat_resultin[$findKey]; echo "</pre>";
-			}	
+			debug($flat_resultin[$findKey], 'Found');
+
 			$feedback = trim(str_replace("{last___result___".$findKey."}", $flat_resultin[$findKey], $stepValue));
 		} 
 	}
@@ -117,15 +116,15 @@ function replacePropertyPlaceholders($mess_subject, $params){
 //		out: return
 //
 
-// echo "<pre>";
-// print_r($params);
-// echo "replacePlaceholder in: ".$mess_subject.CRLF;
+	debug($mess_subject, 'mess_subject');
+	debug($params, 'params');
+
+	
 	$mess_text = Null;
 	if (preg_match("/\{property.*\}/", $mess_subject, $matches)) {
 
 		// This is for the device properties
 		$deviceID = null;
-		//print_r($params);
 		//
 		//	Problem, where is the current device or properties?
 		//		From caller? Ie.. Insteonlog
@@ -138,24 +137,23 @@ function replacePropertyPlaceholders($mess_subject, $params){
 			$deviceID = $params['caller']['deviceID'];
 		}
 		
-		// echo "************".$deviceID."  ".$mess_subject.CRLF.CRLF;
+		debug($deviceID, '****deviceID');
+
 		if (!is_null($deviceID)) {
 			
 			$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
 						JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
 						WHERE ha_mf_device_properties.deviceID ='.$deviceID;
 			if ($props = FetchRows($mysqlp)) {
-				// print_r($props);
 				unset ($pattern);
 				unset ($newprops);
 				foreach ($props as $key => $value) {
 					$pattern[$value['description']]="/\{property___".strtolower($value['description'])."\}/";
 					$newprops[$value['description']]=$value['value'];
 				}
-				if (DEBUG_PHOLDERS) {
-					echo "<pre>Device Properties "; echo "DATA:"; print_r ($newprops); echo "</pre>";
-					echo "<pre>Device Properties "; echo "PATTERN:"; print_r ($pattern); echo "</pre>";
-				}
+				debug($newprops, 'newprops');
+				debug($pattern, 'pattern');
+
 				//$mess_subject = str_replace("{property___", "{", $mess_subject);
 				$mess_subject = preg_replace($pattern, $newprops, $mess_subject);
 			}
@@ -163,8 +161,8 @@ function replacePropertyPlaceholders($mess_subject, $params){
 
 
 	}
-// echo "replacePlaceholder Result: ".$mess_subject.CRLF;
-// echo "</pre>";
+	debug($mess_subject, 'mess_subject');
+
 	return $mess_subject;
 }
 
@@ -174,23 +172,13 @@ function replaceText(&$params){
 //		in:  $params['mess_subject'], $params['mess_text']
 //		out: $params['mess_subject'], $params['mess_text']
 //
-//echo "replaceText in: ".CRLF;
-//echo  $params['mess_subject'].CRLF;
-//echo  $params['mess_text'].CRLF;
-//echo "<pre>";
-//print_r($params);
-//echo "</pre>";
 
-	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
 	
 	$mess_subject = (array_key_exists('mess_subject',$params) ? $params['mess_subject'] : "");
 	$mess_text = (array_key_exists('mess_text',$params) ? $params['mess_text'] : "");
 	
-	// if (array_key_exists('caller', $params)) {
-		// $callerparams = $params['caller'];
-		// unset ($params['caller']);
-	// }
-	
+	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
+
 	if (array_key_exists('caller', $params)) {
 		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['callerID']))  {
 			$params['caller___description']= $cd['description']; 
@@ -203,20 +191,15 @@ function replaceText(&$params){
 		}
 	}
 	
-//	 echo "<pre>";
-//	 print_r($params);
-//	 echo 'var_dump(array_flatten($params, 1));'."\n";
 	$params['now'] = date("Y-m-d H:i:s");
 
 	$flat_params = array_flatten($params, 1);
-
-//	 print_r($flat_params);
-//	 echo "</pre>";
 
 	replaceFields($mess_subject, $mess_text, $flat_params);
   
  	$params['mess_subject'] = $mess_subject;
 	$params['mess_text'] = $mess_text;
+
 	return; 
 }
 
@@ -224,18 +207,16 @@ function replaceFields(&$mess_subject, &$mess_text, $params){
 //
 //	private
 //
-
-	if (DEBUG_PHOLDERS) {
-		echo "<pre> Replace Fields Params "; print_r ($params); echo "</pre>";
-		echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
-		echo "<pre>Message: "; echo $mess_text.CRLF; echo "</pre>";
-	}
+	debug($mess_subject, 'mess_subject');
+	debug($mess_text, 'mess_text');
+	debug($params, 'params');
 
 	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_CURRENT_SESSION) {
 		$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 	}
 
 //	if ($params['deviceID'] != Null) {
+	// if (strpos($mess_subject,"{") !== 0 && strpos($mess_text,"{") !== 0) {
 
 		for ($i = 1; $i <= 1; $i++) {		// Only once???
 
@@ -253,25 +234,22 @@ function replaceFields(&$mess_subject, &$mess_text, $params){
 				$pattern[$key]="/\{".strtolower(str_replace(" ","_",$key))."\}/";
 			}
 
-			if (DEBUG_PHOLDERS) {
-				echo "<pre>Param Values "; echo "DATA:"; print_r ($params); echo "</pre>";
-				echo "<pre>Param Values "; echo "PATTERN:"; print_r ($pattern); echo "</pre>";
-			}
+			debug ($params, 'params');
+			debug ($pattern, 'pattern');
+
 
 			$mess_subject = preg_replace($pattern, $params, $mess_subject);
 			if (!empty($mess_text)) $mess_text = preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
 		}
 
 		// Clean up any left over fields
-		$mess_subject = trim(preg_replace('/\{.*?\}/', '' , $mess_subject));
-		if (!empty($mess_text)) $mess_text = trim(preg_replace('/\{.*?\}/', '', $mess_text)); // twice to support tag in tag
-//	}
+		// $mess_subject = trim(preg_replace('/\{.*?\}/', '' , $mess_subject));
+		// if (!empty($mess_text)) $mess_text = trim(preg_replace('/\{.*?\}/', '', $mess_text)); // twice to support tag in tag
+	// }
 
-	if (DEBUG_PHOLDERS) {
-		echo "<pre> Replace Fields Results "; echo "</pre>";
-		echo "<pre>Subject: "; echo $mess_subject.CRLF; echo "</pre>";
-		echo "<pre>Message: "; echo $mess_text.CRLF; echo "</pre>";
-	}
+	debug($mess_subject, 'mess_subject');
+	debug($mess_text, 'mess_text');
+	
 	return true;
 }
 

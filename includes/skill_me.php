@@ -1,14 +1,10 @@
 <?php
-//define( 'DEBUG_ALX', TRUE );
-if (!defined('DEBUG_ALX')) define( 'DEBUG_ALX', FALSE );
-
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
-
-
 
 $log = array();
 
 function handleRequest($alexaRequest) {
+	debug($alexaRequest, 'alexaRequest');
 
 	global $log;
 
@@ -86,12 +82,14 @@ function handleRequest($alexaRequest) {
 	$exectime += microtime(true);
 	$log['exectime'] = $exectime;
 	logEvent($log);
-	if (DEBUG_ALX) print_r($alexaRequest);
-
+	debug($alexaRequest, 'alexaRequest');
 	return;
 }
 
 function ShortAnswerIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -145,19 +143,23 @@ function ShortAnswerIntent($request, $session, $response) {
 			$response->respond("Sorry, I did not understand, please start over.");
 			$feedback['result'] = $response->tell();
 			$feedback['error'] = "Restart it";
+			debug($feedback, 'feedback');
 			return $feedback;
 	}
 	
-	if (DEBUG_ALX) { print_r($request);}
 	$fname= $request->intentName;
 	$feedback['result'] = $fname($request, $session, $response);
 
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 
 function WhatsTemperatureIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -170,7 +172,6 @@ function WhatsTemperatureIntent($request, $session, $response) {
 	$log['data'] = "TempDevice: ".$find;
 
 	$found = findDeviceByName($find);
-	if (DEBUG_ALX) { print_r($found);}
 	if (!empty($found)) { 
 		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
 		$log['deviceID'] = $deviceID;
@@ -181,13 +182,14 @@ function WhatsTemperatureIntent($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"WhatsTemperatureIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "What device?";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
 	$propertyName = 'Temperature';
 	$deviceProperty = getDeviceProperties(array('description'=>$propertyName, 'deviceID'=>$deviceID));
 	
-	if (DEBUG_ALX) { print_r($deviceProperty); print_r($voicenames);}
+	debug($deviceProperty, 'deviceProperty');
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperty['value'],1) + 0);
 	$response->respond($answer)->withCard(strip_tags($answer));
@@ -195,11 +197,15 @@ function WhatsTemperatureIntent($request, $session, $response) {
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function AnySecurityOpenIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	$feedback['Name'] = 'AnySecurityOpenIntent';
@@ -215,22 +221,20 @@ function AnySecurityOpenIntent($request, $session, $response) {
 	$mysql = 'SELECT typeID, LOWER(description) as description FROM `ha_voice_names` WHERE typeID > 0'; 
 	$voicenames = FetchRows($mysql);
 	$found = search_array_key_value($voicenames, 'description' , $find);
-	if (DEBUG_ALX) { echo "Found:" ; print_r($found);}
 	if (!empty($found)) { 
 		$typeID = $found[0]['typeID'];
 		$mysql = 'SELECT id as deviceID, typeID FROM `ha_mf_devices` WHERE typeID IN ('.$typeID.') and inuse = 1'; // Handle multiple matches?
 		$devices = FetchRows($mysql);
-		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
 		foreach ($devices as $key => $row) {
 			$results[] = getStatusLink(array('deviceID'=>$row['deviceID'], 'propertyID'=>$propertyID));
 		}
-		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
 	} else {
 		$response->respond("Sorry which device group you want?")
 		 ->reprompt("Sorry which device group you want?");
 		$response->sessionAttributes(Array("intentSequence"=>"AnySecurityOpenIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "Cannot find device";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	
@@ -247,17 +251,20 @@ function AnySecurityOpenIntent($request, $session, $response) {
 		$answer = sprintf($responses_all[rand(0,count($responses_all)-1)], $find);
 	} 
 	
-	if (DEBUG_ALX) { print_r($devices); print_r($voicenames);}
 
 	$response->respond($answer)->withCard(strip_tags($answer));
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function SystemReportIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	$feedback['Name'] = 'SystemReportIntent';
@@ -271,11 +278,15 @@ function SystemReportIntent($request, $session, $response) {
 	$findProperty = "Status";
 
 	$feedback['result'] = homeStatus($request, $session, $response);
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function DeviceStatusIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	$feedback['Name'] = 'DeviceStatusIntent';
@@ -288,7 +299,6 @@ function DeviceStatusIntent($request, $session, $response) {
 	$log['data'] = "Device: ".$findDevice;
 
 	$found = findDeviceByName($findDevice);
-	if (DEBUG_ALX) { print_r($found);}
 	if (!empty($found)) { 
 		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
 	} else {
@@ -297,15 +307,14 @@ function DeviceStatusIntent($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"DeviceStatusIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "Cannot find device";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-//	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
+	debug($deviceProperty, 'deviceProperty');
 
 	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
-	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
-	
  
 	if ($deviceProperties[$found]['invertstatus'] == "0") {  
 		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
@@ -322,11 +331,15 @@ function DeviceStatusIntent($request, $session, $response) {
 	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function DeviceReportIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	$feedback['Name'] = 'DeviceReportIntent';
@@ -339,7 +352,6 @@ function DeviceReportIntent($request, $session, $response) {
 	$log['data'] = "Device: ".$findDevice;
 
 	$found = findDeviceByName($findDevice);
-	if (DEBUG_ALX) { print_r($found);}
 	if (!empty($found)) { 
 		$deviceID = $found[0]['deviceID'];	// Handle multiple matches?
 	} else {
@@ -348,11 +360,12 @@ function DeviceReportIntent($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"DeviceReportIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "Cannot find device";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-//	if (DEBUG_ALX) { print_r($deviceProperties); print_r($voicenames);}
+	debug($deviceProperty, 'deviceProperty');
 
 
 	$answer = ["" , ""];
@@ -360,7 +373,6 @@ function DeviceReportIntent($request, $session, $response) {
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID));
 
 	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
-	if (DEBUG_ALX) { echo "Found primary:"; echo($found);}
 
 	if ($deviceProperties[$found]['invertstatus'] == "0") {  
 		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
@@ -393,11 +405,15 @@ function DeviceReportIntent($request, $session, $response) {
 	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function WhatsBedtimeIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -414,6 +430,7 @@ function WhatsBedtimeIntent($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"WhatsBedtimeIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['error'] = "What day.";
+		debug($feedback, 'feedback');
 		return $feedback;
 	} else {
 		// Yesterday should be day before, others should be normal?
@@ -438,11 +455,15 @@ function WhatsBedtimeIntent($request, $session, $response) {
 	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function WhatsPlayingIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -454,17 +475,21 @@ function WhatsPlayingIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	if (DEBUG_ALX) { print_r($deviceProperties); }
+	debug($deviceProperty, 'deviceProperty');
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']);
 	$response->respond($answer)->withCard(strip_tags($answer));
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function DoingIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -489,11 +514,15 @@ function DoingIntent($request, $session, $response) {
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function homeStatus($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -513,14 +542,11 @@ function homeStatus($request, $session, $response) {
 	foreach (['17', '18'] as $groupID) {
 		$mysql = 'SELECT deviceID, groupID FROM `ha_mf_device_group` WHERE groupID = '.$groupID; 
 		$devices = FetchRows($mysql);
-		if (DEBUG_ALX) { echo "Matching devices:" ; print_r($devices);}
 		$feedback = array();
 		foreach ($devices as $row) {
 			$feedback[] = getStatusLink(array('deviceID'=>$row['deviceID'], 'propertyID'=>$propertyID));
 		}
 
-		if (DEBUG_ALX) { echo "Feedback:" ; print_r($feedback);}
-		
 		$anydown = 0;
 		foreach ($feedback as $status) {
 			if (array_key_exists('Link', $status) && $status['Link'] != "1") {
@@ -546,6 +572,7 @@ function homeStatus($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"AlertsIntent"));
 		$feedback['result'] = $response->ask();
 		$feedback['message'] = "Want to listen to alerts??";
+		debug($feedback, 'feedback');
 		return $feedback;	
 	}
 
@@ -554,10 +581,14 @@ function homeStatus($request, $session, $response) {
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function AlertsIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -582,6 +613,7 @@ function AlertsIntent($request, $session, $response) {
 			$response->sessionAttributes(Array("intentSequence"=>"AlertsIntent"));
 			$feedback['result'] = $response->ask();
 			$feedback['error'] = "What day/number.";
+			debug($feedback, 'feedback');
 			return $feedback;
 		} else {
 			$wherestr .= ($wherestr != '' ? ' AND ' : '').'DATE_FORMAT( `alert_date` , "%Y-%m-%d" ) = "'.$findDate.'"';
@@ -595,6 +627,7 @@ function AlertsIntent($request, $session, $response) {
 			$response->sessionAttributes(Array("intentSequence"=>"AlertsIntent"));
 			$feedback['result'] = $response->ask();
 			$feedback['error'] = "What device?";
+			debug($feedback, 'feedback');
 			return $feedback;
 		} else {
 			$wherestr .= ($wherestr != '' ? ' AND ' : '') .'deviceID = '.$found[0]['deviceID'];
@@ -605,9 +638,6 @@ function AlertsIntent($request, $session, $response) {
 		$wherestr .=  'LIMIT '.$findNumber;
 	}
 	
-	if (DEBUG_ALX) echo $wherestr;
-	// echo $wherestr;
-
 	$mysql = 'SELECT deviceID, a.description, priorityID, alert_date, alert_text, p.description as priority FROM ha_alerts a
 				LEFT JOIN ha_mi_priority p ON a.priorityID = p.id	
 				WHERE '.$wherestr;
@@ -617,6 +647,7 @@ function AlertsIntent($request, $session, $response) {
 		$response->respond($answer)->withCard(strip_tags($answer));
 		$feedback['message'] = $answer;
 		$feedback['result'] = $response->tell();
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
@@ -633,7 +664,6 @@ function AlertsIntent($request, $session, $response) {
 		$answer .= ($answer != '' ? ', For ' : 'Here are your alerts for ' ).$findDevice;
 	}
 	
-	if (DEBUG_ALX) 	print_r($alerts);
 	$lastdescr = "";
 	foreach ($alerts as $alert) {
 		$date = new DateTime($alert['alert_date']);
@@ -658,11 +688,15 @@ function AlertsIntent($request, $session, $response) {
 
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function HelpIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -683,10 +717,14 @@ function HelpIntent($request, $session, $response) {
 
 	$feedback['message'] = "Help";
 	$feedback['result'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function NoIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -703,11 +741,15 @@ function NoIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function StopIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -717,10 +759,14 @@ function StopIntent($request, $session, $response) {
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 
 	$feedback['result'] = CancelIntent($request, $session, $response);
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function CancelIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -740,10 +786,14 @@ function CancelIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function LaunchRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -764,11 +814,15 @@ function LaunchRequest($request, $session, $response) {
 
 	$feedback['message'] = "Launch Prompt";
 	$feedback['result'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function SessionEndedRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -779,6 +833,7 @@ function SessionEndedRequest($request, $session, $response) {
 	$log['data'] = $request->reason;
 	echo "{}";
 	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 

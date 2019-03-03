@@ -1,6 +1,4 @@
 <?php
-// define( 'DEBUG_GRAPH', TRUE );
-if (!defined('DEBUG_GRAPH')) define( 'DEBUG_GRAPH', FALSE );
 define( 'MAX_DATAPOINTS', 1000 );
 
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
@@ -19,6 +17,7 @@ define( 'MAX_DATAPOINTS', 1000 );
 //      if error then	'error'			(String)	-> Error description
 //						Nothing else allowed 
 // function templateFunction(&$params) {
+//	debug($params, 'params');
 
 	// $feedback['Name'] = 'templateFunction';
 	// $feedback['commandstr'] = "I send this";
@@ -26,13 +25,14 @@ define( 'MAX_DATAPOINTS', 1000 );
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 
-	// if (DEBUG_COMMANDS) {
-		// echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	// }
+	//	debug($stepValue, 'stepValue');
+
+	//	debug($feedback, 'feedback');
 	// return $feedback;
 // }
 function monitorDevicesTimeout($params) {
-	// No Error checking
+
+	debug($params, 'params');
 
 	// Need to handle inuse and active
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
@@ -63,31 +63,86 @@ function monitorDevicesTimeout($params) {
 			}
 		}
 	}
-	// print_r($feedback);
-	// echo "</pre>";
+
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
-function createAlert($params) {
+function createAlert(&$params) {
+
+	debug($params, 'params');
 
 	$feedback['Name'] = 'createAlert';
+	$feedback['commandstr'] = "";
 	$feedback['result'] = array();
-	if (DEBUG_COMMANDS) {
-		echo "<pre>Alerts Params: "; print_r($params); echo "</pre>";
+
+	$saveparams =  $params;
+
+	$mysql = 'SELECT a.description as description, s.deviceID as deviceID, s.alert_textID as alert_textID FROM `ha_alerts_catalog` a 
+					LEFT JOIN `ha_alert_subscriptions` s ON a.id = s.alert_catalogID 
+				WHERE a.ID = "'.$params['alert_catalogID'].'"';
+		
+
+	$feedback['result'] = Array();
+	if ($subscribers = FetchRows($mysql)) {
+		foreach ($subscribers as $step) {
+			$description = $step['description'];
+
+			$params['deviceID'] =  $step['deviceID'];
+			$params['messagetypeID'] = "MESS_TYPE_COMMAND";
+			$params['commandID'] = COMMAND_SEND_MESSAGE;
+			$params['alert_textID'] = $step['alert_textID'];
+
+
+	 // {echo "<pre>before error ";print_r($params);echo "</pre>";}
+
+			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+				if (array_key_exists('SESSION', $params)) {
+					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+				} else if (array_key_exists('SESSION', $params['caller'])) {
+					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
+				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+			}
+			$feedback['result']['createAlerts_'.$params['deviceID']] = SendCommand($params);
+			$params =  $saveparams;
+	// print_r($feedback);
+	// echo "</pre>";
+
+		}
+		debug($feedback, 'feedback');
+		return $feedback;		// GET OUT
+	} else {
+		$feedback['error'] = 'No subscribers found!';
 	}
-	$feedback['commandstr'] = 'PDOInsert...';
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function createAlertLog($params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'createAlertLog';
+	$feedback['result'] = array();
+	$feedback['commandstr'] = 'PDOInsert: '.$params['mess_text'];
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
 	$feedback['result']['params'] = json_encode($params);
-	$feedback['result'][] = 'AlertID: '.PDOInsert("ha_alerts", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
-	if ($params['priorityID'] <= PRIORITY_HIGH) $feedback['result'][] = sendBullet($params);
+	$feedback['message'] = 'AlertID: '.PDOInsert("ha_alerts_log", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
+	// if ($params['priorityID'] <= PRIORITY_HIGH) $feedback['result'][] = sendBullet($params);
+	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function executeMacro($params) {      // its a scheme, process steps. Scheme setup by a) , b) derived from remotekey
 
+	$schemeID = $params['schemeID'];
+	debug($schemeID, 'schemeID');
+	debug($params, 'params');
+
 // Check conditions
 	$feedback['result'] = array();
-	$schemeID = $params['schemeID'];
 	$callerparams = $params['caller'];
 	$loglevel = (array_key_exists('loglevel', $callerparams) ? $callerparams['loglevel'] : Null);
 	$asyncthread = (array_key_exists('ASYNC_THREAD', $callerparams) ? $callerparams['ASYNC_THREAD'] : false);
@@ -96,9 +151,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
 		$params['macro___commandvalue'] = $params['commandvalue'];
 	}
-
-	if (DEBUG_COMMANDS) echo "<pre>Enter executeMacro $schemeID".CRLF;
-	if (DEBUG_COMMANDS) print_r($params);
 
 	$feedback['Name'] = getSchemeName($schemeID);
 
@@ -113,6 +165,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		if (!$feedback['result'][0]) {
 			$feedback['Name'] = getSchemeName($schemeID);
 			$feedback['message'] = $feedback['Name'].": ".$feedback['message'];
+			debug($feedback, 'feedback');
 			return $feedback;
 		}
 	}
@@ -120,7 +173,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
-				st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID, st.sort, st.alert_textID,
+				st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID, st.sort, st.alert_catalogID, 
 				st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, 
 				"123" as cond_propertyID, st.cond_operator, st.cond_value,
 				s2.runasync as step_async 
@@ -143,6 +196,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$values['messagetypeID'] = "MESS_TYPE_SCHEME";
 			$values['commandvalue'] = (array_key_exists('commandvalue', $callerparams) ? $callerparams['commandvalue'] : null);
 			$values['schemeID'] = $schemeID;
+			$values['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 			$getparams = http_build_query($values, '',' ');
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
 			$outputfile=  tempnam( sys_get_temp_dir(), 'async-M'.$schemeID.'-o-' );
@@ -150,36 +204,30 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['message'] = "Initiated ".current($rowshemesteps)['name'].' sequence. Log: '.$outputfile;
 			$feedback['commandstr'] = $cmd;
-			if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
+			debug($feedback, 'feedback');
 			return $feedback;		// GET OUT
 		}
 		
 		foreach ($rowshemesteps as $step) {
 			//$result = Array();
 
-//			echo "<pre>Check cond result".CRLF;
-//			print_r(array($step));
+			// echo "<pre>Check cond result".CRLF;
+			// print_r(array($step));
 			$check_result = checkConditions(array($step), $params);
-//			print_r($result);
-//			echo "</pre>Check cond result".CRLF;
-// echo '<pre>';
+			// print_r($check_result );
+			// echo "</pre>Check cond result".CRLF;
+
 			if ($check_result['result'][0]) {
 				$stepValue =  $step['value'];
-				if (DEBUG_PARAMS) echo '<pre>StepValue: '.$stepValue.CRLF;
-				if (DEBUG_PARAMS) echo 'last___message: '.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').CRLF;
-				if (DEBUG_PARAMS) {
-					if (array_key_exists('last___result', $params)) {
-						echo 'last___result';
-						var_dump($params['last___result']); 
-					} else {
-						echo 'last___result: Non-existent'.CRLF;
-					}
-				}
+				debug($stepValue, 'stepValue');
+
+				debug((array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent'), 'last___message');
+
 				$params['deviceID'] =  $step['deviceID'];
 				$params['commandID'] = $step['commandID'];
 				if (!empty($step['propertyID'])) $params['propertyID'] = $step['propertyID'];
 				$params['schemeID'] = $step['runschemeID'];
-				$params['alert_textID'] = $step['alert_textID'];
+				$params['alert_catalogID'] = $step['alert_catalogID'];
 
 	 // {echo "<pre>before error ";print_r($params);echo "</pre>";}
 
@@ -192,14 +240,15 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				}
 
 				$stepValue = replacePropertyPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
-				if (DEBUG_PARAMS) echo 'StepValue after replacePropertyPlaceholders: '.$stepValue.CRLF;
+				debug($stepValue, 'stepValue');
 
 				$stepValue = replaceCommandPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
 				$params['commandvalue'] = $stepValue;
 				splitCommandvalue($params);
-				if (DEBUG_PARAMS) echo 'StepValue after replaceCommandPlaceholders: '.$params['commandvalue'].CRLF;
-				if (DEBUG_PARAMS) echo 'Split after splitCommandvalue: '.print_r((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split"))).CRLF;
+				debug($stepValue, 'stepValue');
 
+				debug((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split")), 'cvs');
+				
 				if ($step['step_async']) {			// Spawn it
 					unset($values);
 					$values['callerID'] = $callerparams['callerID'];
@@ -207,6 +256,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['messagetypeID'] = "MESS_TYPE_SCHEME";
 					$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
 					$values['schemeID'] = $params['schemeID'];
+					$values['debug'] = $GLOBALS('debug');
 					$getparams = http_build_query($values, '',' ');
 					
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
@@ -216,7 +266,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 					$step_feedback['message'] = "Initiated ".$step['name'].' sequence. Log: '.$outputfile;
 					$step_feedback['commandstr'] = $cmd;
-					if (DEBUG_COMMANDS) echo "Spawned async step</pre>".CRLF;
+					debug($cmd, 'cmd');
 				} else {
 					$step_feedback = SendCommand($params);
 				}
@@ -225,97 +275,39 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				if (array_key_exists('message',$step_feedback)) $params['last___message'] = $step_feedback['message'];
 				if (array_key_exists('error',$step_feedback)) $params['last___message'] = $step_feedback['error'];
 				if (array_key_exists('result_raw',$step_feedback)) $params['last___result'] = $step_feedback['result_raw'];
-				if (array_key_exists('error',$step_feedback)) $params['last___result'] = $step_feedback['error'];
-				if (DEBUG_PARAMS) echo 'Loaded last___message: >'.(array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent').'<'.CRLF;
-				if (DEBUG_PARAMS) {
-					if (array_key_exists('last___result', $params)) {
-						echo 'Loaded last___result';
-						var_dump($params['last___result']); 
-					} else {
-						echo 'Non-existent'.CRLF;
-					}
-				}
-				if (DEBUG_PARAMS) echo '</pre>';
-			} 
+				// if (array_key_exists('error',$step_feedback)) $params['last___result'] = $step_feedback['error'];
+				debug((array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent'), 'last___message');
+			} else {
+				$step_feedback = 'Skipped';
+			}
 			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $step_feedback;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
 	}
-	if (DEBUG_COMMANDS) echo "Exit executeMacro</pre>".CRLF;
+
 	if (empty($feedback['message'])) unset($feedback['message']);
-	// echo '</pre>';
-	return $feedback;
-}
-
-function getDuskDawn(&$params) {
-
-	$feedback['Name'] = 'getDuskDawn';
-	$feedback['result'] = array();
-
-	$station = $params['commandvalue'];
-	ini_set('max_execution_time',30);
-// echo "<pre>";
-// print_r($params);
-
-	$row = FetchRow("SELECT * FROM ha_mi_oauth20 where id ='YAHOO'");
-	$credentials['method'] = $row['method'];
-	$credentials['username'] = $row['clientID'];
-	$credentials['password'] = $row['secret'];
-
-	$url = "https://query.yahooapis.com/v1/yql";
-	$args = array();
-	$args["q"] = 'select * from weather.forecast where woeid in (12773052) and u="c"';
-	// $args["diagnostics"] = "true";
-	// $args["debug"] = "true";
-	$args["format"] = "json";
-
-	$get = RestClient::get($url,$args,$credentials,30);
-
-	if (DEBUG_COMMANDS) echo "<pre>";
-	//if (DEBUG_YAHOOWEATHER) echo "response: ".$response;
-        $error = false;
-        if ($get->getresponsecode()!=200) $error=true;
-        if (!$error) {
-                $result = json_decode($get->getresponse());
-		if (DEBUG_COMMANDS) print_r($result);
-                $feedback['result'] =  json_encode(json_decode($get->getresponse(), true),JSON_UNESCAPED_SLASHES);
-                if (!isset($result->{'query'}->{'results'})) {
-                        $error = true;
-                } else {
-			$result = $result->{'query'}->{'results'}->{'channel'};
-
-			$tsr = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunrise'})));
-			$tss = date("H:i", strtotime(preg_replace("/:(\d) /",":0$1 ",$result->{'astronomy'}->{'sunset'})));
-			$properties['Astronomy Sunrise']['value'] = $tsr;
-			$properties['Astronomy Sunset']['value'] = $tss;
-			$properties['Link']['value'] = LINK_UP;
-			$params['device']['properties'] = $properties;
-			if (DEBUG_COMMANDS) print_r($params);
-		}
-	}
-	if ($error) {
-		$feedback['error'] = $get->getresponsecode();
- 		$properties['Link']['value'] = LINK_DOWN;
-		$params['device']['properties'] = $properties;
-	}
-	//$feedback['result']['updateDeviceProperties'] = updateDeviceProperties(array( 'callerID' => DEVICE_DARK_OUTSIDE, 'deviceID' => DEVICE_DARK_OUTSIDE, 'device' => $device));
-	if (DEBUG_COMMANDS) echo "</pre>";
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function setResult($params) {
+
+	debug($params, 'params');
+
 	$feedback['Name'] = 'setResult';
 	$feedback['result'] = array();
 	$feedback['message'] = $params['commandvalue'];
+	debug($feedback, 'feedback');
 	return;
 }
 
 
 function setDevicePropertyCommand(&$params) {
-	$feedback['result'] = array();
 
-	if (DEBUG_COMMANDS) { echo "<pre>"; print_r($params); echo "</pre>"; };
+	debug($params, 'params');
+
+	$feedback['result'] = array();
 
 	calculateProperty($params) ;
 	$tarr = explode("___",$params['commandvalue']);
@@ -329,11 +321,13 @@ function setDevicePropertyCommand(&$params) {
 	}
 	$params['device']['properties'][$tarr[0]]['value'] = $text;
 	$feedback['Name'] = $tarr[0];
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function setSessionVar(&$params) {
 
+	debug($params, 'params');
 
 	$feedback['result'] = array();
 	
@@ -359,11 +353,14 @@ function setSessionVar(&$params) {
 
 	$feedback['result'] = $_SESSION['properties'];
 	$feedback['Name'] = $tarr[0];
-	print_r($_SESSION);
+
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function getNowPlaying(&$params) {
+
+	debug($params, 'params');
 
 	$feedback['Name'] = 'getNowPlaying';
 	$feedback['result'] = array();
@@ -382,7 +379,7 @@ function getNowPlaying(&$params) {
 		$properties['File']['value'] = '*';
 		$properties['Artist']['value'] = '*';
 		$properties['Title']['value'] =  '*';
-		$properties['Thumbnail']['value'] = HOME."images/headers/offline.png?t=".rand();
+		$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
 		$properties['PlayingID']['value'] =  '0';
 		$params['device']['properties'] = $properties;
 		$feedback['error']='Error - Nothing playing';
@@ -411,23 +408,24 @@ function getNowPlaying(&$params) {
 			$properties['File']['value'] = '*';
 			$properties['Artist']['value'] = '*';
 			$properties['Title']['value'] =  '*';
-			$properties['Thumbnail']['value'] = HOME."images/headers/offline.png?t=".rand();
+			$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
 			$properties['PlayingID']['value'] =  '0';
 			$params['device']['properties'] = $properties;
 			$feedback['error']='Error - Nothing playing';
 		}
 		// Handle KODI error
 	}	
+
+	debug($feedback, 'feedback');
 	return $feedback;
-	// echo "</pre>";	
 } 
 
 function moveToRecycle($params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'moveToRecycle';
 	$feedback['result'] = array();
-	// echo "<pre>".$feedback['Name'].CRLF;
-	// print_r($params);
 
 	$cmvfile = mv_toLocal($params['commandvalue']);
 	//$result = stat($infile);
@@ -450,16 +448,18 @@ function moveToRecycle($params) {
 		$command['macro___commandvalue'] = $result['error'];
 	}
 	if (!array_key_exists('createbatchfile',$params)) $feedback['result'][] = sendCommand($command);
+
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 	
 function moveMusicVideo($params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'moveMusicVideo';
 	$feedback['result'] = array();
 	$feedback['message'] = '';
-	// echo "<pre>".$feedback['Name'].CRLF;
-	// print_r($params);
 
 	$file = $params['file'];
 	if ($params['movetorecycle']) {
@@ -554,14 +554,16 @@ function moveMusicVideo($params) {
 	else 
 		$log .= date("Y-m-d H:i:s").": Moved: ".$feedback['message'];
 	file_put_contents($file, $log);
+	$feedback['message'] .= '|'.'|';
+
+	debug($feedback, 'feedback');
 	return $feedback;
-	// echo "</pre>";	
 } 
 
 function addToFavorites(&$params) {
 
-//echo "<pre>";
-//print_r($params);
+	debug($params, 'params');
+
 	$feedback['Name'] = 'addToFavorites';
 	$feedback['result'] = array();
  
@@ -583,11 +585,14 @@ function addToFavorites(&$params) {
 	if (!empty($error)) {
 		$feedback['error'] = 'Could not open playlist - '.$params['macro___commandvalue'].'|';
 	}
+
+	debug($feedback, 'feedback');
 	return $feedback;
-//echo "</pre>";	
 } 
 
 function fireTVreboot($params) {
+
+	debug($params, 'params');
 
 	$feedback['Name'] = 'fireTVreboot';
 	$feedback['result'] = array();
@@ -596,84 +601,107 @@ function fireTVreboot($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+
+	debug($feedback, 'feedback');
 	return $feedback;		// GET OUT
 
 } 
 
 function fireTVnetflix($params) {
 
-        $feedback['Name'] = 'fireTVnetflix';
-        $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
-        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-        return $feedback;               // GET OUT
+	debug($params, 'params');
+
+	$feedback['Name'] = 'fireTVnetflix';
+	$feedback['result'] = array();
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+
+	debug($feedback, 'feedback');
+	return $feedback;               // GET OUT
 
 }
 
 function fireTVkodi($params) {
 
-        $feedback['Name'] = 'fireTVkodi';
-        $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
-        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-        return $feedback;               // GET OUT
+	debug($params, 'params');
+
+	$feedback['Name'] = 'fireTVkodi';
+	$feedback['result'] = array();
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+
+	debug($feedback, 'feedback');
+	return $feedback;               // GET OUT
 
 }
 
 function fireTVcamera($params) {
 
-        $feedback['Name'] = 'fireTVcamera';
-        $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
-        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-        return $feedback;               // GET OUT
+	debug($params, 'params');
+
+	$feedback['Name'] = 'fireTVcamera';
+	$feedback['result'] = array();
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+
+	debug($feedback, 'feedback');
+	return $feedback;               // GET OUT
 
 }
 
 function fireTVsleep($params) {
 
-        $feedback['Name'] = 'fireTVsleep';
-        $feedback['result'] = array();
-        $cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVsleep.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
-        $outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        $pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-        exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-        $feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-        return $feedback;               // GET OUT
+	debug($params, 'params');
+
+	$feedback['Name'] = 'fireTVsleep';
+	$feedback['result'] = array();
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVsleep.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+
+	debug($feedback, 'feedback');
+	return $feedback;               // GET OUT
 
 }
 
 function copyFile($params) {
 
-        $feedback['Name'] = 'copyFile';
-        $feedback['result'] = array();
+	debug($params, 'params');
 
-        // echo "<pre>";
-		// print_r($params['cvs']);
-		//echo getcwd() ;
-		//echo $_SERVER['DOCUMENT_ROOT'];
-        // echo "</pre>";
-		if (!copy($params['cvs'][0], $params['cvs'][1])) {
-			$errors= error_get_last();
-			$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];
-		}
+	$feedback['Name'] = 'copyFile';
+	$feedback['result'] = array();
 
-        $feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
-        return $feedback;
+	// echo "<pre>";
+	// print_r($params['cvs']);
+	//echo getcwd() ;
+	//echo $_SERVER['DOCUMENT_ROOT'];
+	// echo "</pre>";
+	if (!copy($params['cvs'][0], $params['cvs'][1])) {
+		$errors= error_get_last();
+		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];
+	}
+
+	$feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
+
+	debug($feedback, 'feedback');
+	return $feedback;
 
 }
 
 function storeCamImage($params) {
 
+	debug($params, 'params');
 
 	$feedback['result'] = array();
     $feedback['Name'] = 'storeCamImage';
@@ -687,33 +715,33 @@ function storeCamImage($params) {
 	$file = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
 
-
-	// echo "<pre>";
+	// echo "storeCamImage <pre>";
 	// echo $public_file;
-	// // echo $feedback['result']['result_raw'];
 	// echo "</pre>";
 	copy($offline,$file);
 
 	if (file_put_contents($file, $feedback['result']['result_raw']) === false) {
 		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];	
+		debug($feedback, 'feedback');
+		return $feedback;
 	}
-    $feedback['result_raw'] = array('filename' => $public_file);
+	$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'_medium.jpg';
+	createthumb($file,$thumbname,500,500);
+    
+	$feedback['result_raw'] = array('filename' => $public_file, 'filename_medium' => PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'_medium'.'.jpg'));
+	
     $feedback['message'] = "Copy ".$params['command']['command'].' to '.$file;
 	unset($feedback['result']['result'][0]);
 	unset($feedback['result']['result_raw']);
-	// echo "<pre>";
-	// print_r($feedback);
-	// // // echo $feedback['result']['result_raw'];
-	// echo "</pre>";
+
+	debug($feedback, 'feedback');
     return $feedback;
 
 }
 
 function sendEmail(&$params) {
 
-//echo "<pre>Email ";
-//print_r($params);
-//echo "</pre>";
+	debug($params, 'params');
 
 	$feedback['Name'] = 'sendmail';
 	$feedback['result'] = array();
@@ -733,29 +761,35 @@ function sendEmail(&$params) {
 	$feedback['commandstr'] = 'mail('.$to.', '.$params['mess_subject'].',  '.$params['mess_text'].', '.$headers.')';
 	if(!mail($to, $params['mess_subject'],  $params['mess_text'], $headers)) {
 	    $feedback['error'] = "Mailer - error";
+		debug($feedback, 'feedback');
 	    return $feedback;
 	}
 	else {
 	    $feedback['message'] = 'Email to: '.$to.' Subj:'.$params['mess_subject'];
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 }
 
 function sendBullet(&$params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'sendBullet';
 	$feedback['result'] = array();
 
-// echo "<pre>";
-// print_r($params);
-// echo "</pre>";	
-
-	if(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
+	// Check for image
+	$type = 'NOTE';
+	if(strpos($params['mess_text'],'<img') > 0) {
+		// Will not use mess_text but cv1 and cv2 directly
+		$type = 'IMAGE';
+		$output = DOCUMENT_ROOT.$params['cvs'][2];
+	} elseif(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
 		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any
 			// <a href="/local/path" title="with attributes">number</a> of
 			// <a href="#anchor" data-attr="lots">links</a>.';
-
+		$type = 'LINK';
 		$dom = new DomDocument();
 		$dom->loadHTML($params['mess_text']);
 		$output = array();
@@ -769,67 +803,61 @@ function sendBullet(&$params) {
 		$text = strip_tags($params['mess_text']);
 	}
 
-	// echo "<pre>";
-	// print_r($params);
-	
-	// $feedback['message'] = 'Temp disabled';
-	// return $feedback;
+	debug($params, 'params');
 
 	try {
 		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-		if (!empty($output)) 
+		switch ($type) {
+		case 'LINK':
 			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
-		elseif (!empty($params['cvs'][2])) { // No image dir
-			$pb->channel(PUSH_CHANNEL)->pushFile($params['cvs'][2],null,$params['cvs'][0],$params['cvs'][1]);
-		} else {
+			break;
+		case 'IMAGE':	
+			$pb->channel(PUSH_CHANNEL)->pushFile($output,null,$params['cvs'][0],$params['cvs'][1]);
+			break;
+		case 'NOTE':
 			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
+			break;
 		}
-		
-
 	} catch (Exception $e) {
 		$feedback['error'] = 'Error: '.$e->getMessage();
 		echo $e->getMessage().CRLF;
 	}
-	// echo "</pre>";
+	debug($feedback, 'feedback');
     return $feedback;
 
 }
 
 function sendInsteonCommand(&$params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'sendInsteonCommand';
 	$feedback['result'] = array();
-
-//echo "<pre>";
-//print_r($params);
-//echo "</pre>";
 
 	global $inst_coder;
 	if ($inst_coder instanceof InsteonCoder) {
 	} else {
 		$inst_coder = new InsteonCoder();
 	}
-	if (DEBUG_DEVICES) echo "commandvalue a".$params['commandvalue'].CRLF;
+	debug($params['commandvalue'], '1. commandvalue');
 	if ($params['commandID'] == COMMAND_ON && $params['commandvalue'] == NULL) $params['commandvalue']= $params['onlevel'];
-	if (DEBUG_DEVICES) echo "commandvalue b".$params['commandvalue'].CRLF;
+	debug($params['commandvalue'], '2. commandvalue');
 	if ($params['commandvalue']>100) $params['commandvalue']=100;
-	if (DEBUG_DEVICES) echo "commandvalue c".$params['commandvalue'].CRLF;
+	debug($params['commandvalue'], '3. commandvalue');
 	if ($params['commandvalue']>0) $params['commandvalue']=255/100*$params['commandvalue'];
-	if (DEBUG_DEVICES) echo "commandvalue d".$params['commandvalue'].CRLF;
+	debug($params['commandvalue'], '4. commandvalue');
 	if ($params['commandvalue'] == NULL && $params['commandID'] == COMMAND_ON) $params['commandvalue']=255;		// Special case so satify the replace in on command
 	$cv_save = $params['commandvalue'];
 	$params['commandvalue'] = dec2hex($params['commandvalue'],2);
-	if (DEBUG_DEVICES) echo "commandvalue ".$params['commandvalue'].CRLF;
+	debug($params['commandvalue'], '5. commandvalue');
 
 	$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 	$params['commandvalue'] = $cv_save;
 
-	if (DEBUG_DEVICES) echo "Rest deviceID ".$params['deviceID']." commandID ".$params['commandID'].CRLF;
+	debug("Rest deviceID ".$params['deviceID']." commandID ".$params['commandID']);
 	$url = setURL($params);
 	$feedback['commandstr'] = $url.$tcomm.'=I=3';
-	if (DEBUG_DEVICES) echo $url.CRLF;
-
-
+	debug($feedback['commandstr'], 'Sending');
 
 	$numberOfAttempts = 10;
 	$retry = 0;
@@ -861,6 +889,7 @@ function sendInsteonCommand(&$params) {
 			if (!is_null($params['commandvalue'])) $params['device']['properties']['Level']['value'] = $params['commandvalue'];
 		}
 	}
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
@@ -868,25 +897,26 @@ function sendGenericPHP(&$params) {
 // TODO: Result not arrays?
 	//$feedback['result'] = array();
 
+	debug($params, 'params');
+
 	$func = $params['command']['command'];
 	if ($func == "sleep") {
 		$feedback['result'][] = $func($params['commandvalue']);
 	} else {
 		$feedback = $func($params);
 	}
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 
 function sendGenericHTTP(&$params) {
 
+	debug($params, 'params');
+
 	$targettype = $params['device']['connection']['targettype'];
 	$feedback['Name'] = 'sendGenericHTTP - '.$targettype;
 	$feedback['result'] = array();
-
-	if (DEBUG_COMMANDS) echo "<pre>Generic HTTP >";
-	if (DEBUG_COMMANDS) print_r($params);
-	if (DEBUG_COMMANDS) echo "</pre>".CRLF;
 
 	switch ($params['command']['http_verb'])
 	{
@@ -915,7 +945,7 @@ function sendGenericHTTP(&$params) {
 	case "JSON":             // Wink
 	case "PUT":           // Dexa
 	case "DELETE":           // Dexa
-		if (DEBUG_COMMANDS) echo $targettype."</p>";
+		debug($targettype, 'targettype');
 		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 		$tmp1 = explode('?', $tcomm);
 		$morepage = null;
@@ -925,35 +955,34 @@ function sendGenericHTTP(&$params) {
 			$tcomm = implode('?',$tmp1);
 		} 
 		$url = setURL($params, $morepage);
-		if (DEBUG_COMMANDS) echo $url." Params: ".htmlentities($tcomm).CRLF;
 		if ($targettype == "POSTTEXT") { 
 			$feedback['commandstr'] = $url.' '.htmlentities($tcomm);
+			debug($feedback['commandstr'],'POSTTEXT - Sending');
 			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "text/plain", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "POSTAPP") {
 			$feedback['commandstr'] = $url.' '.$tcomm;
+			debug($feedback['commandstr'],'POSTAPP - Sending');
 			$curl = restClient::post($url, $tcomm, setAuthentication($params['device']), "application/x-www-form-urlencoded", $params['device']['connection']['timeout']);
 		} elseif ($targettype == "JSON") {
-			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
+			debug($feedback['commandstr'],'JSON - Sending');
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} elseif ($targettype == "PUT") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
-			//echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
+			debug($feedback['commandstr'],'PUT - Sending');
 			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} elseif ($targettype == "DELETE") {
 			//parse_str($tcomm, $params);
 			$postparams = $tcomm;
-			if (DEBUG_COMMANDS) echo $url." Params: ".$postparams.CRLF;
-			//echo $url." Params: ".$postparams.CRLF;
 			$feedback['commandstr'] = $url.' '.$postparams;
+			debug($feedback['commandstr'],'DELETE - Sending');
 			$curl = restClient::delete($url, null, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] = $url.$tcomm;
+			debug($feedback['commandstr'],'DELETE - Sending');
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) 
@@ -970,14 +999,10 @@ function sendGenericHTTP(&$params) {
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 		break;
 	case "GET":          // Sony Cam at the moment
-		if (DEBUG_COMMANDS) echo "GET</p>";
 		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
 		$url= setURL($params);
-		if (DEBUG_COMMANDS) echo $url.$tcomm.CRLF;
 		$feedback['commandstr'] = $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));
-		// echo "<pre>";
-		// echo $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));
-		// echo "</pre>";
+		debug($url.$tcomm, 'GET - Sending');
 		$curl = restClient::get($url.$tcomm, null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -986,8 +1011,6 @@ function sendGenericHTTP(&$params) {
 			$feedback['result'][] = $curl->getresponse();
 		break;
 	case "TCP":              // iTach (Only \r)
-		if (DEBUG_COMMANDS) echo "TCP_IR</p>";
-		//print_r($params);
 		$url = setURL($params);
 		$feedback['commandstr'] = $url.$params['command']['command']."\r";
 		if (empty($params['device']['connection']['targetaddress'])) {
@@ -995,7 +1018,7 @@ function sendGenericHTTP(&$params) {
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		if (DEBUG_COMMANDS) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'].CRLF;
+		debug($ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'], 'TCP - Sending');
 		// open a client connection
 		$client = stream_socket_client('tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
 		if ($client === false) {
@@ -1018,73 +1041,72 @@ function sendGenericHTTP(&$params) {
 		//if ($feedback['result'] != "ERR", or busy...
 		break;
 	case "TCP64":          // TP-Link
-		if (DEBUG_COMMANDS) echo "TP-Link</p>";
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		if (DEBUG_COMMANDS) echo $ipaddress.':'.$params['device']['connection']['targetport'].' - '.$params['command']['command'].CRLF;
+		$feedback['commandstr'] = "tcp64://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command']['command'];
+		debug($feedback['commandstr'], 'TCP64 - Sending');
 		// open a client connection
 //		$p="AAA0QcNAAEAGY0DAqAoawKgKVicP0VZB4a7Q3VhsD4ARC1AJYAAAAQEICgAP780AL6k=";
 		//decodeTPLink(base64_decode($feedback['commandstr']));
-		$feedback['commandstr'] = "tcp64://".$ipaddress.":".$params['device']['connection']['targetport']."/".$params['command']['command'];
 		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command']['command'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
 //		print_r($feedback['result']);
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
-		if (DEBUG_COMMANDS) echo "DOING NOTHING</p>";
+		debug(" ", 'nothing done');
 		break;
 	}
 	
 	foreach ($feedback['result'] as $key => $value) {	
 		if (!is_array($value) && strtoupper($value) == "OK") $feedback['result'][$key]= "";
 	}
-//	 echo "<pre>";
-//	 echo "***";
-//	 print_r($feedback);
-//	 echo "</pre>";
-	
+
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function calculateProperty(&$params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'calculateProperty';
 	//$feedback['commandstr'] = "I send this";
 	$feedback['result'] = array();
 
-	if (DEBUG_COMMANDS) {echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";}
-
 	// 	{calculate___{property_position}+1
 	if (preg_match("/\{calculate___(.*?)\}/", $params['commandvalue'], $matches)) {
-		if (DEBUG_COMMANDS) {echo "<pre> calculate "; print_r ($matches); echo "</pre>";}
+		debug($matches, 'calculate matches');
 		$calcvalue = eval('return '.$matches[1].';');
 		$params['commandvalue'] = str_replace($matches[0], $calcvalue, $params['commandvalue']);
 	}
 
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 // Private
 function NOP() {
+
+	debug(" ", 'params');
+
 	$feedback['result'] = "Nothing done";
+
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function graphCreate($params) {
-	if (DEBUG_GRAPH) echo "<pre>params: ";
-	if (DEBUG_GRAPH) print_r($params);
+	debug($params, 'params');
 	parse_str(urldecode($params['commandvalue']), $fparams);
-	if (DEBUG_GRAPH) print_r($fparams);
+	debug($fparams, 'fparams');
 
 	if (!array_key_exists('0', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
 		$feedback['error']="No Device selected";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	$devices = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['0']);
@@ -1092,11 +1114,9 @@ function graphCreate($params) {
 		$caption[] = FetchRow('select description from ha_mf_devices where id='.$deviceID)['description'];
 	}
 	if (!array_key_exists('1', $fparams['fabrik___filter']['list_231_com_fabrik_231']['value'])) {
-		//$result['error']="No Device selected";
-		//return $result;
 		$result = listDeviceProperties($devices);
 		$result = array_unique($result, SORT_NUMERIC);
-		if (DEBUG_GRAPH) print_r($result);
+		debug($result, 'result');
 		$properties = implode(",", $result);
 	} else {
 		$properties = implode(",",$fparams['fabrik___filter']['list_231_com_fabrik_231']['value']['1']);
@@ -1113,16 +1133,13 @@ function graphCreate($params) {
 	}
 
 	$debug = 1;
-	if (DEBUG_GRAPH) {
-		echo $devices.CRLF;
-		echo $properties.CRLF;
-		echo $startdate.CRLF; 
-		echo $enddate.CRLF; 
-	}
+	debug("devices $devices properties: $properties startdate: $startdate enddate: $enddate");
 
 	//call sp_properties( '60,114,201', '138,126,123,127,124', "2015-09-25 00:00:00", "2015-09-27 23:59:59", 1) 
-	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(DEBUG_GRAPH ? 1 : 0).');';
-	if (DEBUG_GRAPH) echo $mysql.CRLF;
+	// $mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'",'.(GRAPH ? 1 : 0).');';
+	$mysql='call sp_properties( "'.$devices.'", "'.$properties.'", "'.$startdate.'" , "'.$enddate.'","0");';
+	debug($mysql, 'mysql');
+
 	$feedback['result'] = array();
 	$feedback['message'] = '</div>';	// close system message frame
 	if ($rows = FetchRows($mysql)) {
@@ -1137,7 +1154,7 @@ function graphCreate($params) {
 		$rowsprops = FetchRows($mysql);
 
 		$tablename="graph_0";
-		$hidden = (DEBUG_GRAPH ? '' : ' hidden ');
+		$hidden = (isset($GLOBALS['debug']) ? '' : ' hidden ');
 
 		if (count($rows)> MAX_DATAPOINTS) {
 		//
@@ -1220,7 +1237,7 @@ function graphCreate($params) {
 				data-graph-container-before="1" data-graph-zoom-type="x" data-graph-height="500" >';
 		//data-graph-xaxis-type="datetime"
 
-		if (DEBUG_GRAPH) {echo "RowsProps:"; print_r($rowsprops);}
+		debug($rowsprops, 'rowsprops');
 
 		$feedback['message'] .= '<caption>'.implode(", ",$caption).'</caption>';
 		$feedback['message'] .= '<thead><tr class="fabrik___heading">';
@@ -1264,7 +1281,6 @@ function graphCreate($params) {
 		$feedback['message'] .= '</tr></thead>';
 		$feedback['message'] .= '<tbody>';
 		$x=0;
-		if (DEBUG_GRAPH) echo "</pre>";
 
 		foreach($rows as $key=>$row) {
 			$feedback['message'] .= '<tr id="'.$tablename.'_row_'.$row['id'].'">';
@@ -1287,13 +1303,15 @@ function graphCreate($params) {
 		$feedback['message'] .= '</tbody>';
 		$feedback['message'] .= '</table>';
 	}
-//	$feedback['message'] = "";
+
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function sendEchoBridge($params) {
 
+	debug($params, 'params');
 
 	$vcIDs = explode(",", $params['commandvalue']);
 
@@ -1362,7 +1380,7 @@ Update - Put
 		
 		if (!empty($send_params['id'])) {		// Update - PUT
 			$url .= '/'.$send_params['id'];
-			if (DEBUG_DEVICES) echo $url." PUT-Params: ".htmlentities($postparams).CRLF;
+			debug($postparams,'PUT - Sending');
 			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() == 200 || $curl->getresponsecode() == 201) {
 				$result = $curl->getresponse();
@@ -1375,7 +1393,7 @@ Update - Put
 			}
 		} 
 		if (empty($send_params['id'])) {				// Add - Post
-			if (DEBUG_DEVICES) echo $url." POST-Params: ".htmlentities($postparams).CRLF;
+			debug($postparams,'POST - Sending');
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
@@ -1390,12 +1408,17 @@ Update - Put
 		// echo "</pre>";
 	}
 
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function sendtoplug ($ip, $port, $payload, $timeout) {
+
+	debug("$ip, $port, $payload, $timeout", '$ip, $port, $payload, $timeout');
+
 	$client = stream_socket_client('tcp://'.$ip.':'.$port, $errno, $errorMessage, $timeout);
 	if ($client === false) {
+		debug("Failed to connect: $errno $errorMessage");
 		return "Failed to connect: $errno $errorMessage";
 	} else {
 		stream_set_timeout($client, $timeout);
@@ -1446,6 +1469,8 @@ return json_decode($decoded,TRUE);
 
 function getStereoSettings(&$params) {
 
+	debug($params, 'params');
+
 	$feedback['result'][] = array();
 	$feedback['Name'] = 'getStereoSettings';
  	$command['caller'] = $params['caller'];
@@ -1454,16 +1479,9 @@ function getStereoSettings(&$params) {
 	$command['commandID'] = COMMAND_GET_VALUE;
 	$result = sendCommand($command); 
 	
-	// echo "<pre>";	
    	$main = new SimpleXMLElement($result['result_raw']);
 
-    
-	// if (!is_numeric((string)$flexresponse->code)) {
-    		// echo date("Y-m-d H:i:s").": "."Error: ".$xml->code."<br/>\r\n on: '".$url; 
-	    	// die();
-    	// }
-
-	// print_r($params);
+  
 	if (array_key_exists('error', $result)) {
 		// $properties['Playing']['value'] =  'Nothing';
 		// $properties['File']['value'] = '*';
@@ -1486,6 +1504,8 @@ function getStereoSettings(&$params) {
 		$params['device']['properties'] = $properties;
 	}	
 	$feedback['result'] = $result;
+
+	debug($feedback, 'feedback');
 	return $feedback;
 
 	// echo "</pre>";	
@@ -1493,15 +1513,13 @@ function getStereoSettings(&$params) {
 
 function checkSyslog(&$params) {
 
+	debug($params, 'params');
+
 	$feedback['Name'] = 'checkSyslog';
 	$feedback['commandstr'] = "I send this";
 	$feedback['result'] = array();
 	$feedback['message'] = "";
 	// if () $feedback['error'] = "Not so good";
-
-	if (DEBUG_COMMANDS) {
-		echo "<pre>".$feedback['Name'].': '; print_r($params); echo "</pre>";
-	}
 
 	//$devs = getDeviceProperties(array('description' => "Syslog Name"));
 	
@@ -1532,10 +1550,13 @@ function checkSyslog(&$params) {
 		}
 	}
 
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function executeQuery($params) {
+
+	debug($params, 'params');
 
 	$mysql = $params['commandvalue'];
 	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);
@@ -1545,122 +1566,124 @@ function executeQuery($params) {
 	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
 
 	$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
+
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
-function readFlashAir(&$params) {
+// function readFlashAir(&$params) {
 
-	$feedback['Name'] = 'readFlashAir';
-	$feedback['result'] = array();
-	$feedback['message'] = '';
-	$feedback['error'] = "Error copying: ";
+	// $feedback['Name'] = 'readFlashAir';
+	// $feedback['result'] = array();
+	// $feedback['message'] = '';
+	// $feedback['error'] = "Error copying: ";
 	
-	echo "<pre>***".$feedback['Name'].CRLF;
-	print_r($params);
-	$lastfile="";
+	// // echo "<pre>***".$feedback['Name'].CRLF;
+	// // print_r($params);
+	// $lastfile="";
 
-	// User callerID instead
-	//$params['deviceID'] = $params['caller']['callerID'];
+	// // User callerID instead
+	// //$params['deviceID'] = $params['caller']['callerID'];
 	
-	$params['commandID'] = COMMAND_GET_LIST;
-	$result =sendCommand($params);
-	if (array_key_exists("error", $result)) {
-		 $feedback['error'] .= $result['error']; 
-	} else {
-	$liststr = $result['result'][0]; 
-	$list1 = explode("\n", $liststr);
-	foreach($list1 as $value) {
-		$split = explode(',', $value);
-		if (array_key_exists('1',$split)) {
-			$list[] = $split;
-		}
-	}
+	// $params['commandID'] = COMMAND_GET_LIST;
+	// $result =sendCommand($params);
+	// if (array_key_exists("error", $result)) {
+		 // $feedback['error'] .= $result['error']; 
+	// } else {
+	// $liststr = $result['result'][0]; 
+	// $list1 = explode("\n", $liststr);
+	// foreach($list1 as $value) {
+		// $split = explode(',', $value);
+		// if (array_key_exists('1',$split)) {
+			// $list[] = $split;
+		// }
+	// }
 
-	// print_r($list);
-	$numfiles = 0;
-	$feedback['commandstr'] = "MyCopy";
-	foreach($list as $file) {
-		if ($file[1] > $params['device']['previous_properties']['Last File']['value']) {		// Ok copy this one
-			$url = setURL($params, $dummy);
-			$infile = $url.urlencode($file[0].'/'.$file[1]);
-			$tofile = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
-			echo "cp ".$infile.' '.$tofile.CRLF;
-			if (!mycopy($infile, $tofile)) {
-				$feedback['error'] .= $infile.' '.$tofile.", Aborting";
-				break;
-			} else {
-				$feedback['result'][] = $infile.' '.$tofile;
-				if (!($numfiles % 3)) {
-				copy($tofile,'/home/www/vlohome/images/lastimage/'.$params['device']['description'].'.jpg');
-				$command = array('callerID' => $params['caller']['callerID'], 
-					'caller'  => $params['caller'],
-					'deviceID' => $params['deviceID'], 
-					'commandID' => COMMAND_RUN_SCHEME,
-					'schemeID' => SCHEME_ALERT_KODI,
-					'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.'https://192.168.2.11/'.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
-					// 'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.HOME.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
-					$feedback['result'][] = sendCommand($command);
-				}
-				$numfiles++;
-			}
-			if ($file[1] > $lastfile) $lastfile = $file[1];
-		}
-	}
+	// // print_r($list);
+	// $numfiles = 0;
+	// $feedback['commandstr'] = "MyCopy";
+	// foreach($list as $file) {
+		// if ($file[1] > $params['device']['previous_properties']['Last File']['value']) {		// Ok copy this one
+			// $url = setURL($params, $dummy);
+			// $infile = $url.urlencode($file[0].'/'.$file[1]);
+			// $tofile = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/'.$file[1];
+			// echo "cp ".$infile.' '.$tofile.CRLF;
+			// if (!mycopy($infile, $tofile)) {
+				// $feedback['error'] .= $infile.' '.$tofile.", Aborting";
+				// break;
+			// } else {
+				// $feedback['result'][] = $infile.' '.$tofile;
+				// if (!($numfiles % 3)) {
+				// copy($tofile,'/home/www/vlohome/images/lastimage/'.$params['device']['description'].'.jpg');
+				// $command = array('callerID' => $params['caller']['callerID'], 
+					// 'caller'  => $params['caller'],
+					// 'deviceID' => $params['deviceID'], 
+					// 'commandID' => COMMAND_RUN_SCHEME,
+					// 'schemeID' => SCHEME_ALERT_KODI,
+					// 'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.'https://192.168.2.11/'.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
+					// // 'macro___commandvalue' => 'Motion Detected|On '.$params['device']['description'].'|'.HOME.'images/lastimage/'.$params['device']['description'].'.jpg?t='.rand(10000000,99999999));
+					// $feedback['result'][] = sendCommand($command);
+				// }
+				// $numfiles++;
+			// }
+			// if ($file[1] > $lastfile) $lastfile = $file[1];
+		// }
+	// }
 
-}
-	// if () $feedback['error'] = "Not so good";
-    if ($feedback['error'] == "Error copying: ") unset($feedback['error']);
-	if ($numfiles) {
-		$params['device']['properties']['Last File']['value'] = $lastfile;
-	}
-	// $feedback['result'][] = $params;
-	$feedback['message'] = $numfiles." pictures copied";
-	return $feedback;
-	// echo "</pre>";	
-} 
+// }
+	// // if () $feedback['error'] = "Not so good";
+    // if ($feedback['error'] == "Error copying: ") unset($feedback['error']);
+	// if ($numfiles) {
+		// $params['device']['properties']['Last File']['value'] = $lastfile;
+	// }
+	// // $feedback['result'][] = $params;
+	// $feedback['message'] = $numfiles." pictures copied";
+	// return $feedback;
+	// // echo "</pre>";	
+// } 
 
 function mycopy($infile, $tofile) {
 
-//Get the file
-if (!$content = file_get_contents($infile)) {
- echo "MyCopy Error: reading $infile\n";
- return false;
-} else {
-   if (strlen($content) < 300) {
-      echo "MyCopy Error: size ".strlen($content)." < 300\n";
-     return false;
-   } else {
-      //Store in the filesystem.
-      if (!$fp = fopen($tofile, "w")) {
-        echo "MyCopy Error: Cannot open $tofile for write\n";
-      } else {
-         if ($bytes = !fwrite($fp, $content)) {
-            echo "MyCopy Error: Cannot write $tofile\n";
-            return false;
-         }
-         fclose($fp);
-     }
-  }
-}
-//echo $bytes."\n";
-return true;
+	debug($infile, 'infile');
+	debug($tofile, 'tofile');
+
+	//Get the file
+	if (!$content = file_get_contents($infile)) {
+		echo "MyCopy Error: reading $infile\n";
+		debug($feedback, 'feedback');
+		return false;
+	} else {
+		if (strlen($content) < 300) {
+			echo "MyCopy Error: size ".strlen($content)." < 300\n";
+			return false;
+		} else {
+			//Store in the filesystem.
+			if (!$fp = fopen($tofile, "w")) {
+				echo "MyCopy Error: Cannot open $tofile for write\n";
+			} else {
+				if ($bytes = !fwrite($fp, $content)) {
+					echo "MyCopy Error: Cannot write $tofile\n";
+					return false;
+				}
+				fclose($fp);
+			}
+		}
+	}
+
+	return true;
 }
 
 function extractVids($params) {
 //
 //	Extract pictures from video (Not is use, was Wansview camera
 //
+	debug($params, 'params');
+
 	$feedback['Name'] = 'extractVids';
 	$feedback['commandstr'] = "readDir";
 
-//	echo "<pre>".CRLF;
-//	echo $params['commandvalue'].CRLF;
-
-//        print_r($params);
-
-        $dir = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/';
-//	echo "dir: $dir".CRLF;
+    $dir = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/';
 
 	$params['importprocess'] = true;
 	$result = readDirs($dir.LOCAL_IMPORT, $params['importprocess']);
@@ -1716,6 +1739,7 @@ function extractVids($params) {
 //	print_r($feedback);
 //	echo "<pre>".CRLF;
 
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }

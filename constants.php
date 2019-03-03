@@ -58,6 +58,7 @@ define("COMMAND_VOICE", 324);
 define("COMMAND_GET_PROPERTIES", 325);
 define("COMMAND_LOG_EVENT", 378);
 define("COMMAND_GET_LIST", 444);
+define("COMMAND_SEND_MESSAGE", 452);
 
 define("SCHEME_ALERT_CRITICAL", 291);
 define("SCHEME_ALERT_HIGH", 288);
@@ -203,7 +204,6 @@ define("PRIORITY_HIDE", 99);
 define("REPEAT_EVERY_RUN", -1);
 define("REPEAT_ONCE_DAY", 0);
 
-define("MY_VPN_SUBNET", "192.168.10");
 
 define("WINK_CODE", "U");
 

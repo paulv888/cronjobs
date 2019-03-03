@@ -2,6 +2,8 @@
 <?php
 require_once 'includes.php';
 
+//$GLOBALS['debug'] = 10;
+
 define("MY_DEVICE_ID", 137);
 
 if (isset($argv)) {
@@ -14,10 +16,7 @@ if (isset($argv)) {
 	}
 }
 
-define( 'DEBUG_INSTEON', TRUE );
-if (!defined('DEBUG_INSTEON')) define( 'DEBUG_INSTEON', FALSE );
-
-if (isset($_GET['DEBUG'])) {
+if (isset($_GET['ONLINE_DEBUG'])) {
 	echo date("Y-m-d H:i:s").": trying to connect to VLOSITE:3333".CRLF;
 	echo date("Y-m-d H:i:s").": send a command with nc -l 3333".CRLF;
 	define("INSTEON_HUB_IP", "vlosite");
@@ -28,6 +27,7 @@ if (isset($_GET['DEBUG'])) {
 	define("DEBUG_MODE", false);
 } 
 
+//$GLOBALS['debug'] = 10;
 
 if (!DEBUG_MODE) {
 	class console{
@@ -85,7 +85,6 @@ while (true) {
 	while (true) {
 		
 		usleep(250000); // 250ms
-			// if (DEBUG_MODE) echo $this->url.CRLF;
 		$curl = restClient::get($url,null, setAuthentication($device),  $device['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
 			// handle error?
@@ -99,13 +98,13 @@ while (true) {
 				//
 				// Sub what we already processed, cannot rely on counter bc auto empty
 				//
-				if (DEBUG_INSTEON) echo "Input buffer         :".$inbuffer."\n";
-				if (DEBUG_INSTEON) echo "Left Processed length:".substr($inbuffer, 0, strlen($processed))."\n";
-				if (DEBUG_INSTEON) echo "Actual processed     :".$processed."\n";
+				debug("Input buffer         :".$inbuffer, 'Input');
+				debug("Left Processed length:".substr($inbuffer, 0, strlen($processed)), 'Left');
+				debug("Actual processed     :".$processed, 'processed');
 				if (substr($inbuffer, 0, strlen($processed)) == $processed) {							  // Start position or received additional 
 					$mybuffer .= substr($inbuffer, strlen($processed), $buff_len - strlen($processed));   // Left part the same, cut off
 					$end_buffer_len = 0;
-				if (DEBUG_INSTEON) echo "Left = Proc, Remaindr:".$mybuffer."\n";
+					debug("Left = Proc, Remaindr:".$mybuffer, 'Remaindr');
 				} else {
 					// 2 Scenario's 
 					//		Normal circle -> grab end and beginning
@@ -116,14 +115,14 @@ while (true) {
 						$mybuffer .= substr($inbuffer, strlen($processed) , $max_buff_len - strlen($processed) - 2 );
 						$end_buffer_len = $max_buff_len - strlen($processed) - 2 ;
 					}
-				if (DEBUG_INSTEON) echo "Left <> Proc, grab end:".$mybuffer."\n";
+					debug("Left <> Proc, grab end:".$mybuffer, 'grab end');
 
 					//= preg_replace('/^00+/', '02', $mybuffer);
-					if (DEBUG_INSTEON) echo "end_buffer_len: $end_buffer_len\n";
+					debug("end_buffer_len: $end_buffer_len", 'buffer length');
 					$mybuffer .= substr($inbuffer, 0 , $buff_len );
 					$processed = "";
 
-				if (DEBUG_INSTEON) echo "Left <> Prc, add start:".$mybuffer."\n";
+					debug("Left <> Prc, add start:".$mybuffer, 'add start');
 
 					// Was command send and do we only want to get the start
 					//  Remove leading zero's
@@ -131,8 +130,8 @@ while (true) {
 
 				// Incoming commands buffer keeps growing.
 				// On sending a command, buffer is auto cleared HOW TO RECOGNIZE?
-				if (DEBUG_INSTEON) echo "Buffer Length:".$buff_len."\n";
-				if (DEBUG_INSTEON) echo "->".$mybuffer."\n";
+				debug("Buffer Length:".$buff_len, 'Buffer Length');
+				debug("->".$mybuffer, 'buffer');
 				$last_buff_len = $buff_len;
 				$last_result = $inbuffer;
 				
@@ -169,7 +168,7 @@ while (true) {
 						storeMessage($plm_decode_result);
 						$processed .= substr($mybuffer, $end_buffer_len, $plm_decode_result['length']);	
 						$mybuffer = substr($mybuffer,$plm_decode_result['length']);	
-						if (DEBUG_INSTEON) echo "%%%%%%%:".$mybuffer."\n";
+						debug("%%%%%%%:".$mybuffer, 'buffer');
 					}
 				} while ($plm_decode_result['length']>0 && strlen($mybuffer>0));
 			}

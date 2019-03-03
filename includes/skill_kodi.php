@@ -1,4 +1,5 @@
 <?php
+//$GLOBALS['debug'] = 10;
 
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 define ("SOUND_DEVICE_ID", 241);
@@ -6,6 +7,8 @@ define ("SOUND_DEVICE_ID", 241);
 $log = array();
 
 function handleRequest($alexaRequest) {
+	debug($alexaRequest, 'alexaRequest');
+
 	$commandMap = [ 
 		"ShortAnswerIntent" 	=>          "409",
 		"PlayArtistIntent" 		=> 		    "431",
@@ -79,12 +82,15 @@ function handleRequest($alexaRequest) {
 	$exectime += microtime(true);
 	$log['exectime'] = $exectime;
 	logEvent($log);
-	if (DEBUG_ALX) print_r($alexaRequest);
 
+	debug($log, 'log');
 	return;
 }
 
 function ShortAnswerIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -128,18 +134,23 @@ function ShortAnswerIntent($request, $session, $response) {
 			$response->respond("Sorry, I did not understand, please start over.");
 			$feedback['result']['tell'] = $response->tell();
 			$feedback['error'] = "Restart it";
+			debug($feedback, 'feedback');
 			return $feedback;
 	}
 	
-	if (DEBUG_ALX) { print_r($request);}
+	debug($request, 'request');
 	$fname= $request->intentName;
 	$feedback['result'][$request->intentName] = $fname($request, $session, $response);
 
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function PlaySongIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	$feedback['Name'] = 'PlaySongIntent';
@@ -154,19 +165,21 @@ function PlaySongIntent($request, $session, $response) {
 		$response->sessionAttributes(Array("intentSequence"=>"PlaySongIntent"));
 		$feedback['result']['ask'] = $response->ask();
 		$feedback['error'] = "Which song?";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 	
 	$log['data'] = "Song Title: ".$find;
 
 	$found = findSongsByTitle($find);
-	if (DEBUG_ALX) {print_r($found);}
+	debug($found, 'found');
 	if (empty($found)) { 
 		$response->respond(sprintf("I could not find song with %s, please try again?",  $find))
 		 ->reprompt("Which song are you looking for?");
 		$response->sessionAttributes(Array("intentSequence"=>"PlaySongIntent"));
 		$feedback['result']['ask'] = $response->ask();
 		$feedback['error'] = "What song?";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
@@ -196,12 +209,16 @@ function PlaySongIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 
 function PlayArtistIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 $playLists = [ 
 	"turkish"			=>  ["Smart", "Turkish"],
@@ -230,6 +247,7 @@ $playLists = [
 		$response->sessionAttributes(Array("intentSequence"=>"PlayArtistIntent"));
 		$feedback['result']['ask'] = $response->ask();
 		$feedback['error'] = "Which Artist?";
+		debug($feedback, 'feedback');
 		return $feedback;
 	}
 
@@ -260,13 +278,14 @@ $playLists = [
 			$found = findSongsByArtist($find, true);
 			$feedback['Name'] = 'PlayLatestArtistIntent';
 		}
-		if (DEBUG_ALX) {print_r($found);}
+		debug($found, 'found');
 		if (empty($found)) { 
 			$response->respond(sprintf("I could not find artist %s, please try again?",  $find))
 			 ->reprompt("Sorry which artist you want?");
 			$response->sessionAttributes(Array("intentSequence"=>"PlayArtistIntent"));
 			$feedback['result']['ask'] = $response->ask();
 			$feedback['error'] = "Which Artist?";
+			debug($feedback, 'feedback');
 			return $feedback;
 		}
 
@@ -300,6 +319,7 @@ $playLists = [
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
@@ -307,6 +327,9 @@ $playLists = [
 
 
 function PlayPreviousSongIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -318,18 +341,22 @@ function PlayPreviousSongIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	if (DEBUG_ALX) { print_r($deviceProperties); }
+	debug($deviceProperties, 'deviceProperties');
 	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>283));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function PlayNextSongIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -341,18 +368,22 @@ function PlayNextSongIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	if (DEBUG_ALX) { print_r($deviceProperties); }
+	debug($deviceProperties, 'deviceProperties');
 	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>30));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function PlayLoudIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -370,11 +401,15 @@ function PlayLoudIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function PlayExtraLoudIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -392,12 +427,16 @@ function PlayExtraLoudIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 
 function WhatsPlayingIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -409,17 +448,21 @@ function WhatsPlayingIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	if (DEBUG_ALX) { print_r($deviceProperties); }
+	debug($deviceProperties, 'deviceProperties');
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']);
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function ShowIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 	
@@ -432,7 +475,7 @@ function ShowIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	if (DEBUG_ALX) { print_r($deviceProperties); }
+	debug($deviceProperties, 'deviceProperties');
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
@@ -441,13 +484,15 @@ function ShowIntent($request, $session, $response) {
 
 	$feedback['result']['display'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>315));
 
-	//return $result;
-	
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function HelpIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -468,10 +513,14 @@ function HelpIntent($request, $session, $response) {
 
 	$feedback['message'] = "Help";
 	$feedback['result']['ask'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function NoIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -488,11 +537,15 @@ function NoIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 	
 }
 
 function StopIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -502,10 +555,14 @@ function StopIntent($request, $session, $response) {
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 
 	$feedback['result']['cancel'] = CancelIntent($request, $session, $response);
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function CancelIntent($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -525,10 +582,14 @@ function CancelIntent($request, $session, $response) {
 	$response->respond($answer);
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function LaunchRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -549,11 +610,15 @@ function LaunchRequest($request, $session, $response) {
 
 	$feedback['message'] = "Launch Prompt";
 	$feedback['result']['ask'] = $response->ask();
+	debug($feedback, 'feedback');
 	return $feedback;
 
 }
 
 function SessionEndedRequest($request, $session, $response) {
+	debug($request, 'request');
+	debug($session, 'session');
+	debug($response, 'response');
 
 	global $log;
 
@@ -564,6 +629,7 @@ function SessionEndedRequest($request, $session, $response) {
 	$log['data'] = $request->reason;
 	echo "{}";
 	
+	debug($feedback, 'feedback');
 	return $feedback;
 }
 
