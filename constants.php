@@ -98,6 +98,7 @@ define ("COMMAND_CLASS_BULLET", 28);
 define ("PROPERTY_STATUS", 123);
 define ("PROPERTY_LINK", 225);
 define ("PROPERTY_SEMAPHORE", 376);
+define ("PROPERTY_LEVEL", 243);
 
 
 // Special X10_INSTEON dim handling

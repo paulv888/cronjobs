@@ -283,26 +283,28 @@ function uploadPictures($camera) {
 //Send through create alert
 
 	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
-	if (array_key_exists('Send Pushbullet on Alert', $camera['previous_properties']) && $camera['previous_properties']['Send Pushbullet on Alert']['value'] != 'Y') return;
+	if (array_key_exists('Send Pushbullet on Alert', $camera['previous_properties']) && $camera['previous_properties']['Send Pushbullet on Alert']['value'] == 'Y') {
 
-	$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
+		$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
 
-	$files = array();
-	if ($handle = opendir($dir.$targetdir)) {
-		while (false !== ($file = readdir($handle))) {
-			$file_parts = mb_pathinfo($file);
-			if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
-				$files[] = $file;
-				//$filetimes[] = filemtime($dir.$file);
+		$files = array();
+		if ($handle = opendir($dir.$targetdir)) {
+			while (false !== ($file = readdir($handle))) {
+				$file_parts = mb_pathinfo($file);
+				if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
+					$files[] = $file;
+					//$filetimes[] = filemtime($dir.$file);
+				}
 			}
+			closedir($handle);
 		}
-		closedir($handle);
+	        sort($files);
+ 		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
+		for ($i = 1; $i <= 3; $i++) {
+			if (array_key_exists($i, $files)) $pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
+		}
 	}
-        sort($files);
- 	$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-	for ($i = 1; $i <= 3; $i++) {
-		if (array_key_exists($i, $files)) $pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
-	}
+	return;
 
 }
 ?>

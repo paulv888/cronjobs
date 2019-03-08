@@ -242,14 +242,14 @@ function getDeviceList(&$params) {
 // echo $url.CRLF;
 // echo $url_r.CRLF;
 	$fields = array(
-		'login_authorization' => base64_encode($device['connection']['username'].":".$device['connection']['password']),
+		'login_authorization' => base64_encode($device['connection']['username'].":".$device['connection']['password'])
 	);
+	
 	$fields_string = "";
-	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
-	rtrim($fields_string, '&');
-
+	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value; }
+	debug($fields,'post fields');
+	
 	$cookie_file_path = $_SERVER['DOCUMENT_ROOT'].'/tmp/cookies.txt';
-
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -269,7 +269,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
 
 
-	$tmpresponse=curl_exec ($ch);
+	$response=curl_exec ($ch);
 	$information = curl_getinfo($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	if ($httpcode != 200 && $httpcode != 204) {
@@ -278,6 +278,8 @@ function getDeviceList(&$params) {
 	}
 	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Login']= $information;
 	curl_close ($ch);
+	debug($feedback,'login->feedback');
+	debug($response,'response');
 
 	//
 	// Scrape device list
@@ -292,6 +294,7 @@ function getDeviceList(&$params) {
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
+	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
 	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
@@ -312,14 +315,9 @@ function getDeviceList(&$params) {
 	}
 	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Network']= $information;
 	curl_close ($ch);
-
-// echo "code:".$httpcode;
-// echo "info".CRLF;
-// print_r($information);
-// echo "response".CRLF;
-// print_r($response);
-// exit;
-
+	$ch = curl_init();
+	debug($feedback,'update_clients->feedback');
+	debug($response,'response');
 
 	//
 	// Add traffic_warning_0 cookie
@@ -339,7 +337,6 @@ function getDeviceList(&$params) {
 	//current_page=device-map/clients.asp&next_page=device-map/clients.asp"
 	$url = setURL(array('device' => $device), '/apply.cgi');
 	$url_r = setURL(array('device' => $device), '/device-map/clients.asp');
-// echo $url.CRLF;
 
 	$fields = array(
 		'action_mode' => 'refresh_networkmap',
@@ -350,8 +347,9 @@ function getDeviceList(&$params) {
 	);
 	$fields_string = "";
 	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
-	rtrim($fields_string, '&');
+	debug($fields_string,'fields_string');
 
+	
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -378,13 +376,8 @@ function getDeviceList(&$params) {
 	}
 	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Refresh']= $information;
 	curl_close ($ch);
-
-// echo "code:".$httpcode;
-// echo "info".CRLF;
-// print_r($information);
-// echo "response".CRLF;
-// print_r($tmpresponse);
-
+	debug($feedback,'device-map->feedback');
+	debug($tmpresponse,'tmpresponse');
 
 	//
 	// Logout
@@ -418,13 +411,7 @@ function getDeviceList(&$params) {
 	}
 	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Logout']= $information;
 	curl_close ($ch);
-
-// echo "code:".$httpcode;
-// echo "info".CRLF;
-// print_r($information);
-// echo "tmpresponse".CRLF;
-// print_r($response);
-// exit;
+	debug($feedback,'logout->feedback');
 
 	$pattern = "/fromNetworkmapd: '(.*?)'./si";
 
@@ -562,7 +549,7 @@ if(networkmap_fullscan == 1) genClientList();
 		$feedback['message'] = "Devices found: $devicesimported, New MACs: $newmacs, Changed IP's: $changedips";
 
     //echo "</pre>";
-	
+	debug($feedback,'feedback');
 	return $feedback;
 ;
 

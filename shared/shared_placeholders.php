@@ -5,6 +5,11 @@ function replaceCommandPlaceholders($stepValue, $params) {
 //		in: $stepValue
 //		out: return
 
+	if (strpos($stepValue,'{') === false) {
+		debug("return", 'return');
+		return $stepValue;
+	}
+
 	debug($stepValue, 'stepValue');
 	debug($params, 'params');
 
@@ -12,13 +17,6 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (strpos($stepValue, "{mycommandID}") !== false) $stepValue = str_replace("{mycommandID}",trim($params['commandID']),$stepValue);
 	if (strpos($stepValue, "{deviceID}") !== false) $stepValue = str_replace("{deviceID}",trim($params['deviceID']),$stepValue);
 	if (strpos($stepValue, "{unit}") !== false) $stepValue = str_replace("{unit}",trim($params['device']['unit']),$stepValue);
-	// Not tested
-	if (strpos($params['commandvalue'],'|') !== false) {
-		$cvs = explode('|', $params['commandvalue']);
-		foreach ($cvs as $key => $value) {
-			 $stepValue = str_replace('{commandvalue'.$key.'}', $value, $stepValue);
-		}
-	}
 
 	if (strpos($stepValue,"{port}") !== false) {
 		$port = getProperty($params['propertyID'])['port'];
@@ -46,68 +44,71 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (array_key_exists('mess_subject',$params)) $stepValue = str_replace("{mess_subject}",trim($params['mess_subject']),$stepValue);
 	if (array_key_exists('mess_text',$params)) $stepValue = str_replace("{mess_text}",trim($params['mess_text']),$stepValue);
 
-	$dummy="";
-	$flat_params = array_flatten($params, 1);
-	replaceFields($stepValue, $dummy, $flat_params);
-	
+	$stepValue = replaceText($params, $stepValue);
 	debug($stepValue, 'stepValue');
 
 	return $stepValue;
 }
 
-function splitCommandvalue(&$params) {
+function replaceText($params, $field){
 //
-//  For macro stepvalues
-//		in: $params
-//		in: $params
-//		out: add cvs array to $params
-
+//		For Alerts
+//		in:  $params['mess_subject'], $params['mess_text']
+//		out: $params['mess_subject'], $params['mess_text']
+//
+	debug($field, 'field');
 	debug($params, 'params');
 
-	if (strpos($params['commandvalue'],'|') !== false) {
-		$cvs = explode('|', $params['commandvalue']);
-		$params['cvs']= $cvs;
+	// $params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
+
+	//
+	// Find better place for this
+	//
+	if (array_key_exists('caller', $params)) {
+		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['callerID']))  {
+			$params['caller___description']= $cd['description']; 
+		}
+		if (array_key_exists('deviceID', $params['caller']) && !empty($params['caller']['deviceID'])) {
+			if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['deviceID'])) {
+				$params['caller___device___description']= $cd['description'];
+			}
+			$params['caller___device___property'] = getDeviceProperties(Array( 'deviceID' => $params['caller']['deviceID']));
+		}
 	}
 	
-	debug($params, 'resultParams');
-
-	return;
-}
-function parseLastResult($resultin, $stepValue){
-
-//	$thiscommand['commandvalue'] = replaceResultPlaceholders($text (result___postion), $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
-
-
-	if (!is_array($resultin)) return $resultin;
-
-	debug($stepValue, 'stepValue');
-	debug($resultin, 'resultin');
-
-
-	// Do an array search for the value to replace {postion}
-	// execute before clobbering input
-	preg_match('/\{last___result___(.*?)\}/', $stepValue, $output);
-
-	// var_dump($output);
-	$flat_resultin = array_flatten($resultin, 1);
-
-	$feedback = false;
-	if (array_key_exists(1,$output)) {	// Result found
-
-		$findKey = $output[1];
-		debug($findKey, 'Search Array for Key->findKey');
-
-		if (array_key_exists($findKey, $flat_resultin)) {	
-			
-			debug($flat_resultin[$findKey], 'Found');
-
-			$feedback = trim(str_replace("{last___result___".$findKey."}", $flat_resultin[$findKey], $stepValue));
-		} 
+	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_CURRENT_SESSION) {
+		$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 	}
-	return $feedback;
+
+	if (strpos($field,'{') === false) {
+		debug("return", 'return');
+		return $field;
+	}
+
+	
+	$params['now'] = date("Y-m-d H:i:s");
+
+	$flat_params = array_flatten($params, 1);
+
+	for ($i = 1; $i <= 1; $i++) {		// Only once???
+
+		unset ($pattern);
+		foreach ($flat_params as $key => $value) {
+			if (is_array($value)) unset($flat_params[$key]);
+			$pattern[$key]="/\{".strtolower(str_replace(" ","_",$key))."\}/";
+		}
+
+		debug ($flat_params, 'flat_params');
+		debug ($pattern, 'pattern');
+
+		$field = preg_replace($pattern, $flat_params, $field);
+	}
+
+	debug($field, 'result->field');
+
+	return $field;
 	
 }
-
 
 function replacePropertyPlaceholders($mess_subject, $params){
 //
@@ -119,6 +120,10 @@ function replacePropertyPlaceholders($mess_subject, $params){
 	debug($mess_subject, 'mess_subject');
 	debug($params, 'params');
 
+	if (strpos($mess_subject,'{') === false) {
+		debug("return", 'return');
+	return $mess_subject;
+	}
 	
 	$mess_text = Null;
 	if (preg_match("/\{property.*\}/", $mess_subject, $matches)) {
@@ -166,110 +171,70 @@ function replacePropertyPlaceholders($mess_subject, $params){
 	return $mess_subject;
 }
 
-function replaceText(&$params){
+function splitCommandvalue(&$params) {
 //
-//		For Alerts
-//		in:  $params['mess_subject'], $params['mess_text']
-//		out: $params['mess_subject'], $params['mess_text']
-//
+//  For macro stepvalues
+//		in: $params
+//		in: $params
+//		out: add value_parts array to $params
 
-	
-	$mess_subject = (array_key_exists('mess_subject',$params) ? $params['mess_subject'] : "");
-	$mess_text = (array_key_exists('mess_text',$params) ? $params['mess_text'] : "");
-	
-	$params['deviceID'] = (array_key_exists('deviceID', $params) ? $params['deviceID'] : 'NULL');
-
-	if (array_key_exists('caller', $params)) {
-		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['callerID']))  {
-			$params['caller___description']= $cd['description']; 
-		}
-		if (array_key_exists('deviceID', $params['caller']) && !empty($params['caller']['deviceID'])) {
-			if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['deviceID'])) {
-				$params['caller___device___description']= $cd['description'];
-			}
-			$params['caller___device___property'] = getDeviceProperties(Array( 'deviceID' => $params['caller']['deviceID']));
-		}
-	}
-	
-	$params['now'] = date("Y-m-d H:i:s");
-
-	$flat_params = array_flatten($params, 1);
-
-	replaceFields($mess_subject, $mess_text, $flat_params);
-  
- 	$params['mess_subject'] = $mess_subject;
-	$params['mess_text'] = $mess_text;
-
-	return; 
-}
-
-function replaceFields(&$mess_subject, &$mess_text, $params){
-//
-//	private
-//
-	debug($mess_subject, 'mess_subject');
-	debug($mess_text, 'mess_text');
 	debug($params, 'params');
 
-	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_CURRENT_SESSION) {
-		$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+	if (strpos($params['commandvalue'],'|') !== false) {
+		$value_parts = explode('|', $params['commandvalue']);
+		$params['value_parts']= $value_parts;
+	} else {
+		$params['value_parts'][0] = $params['commandvalue'];
 	}
-
-//	if ($params['deviceID'] != Null) {
-	// if (strpos($mess_subject,"{") !== 0 && strpos($mess_text,"{") !== 0) {
-
-		for ($i = 1; $i <= 1; $i++) {		// Only once???
-
-			// Handle commandvalue1, ...
-			if (array_key_exists('commandvalue', $params) && strpos($params['commandvalue'],'|') !== false) {
-				$cvs = explode('|', $params['commandvalue']);
-				foreach ($cvs as $key => $value) {
-					$params['commandvalue'.$key] = $value;
-				}
-			}
-
-			unset ($pattern);
-			foreach ($params as $key => $value) {
-				if (is_array($value)) unset($params[$key]);
-				$pattern[$key]="/\{".strtolower(str_replace(" ","_",$key))."\}/";
-			}
-
-			debug ($params, 'params');
-			debug ($pattern, 'pattern');
-
-
-			$mess_subject = preg_replace($pattern, $params, $mess_subject);
-			if (!empty($mess_text)) $mess_text = preg_replace($pattern, $params, $mess_text); // twice to support tag in tag
-		}
-
-		// Clean up any left over fields
-		// $mess_subject = trim(preg_replace('/\{.*?\}/', '' , $mess_subject));
-		// if (!empty($mess_text)) $mess_text = trim(preg_replace('/\{.*?\}/', '', $mess_text)); // twice to support tag in tag
-	// }
-
-	debug($mess_subject, 'mess_subject');
-	debug($mess_text, 'mess_text');
 	
-	return true;
+	debug($params, 'resultParams');
+
+	return;
 }
 
-function preg_replace_array__delete($pattern, $replacement, $subject, $limit=-1) {
-    if (is_array($subject)) {
-        foreach ($subject as &$value) $value=preg_replace_array($pattern, $replacement, $value, $limit);
-        return $subject;
-    } else {
-        return preg_replace($pattern, $replacement, $subject, $limit);
-    }
-} 
+function parseLastResult($resultin, $stepValue){
+
+//	$thiscommand['commandvalue'] = replaceResultPlaceholders($text (result___postion), $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
+
+
+	if (!is_array($resultin)) return $resultin;
+
+	debug($stepValue, 'stepValue');
+	debug($resultin, 'resultin');
+
+
+	// Do an array search for the value to replace {postion}
+	// execute before clobbering input
+	preg_match('/\{last___result___(.*?)\}/', $stepValue, $output);
+
+	// var_dump($output);
+	$flat_resultin = array_flatten($resultin, 1);
+
+	$feedback = false;
+	if (array_key_exists(1,$output)) {	// Result found
+
+		$findKey = $output[1];
+		debug($findKey, 'Search Array for Key->findKey');
+
+		if (array_key_exists($findKey, $flat_resultin)) {	
+			
+			debug($flat_resultin[$findKey], 'Found');
+
+			$feedback = trim(str_replace("{last___result___".$findKey."}", $flat_resultin[$findKey], $stepValue));
+		} 
+	}
+	return $feedback;
+	
+}
 
 function array_flatten($array, $preserve_keys = 1, &$newArray = Array(), $parentkey = "") {
   foreach ($array as $key => $child) {
     if (is_array($child)) {
       $newArray = array_flatten($child, $preserve_keys, $newArray, $parentkey.$key."___");
-    } elseif ($preserve_keys + is_string($key) > 1) {
+    } elseif ($preserve_keys == 1) {
       $newArray[str_replace(array("previous_properties___", "___value"),array("property___",""),$parentkey.$key)] = $child;
     } else {
-      $newArray[] = $child;
+		$newArray[] = $child;
     }
   }
   return $newArray;

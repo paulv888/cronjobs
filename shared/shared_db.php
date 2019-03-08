@@ -238,16 +238,15 @@ function PDOError($e, $function, $mysql) {
 
 	echo "<pre>";
 	echo "PDOError:".print_r($e);
-	echo "\nPDO::errorCode(): ", $dbh->errorCode();
 	echo CRLF."MySql: ".$mysql.CRLF;
 	echo "</pre>";
-        $command = array(
-                'callerID' => 164,
-                'messagetypeID' => MESS_TYPE_SCHEME,
-                'schemeID'=>SCHEME_ALERT_PDO,
-                'commandvalue'=> $mysql.'|'.'<pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
-        );
-        $feedback['result'][] = executeCommand($command);
+	$command = array(
+			'callerID' => 164,
+			'messagetypeID' => MESS_TYPE_SCHEME,
+			'schemeID'=>SCHEME_ALERT_PDO,
+			'commandvalue'=> $mysql.'|'.'<pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
+	);
+	$feedback['result'][] = executeCommand($command);
 	return;
 }
 ?>

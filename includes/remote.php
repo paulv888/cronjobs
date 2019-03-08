@@ -1,5 +1,5 @@
 <?php
-function loadremote($remoteID) {
+function loadRemote($remoteID) {
 
 	if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
 		$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];

@@ -69,7 +69,6 @@ function sendCommand(&$thiscommand) {
 							if (array_key_exists('propertyID', $thiscommand)) {
 								$mysql = 'SELECT * FROM ha_mi_properties_commands where on_off = '.$thiscommand['commandID']. ' AND propertyID = '.$thiscommand['propertyID'];
 								if ($rowpropcommand = FetchRow($mysql))  {								// Found command overwrite
-									// print_r($rowpropcommand);
 									$thiscommand['commandID'] = $rowpropcommand['commandID'];
 								}
 							}
@@ -118,7 +117,6 @@ function sendCommand(&$thiscommand) {
 	}
 
 
-	debug($thiscommand, 'thiscommand');
 	$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
 			" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 			" WHERE ha_mf_commands.id =".$thiscommand['commandID']. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
@@ -135,22 +133,21 @@ function sendCommand(&$thiscommand) {
 			return $feedback;			// error abort
 		}
 	}
-	$thiscommand['command'] = $rowcommands;
-	//$thiscommand['value'] = $rowcommands['value'];
-
 	// Load Message Template
 	if (!empty($thiscommand['alert_textID'])) {
 		$rowtext = FetchRow("SELECT * FROM ha_alert_text where id =".$thiscommand['alert_textID']);
 		debug($rowtext, 'Load alert textID rowtext');
-		$thiscommand['mess_subject'] = $rowtext['subject'];
-		$thiscommand['mess_text'] = $rowtext['message'];
+		$thiscommand['mess_subject'] = trim(preg_replace('/\{.*?\}/', '' , replaceText($thiscommand, $rowtext['subject'])));;
+		$thiscommand['mess_text'] = trim(preg_replace('/\{.*?\}/', '', replaceText($thiscommand,$rowtext['message'])));;
 		if ($rowtext['priorityID'] != Null) $thiscommand['priorityID']= $rowtext['priorityID'];
 		if (strlen($thiscommand['mess_text']) == 0) $thiscommand['mess_text'] = " ";
-		replaceText($thiscommand);
 	}
-
+	
+	$thiscommand['command'] = $rowcommands;
+	debug($thiscommand, 'thiscommand');
+	
 	if (array_key_exists('device', $thiscommand) && $thiscommand['device']['connection']['targettype'] == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
-	debug(	"commandID ".$thiscommand['commandID']."commandclassID ".$commandclassID."commandvalue ".$thiscommand['commandvalue']."command ".$thiscommand['command']['command'].'Starting swich');
+	debug(	"commandID ".$thiscommand['commandID']." commandclassID ".$commandclassID." commandvalue ".$thiscommand['commandvalue']." command ".$thiscommand['command']['command'].'Starting swich');
 
 
 	switch ($commandclassID)
@@ -296,7 +293,7 @@ function executeCommand($callerparams) {
 				}
 			}
 		} else {			
-			debug($callerparams['deviceID'], 'deviceID');
+			if (array_key_exists('deviceID',$callerparams)) debug($callerparams['deviceID'], 'deviceID');
 			debug($callerparams['commandID'], 'commandID');
 			$callerparams['caller'] = $callerparams;
 			$feedback['SendCommand'][]=sendCommand($callerparams);

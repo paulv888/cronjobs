@@ -75,7 +75,7 @@ function RunTimers(){
 
 
 function runTimerSteps($params) {
-	debug($params, params);
+	debug($params, 'params');
 
 	if (!array_key_exists('timer',$params))	{ // Called directly from remote from form
 		$timer['runasync'] = false;
