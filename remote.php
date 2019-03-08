@@ -23,8 +23,7 @@ if (isset($_GET['name'])) {
 <script src="/media/jui/js/jquery.min.js"></script>
 <script src="/media/jui/js/bootstrap.min.js"></script>
 <script async src="/media/jui/js/jquery.min.js"></script>
-<script async src="<?php echo getPath(true);?>/js/remote.js"></script>
-<!--script async src="/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/js/remote.combined.js"></script-->
+<script async src="<?php echo getPath(true);?>/js/remote.min.js"></script>
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
                 height: 100%; width: 100%; background-color: #B7CFE4">
