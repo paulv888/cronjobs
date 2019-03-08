@@ -63,7 +63,6 @@ function setDevicePropertyValue($params, $propertyName) {
 	$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 
 	debug($deviceproperty, 'deviceproperty');
-	debug($deviceproperty, 'deviceproperty');
 
 	if (strtoupper($deviceproperty['value']) == "TRUE" || strtoupper($deviceproperty['value']) == "ON") $deviceproperty['value'] = STATUS_ON;
 	if (strtoupper($deviceproperty['value']) == "FALSE" || strtoupper($deviceproperty['value']) == "OFF") $deviceproperty['value'] = STATUS_OFF;
@@ -94,20 +93,20 @@ function setDevicePropertyValue($params, $propertyName) {
 		if (function_exists ($func)) {
 			if(!($feedback['updateStatus'] = $func($params, $propertyName))) {
 				$feedback['!Fail'] = 'Factory returned false, exit';
-				debug("nothing", 'nothing');
+				debug("nothing", 'return: nothing');
 				return;
 			}
 		} else {
 			if(!($feedback['updateStatus'] = updateGeneric($params, $propertyName))) {
 				$feedback['!Fail'] = 'Factory returned false, exit';
-				debug("nothing", 'nothing');
+				debug("nothing", 'return: nothing');
 				return;
 			}
 		}
 		$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
 	} else {
 		$feedback['!Monitor'] = $deviceproperty;
-		if ($deviceproperty['propertyID'] == "243") {
+		if ($deviceproperty['propertyID'] == PROPERTY_LEVEL) {
 			$feedback['!Monitor']['message'] = 'Level set to '.$deviceproperty['value']."%";
 		}
 	}
@@ -188,9 +187,6 @@ function setDevicePropertyValue($params, $propertyName) {
 	//
 	// Execute triggers
 	// 
-	// var_dump($oldvalue);
-	// var_dump($deviceproperty['value']);
-//	if ($monitor && ($oldvalue !== $deviceproperty['value'])) {
 	if ($oldvalue !== $deviceproperty['value']) {
 		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
 			if ($deviceproperty['value'] == STATUS_ON ) {
@@ -830,7 +826,7 @@ function getFeedbackStatus($deviceID, $status) {
 	} else { 							
 		$feedbackstatus=$status;
 	}
-	debug($feedback, 'feedback');
+	debug($feedbackstatus, 'feedbackstatus');
 	return $feedbackstatus;
 
 }

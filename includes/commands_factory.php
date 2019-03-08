@@ -81,7 +81,6 @@ function createAlert(&$params) {
 	$mysql = 'SELECT a.description as description, s.deviceID as deviceID, s.alert_textID as alert_textID FROM `ha_alerts_catalog` a 
 					LEFT JOIN `ha_alert_subscriptions` s ON a.id = s.alert_catalogID 
 				WHERE a.ID = "'.$params['alert_catalogID'].'"';
-		
 
 	$feedback['result'] = Array();
 	if ($subscribers = FetchRows($mysql)) {
@@ -99,7 +98,7 @@ function createAlert(&$params) {
 			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
 				if (array_key_exists('SESSION', $params)) {
 					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
-				} else if (array_key_exists('SESSION', $params['caller'])) {
+				} elseif (array_key_exists('SESSION', $params['caller'])) {
 					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
 				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
 			}
@@ -247,7 +246,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				splitCommandvalue($params);
 				debug($stepValue, 'stepValue');
 
-				debug((array_key_exists('cvs',$params) ? $params['cvs'] : array("No params to split")), 'cvs');
+				debug((array_key_exists('value_parts',$params) ? $params['value_parts'] : array("No params to split")), 'value_parts');
 				
 				if ($step['step_async']) {			// Spawn it
 					unset($values);
@@ -256,7 +255,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['messagetypeID'] = "MESS_TYPE_SCHEME";
 					$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
 					$values['schemeID'] = $params['schemeID'];
-					$values['debug'] = $GLOBALS('debug');
+					$values['debug'] = $GLOBALS['debug'];
 					$getparams = http_build_query($values, '',' ');
 					
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
@@ -682,17 +681,12 @@ function copyFile($params) {
 	$feedback['Name'] = 'copyFile';
 	$feedback['result'] = array();
 
-	// echo "<pre>";
-	// print_r($params['cvs']);
-	//echo getcwd() ;
-	//echo $_SERVER['DOCUMENT_ROOT'];
-	// echo "</pre>";
-	if (!copy($params['cvs'][0], $params['cvs'][1])) {
+	if (!copy($params['value_parts'][0], $params['value_parts'][1])) {
 		$errors= error_get_last();
 		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];
 	}
 
-	$feedback['message'] = "Copy ".$params['cvs'][0].' to '.$params['cvs'][1];
+	$feedback['message'] = "Copy ".$params['value_parts'][0].' to '.$params['value_parts'][1];
 
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -783,7 +777,7 @@ function sendBullet(&$params) {
 	if(strpos($params['mess_text'],'<img') > 0) {
 		// Will not use mess_text but cv1 and cv2 directly
 		$type = 'IMAGE';
-		$output = DOCUMENT_ROOT.$params['cvs'][2];
+		$output = DOCUMENT_ROOT.$params['value_parts'][2];
 	} elseif(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
 		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any
@@ -812,7 +806,7 @@ function sendBullet(&$params) {
 			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
 			break;
 		case 'IMAGE':	
-			$pb->channel(PUSH_CHANNEL)->pushFile($output,null,$params['cvs'][0],$params['cvs'][1]);
+			$pb->channel(PUSH_CHANNEL)->pushFile($output,null,$params['value_parts'][0],$params['value_parts'][1]);
 			break;
 		case 'NOTE':
 			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);

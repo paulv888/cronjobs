@@ -310,7 +310,8 @@ function setURL($params, $morepage = null) {
 	if (!empty($connect['page'])) $url .= '/'.ltrim($connect['page'],'/');
 	if (!empty($morepage)) $url .= $morepage;
 	
-	$url = str_replace('//', '/', $url);
+	// Do not do this http://
+	// $url = str_replace('//', '/', $url);
 	
 	return trim($url);
 }
