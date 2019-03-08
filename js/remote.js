@@ -1,4 +1,3 @@
-
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
 
