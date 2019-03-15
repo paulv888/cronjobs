@@ -1,3 +1,4 @@
+
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
 
@@ -8,7 +9,7 @@ if(!window.scriptRemoteHasRun) {
 			'MY_DEVICE_ID' : 164,
 			'GROUP_NO_SELECTED' : 0,
 			'DIM_NO_SELECTED' : 19,
-			'url' : '/cronjobs/70D455DC-ACB4-4525-8A85-E6009AE93AF4/process.php',
+			'url' : '/ha/process.php',
 			'timer' : 0
 	};
 

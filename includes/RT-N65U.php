@@ -158,9 +158,8 @@ function findLocalName($ip, $sendAlert = false) {
 			$params = array('callerID' => MY_DEVICE_ID, 
 							'deviceID' => MY_DEVICE_ID, 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
-							'schemeID' => ALERT_UNKNOWN_IP_FOUND,
-							'ha_alerts___l1' => 'IP Address', 
-							'ha_alerts___v1' => $ip);
+							'schemeID' => SCHEME_ALERT_NORMAL,
+							'commandvalue' => 'Unknown IP Address found |' . $ip);
 			print_r(executeCommand($params));
 			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
 				`ip` ,

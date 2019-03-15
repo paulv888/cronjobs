@@ -31,8 +31,8 @@ if (!$runonce) {
 }
 
 while (true) {
-	echo date("Y-m-d H:i:s").": ".monitorDevices("POLL2");
-        echo updateDLink(MY_DEVICE_ID);
+	monitorDevices("POLL2");
+        updateDLink(MY_DEVICE_ID);
  	sleep(5);
 	if ($runonce) break;
 }
