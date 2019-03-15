@@ -50,11 +50,11 @@ if (!DEBUG_MODE) {
 
 $errors = 0;
 
+echo "Initialize...\n";
 while (true) {
 
 	$last = strtotime(date("Y-m-d H:i:s"));
-	echo updateDLink(MY_DEVICE_ID);
-	echo "Initialize...\n";
+	updateDLink(MY_DEVICE_ID);
 	
 	if ($device = getDevice(INSTEON_HUB_DEVICE)) {
 
@@ -143,9 +143,9 @@ while (true) {
 					
 					// check for to short for PLM message, if so save result for rest
 					// if (!array_key_exists("etdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
-					echo date("Y-m-d H:i:s")." \e[32mplm_decode_result\e[39;49m\n";
-					print_r($plm_decode_result);
-					echo date("Y-m-d H:i:s")." \e[32mend plm_decode_result\e[39;49m\n";
+					//echo date("Y-m-d H:i:s")." \e[32mplm_decode_result\e[39;49m\n";
+					//print_r($plm_decode_result);
+					//echo date("Y-m-d H:i:s")." \e[32mend plm_decode_result\e[39;49m\n";
 					if ($plm_decode_result['length'] == ERROR_MESSAGE_TO_SHORT) {  							// leave result and wait for more
 						echo "\e[31mERROR_MESSAGE_TO_SHORT"." Empty mybuffer, refill from buffer\e[39;49m"."\n";
 						$mybuffer = "";
@@ -174,7 +174,7 @@ while (true) {
 			}
 		} // end else process successful/ call
 		// Update My Link 
-		if (timeExpired($last, 15)) echo updateDLink(MY_DEVICE_ID);
+		if (timeExpired($last, 15)) updateDLink(MY_DEVICE_ID);
 	} // End while (true)
 }
 
@@ -218,10 +218,10 @@ function storeMessage($plm_decode_result) {
 //		$message['deviceID'] = MY_DEVICE_ID;
 	}
 
-	echo date("Y-m-d H:i:s")." \e[32mStoring message: \e[39;49m\n";
+	//echo date("Y-m-d H:i:s")." \e[32mStoring message: \e[39;49m\n";
 	if (!array_key_exists('commandID', $message)) $message['commandID'] = COMMAND_UNKNOWN;
 
-	print_r($message);
+	//print_r($message);
 	$message ['message'] = $plm_decode_result['plm_message'];
 
 
@@ -233,14 +233,14 @@ function storeMessage($plm_decode_result) {
 		$device['properties'] = $properties;
 		$result = updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'],'commandID' => $message['commandID'], 
 			'device' => $device, 'caller' => $message));
-		echo date("Y-m-d H:i:s").": ".'Update Properties: '."\n";
+		//echo date("Y-m-d H:i:s").": ".'Update Properties: '."\n";
 //		print_r($result);
 	}
 
         $exectime += microtime(true);
 	$message['result'] = $result;
 	$message['exectime'] = $exectime;
-	echo date("Y-m-d H:i:s")." \e[32mEnd storing message\e[39;49m\n";
+	//echo date("Y-m-d H:i:s")." \e[32mEnd storing message\e[39;49m\n";
 
 	logEvent($message);
 

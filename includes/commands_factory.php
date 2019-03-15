@@ -571,7 +571,7 @@ function addToFavorites(&$params) {
 	if (($playlist = file_get_contents($file)) !== false) {
 		$playingfile = $params['device']['previous_properties']['File']['value'];
 		$playing = $params['device']['previous_properties']['Playing']['value'];
-		if (strpos($playlist, $playing) === false) {
+		if (strpos($playlist, $playingfile) === false) {
 			$playlist .= $playingfile."\n";
 			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
 			$feedback['message'] = 'Added to - '.$params['macro___commandvalue'].'|'.$playing;
@@ -1472,7 +1472,9 @@ function getStereoSettings(&$params) {
 	$command['deviceID'] = $params['deviceID']; 
 	$command['commandID'] = COMMAND_GET_VALUE;
 	$result = sendCommand($command); 
-	
+
+	if (isset($result['error'])) return;;
+
    	$main = new SimpleXMLElement($result['result_raw']);
 
   

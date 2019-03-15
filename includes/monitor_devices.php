@@ -36,7 +36,7 @@ function monitorDevice($deviceID, $pingport) {
 		$statverb = "Offline";
 	}
 
-	echo date("Y-m-d H:i:s").": ".$rowip['friendly_name']."-".$rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
+//	echo date("Y-m-d H:i:s").": ".$rowip['friendly_name']."-".$rowip['name']." ".$rowip['ip']." is $statverb, Device: $deviceID".CRLF;
 	$params['callerID'] = MY_DEVICE_ID;
 	$params['deviceID'] = $deviceID;
 	$params['commandID'] = COMMAND_PING;

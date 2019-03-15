@@ -32,8 +32,8 @@ if(version_compare(PHP_VERSION, "5.3.0", '>=')){
 }
 
 while (true) {
-	echo date("Y-m-d H:i:s").": ".RunTimers()." Timers Executed".CRLF;
-	echo updateDLink(MY_DEVICE_ID);
+	RunTimers();
+	updateDLink(MY_DEVICE_ID);
 	sleep(10);
 }
 

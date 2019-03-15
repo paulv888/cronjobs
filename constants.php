@@ -63,6 +63,7 @@ define("COMMAND_SEND_MESSAGE", 452);
 define("SCHEME_ALERT_CRITICAL", 291);
 define("SCHEME_ALERT_HIGH", 288);
 define("SCHEME_ALERT_NORMAL", 290);
+define("SCHEME_ALERT_LOW", 292);
 define("SCHEME_ALERT_KODI", 224);
 
 // Triggers

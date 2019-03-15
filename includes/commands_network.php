@@ -1,8 +1,4 @@
 <?php
-//$GLOBALS['debug'] = 10;
-define("MACRO_NETWORK_DEVICE_CHANGE", 218);
-define("MACRO_NEW_NETWORK_DEVICE", 219);
-define("MACRO_UNKNOWN_IP_FOUND", 217);
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
 //
 //	Command in:
@@ -27,203 +23,6 @@ define("MACRO_UNKNOWN_IP_FOUND", 217);
 
 	// return $feedback;
 // }
-function MoveHistory1() {
-    $mysql="INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
-	$result = PDOExec($mysql);
-    $mysql='UPDATE `net_sessions_history` SET `remote_domain`=if(`remote_name`=`remote_address`, `remote_name`, SUBSTRING_INDEX(`remote_name`, ".", -2))   WHERE `remote_domain` IS Null';
-	PDOExec($mysql);
-    $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
-	PDOExec($mysql);
-	return $result;
-}
-
-function GetSessions1() {
-
-		// Get myIP
-	if (!($myip = FetchRow('SELECT ip FROM `ha_mf_device_ipaddress`  WHERE name="PublicIP"')['ip'])) {
-		echo "Could not find 'PublicIP'";
-		exit; 
-	}
-	//echo "MyIP:".$myip.CRLF;
-    $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD);
-    
-    $sessions_raw = explode("\n", $output); 
-    // unset($sess[0]);
-	end($sessions_raw);
-	unset($sessions_raw[key($sessions_raw)]);
-
-	$sessions= Array();
-	
-	foreach ($sessions_raw as $row) {
-		$row_split = preg_split('/[\s:]+/', $row);
-
-	// echo "<pre>";
-	//echo $row.CRLF;
-		unset($session);
-		$session['raw'] = $row;
-		$session['protocol'] = $row_split[1];
-		if (!($session['local_address'] = get_string_between($row, 'src=', ' '))) continue;
-
-		$session['local_port'] = get_string_between($row, 'sport=', ' ');
-		if (substr($session['local_address'],0,strlen(MY_SUBNET)) <> MY_SUBNET &&
-				substr($session['local_address'],0,strlen(MY_VPN_SUBNET)) <> MY_VPN_SUBNET &&
-				$session['local_address'] <> $myip)	{
-           	$session['class'] = SEVERITY_DANGER_CLASS;
-			$session['remote_address'] = $session['local_address'];
-			$session['remote_port'] = $session['local_port'];
-			$session['local_address'] = get_string_between($row, 'src=', ' ', 2);
-			$session['local_port'] = get_string_between($row, 'sport=', ' ', 2);
-			$session['packets']  = get_string_between($row, 'packets=', ' ', 2);
-			$session['bytes'] = get_string_between($row, 'bytes=', ' ', 2); 
-		}	else {
-
-			$session['remote_address'] = get_string_between($row, 'dst=', ' ');
-			$session['remote_port'] = get_string_between($row, 'dport=', ' ');
-			$session['packets']  = get_string_between($row, 'packets=', ' ');
-			$session['bytes'] = get_string_between($row, 'bytes=', ' '); 
-		}
-		if ($session['protocol']==6) $session['TCPstate'] = $row_split[3];
-		if ($session['protocol']==6) $session['flags'] = $row_split[16];
-		$session['active'] = 1;
-	// print_r($session);
-	// echo "</pre>";
-		$sessions[] = $session;
-
-	}
-	
-    // Protocol name.
-    // Protocol number. (6 = TCP. 17 = UDP.)
-    // Seconds until this entry expires.
-    // TCP only: TCP connection state.
-    // Source address of “original”-side packets (packets from the side that initiated the connection).
-    // Destination address of original-side packets.
-    // Source port of original-side packets.
-    // Destination port of original-side packets.
-    // “[UNREPLIED]”, if this connection has not seen traffic in both directions. Otherwise not present.
-    // Source address of “reply”-side packets (packets from the side that received the connection).
-    // Destination address of reply-side packets.
-    // Source port of reply-side packets.
-    // Destination port of reply-side packets.
-    // “[ASSURED]”, if this connection has seen traffic in both directions (for UDP) or an ACK in an ESTABLISHED connection (for TCP). Otherwise not present.
-    // Use count of this connection structure. 
-	
-// echo "<pre>";
-// print_r($sessions);
-// echo "</pre>";
-// exit;
-       
-	return $sessions;
-}
-
-function findRemoteName1($ip) {
-	$mysql="SELECT * FROM  `net_iplookup` WHERE ip='".$ip."';";  
-
-	if ($row=FetchRow($mysql)) {
-		$last = new DateTime($row['updatedate']);
-		$nowdt = new DateTime();
-		/*echo "<pre>";
-		print_r ($last);
-		print_r ($nowdt);
-		echo  $nowdt->diff($last, true)->days."</br>";
-		echo "</pre>";*/
-		if ($nowdt->diff($last, true)->days < 30) {
-			return $row['name'];			
-		}
-	}
-	$hostname = gethostbyaddr($ip);
-	//echo $ip." ".$hostname."</br>";
-
-	if ($row) {
-		$processed = $row['processed'] + 1;
-	   	$mysql = "UPDATE `net_iplookup` SET `processed` =".$processed.", `name`='".$hostname."' WHERE id =".$row['id'];
-		PDOExec($mysql);
-	} else {
-		$mysql = "INSERT INTO `net_iplookup` (ip, name, processed) values ('".$ip."','".$hostname."', 1)";
-		PDOExec($mysql);
-	}
-
-	return  $hostname;
-}
-
-function findLocalName1($ip, $sendAlert = false) {
-	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
-
-	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
-
-	if ($row=FetchRow($mysql)) {
-		return  $row['friendly_name'];
-	} else {
-		if ($sendAlert) {
-			$params = array('callerID' => MY_DEVICE_ID, 
-							'deviceID' => MY_DEVICE_ID, 
-							'messagetypeID' => 'MESS_TYPE_SCHEME',
-							'schemeID' => MACRO_UNKNOWN_IP_FOUND,
-							'commandvalue' => 'IP Address'.' '.$ip);
-			print_r(executeCommand($params));
-			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
-				`ip` ,
-				`mac` ,
-				`name` ,
-				`friendly_name` ,
-				`connection` ,
-				`trusted`
-				)
-			VALUES (' . 
-				'"'.$ip.'",'.
-				'"'.$ip.'",'.
-				'"**Unknown",'.
-				'"**Unknown",'.
-				'"",'.
-				'"0");';
-			PDOExec($mysql);	
-		}
-	}
-	return false;
-}
-
-
-function ImportSessions1() {
- 
-	$sessionsresponse=GetSessions();
-//echo "<pre>";
-//print_r($sessionsresponse);
-//echo "</pre>";
-
-	if (empty($sessionsresponse)) return -1;
-	
-	$sessionsimported=0;
-   	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
-	PDOExec($mysql);
-    
-	foreach ($sessionsresponse as $session) {
-    	
-		$mysql="SELECT * ". 
-				" FROM  `net_sessions`" .  
-				" WHERE local_address='".$session['local_address']."'"." AND local_port='".$session['local_port']."'".
-                                     " AND remote_address='".$session['remote_address']."'"." AND remote_port='".$session['remote_port']."'";  
-		if ($dbsession = FetchRow($mysql)) {
-			// check for same ip's???
-				$mysql="DELETE ". 
-						" FROM  `net_sessions`" .  
-						" WHERE id='".$dbsession['id']."'";  
-				PDOExec($mysql);
-			}
-
-
-		$local = $session['local_address'];
-		$session['local_name'] = "*unknown";
-		if ($lname = findLocalName($session['local_address'], true)) $session['local_name'] = $lname; 
-		$remote = $session['remote_address'];
-		$session['remote_name'] = findRemoteName($session['remote_address']); 
-		$session['createdate'] = date('Y-m-d H:i:s');
-		PDOinsert('net_sessions', $session);
-		$sessionsimported++;
-
-	}
-    
-	return $sessionsimported;
-}
-
 function getDeviceList(&$params) {
 
 	$showlist=false;
@@ -413,84 +212,48 @@ function getDeviceList(&$params) {
 	curl_close ($ch);
 	debug($feedback,'logout->feedback');
 
-	$pattern = "/fromNetworkmapd: '(.*?)'./si";
-
 /* 
  * 	There is more info here, wired wireless, DB, 2 or 5gb ...
  * 
-?originDataTmp = originData;
-originData = {
-customList: decodeURIComponent('').replace(/>/g, ">").replace(/</g, "<").split('<'),
-asusDevice: decodeURIComponent('%3C3%3ERT%2DN65U%3E192%2E168%2E2%2E1%3E74%3AD0%3A2B%3A8B%3A08%3AA4%3E0%3E%3E%3Evlohome%3E255%2E255%2E255%2E0%3C3%3ERT%2DN10P%3E192%2E168%2E2%2E2%3EE0%3A3F%3A49%3AF0%3AF7%3AB8%3E0%3E%3E%3Evlohome1%3E255%2E255%2E255%2E0').replace(/>/g, ">").replace(/</g, "<").split('<'),
-fromDHCPLease: '',
-staticList: decodeURIComponent('').replace(/>/g, ">").replace(/</g, "<").split('<'),
-fromNetworkmapd: '<6>>192.168.2.110>54:04:A6:0A:58:20>0>0>0<0>>192.168.2.2>E0:3F:49:F0:F7:B8>0>0>0<0>>192.168.2.101>52:54:00:62:E5:67>0>0>0<0>>192.168.2.100>00:00:00:00:00:01>0>0>0<0>>192.168.2.102>52:54:00:30:98:3C>0>0>0<0>>192.168.2.104>54:04:A6:80:F9:69>0>0>0<0>>192.168.2.120>00:1E:C0:11:D5:AA>0>0>0<0>>192.168.2.125>00:0E:F3:1E:CC:75>0>0>0<0>>192.168.2.131>00:01:4A:2F:B6:E6>0>0>0<0>>192.168.2.132>00:18:1A:0C:30:3E>0>0>0<0>>192.168.2.162>F0:25:B7:A3:44:56>0>0>0<0>>192.168.2.195>4C:82:CF:F0:E6:BE>0>0>0<0>>192.168.2.127>14:7D:C5:74:11:F9>0>0>0<0>>192.168.2.128>88:30:8A:1A:0A:02>0>0>0<0>>192.168.2.218>60:A1:0A:C0:40:61>0>0>0<0>>192.168.2.122>44:A7:CF:51:1E:D6>0>0>0<0>>192.168.2.138>00:14:D1:7A:E3:77>0>0>0'.replace(/>/g, ">").replace(/</g, "<").split('<'),
-fromBWDPI: ''.replace(/>/g, ">").replace(/</g, "<").split('<'),
-wlList_2g: [["00:14:D1:7A:E3:77", "Yes", "", "-62"], ["F0:25:B7:A3:44:56", "Yes", "", "-54"], ["00:18:1A:0C:30:3E", "Yes", "", "-79"], ["00:1E:C0:11:D5:AA", "Yes", "", "-79"], ["4C:82:CF:F0:E6:BE", "Yes", "", "-66"], ["14:7D:C5:74:11:F9", "Yes", "", "-63"], ["88:30:8A:1A:0A:02", "Yes", "", "-68"], ["60:A1:0A:C0:40:61", "Yes", "", "-77"], ["44:A7:CF:51:1E:D6", "Yes", "", "-53"]],
-wlList_5g: [],
-qosRuleList: decodeURIComponent('%3CWeb%20Surf%3E%3E80%3Etcp%3E0%7E512%3E0%3CHTTPS%3E%3E443%3Etcp%3E0%7E512%3E0%3CFile%20Transfer%3E%3E80%3Etcp%3E512%7E%3E3%3CFile%20Transfer%3E%3E443%3Etcp%3E512%7E%3E3').replace(/>/g, ">").replace(/</g, "<").split('<')
-}
-networkmap_fullscan = '0';
-if(networkmap_fullscan == 1) genClientList();
 */
 
 
-
- 
-	$noresult = preg_match_all($pattern, $response, $matches);
-//echo "<pre>";
-//echo $response;
-//print_r($matches);
-	$lasterr = preg_last_error();
-	if (array_key_exists(0, $matches[0]) and $matches[0][0] != '')
-    {
-        $t1 = explode("<", $matches[1][0]);
+	$in = explode(PHP_EOL, $response);
+	if (array_key_exists(13, $in) and substr($in[13],0, 15) == 'fromNetworkmapd') {
+		debug($in,'logout->matches');
+		$noresult = rtrim(str_replace( 'fromNetworkmapd : ', '', $in[13]),",");
+		debug($noresult,'logout->noresult');
+		$deviceslist = json_decode($noresult,true);
+		debug($deviceslist[0],'logout->deviceslist');
     } else {
-    	echo $response;
+    	// echo $response;
 		$feedback['error'] = "Error: No devices found";
 		return $feedback;
     } 
-   	
-	unset($t1[0]);
-	
-//print_r($t1);
 
-	$loop=0;
-	$deviceslist = array();
-	foreach($t1 as $row) {
-		$deviceslist[] = explode(">", $row);
-		$deviceslog[] = json_encode(explode(">", $row));
-	}
-
-
-// echo "<pre>";
-	$feedback['result']['devicelist'] = $deviceslog;
-// echo "</pre>";
-
-	usort($deviceslist, function($a, $b) {
-	    return ip2long($a[2]) - ip2long($b[2]);
-	});
+	$feedback['result']['devicelist'] = $deviceslist;
 
 	$newmacs=0;
 	$changedips=0;
 	$devicesimported=0;
-    if ($showlist) $feedback['message']="<pre><table><thead><tr><th>Name</th><th>IP</th><th>Connection</th><th>Mac</th></tr></thead><tbody>";
-	foreach ($deviceslist as $device) {
-		$name = $device[1];
-		$ip = $device[2];
-		$connection = $device[4];
-		$mac = strtoupper($device[3]);
+    if ($showlist) $feedback['message']="<pre><table><thead><tr><th>Name</th><th>IP</th><th>Vendor</th><th>Mac</th></tr></thead><tbody>";
+	foreach ($deviceslist[0] as $mac => $devicefull ) {
+		if ($mac == 'maclist') continue; 
+		unset($device);
+		$device['name'] = $devicefull['name'];
+		$device['vendor'] = $devicefull['vendor'];
+		$device['ip'] = $devicefull['ip'];
+		$device['mac'] = strtoupper($mac);
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
-				" WHERE mac='".$mac."'";  
+				" WHERE mac='".$device['mac']."'";  
+		debug($device,'handle->device');
 		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
 			if ($showlist) {
-					$feedback['message'] .= "<tr><td>$name</td><td>$ip</td><td>$connection</td><td>$mac</td></tr>";
+					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$device['vendor'].'</td><td>'.$device['mac'].'</td></tr>';
 			}
- 		// does not work anymore on name, names are empty
-			if (strlen($name) == 0) $name = $rowdevice['name'];
-//			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip || $rowdevice['connection'] <> $connection) {		// Something changed
-			if ($rowdevice['name'] <> $name || $rowdevice['ip'] <> $ip) {		// Something changed
+			if (strlen($device['name']) == 0) $device['name'] = $rowdevice['name'];
+			if ($rowdevice['name'] <> $device['name'] || $rowdevice['ip'] <> $device['ip']) {		// Something changed
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
 					" WHERE ipaddressID =".$rowdevice['id'];  
@@ -498,49 +261,31 @@ if(networkmap_fullscan == 1) genClientList();
 				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
-								'schemeID' => MACRO_NETWORK_DEVICE_CHANGE,
-								"commandvalue" => $rowdevice['friendly_name'].' MAC:'.$mac.' Old Name:'.$rowdevice['name'].' New Name'.$name.' Old IP'.$rowdevice['ip'].' New IP'.$ip);
+								'schemeID' => SCHEME_ALERT_LOW,
+								"commandvalue" => $rowdevice['friendly_name'].' MAC:'.$device['mac'].' Old Name:'.$rowdevice['name'].' New Name'.$device['name'].' Old IP'.$rowdevice['ip'].' New IP'.$device['ip']);
 				$feedback['result']['Changed'][] = executeCommand($command);
-				$mysql= 'UPDATE `ha_mf_device_ipaddress` SET `mac` = "'. $mac .'", 
-					`name` = "'. $name.'", `ip` = "'.$ip.'" , `connection` = "'.$connection.'", 
-					`last_list_date` = "'.date("Y-m-d H:i:s").'" WHERE `ha_mf_device_ipaddress`.`id` = '.$rowdevice['id'];
-				//echo $mysql;
-				PDOExec($mysql);	
+				PDOUpdate('ha_mf_device_ipaddress', $device, array('id' => $rowdevice['id']));
 				$changedips++;
 			} else {
-				PDOUpdate('ha_mf_device_ipaddress',array('last_list_date' => date("Y-m-d H:i:s")),array('id' => $rowdevice['id']));	
+				PDOUpdate('ha_mf_device_ipaddress', array('last_list_date' => date("Y-m-d H:i:s")), array('id' => $rowdevice['id']));
 				$devicesimported++;
 			}
 		}	else {				// New MAC
 			$command = array('callerID' => $params['caller']['callerID'], 
 							'deviceID' => $params['caller']['callerID'], 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
-							'schemeID' => MACRO_NEW_NETWORK_DEVICE,
-							'commandvalue'   => 'MAC'.$mac.' IP'.$ip);
+							'schemeID' => SCHEME_ALERT_HIGH,
+							'commandvalue'   => 'New MAC '.$device['mac'].' found, IP '.$device['ip']);
 			$feedback['result']['New MAC'][] = executeCommand($command);
-			$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
-						`ip` ,
-						`mac` ,
-						`name` ,
-						`connection` ,
-						`trusted`
-						)
-					VALUES (' . 
-						'"'.$ip.'",'.
-						'"'.$mac.'",'.
-						'"'.$name.'",'.
-						'"'.$connection.'",'.
-						'"0");';
-		
-				PDOExec($mysql);	
-				$newmacs++;
+			PDOInsert('ha_mf_device_ipaddress', $device);
+			$newmacs++;
 		}
 		//
 		//		Release duplicate IP's
 		//
 		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
 				" ip = NULL " .  
-				" WHERE mac<>'".$mac."' AND  ip='".$ip."'";  
+				" WHERE mac<>'".$device['mac']."' AND  ip='".$device['ip']."'";  
 		PDOExec($mysql);
     }
     if ($showlist) 
@@ -548,10 +293,8 @@ if(networkmap_fullscan == 1) genClientList();
 	else
 		$feedback['message'] = "Devices found: $devicesimported, New MACs: $newmacs, Changed IP's: $changedips";
 
-    //echo "</pre>";
 	debug($feedback,'feedback');
 	return $feedback;
-;
 
 }
 ?>
