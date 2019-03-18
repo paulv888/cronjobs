@@ -6,8 +6,8 @@ require_once 'includes.php';
 
 define("MY_DEVICE_ID", 215);
 define("MAX_FILES_DIR", 1000);
-define("MOTION_URL_DESKTOP",SERVER_HOME."index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
-define("MOTION_URL_PHONE",SERVER_HOME."index.php?option=com_content&view=article&id=238&Itemid=527");
+define("MOTION_URL_DESKTOP",SERVER_HOME."/index.php?option=com_content&amp;view=article&amp;id=238&amp;Itemid=30");
+define("MOTION_URL_PHONE",SERVER_HOME."/index.php?option=com_content&view=article&id=238&Itemid=527");
 
 $cameras = readCameras();
 

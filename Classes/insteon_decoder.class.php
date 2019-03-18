@@ -72,6 +72,7 @@ private static $inout_a = Array (
 #You should understand the parsing logic before attempting
 #to modify this table! */
 private static $insteonCmd = array (
+'SD00' => array ('Cmd1Name'=>'Insteon Cloud polling','Cmd2Flag'=>'Command','Cmd2Value'=>'Value','Cmd2Name'=>'Ping','commandID'=>'151'),
 'SD01' => array ('Cmd1Name'=>'Assign to All-Link Group','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'165'),
 'SB01' => array ('Cmd1Name'=>'SET Button Pressed Respond','Cmd2Flag'=>'NA','Cmd2Value'=>'','Cmd2Name'=>'','commandID'=>'229'),
 'SD02' => array ('Cmd1Name'=>'Delete from All-Link Group','Cmd2Flag'=>'Value','Cmd2Value'=>'','Cmd2Name'=>'Group','commandID'=>'170'),

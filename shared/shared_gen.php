@@ -437,19 +437,21 @@ if (isset($GLOBALS['debug'])) {
 				else
 					$function .= $level['function'].'->';
 			} elseif ($level['function'] == 'setDevicePropertyValue') {
-				$mysql = 'SELECT description FROM ha_mi_properties WHERE id = '.$level['args'][0]['propertyID']; 
-				$pdo = openDB();
-				$found = true;
-				try	{
-					$res_row = $pdo->query($mysql);
-					$rows = $res_row->fetch(PDO::FETCH_ASSOC);
-				} catch( Exception $e )	{
-					$found = false;
+				if (array_key_exists('propertyID', $level['args'][0])) {
+					$mysql = 'SELECT description FROM ha_mi_properties WHERE id = '.$level['args'][0]['propertyID']; 
+					$pdo = openDB();
+					$found = true;
+					try	{
+						$res_row = $pdo->query($mysql);
+						$rows = $res_row->fetch(PDO::FETCH_ASSOC);
+					} catch( Exception $e )	{
+						$found = false;
+					}
+					if ($found) 
+						$function .=  $level['function'].'('.$rows['description'].')->';
+					else
+						$function .= $level['function'].'->';
 				}
-				if ($found) 
-					$function .=  $level['function'].'('.$rows['description'].')->';
-				else
-					$function .= $level['function'].'->';
 			} else {
 				$function .= ($level['function'] != 'debug' ? $level['function'].'->' : '');
 			}
@@ -459,11 +461,15 @@ if (isset($GLOBALS['debug'])) {
 		if (!isCLI()) echo '<div class="myDebugOutput myDebugHidden">';
 
 		if (is_object($content) || is_array($content)) {
-			echo (!isCLI() ? '<pre>' . htmlspecialchars(print_r($content, true)) . '</pre>' : htmlspecialchars(print_r($content, true)));
+			echo (!isCLI() ? '<pre>' . htmlspecialchars(print_r($content, true)) . '</pre>' : print_r($content, true));
 		} else {
 			// Remove any <pre> tags provided by e.g. JQuery::dump
-			$content = preg_replace('/(^\s*<pre( .*)?>)|(<\/pre>\s*$)/i', '', $content);
-			echo nl2br(htmlspecialchars($content));
+			if (!isCLI()) {
+				$content = preg_replace('/(^\s*<pre( .*)?>)|(<\/pre>\s*$)/i', '', $content);
+				echo nl2br(htmlspecialchars($content));
+			} else {
+				echo $content;
+			}
 		}
 		if (!isCLI()) echo '</div>';
 	}

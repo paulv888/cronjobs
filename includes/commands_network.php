@@ -262,7 +262,8 @@ function getDeviceList(&$params) {
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
 								'schemeID' => SCHEME_ALERT_LOW,
-								"commandvalue" => $rowdevice['friendly_name'].' MAC:'.$device['mac'].' Old Name:'.$rowdevice['name'].' New Name'.$device['name'].' Old IP'.$rowdevice['ip'].' New IP'.$device['ip']);
+								"commandvalue" => $rowdevice['friendly_name']."|MAC: ".$device['mac']."<br/>Old Name: ".$rowdevice['name']."<br/>New Name: "
+								              .$device['name']."<br/>Old IP: ".$rowdevice['ip']."<br/>New IP: ".$device['ip']);
 				$feedback['result']['Changed'][] = executeCommand($command);
 				PDOUpdate('ha_mf_device_ipaddress', $device, array('id' => $rowdevice['id']));
 				$changedips++;
@@ -275,7 +276,7 @@ function getDeviceList(&$params) {
 							'deviceID' => $params['caller']['callerID'], 
 							'messagetypeID' => 'MESS_TYPE_SCHEME',
 							'schemeID' => SCHEME_ALERT_HIGH,
-							'commandvalue'   => 'New MAC '.$device['mac'].' found, IP '.$device['ip']);
+							'commandvalue'   => 'New MAC '.$device['mac'].' found,<br/> IP '.$device['ip']);
 			$feedback['result']['New MAC'][] = executeCommand($command);
 			PDOInsert('ha_mf_device_ipaddress', $device);
 			$newmacs++;
