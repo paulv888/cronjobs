@@ -765,7 +765,7 @@ function sendEmail(&$params) {
 	}
 }
 
-function sendBullet(&$params) {
+function sendBullet($params) {
 
 	debug($params, 'params');
 
@@ -774,6 +774,8 @@ function sendBullet(&$params) {
 
 	// Check for image
 	$type = 'NOTE';
+	$params['mess_subject'] = str_replace('<br/>', "\r",$params['mess_subject']);
+	$params['mess_text'] = str_replace('<br/>', "\r",$params['mess_text']);
 	if(strpos($params['mess_text'],'<img') > 0) {
 		// Will not use mess_text but cv1 and cv2 directly
 		$type = 'IMAGE';

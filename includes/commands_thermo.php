@@ -26,6 +26,8 @@ function getThermoSettings(&$params) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_HEAT);
 		}	elseif ($stat->tmode == 2) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_COOL);
+		}	elseif ($stat->tmode == 3) {
+			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_AUTO);
 		} else {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_OFF);
 		}		

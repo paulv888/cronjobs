@@ -58,6 +58,10 @@ class RestClient {
          	 curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT ,$this->timeOut); 
 			 curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->timeOut); //timeout in seconds
          }
+		 // echo "<pre>";
+		// echo $this->url;
+		// echo "</pre>";
+
          curl_setopt($this->curl,CURLOPT_URL,$this->url);
          $r = curl_exec($this->curl);
          $this->treatResponse($r); // Extract the headers and response
@@ -69,14 +73,14 @@ class RestClient {
       */
 	private function treatURL(){
 		if(is_array($this->params) && count($this->params) >= 1) { // Transform parameters in key/value pars in URL
-		if(!strpos($this->url,'?'))
-		$this->url .= '?' ;
-		$i = 0;
-		foreach($this->params as $k=>$v) {
-		if ($i) $this->url .= "&";
-		$this->url .= urlencode($k)."=".urlencode($v);
-		$i++;
-		}
+			if(!strpos($this->url,'?'))
+				$this->url .= '?' ;
+			$i = 0;
+			foreach($this->params as $k=>$v) {
+				if ($i) $this->url .= "&";
+				$this->url .= urlencode($k)."=".urlencode($v);
+				$i++;
+			}
 		}
 		return $this->url;
 	}
@@ -317,7 +321,7 @@ class RestClient {
       * @param string $credentials [optional]
       * @return RestClient
       */
-     public static function get($url,array $params=null,$credentials=null, $timeout=null) {
+     public static function get($url,array $params=null, $credentials=null, $timeout=null) {
          return self::call("GET",$url,$params,$credentials,"application/json",$timeout);
      }
 

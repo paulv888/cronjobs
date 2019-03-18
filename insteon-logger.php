@@ -2,7 +2,7 @@
 <?php
 require_once 'includes.php';
 
-//$GLOBALS['debug'] = 10;
+// $GLOBALS['debug'] = 1;
 
 define("MY_DEVICE_ID", 137);
 
