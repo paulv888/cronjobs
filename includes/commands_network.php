@@ -262,7 +262,7 @@ function getDeviceList(&$params) {
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
 								'schemeID' => SCHEME_ALERT_LOW,
-								"commandvalue" => $rowdevice['friendly_name']."|MAC: ".$device['mac']."<br/>Old Name: ".$rowdevice['name']."<br/>New Name: "
+								"commandvalue" => $rowdevice['friendly_name']." MAC: ".$device['mac']."|Old Name: ".$rowdevice['name']."<br/>New Name: "
 								              .$device['name']."<br/>Old IP: ".$rowdevice['ip']."<br/>New IP: ".$device['ip']);
 				$feedback['result']['Changed'][] = executeCommand($command);
 				PDOUpdate('ha_mf_device_ipaddress', $device, array('id' => $rowdevice['id']));

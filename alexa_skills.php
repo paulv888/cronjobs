@@ -1,5 +1,5 @@
 <?php
-//$GLOBALS['debug'] = 10;
+// $GLOBALS['debug'] = 99;
 define("MY_DEVICE_ID", 283);
 
 require_once 'includes.php';
@@ -11,7 +11,7 @@ if (isset($_GET["Message"])) {
 	$sdata = file_get_contents("php://input");
 }
 
-$file = 'alexa_skills.log';
+$file = 'log/alexa_skills.log';
 $current = file_get_contents($file);
 $current .= date("Y-m-d H:i:s").": ".$sdata."\n";
 file_put_contents($file, $current);

@@ -24,7 +24,7 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	'/musicvideos/Eastern/Bulgarian/', '/musicvideos/Eastern/Celtic/', 
 	'/musicvideos/Eastern/Japanese/',  '/musicvideos/Eastern/OtherEastern/', 
 	'/musicvideos/Eastern/Polish/',  '/musicvideos/Eastern/Russian/', 
-	'/musicvideos/Eastern/Meditation/',  '/musicvideos/Nederlands/',
+	'/musicvideos/Meditation/',  '/musicvideos/Nederlands/',
 	'/musicvideos/Popular/',  '/musicvideos/Spanish/', 
 	'/musicvideos/Tropical/',  '/musicvideos/Turkish/');
 
@@ -817,7 +817,7 @@ function getGenre($dirname) {
 function findBestMatch(&$file, $mvids) {
 	debug($file, 'file');
 
-	$file['moveto'] = VLOSITE_DATA.$mvids[0]['strPath'];
+	$file['moveto'] = LOCAL_DATA.$mvids[0]['strPath'];
 	$paths = array();
 	foreach($mvids as $mvid) {	// count occurences?
 		// [0] => Array
@@ -845,11 +845,11 @@ function findBestMatch(&$file, $mvids) {
 	// echo "<pre>";
 	arsort($paths);
 	// print_r($paths);
-	$file['moveto'] = VLOSITE_DATA.key($paths);
+	$file['moveto'] = LOCAL_DATA.key($paths);
 	// echo "mfrequent: ". $file['moveto'].CRLF; 
 	foreach($paths as $key => $value) {	// try to find non asorted
 		if (strpos($key, ASSORTED_DIR) === false) {
-			$file['moveto'] = VLOSITE_DATA.$key;
+			$file['moveto'] = LOCAL_DATA.$key;
 			// echo "improved: ". $file['moveto'].CRLF; 
 			break;
 		}
@@ -899,7 +899,7 @@ function findMoveTo(&$file, $importprocess) {
 		} else {								// Must be new artist -> going to assorted for input genre
 			if (($key = array_search($file['genre'], $genres)) !== false) {
 				$key = array_search($file['genre'], $genres);
-				$file['moveto'] = VLOSITE_DATA.$genrefolders[$key].ASSORTED_DIR;
+				$file['moveto'] = LOCAL_DATA.$genrefolders[$key].ASSORTED_DIR;
 				// echo "<pre> New Artist".': '; print_r($mvids); echo "</pre>";
 			} else {
 				$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;

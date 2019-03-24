@@ -7,4 +7,4 @@ fi
 adb reboot &    # run in background
 sleep 2         # give it time to run
 kill -SIGINT $! # send Ctrl-C to PID of last background process 
-adb disconnect
+#adb disconnect

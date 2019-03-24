@@ -19,5 +19,5 @@ case "$1" in
    ;;
 esac
 adb shell su -c am start -n com.android.deskclock/.ScreensaverActivity
-adb disconnect
+#adb disconnect
 
