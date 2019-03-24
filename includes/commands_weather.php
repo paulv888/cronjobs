@@ -28,44 +28,48 @@ function getWeather($params) {
 		if (!isset($result->{'properties'})) {
 			$error = true;
 		} else {
-			$result = $result->{'properties'};
-			$properties['Temperature']['value'] = $result->{'temperature'}->{'value'};
-			$properties['Humidity']['value'] =  $result->{'relativeHumidity'}->{'value'};
-			$properties['Status']['value'] = STATUS_ON;
-			$device['properties'] = $properties;
+			if (isset($result->{'properties'}->{'temperature'}->{'value'})) {
+				$result = $result->{'properties'};
+				$properties['Temperature']['value'] = $result->{'temperature'}->{'value'};
+				$properties['Humidity']['value'] =  $result->{'relativeHumidity'}->{'value'};
+				$properties['Status']['value'] = STATUS_ON;
+				$device['properties'] = $properties;
 
-			$array['deviceID'] = $deviceID;
-			$array['mdate'] = date("Y-m-d H:i:s",strtotime($result->{'timestamp'}));
-			$array['temp'] = $result->{'temperature'}->{'value'};
-			$array['humidity'] = $result->{'relativeHumidity'}->{'value'};
-			$array['pressure'] = $result->{'barometricPressure'}->{'value'}/100;
-			$array['visibility'] = $result->{'visibility'}->{'value'}/1000;
-			if (isset($result->{'windDirection'}->{'value'})) $array['direction'] = degToCompass($result->{'windDirection'}->{'value'});
-			$to_beaufort = array (0.2, 1.5, 3.3, 5.4, 7.9, 10.7, 13.8, 17.1, 20.7, 24.4, 28.4, 32.6, 32.7);
-			foreach ($to_beaufort as $key => $value) {
-				if ($result->{'windSpeed'}->{'value'} < $value) break;
+				$array['deviceID'] = $deviceID;
+				$array['mdate'] = date("Y-m-d H:i:s",strtotime($result->{'timestamp'}));
+				$array['temp'] = $result->{'temperature'}->{'value'};
+				$array['humidity'] = $result->{'relativeHumidity'}->{'value'};
+				$array['pressure'] = $result->{'barometricPressure'}->{'value'}/100;
+				$array['visibility'] = $result->{'visibility'}->{'value'}/1000;
+				if (isset($result->{'windDirection'}->{'value'})) $array['direction'] = degToCompass($result->{'windDirection'}->{'value'});
+				$to_beaufort = array (0.2, 1.5, 3.3, 5.4, 7.9, 10.7, 13.8, 17.1, 20.7, 24.4, 28.4, 32.6, 32.7);
+				foreach ($to_beaufort as $key => $value) {
+					if ($result->{'windSpeed'}->{'value'} < $value) break;
+				}
+				$array['speed'] = $key;
+	// BF	m/s			Label
+	// 0	0 - 0.2		Calm
+	// 1	0.3-1.5		Light Air
+	// 2	1.6-3.3		Light Breeze
+	// 3	3.4-5.4		Gentle Breeze
+	// 4	5.5-7.9		Moderate Breeze
+	// 5	8.0-10.7	Fresh Breeze
+	// 6	10.8-13.8	strong Breeze
+	// 7	13.9-17.1	Near Gale
+	// 8	17.2-20.7	Gale
+	// 9	20.8-24.4	Severe Gale
+	// 10	24.5-28.4	Strong storm
+	// 11	28.5-32.6	Violent Storm
+	// 12	>32.7		Hurricane
+
+				$array['short_forecast'] = $result->{'textDescription'};
+				$array['typeID'] = DEV_TYPE_TEMP_HUMIDITY;
+				$array['link1'] = cache_image(str_replace('medium','large',$result->{'icon'}));
+				PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $deviceID));
+				debug($result, 'result');
+			} else {
+				$feedback['result']['message'] = "Skipping, did not find temperature";
 			}
-			$array['speed'] = $key;
-// BF	m/s			Label
-// 0	0 - 0.2		Calm
-// 1	0.3-1.5		Light Air
-// 2	1.6-3.3		Light Breeze
-// 3	3.4-5.4		Gentle Breeze
-// 4	5.5-7.9		Moderate Breeze
-// 5	8.0-10.7	Fresh Breeze
-// 6	10.8-13.8	strong Breeze
-// 7	13.9-17.1	Near Gale
-// 8	17.2-20.7	Gale
-// 9	20.8-24.4	Severe Gale
-// 10	24.5-28.4	Strong storm
-// 11	28.5-32.6	Violent Storm
-// 12	>32.7		Hurricane
-
-			$array['short_forecast'] = $result->{'textDescription'};
-			$array['typeID'] = DEV_TYPE_TEMP_HUMIDITY;
-			$array['link1'] = cache_image(str_replace('medium','large',$result->{'icon'}));
-			PDOupdate("ha_weather_extended", $array, array( 'deviceID' => $deviceID));
-			debug($result, 'result');
 		}
 	}
 	if ($error) {

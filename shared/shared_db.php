@@ -244,7 +244,7 @@ function PDOError($e, $function, $mysql) {
 			'callerID' => 164,
 			'messagetypeID' => MESS_TYPE_SCHEME,
 			'schemeID'=>SCHEME_ALERT_PDO,
-			'commandvalue'=> $mysql.'|'.'<pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
+			'commandvalue'=> substr($mysql, 0, 20).'| SQL: '.$mysql.'ERROR: <pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
 	);
 	$feedback['result'][] = executeCommand($command);
 	return;
