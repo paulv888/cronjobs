@@ -273,8 +273,10 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				//echo "****";print_r($step_feedback).CRLF;
 				if (array_key_exists('message',$step_feedback)) $params['last___message'] = $step_feedback['message'];
 				if (array_key_exists('error',$step_feedback)) $params['last___message'] = $step_feedback['error'];
+				if (array_key_exists('result',$step_feedback)) $params['last___result'] = $step_feedback['result'];
 				if (array_key_exists('result_raw',$step_feedback)) $params['last___result'] = $step_feedback['result_raw'];
 				// if (array_key_exists('error',$step_feedback)) $params['last___result'] = $step_feedback['error'];
+				debug((array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent'), 'last___result');
 				debug((array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent'), 'last___message');
 			} else {
 				$step_feedback = 'Skipped';
@@ -1548,6 +1550,30 @@ function checkSyslog(&$params) {
 		}
 	}
 
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function checkDriveCapacity(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'checkDriveCapacity';
+	$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+	$feedback['message'] = "";
+
+    $mysql = 'SELECT * FROM `os_df` WHERE capacity >= "90%"';
+	$deviceID = null;
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $key => $row) {
+			$feedback['result']['debug'][]=$row;
+			$mysql = 'SELECT id FROM `ha_mf_devices` WHERE shortdesc ="'.$row['hostname'].'"';
+			if ($device = FetchRow($mysql)) $deviceID = $device['id']; 
+			$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
+				'schemeID'=>SCHEME_ALERT_HIGH, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
+		}
+	}
 	debug($feedback, 'feedback');
 	return $feedback;
 }

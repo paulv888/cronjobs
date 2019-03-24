@@ -187,11 +187,11 @@ function WhatsTemperatureIntent($request, $session, $response) {
 	}
 
 	$propertyName = 'Temperature';
-	$deviceProperty = getDeviceProperties(array('description'=>$propertyName, 'deviceID'=>$deviceID));
+	$deviceProperties = getDeviceProperties(array('description'=>$propertyName, 'deviceID'=>$deviceID));
 	
-	debug($deviceProperty, 'deviceProperty');
+	debug($deviceProperties, 'deviceProperties');
 	
-	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperty['value'],1) + 0);
+	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID), round((float)$deviceProperties['value'],1) + 0);
 	$response->respond($answer)->withCard(strip_tags($answer));
 
 
@@ -312,7 +312,7 @@ function DeviceStatusIntent($request, $session, $response) {
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-	debug($deviceProperty, 'deviceProperty');
+	debug($deviceProperties, 'deviceProperties');
 
 	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
  
@@ -365,7 +365,7 @@ function DeviceReportIntent($request, $session, $response) {
 	}
 
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
-	debug($deviceProperty, 'deviceProperty');
+	debug($deviceProperties, 'deviceProperties');
 
 
 	$answer = ["" , ""];
@@ -436,13 +436,13 @@ function WhatsBedtimeIntent($request, $session, $response) {
 		// Yesterday should be day before, others should be normal?
 		$fromdate = $find;
 		$to_date = date("Y-m-d H:i", strtotime($fromdate." +24 hour"));
-		$mysql = 'SELECT alert_date FROM `ha_alerts`  WHERE (description LIKE "%goodnight%" and `alert_date` > "'.$fromdate.'" and `alert_date` < "'. $to_date.'") order by alert_date desc limit 1';
+		$mysql = 'SELECT alert_date FROM `ha_alerts_log`  WHERE (description LIKE "%goodnight goodnight%" and `alert_date` > "'.$fromdate.'" and `alert_date` < "'. $to_date.'") order by alert_date desc limit 1';
 		// echo $mysql;
 		$answer = "Insufficient data. Please specify parameters.";
 		if ($row = FetchRow($mysql)) {
 			$date = new DateTime($row['alert_date']);
 		} else { 
-			$mysql = 'SELECT alert_date FROM `ha_alerts`  WHERE (description LIKE "%goodnight%") order by alert_date desc limit 1';
+			$mysql = 'SELECT alert_date FROM `ha_alerts_log`  WHERE (description LIKE "%goodnight goodnight%") order by alert_date desc limit 1';
 			if ($row = FetchRow($mysql)) {
 				$date = new DateTime($row['alert_date']);
 			}
@@ -475,7 +475,7 @@ function WhatsPlayingIntent($request, $session, $response) {
 	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	debug($deviceProperty, 'deviceProperty');
+	debug($deviceProperties, 'deviceProperties');
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)], $deviceProperties['Title']['value'], $deviceProperties['Artist']['value']);
 	$response->respond($answer)->withCard(strip_tags($answer));
@@ -562,7 +562,7 @@ function homeStatus($request, $session, $response) {
 		
 	}
 	
-	$mysql = 'SELECT count(id) as count FROM ha_alerts WHERE `priorityID` < '.PRIORITY_LOW.' AND DATE_FORMAT( NOW() , "%Y-%m-%d" ) = DATE_FORMAT(`alert_date`, "%Y-%m-%d" )';
+	$mysql = 'SELECT count(id) as count FROM ha_alerts_log WHERE `priorityID` < '.PRIORITY_LOW.' AND DATE_FORMAT( NOW() , "%Y-%m-%d" ) = DATE_FORMAT(`alert_date`, "%Y-%m-%d" )';
 	$alerts = FetchRow($mysql);
 	// print_r($alerts);
 	if (!empty($alerts['count'])) {		// Alerts
@@ -638,7 +638,7 @@ function AlertsIntent($request, $session, $response) {
 		$wherestr .=  'LIMIT '.$findNumber;
 	}
 	
-	$mysql = 'SELECT deviceID, a.description, priorityID, alert_date, alert_text, p.description as priority FROM ha_alerts a
+	$mysql = 'SELECT deviceID, a.description, priorityID, alert_date, alert_text, p.description as priority FROM ha_alerts_log a
 				LEFT JOIN ha_mi_priority p ON a.priorityID = p.id	
 				WHERE '.$wherestr;
 	$alerts = FetchRows($mysql);

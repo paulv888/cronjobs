@@ -20,5 +20,5 @@ case "$1" in
 *) echo Nothing Done
    ;;
 esac
-adb disconnect
+#adb disconnect
 

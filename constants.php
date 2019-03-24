@@ -3,9 +3,9 @@
 define("INSTEON_SLEEP_MICRO", 300000); // 300mS
 
 define("SEVERITY_NONE", 0);
-define("SEVERITY_DANGER", 1);
-define("SEVERITY_WARNING", 2);
-define("SEVERITY_INFO", 3);
+define("SEVERITY_DANGER", "Major");
+define("SEVERITY_WARNING", "Severe");
+define("SEVERITY_INFO", "Minor");
 
 define("SEVERITY_DANGER_CLASS", "alert-danger");
 define("SEVERITY_WARNING_CLASS", "alert");
