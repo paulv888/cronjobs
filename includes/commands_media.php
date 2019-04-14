@@ -123,8 +123,6 @@ function importVideos(&$params) {
 	$params['importprocess'] = true;
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	$feedback = refreshVideos($params);
-	// echo $params['file']['moveto'].$params['file']['newname'];
-	// print_r($feedback);
 	echo "<pre>";
 	print_r($feedback['result']);
 	echo "</pre>";
@@ -142,13 +140,9 @@ function import1Video(&$params) {
 	$params['commandvalue'] = $params['commandvalue'];
 	echo $params['commandvalue'].CRLF;
 	
-	// print_r($params);	
-	//.': '; print_r($params);echo "</pre>";
-
 	$params['importprocess'] = true;
 	$result = readDirs(LOCAL_IMPORT, $params['importprocess']); 
 	$files = $result['result'];
-	// print_r($files);
 	$params['refreshvideooptions'] = REFRESH_ALL;
 	// $params['refreshvideooptions'] = REFRESH_RECYCLE_DUPLICATE|REFRESH_NFO;
 
@@ -165,7 +159,6 @@ function import1Video(&$params) {
 		echo "Not found: ".$params['commandvalue'].CRLF;
 		print_r($files);
 	}
-	// print_r($feedback);
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -188,10 +181,6 @@ function refreshVideos(&$params) {
 	$files = $result['result'];
 	usort($files, "cmp");	
 
-	// echo "<pre>";
-	// print_r($files);
-	// exit;
-
 	if ($params['refreshvideooptions'] & REFRESH_MOVE && !$params['importprocess']) {
 		$file = 'mv_vids.sh';
 		file_put_contents($file, '#! /bin/bash'."\n");
@@ -201,8 +190,6 @@ function refreshVideos(&$params) {
 		$params['file'] = $file;
 		$result = refreshVideo($params);
 		$files[$index] = $params['file'];		// Keep files array in order
-		// print_r($files[$index]);
-		//$feedback[$index] = $result;			F. feedback for now getting t big
 	}
 	
 	if ($params['refreshvideooptions'] & REFRESH_CHECK_DUPLICATES && !$params['importprocess']) {
@@ -219,14 +206,6 @@ function refreshVideos(&$params) {
 		$feedback['result'] = $files;
 	}	
 		
-	// echo '<pre>';
-	// print_r($files);
-	// echo '</pre>';
-	// $feedback['commandstr'] = "I send this";
-	// $feedback['result'] = array();
-	// $feedback['message'] = "all good";
-	// if () $feedback['error'] = "Not so good";
-	
 	
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -238,7 +217,6 @@ function refreshVideo(&$params) {
 
 
 	$feedback['Name'] = 'refreshVideo';
-	// echo "<pre>".$feedback['Name'].': '; print_r($params['file']); echo "</pre>";
 
 	$exectime = -microtime(true); 
 	// echo $options.CRLF;

@@ -2,8 +2,6 @@
 function sendCommand(&$thiscommand) { 
 	debug($thiscommand, 'thiscommand');
 
-	// echo "<pre>Enter sendCommand";
-	// print_r($thiscommand);
 	$exittrap=false;
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
@@ -55,7 +53,6 @@ function sendCommand(&$thiscommand) {
 				$status_key = $statusarr[0]['description'];
 				$status = $thiscommand['device']['previous_properties'][$status_key]['value'];
 				$rowmonitor = $thiscommand['device']['previous_properties'][$status_key];
-				// print_r($statusarr);
 			
 				// Special handling for toggle
 				if ($thiscommand['commandID']==COMMAND_TOGGLE) {   
@@ -308,7 +305,6 @@ function executeCommand($callerparams) {
 		$result = $feedback;
 	}
 	
-	// print_r($result);
 	if (isset($encode)) {
 		$result = json_encode($result,JSON_UNESCAPED_SLASHES);
 		switch (json_last_error()) {
@@ -345,9 +341,6 @@ function executeCommand($callerparams) {
 function RemoteKeys($in, $params) {
 	debug($params, 'params');
 
-// echo "<pre>";
-// print_r($params);
-// print_r($in);
 	if ($in['show_result']) {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);

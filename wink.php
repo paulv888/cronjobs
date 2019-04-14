@@ -33,7 +33,6 @@ if (!($sdata=="")) { 					//import_event
 	$h = Null;
 	$s = Null;
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
-//print_r($rcv_message);
 	$rcv_message['code']=WINK_CODE;
 	$message['deviceID'] = setDeviceID($rcv_message);
 	$message['commandID'] = $rcv_message['Command'];
@@ -57,12 +56,8 @@ if (!($sdata=="")) { 					//import_event
 			$properties[str_replace('_', ' ', $attr['attributeName'])]['value'] =  ($attr['value_get'] != "" ? $attr['value_get'] : $attr['value_set']);
 		}
 	}
-	//print_r($properties);
-	
-	//$message['message'] = prettyPrint($sdata);
 	$message['callerID'] = MY_DEVICE_ID;
 	$message['message'] = $sdata;
-//print_r($message);
 	if ($message['inout'] == COMMAND_IO_RECV) {
 		$error_message = (array_key_exists('errorMessage', $rcv_message) ? implode(" - ", $errorMessage) : null);
 		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));

@@ -7,11 +7,6 @@ if (array_key_exists('DEBUG',$_GET)) {
 if (!defined('DEBUG')) define( 'DEBUG', FALSE );
 //require_once $_SERVER['DOCUMENT_ROOT'].'/cronjobs/process.php';
 //$origData = $formModel->getOrigData()[0]; 
-if (DEBUG) echo "<pre>";
-if (DEBUG) echo "Data:";
-if (DEBUG) print_r($data);
-//print_r($formModel->formData); 
-//print_r($formModel->getElementIds());
 
 $groups = $formModel->getGroupsHiarachy();
 foreach ($groups as $group) {
@@ -28,10 +23,6 @@ foreach ($groups as $group) {
 		}
 	}
 }
-if (DEBUG) echo "fieldMap:";
-if (DEBUG) print_r($fieldMap);
-if (DEBUG) echo "fields:";
-if (DEBUG) print_r($fields);
 
 function loadFields($fields, $fieldMap, $data, $repeat = null) {
 

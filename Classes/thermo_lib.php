@@ -307,10 +307,6 @@ class Stat
 
 		$this->t_type_post = $obj->{'t_type_post'};
 
-// echo "<pre>";
-// print_r($this);
-// echo "</pre>";
-		
 		return;
 	}
 

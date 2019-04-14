@@ -61,9 +61,6 @@ function pingip($host, $timeout)
 { 
 	$tB = microtime(true); 
 	$fP = exec("fping -t$timeout $host", $output, $status);
-	/* print_r ($output);
-	echo "</br>TCP status: $status</br>";
-	echo "</br>TCP status: $fP</br>"; */
 	if ($status==0) return true;
 	return FALSE; 
 }

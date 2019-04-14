@@ -1,10 +1,5 @@
 #! /bin/bash
-adb devices | grep '$1' &> /dev/null
-if [ $? != 0 ]; then
-  adb connect $1
-  sleep 1         # give it time to run
-fi
-
+/home/www/ha/bin/check-connected.sh "$1"
 adb shell am force-stop com.rcreations.WebCamViewerPaid
 adb shell am force-stop org.xbmc.kodi
 adb shell am force-stop com.android.deskclock

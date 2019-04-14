@@ -31,7 +31,6 @@ function handleRequest($alexaRequest) {
 	
 	$to_person = ($alexaRequest->applicationId == APP_ID_AYNUR_ECHO ? 'Aynur' :'Paul');
 
-	// print_r($alexaRequest);
 	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
 		
 		$log['commandID'] = (array_key_exists($alexaRequest->intentName, $commandMap) ? $commandMap[$alexaRequest->intentName] : COMMAND_UNKNOWN);
@@ -71,9 +70,7 @@ function handleRequest($alexaRequest) {
 		$feedback = SessionEndedRequest($alexaRequest, $alexaRequest->session, $response);
 	}
 
-	// print_r($feedback);
 	$log['result'] = $feedback;
-	// print_r($log);
 	if  (!array_key_exists('commandstr', $feedback['result'])) $feedback['result']['commandstr'] ="Not set.";
 	$log['commandstr'] = $feedback['result']['commandstr'];
 	$exectime += microtime(true);
@@ -99,14 +96,6 @@ function ShortAnswerIntent($request, $session, $response) {
 	
 	$log['data'] = "Date: ".$finddate." CatchAll: ".$findelse." orgIntent: ".$orgIntent;
 	
-	// var_dump(isset('attributes', $session));
-	// var_dump($session);
-	// var_dump(!$session->new);
-	// print_r($request);
-	// var_dump(isset($request->slots->CatchAll));
-	// print_r($request->slots);
-	// echo "$findelse"." "."$orgIntent".CRLF;
-
 	if (empty($findelse) && empty($finddate)) {
 		$response->respond("Sorry, I did not understand, please start over.");
 		$response->tell();

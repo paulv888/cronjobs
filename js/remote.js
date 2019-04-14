@@ -403,8 +403,13 @@ if(!window.scriptRemoteHasRun) {
 	};
 
 	function showMessage(message) {
-		if (message.length > 0) {
-			jQuery('#system-message-container').html('<div class="alert alert-success"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+		if ((typeof(message) != "undefined") && message.length > 0) {
+			if (message.substring(0,6) != '<HTML>') {
+			console.log(message.substring(0,6));
+				jQuery('#system-message-container').html('<div class="alert alert-success"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
+			} else {
+				jQuery('#html-container').html('<div>'+message.substring(6)+'</div>');
+			} 
 		}
 	}
 

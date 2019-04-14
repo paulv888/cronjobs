@@ -144,8 +144,6 @@ function PDOupdate($table, $fields, $where){
 	$values = array_values($fields);
 	$cols = array_keys($fields);
 	$numItems = count($values);
-	// print_r($cols);
-	// print_r($values);
 
 	$mysql = 'UPDATE '. $table . ' SET ';
 	$i = 0;
@@ -244,7 +242,7 @@ function PDOError($e, $function, $mysql) {
 			'callerID' => 164,
 			'messagetypeID' => MESS_TYPE_SCHEME,
 			'schemeID'=>SCHEME_ALERT_PDO,
-			'commandvalue'=> substr($mysql, 0, 20).'| SQL: '.$mysql.'ERROR: <pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
+			'commandvalue'=> substr($mysql, 0, 30).'| SQL: '.$mysql.'ERROR: <pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
 	);
 	$feedback['result'][] = executeCommand($command);
 	return;

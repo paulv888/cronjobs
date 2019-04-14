@@ -99,9 +99,6 @@ function GetSessions() {
 //	IN_is: 1434494543, sent: 40984, unacked: 339, mss: 0, windows_scale: 0 ,  OUT_is 3441205173, sent: 4817, unacked: 0, mss: 0, windows_scale: 0
     $sessions = explode("\n", $t1); 
     
-	//echo "<pre>";
-    //print_r($sessions);
-//    echo $sessions[0];
 	$a1 = explode(",",$sessions[0]);
 	$a2 = explode(":",$a1[1]);
 	$secs_boot = $a2[1];
@@ -137,11 +134,6 @@ function findRemoteName($ip) {
 	if ($row=FetchRow($mysql)) {
 		$last = new DateTime($row['updatedate']);
 		$nowdt = new DateTime();
-		/*echo "<pre>";
-		print_r ($last);
-		print_r ($nowdt);
-		echo  $nowdt->diff($last, true)->days."</br>";
-		echo "</pre>";*/
 		if ($nowdt->diff($last, true)->days < 30) {
 			return $row['name'];			
 		}
@@ -365,9 +357,6 @@ function GetDeviceList() {
 		$deviceslist[] = $rowvals;
 	}
 
-	//echo "<pre>";
-	//print_r($deviceslist);
-    
 	$devicesimported=0;
     	
 	foreach ($deviceslist as $device) {

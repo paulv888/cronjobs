@@ -198,9 +198,6 @@ function startTimer($params) {
 	$thiscommand['device']['properties']['Timer Date']['value'] = date("Y-m-d H:i:s");
 	$thiscommand['device']['properties']['Timer Value']['value'] = $params['commandvalue'];
 	$thiscommand['device']['properties']['Timer Remaining']['value'] = $params['commandvalue'];
-//	echo "<pre>+++StartTimer";
-//	print_r($params);
-//	echo "</pre>===StartTimer";
 	$feedback['SendCommand']=sendCommand($thiscommand); 
 	return $feedback;
 }

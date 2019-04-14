@@ -13,11 +13,6 @@ if (array_key_exists('DEBUG',$_GET)) {
 if (!defined('DEBUG')) define( 'DEBUG', FALSE );
 require_once $_SERVER['DOCUMENT_ROOT'].'/cronjobs/process.php';
 //$origData = $formModel->getOrigData()[0]; 
-if (DEBUG) echo "<pre>";
-if (DEBUG) echo "Data:";
-if (DEBUG) print_r($data);
-//print_r($formModel->formData); 
-//print_r($formModel->getElementIds());
 
 $groups = $formModel->getGroupsHiarachy();
 foreach ($groups as $group) {
@@ -34,10 +29,6 @@ foreach ($groups as $group) {
 		}
 	}
 }
-if (DEBUG) echo "putelements:";
-if (DEBUG) print_r($putelements);
-if (DEBUG) echo "putelementsByGroup:";
-if (DEBUG) print_r($putelementsByGroup);
 
 $parent = array();
 foreach ($putelementsByGroup['526'] as $fieldName) {
@@ -57,7 +48,6 @@ foreach ($putelementsByGroup['526'] as $fieldName) {
 
 $parent['dexaId'] = $dexaId;
 $parent['configurationId'] = $data['pg_configurations___configurationId'];
-if (defined('DEBUG')) print_r($parent);
 $feedback['result']['Dexa PUT'] = executeCommand(Array('callerID'=>326,'messagetypeID'=>"MESS_TYPE_COMMAND",'deviceID' => 326, 'commandID'=>11,'commandvalue' => $dexaId."|".$parent['configurationId'], 'mess_text'=>json_encode($parent)));
 
 if (count($data[pg_configurations_details___id])>0) { // We have some config details
@@ -80,7 +70,6 @@ if (count($data[pg_configurations_details___id])>0) { // We have some config det
           if (!empty($data[$fieldName.'_raw'][$repeat][0])) $children[$putelements[$fieldName][name]] = $data[$fieldName.'_raw'][$repeat][0];
         }
       }
-      print_r($children);
       if ($parent['statusCode'] == "DESIGN") {
         if (!empty($detailId))  { // Update exsisting PUT 
         //echo "put";

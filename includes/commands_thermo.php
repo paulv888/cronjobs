@@ -41,10 +41,6 @@ function getThermoSettings(&$params) {
 		$yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
 		PDOupsert('hvac_run_times', array('deviceID' => $params['deviceID'], 'date' => $yesterday, 'heat_runtime' => $stat->runTimeHeatYesterday, 'cool_runtime' =>$stat->runTimeCoolYesterday), array('date' => $yesterday, 'deviceID' => $params['deviceID']));
 					
-		// echo "<pre>";
-		// print_r ($stat);
-		// echo "<pre>";
-		
 		$properties['Temperature']['value'] = to_celcius($stat->temp);
 		$properties['Setpoint']['value'] =  to_celcius($stat->setpoint);
 		$properties['Status']['value'] = $stat->getTargetOnOff();
@@ -57,11 +53,6 @@ function getThermoSettings(&$params) {
 	catch( Exception $e ) {
 		$feedback['error'] = 'Caught exception: '. $e->getMessage();
 	}
-// echo "<pre>";
-// var_dump($properties['Status']['value'] );
-// print_r($params);
-// echo "</pre>";
-
 	return $feedback;
 }
 
@@ -73,10 +64,6 @@ function updateThermType($deviceID, $typeID){
 
 function HvacToggle(&$params) {
 
-// echo "<pre>";
-// print_r($params);
-// echo "</pre>";
-	
 	try
 	{
 		$stat = new Stat( $params['device'] );
@@ -92,13 +79,6 @@ function HvacToggle(&$params) {
 		$properties['Status']['value'] = $stat->Toggle($params['commandID']);
 		$properties['Setpoint']['value'] =  to_celcius($stat->setpoint);
 		$params['device']['properties'] = $properties;
-
-
-// echo "<pre>";
-// var_dump($properties['Status']['value'] );
-// print_r($params);
-// echo "</pre>";
-
 		$feedback['message'] = 'Temperature set to '.$properties['Setpoint']['value'];
 
 		return $feedback;
