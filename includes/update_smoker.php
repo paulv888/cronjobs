@@ -298,10 +298,6 @@ switch (implode($data['smk_run___phase_raw'])) {
         break;
 }
 
-//echo "<pre>";
-//print_r($messages);
-//exit;
-
 $application = JFactory::getApplication();
 foreach ($messages as $data) {
 	$result = sendPostData($url_send, $data);

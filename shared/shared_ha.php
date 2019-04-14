@@ -34,7 +34,6 @@ function updateDeviceProperties($params) {
 		}
 	}
 
-	// print_r($params['device']['properties']);
 	if (array_key_exists('properties', $params['device'])) {		// Do we have props to update?
 		$params['device']['properties'] = sortArrayByArray($params['device']['properties'], Array('Status'));
 		foreach ($params['device']['properties'] as $key=>$property) {
@@ -125,9 +124,6 @@ function setDevicePropertyValue($params, $propertyName) {
 	// var_dump($deviceproperty['value'] !== $oldvalue);
 	// echo CRLF;
 	if ($deviceproperty['value'] !== $oldvalue && $propertyName != 'Link') {		// Link special, updated in factory (How about not monitor?)
-		// echo "<pre>Updateing:";
-		// print_r($deviceproperty);
-		// echo "</pre>Updateing:";
 		$deviceproperty['trend'] = setTrend($deviceproperty['value'], $oldvalue);
 		$deviceproperty['updatedate'] = date("Y-m-d H:i:s");
 		PDOupsert('ha_mf_device_properties', $deviceproperty, Array('deviceID' => $deviceproperty['deviceID'], 'propertyID' => $deviceproperty['propertyID'] ));
@@ -250,7 +246,7 @@ function getDevice($deviceID){
 		if ($rowtype = FetchRow($mysql)) {
 			$rowdevice['type'] = $rowtype;
 		}
-		if ($rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_HEAT || $rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_COOL  || $rowdevice['typeID']=DEV_TYPE_THERMOSTAT_CT30_OFF) {
+		if ($rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_HEAT || $rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_COOL  || $rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_OFF) {
 			$mysql = 'SELECT * FROM `ha_mf_devices_thermostat` WHERE `deviceID` = '.$deviceID; 
 			if ($rowthermostat = FetchRow($mysql)) {
 				$rowdevice['thermostat'] = $rowthermostat;
@@ -299,9 +295,6 @@ function getDevicesWithProperties($params){
 		$deviceproperty['description'] = $propertyName;
 		$res = getDeviceProperties($deviceproperty);
 		$comb = array_replace_recursive($comb, $res);
-  // echo "<pre>comb";
-  // print_r($comb);
-  // echo "</pre>";
 	}
 	debug($comb, 'comb');
 	return $comb; // Format
@@ -412,7 +405,6 @@ function getDeviceProperties($deviceproperty){
 function getStatusLink($devprop) {
 	debug($devprop, 'devprop');
 
-	// print_r($devprop);
 	$feedback = Array();
 	if (!empty($devprop['propertyID'])) {
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'propertyID' => $devprop['propertyID'])))) {
@@ -702,8 +694,6 @@ function checkConditions($rows, $params) {
 					$message = "No devices in group ".$device['group_description']." are ";
 				}
 				$savedeviceID = $device['deviceID'];
-			// echo "<pre>";
-			// print_r(getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $device['groupselect']['DeviceID'])));
 			}
 			$testvalue[] = $test;
 			break;
@@ -814,7 +804,6 @@ function getFeedbackStatus($deviceID, $status) {
 
 	$statusNames = $status_feedback[getDevice($deviceID)['type']['status_feedback']];
 	
-	// print_r($statusNames);
 	if ($status == STATUS_OFF) {
 		$feedbackstatus=$statusNames[STATUS_OFF];
 	} elseif ($status == STATUS_UNKNOWN) {

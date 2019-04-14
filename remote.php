@@ -17,7 +17,7 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#B7CFE4"/>
+<meta name="theme-color" content="#E9ECE5"/>
 <link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
 <link rel="stylesheet" href="/templates/protostar-remote/css/woffs.css" type="text/css" media="screen" /> 
 <script src="/media/jui/js/jquery.min.js"></script>
@@ -26,7 +26,7 @@ if (isset($_GET['name'])) {
 <script async src="<?php echo getPath(true);?>/js/remote.js"></script>
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
-                height: 100%; width: 100%; background-color: #B7CFE4">
+                height: 100%; width: 100%; background-color: #E9ECE5">
         <p style="margin-left: 10px">JavaScript is not enabled.</p>
     </div>
 </noscript>

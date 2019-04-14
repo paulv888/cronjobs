@@ -37,7 +37,6 @@ function handleRequest($alexaRequest) {
 	$log['inout'] = COMMAND_IO_RECV;
 	
 	
-	// print_r($alexaRequest);
  	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
 		$log['commandID'] = (array_key_exists($alexaRequest->intentName, $commandMap) ? $commandMap[$alexaRequest->intentName] : COMMAND_UNKNOWN);
 		$fname = ($alexaRequest->intentName == "PlayLatestArtistIntent" ? "PlayArtistIntent"  : $alexaRequest->intentName);
@@ -74,9 +73,7 @@ function handleRequest($alexaRequest) {
 		$feedback = SessionEndedRequest($alexaRequest, $alexaRequest->session, $response);
 	}
 
-// print_r($feedback);
 	$log['result'][] = $feedback;
-	// print_r($log);
 	if  (!array_key_exists('commandstr', $feedback['result'])) $feedback['result']['commandstr'] ="Not set.";
 	$log['commandstr'] = $feedback['result']['commandstr'];
 	$exectime += microtime(true);
@@ -107,14 +104,6 @@ function ShortAnswerIntent($request, $session, $response) {
 	
 	if ($findsong == 'cancel' || $findsong == 'stop' || $findelse == 'cancel' || $findelse == 'stop') 
 		CancelIntent($request, $session, $response);
-	// var_dump(isset('attributes', $session));
-	// var_dump($session);
-	// var_dump(!$session->new);
-	// print_r($request);
-	// var_dump(isset($request->slots->CatchAll));
-	// print_r($request->slots);
-	// echo "$findelse"." "."$orgIntent".CRLF;
-
 	switch ($orgIntent) {
 		case "PlayArtistIntent":
 			$request->slots->Artist = $findartist;

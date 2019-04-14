@@ -870,9 +870,6 @@ private function insteon_decode_cmd($cmdLookup, $cmd1, $cmd2, $extended, $Data) 
 	#lookup 1st without using Cmd2
 	if (array_key_exists($cmdLookup.$cmd1,self::$insteonCmd)) $cmdDecoder1 = self::$insteonCmd[$cmdLookup.$cmd1];
 
-	// echo "here 3: "."".$cmdLookup.$cmd1.CRLF;
-	// print_r($cmdDecoder1);
-
 	
 	if(!isset($cmdDecoder1)) {
 		#lookup failed, if this is an ACK/NACK retry w/ direct version

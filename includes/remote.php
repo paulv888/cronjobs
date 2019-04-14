@@ -84,10 +84,6 @@ function loadRemoteDiv($divid, $params) {
 				if (!empty($rowremotekeys['deviceID'])) {
 					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_CURRENT_SESSION ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
 					if  (!empty($deviceID)) {
-					// echo "<pre>$myycell $myxcell ";
-					// print_r($rowdevices);
-					// echo "</pre>";
-						//$statuslink = getStatusLink(Array('deviceID' => $deviceID, 'propertyID' => $rowremotekeys['propertyID']));
 						$statuslink = array();
 						if (array_key_exists('Status',$statuslink)) {
 							$status = ($statuslink['Status'] == STATUS_ON ? 'on' : 

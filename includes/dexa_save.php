@@ -6,12 +6,6 @@ if (!defined('DEBUG')) define( 'DEBUG', FALSE );
 // I am using params in my code
 $saveParams = $params;
 require_once $_SERVER['DOCUMENT_ROOT'].'/cronjobs/process.php';
-if (DEBUG) echo "<pre>";
-if (DEBUG) echo "Data:";
-if (DEBUG) print_r($data);
-//print_r($formModel->formData);
-//print_r($formModel->getElementIds());
-//print_r($formModel->getElementOptions()); 
 
 $groups = $formModel->getGroupsHiarachy();
 foreach ($groups as $group) {
@@ -28,10 +22,6 @@ foreach ($groups as $group) {
 		}
 	}
 }
-if (DEBUG) echo "putelements:";
-if (DEBUG) print_r($putelements);
-if (DEBUG) echo "putelementsByGroup:";
-if (DEBUG) print_r($putelementsByGroup);
 
 // Process Dexa
 $dexa = array();
@@ -44,7 +34,6 @@ foreach ($putelementsByGroup['524'] as $fieldName) {
         if (!empty($data[$fieldName.'_raw'][0]))$dexa[$putelements[$fieldName][name]] = $data[$fieldName.'_raw'][0];
     }
 }
-if (DEBUG) print_r($dexa);
 
 if (!empty($data['pg_dexas___dexaId'])) {   // Update
 	$dexa['dexaId'] = $data['pg_dexas___dexaId'];
@@ -63,7 +52,6 @@ if (array_key_exists('error',$temp)) {
 	$params = $saveParams;
     return false;
 }
-if (DEBUG) print_r($dexa);
 
 if (!empty($data['pg_configurations___configurationId'])) { 	// We have some configs
     foreach ($data['pg_configurations___configurationId'] as $repeat=>$configId) {

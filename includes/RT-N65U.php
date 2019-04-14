@@ -86,8 +86,6 @@ function GetSessions() {
 		if ($session['protocol']==6) $session['TCPstate'] = $row_split[3];
 		if ($session['protocol']==6) $session['flags'] = $row_split[16];
 		$session['active'] = 1;
-	// print_r($session);
-	// echo "</pre>";
 		$sessions[] = $session;
 
 	}
@@ -108,11 +106,6 @@ function GetSessions() {
     // “[ASSURED]”, if this connection has seen traffic in both directions (for UDP) or an ACK in an ESTABLISHED connection (for TCP). Otherwise not present.
     // Use count of this connection structure. 
 	
-// echo "<pre>";
-// print_r($sessions);
-// echo "</pre>";
-// exit;
-       
 	return $sessions;
 }
 
@@ -122,11 +115,6 @@ function findRemoteName($ip) {
 	if ($row=FetchRow($mysql)) {
 		$last = new DateTime($row['updatedate']);
 		$nowdt = new DateTime();
-		/*echo "<pre>";
-		print_r ($last);
-		print_r ($nowdt);
-		echo  $nowdt->diff($last, true)->days."</br>";
-		echo "</pre>";*/
 		if ($nowdt->diff($last, true)->days < 30) {
 			return $row['name'];			
 		}
@@ -200,9 +188,6 @@ function findLocalName($ip, $sendAlert = false) {
 function ImportSessions() {
  
 	$sessionsresponse=GetSessions();
-//echo "<pre>";
-//print_r($sessionsresponse);
-//echo "</pre>";
 
 	if (empty($sessionsresponse)) return -1;
 	

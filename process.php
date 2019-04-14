@@ -71,7 +71,6 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 	
 	$result = executeCommand($params);
 	if (is_array($result)) {
-//		print_r($result);
 		echo "ok";
 	}
 	else

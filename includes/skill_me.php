@@ -33,10 +33,9 @@ function handleRequest($alexaRequest) {
 	
 	$log['callerID'] = MY_DEVICE_ID;
 	$log['inout'] = COMMAND_IO_RECV;
+
 	
-	
-	// print_r($alexaRequest);
- 	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
+	if ($alexaRequest instanceof \Alexa\Request\IntentRequest) {
 		$log['commandID'] = (array_key_exists($alexaRequest->intentName, $commandMap) ? $commandMap[$alexaRequest->intentName] : COMMAND_UNKNOWN);
 		if (function_exists($alexaRequest->intentName)) {
 			$fname= $alexaRequest->intentName;
@@ -74,9 +73,7 @@ function handleRequest($alexaRequest) {
 		$feedback = SessionEndedRequest($alexaRequest, $alexaRequest->session, $response);
 	}
 
-// print_r($feedback);
 	$log['result'] = $feedback;
-	// print_r($log);
 	if  (!array_key_exists('commandstr', $feedback['result'])) $feedback['result']['commandstr'] ="Not set.";
 	$log['commandstr'] = $feedback['result']['commandstr'];
 	$exectime += microtime(true);
@@ -102,14 +99,6 @@ function ShortAnswerIntent($request, $session, $response) {
 	
 	$log['data'] = "Date: ".$finddate." CatchAll: ".$findelse." orgIntent: ".$orgIntent;
 	
-	// var_dump(isset('attributes', $session));
-	// var_dump($session);
-	// var_dump(!$session->new);
-	// print_r($request);
-	// var_dump(isset($request->slots->CatchAll));
-	// print_r($request->slots);
-	// echo "$findelse"." "."$orgIntent".CRLF;
-
 	if (empty($findelse) && empty($finddate)) {
 		$response->respond("Sorry, I did not understand, please start over.");
 		$response->tell();
@@ -271,10 +260,8 @@ function SystemReportIntent($request, $session, $response) {
 
 	$responses = array ("The %s is %s", "The status of the %s is %s.");
 
-	// print_r($request);
 	
 	$findDevice = "system";
-	// $findProperty = (isset($request->slots->Status) ? $request->slots->Status : "Status");
 	$findProperty = "Status";
 
 	$feedback['result'] = homeStatus($request, $session, $response);
@@ -564,7 +551,6 @@ function homeStatus($request, $session, $response) {
 	
 	$mysql = 'SELECT count(id) as count FROM ha_alerts_log WHERE `priorityID` < '.PRIORITY_LOW.' AND DATE_FORMAT( NOW() , "%Y-%m-%d" ) = DATE_FORMAT(`alert_date`, "%Y-%m-%d" )';
 	$alerts = FetchRow($mysql);
-	// print_r($alerts);
 	if (!empty($alerts['count'])) {		// Alerts
 		$answer = "<speak>".implode(". ", $answer)." You have ".$alerts['count']." alerts for today. Do you want to hear these?</speak>";
 		$response->respond($answer)

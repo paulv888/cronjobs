@@ -19,23 +19,14 @@ if ($this->data['mc_import_mongoDB___purge_raw'][0]==0) {
 	$result = $db->execute();
 }
 
-//print_r($this->data);
-//echo $this->data['mc_import_mongoDB___period_raw'].'</br>';
-//echo $this->data['mc_import_mongoDB___filename'].'</br>';
-//print_r($this->data['mc_import_mongoDB___db_name_raw']);
-//echo $this->data['mc_import_mongoDB___db_name_raw'][0].'</br>';
-
 $file = $this->data['mc_import_mongoDB___filename'];
 $type = $this->data['mc_import_mongoDB___file_type_raw'];
 $data = file_get_contents($_SERVER['DOCUMENT_ROOT'].$file);
 $data = preg_replace('~\R~u', ",", $data);
 $data = '['.rtrim($data, ",").']';
 
-//echo $data.'</br>';
-
 $dataArray = json_decode($data,1);
 
-//print_r($dataArray);
 
 // Get a db connection.
 $db = JFactory::getDbo();
@@ -79,8 +70,6 @@ foreach ($dataArray as $key => $user) {
 		}
 	}
 	unset($dataArray[$key]['products']);
-//	echo "$key $user".'</br>';
-//	print_r($dataArray[$key]);
 	foreach($dataArray[$key] as $field => $values){
 		//echo "$field $values".'</br>';
 		if ($field == '_id') $dataArray[$key][$field] = $values['$oid'];
@@ -120,7 +109,4 @@ foreach ($dataArray as $key => $user) {
 
 
 JFactory::getApplication()->enqueueMessage("$count Records imported.");
-//print_r($dataArray);
-
-//echo "</pre>";
 return;

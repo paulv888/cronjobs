@@ -1,10 +1,4 @@
 #! /bin/bash
-adb devices | grep '$1' &> /dev/null
-if [ $? != 0 ]; then
-  adb connect $1
-  sleep 1         # give it time to run
-fi
-
 GALLERYNOCAM="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW"
 GALLERY="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW -e selectCameraName"
 SELECT="adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.MAIN' -e selectView GALLERY_VIEW -e selectCameraName"

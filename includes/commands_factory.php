@@ -37,8 +37,6 @@ function monitorDevicesTimeout($params) {
 	// Need to handle inuse and active
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
 
-	// echo "<pre>";
-	// print_r($devs);
 	$feedback['Name'] = 'monitorDevicesTimeout';
 	$feedback['result'] = array();
 	$params['callerID'] = $params['callerID'];
@@ -58,7 +56,6 @@ function monitorDevicesTimeout($params) {
 				$params['device']['previous_properties'] = $props;
 				$properties['Link']['value'] = LINK_TIMEDOUT;
 				$params['device']['properties'] = $properties;
-				// print_r($params);
 				$feedback['result'] = updateDeviceProperties($params);
 			}
 		}
@@ -93,7 +90,6 @@ function createAlert(&$params) {
 			$params['alert_textID'] = $step['alert_textID'];
 
 
-	 // {echo "<pre>before error ";print_r($params);echo "</pre>";}
 
 			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
 				if (array_key_exists('SESSION', $params)) {
@@ -104,8 +100,6 @@ function createAlert(&$params) {
 			}
 			$feedback['result']['createAlerts_'.$params['deviceID']] = SendCommand($params);
 			$params =  $saveparams;
-	// print_r($feedback);
-	// echo "</pre>";
 
 		}
 		debug($feedback, 'feedback');
@@ -158,9 +152,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID.' ORDER BY SORT';
 	if ($rows = FetchRows($mysql)) {
 		$feedback = checkConditions($rows, $params);
-		// echo "<pre>Check cond result".CRLF;
-		// print_r($rows);
-		// print_r($feedback);
 		if (!$feedback['result'][0]) {
 			$feedback['Name'] = getSchemeName($schemeID);
 			$feedback['message'] = $feedback['Name'].": ".$feedback['message'];
@@ -208,13 +199,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		
 		foreach ($rowshemesteps as $step) {
-			//$result = Array();
-
-			// echo "<pre>Check cond result".CRLF;
-			// print_r(array($step));
 			$check_result = checkConditions(array($step), $params);
-			// print_r($check_result );
-			// echo "</pre>Check cond result".CRLF;
 
 			if ($check_result['result'][0]) {
 				$stepValue =  $step['value'];
@@ -228,7 +213,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				$params['schemeID'] = $step['runschemeID'];
 				$params['alert_catalogID'] = $step['alert_catalogID'];
 
-	 // {echo "<pre>before error ";print_r($params);echo "</pre>";}
 
 				if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
 					if (array_key_exists('SESSION', $params)) {
@@ -269,8 +253,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				} else {
 					$step_feedback = SendCommand($params);
 				}
-				// echo "****";print_r($params).CRLF;
-				//echo "****";print_r($step_feedback).CRLF;
 				if (array_key_exists('message',$step_feedback)) $params['last___message'] = $step_feedback['message'];
 				if (array_key_exists('error',$step_feedback)) $params['last___message'] = $step_feedback['error'];
 				if (array_key_exists('result',$step_feedback)) $params['last___result'] = $step_feedback['result'];
@@ -385,8 +367,6 @@ function getNowPlaying(&$params) {
 		$params['device']['properties'] = $properties;
 		$feedback['error']='Error - Nothing playing';
 	} else {
- // echo "<pre>";
- // print_r($result['result_raw']);
  		$result = $result['result_raw'];
 		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
 			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
@@ -477,8 +457,6 @@ function moveMusicVideo($params) {
 	
 	$matches = glob($file['moveto'].$file['newname'].'.*');
 	if (strtolower($file['dirname'].$file['filename']) != strtolower($file['moveto'].$file['newname'])) {
-		// echo "<pre>Matches ".$feedback['Name'].CRLF;
-		// print_r($matches);
 		if (!empty($matches)) {			// Assume we found an upgrade and move to recycle
 			// Find vid match
 			// echo "<pre>Found old one ".$feedback['Name'].' '.$dirname.$fparsed['basename'].CRLF;
@@ -602,7 +580,6 @@ function fireTVreboot($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-
 	debug($feedback, 'feedback');
 	return $feedback;		// GET OUT
 
@@ -619,7 +596,6 @@ function fireTVnetflix($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-
 	debug($feedback, 'feedback');
 	return $feedback;               // GET OUT
 
@@ -636,9 +612,8 @@ function fireTVkodi($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-
 	debug($feedback, 'feedback');
-	return $feedback;               // GET OUT
+	return $feedback;              
 
 }
 
@@ -653,7 +628,6 @@ function fireTVcamera($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-
 	debug($feedback, 'feedback');
 	return $feedback;               // GET OUT
 
@@ -670,7 +644,6 @@ function fireTVsleep($params) {
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-
 	debug($feedback, 'feedback');
 	return $feedback;               // GET OUT
 
@@ -1032,7 +1005,6 @@ function sendGenericHTTP(&$params) {
 			fwrite($client, $binout);
 			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
-			//echo "**>**".print_r($feedback['result'])."**<**";
 		}
 		// TODO:: Error handling (GCache errors)
 		// completeir,1:1,2
@@ -1051,7 +1023,6 @@ function sendGenericHTTP(&$params) {
 		//decodeTPLink(base64_decode($feedback['commandstr']));
 		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $params['command']['command'], $params['device']['connection']['timeout']);
 //		$feedback['result'][] = sendtoplug($ipaddress, $params['device']['connection']['targetport'], $p, $params['device']['connection']['timeout']);
-//		print_r($feedback['result']);
 		break;
 	case null:
 	case "NONE":          // Virtual Devices
@@ -1139,14 +1110,8 @@ function graphCreate($params) {
 	debug($mysql, 'mysql');
 
 	$feedback['result'] = array();
-	$feedback['message'] = '</div>';	// close system message frame
+	$feedback['message'] = '<HTML>';	// close system message frame
 	if ($rows = FetchRows($mysql)) {
-		//print_r($rows);
-
-		// global $mysql_link;
-		// mysql_close($mysql_link);
-		// openMySql();
-
 
 		$mysql='SELECT * FROM ha_mi_properties_graph WHERE propertyID IN ('.$properties.');';
 		$rowsprops = FetchRows($mysql);
@@ -1158,9 +1123,6 @@ function graphCreate($params) {
 		//
 		// Average datapoint 
 		// 		Average point 
-// echo "<pre>";
-// echo count($rows)."   ".round(count($rows)/MAX_DATAPOINTS);
-// print_r($rows);
 			$average_count = round(count($rows)/MAX_DATAPOINTS);
 			$avg_loop = 0;
 			$avg_temp = array();
@@ -1170,7 +1132,6 @@ function graphCreate($params) {
 					$avg_temp[] = $item;
 					$avg_loop++;
 				} else {							// Average and add to output
-// print_r($avg_temp);
 					$avgArray = array();
 					foreach ($avg_temp as $k=>$subArray) {		// Sum in $avgArray
 						foreach ($subArray as $key=>$value) {
@@ -1182,7 +1143,12 @@ function graphCreate($params) {
 								$avgCount[$key] = 0;
 							} else {
 								if (strlen(trim($value))) {			// Non empty 
-									if (array_key_exists($key, $avgArray)) {
+									// echo '<pre>';
+									// print_r($subArray);
+									// echo $key.'<br.>';
+									// var_dump( $avgArray[$key]).'<br.>';
+									// echo '</pre>';
+									if (array_key_exists($key, $avgArray) && is_numeric($avgArray[$key])) {
 											$avgArray[$key] = $avgArray[$key] + $value;
 											$avgCount[$key]++;
 									} else {
@@ -1202,18 +1168,18 @@ function graphCreate($params) {
 						if ($avgCount[$key]==0) {
 							$avgArray[$key] = $value;
 						} else {
+									// echo '<pre>';
+									// print_r($value);
+									// echo $avgCount[$key].'<br.>';
+									// echo '</pre>';
 							$avgArray[$key] = ($value/$avgCount[$key]);
 						}
 					}
-// print_r($avgArray);
-// print_r($avgCount);
 					$avg_rows[] = $avgArray;
 					$avg_temp = array();
 					$avg_loop = 0;
 				}
 			}
-// print_r($avg_rows);
-// echo "</pre>";
 			// $rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
 			// $s = $rows[0]['Date'];
 			// $e = $rows[count($rows)-1]['Date'];
@@ -1231,7 +1197,7 @@ function graphCreate($params) {
 		//echo $tickinterval.CRLF;
 		//echo count($rows).CRLF;
 		$feedback['message'] .= '<table id="'.$tablename.'" class="'.$tablename.$hidden.' table table-striped table-hover" data-graph-xaxis-type="datetime" data-graph-yaxis-2-opposite="1" 
-				data-graph-xaxis-tick-interval="'.$tickinterval.'" data-graph-xaxis-align="right" data-graph-xaxis-rotation="270" data-graph-type="spline" 
+				data-graph-xaxis-tick-interval="'.$tickinterval.'" data-graph-xaxis-align="right" style="display:none;" data-graph-xaxis-rotation="270" data-graph-type="spline" 
 				data-graph-container-before="1" data-graph-zoom-type="x" data-graph-height="500" >';
 		//data-graph-xaxis-type="datetime"
 
@@ -1243,7 +1209,6 @@ function graphCreate($params) {
 			if ($header != "id") {
 				$datastr="";
 				if ($header != "Date") {
-					//print_r($rows[0]);
 					$t = explode('`',$header);
 					$propID = getProperty($t[0])['id'];
 					if (($prodIdx = findByKeyValue($rowsprops,'propertyID',$propID)) !== false) {
@@ -1321,7 +1286,6 @@ function sendEchoBridge($params) {
 
 		$vlosite = VLO_SITE."process.php?";
 		if ($in_commands = FetchRows($mysql)) {
-		// print_r($in_commands);
 			unset($send_params);
 			$send_params['id'] = (empty($in_commands[0]['bridge_id']) ? null : $in_commands[0]['bridge_id']);
 			$send_params['name'] = $in_commands[0]['description'];
@@ -1337,7 +1301,6 @@ function sendEchoBridge($params) {
 				}
 			}
 		}
-	//echo "<pre>";print_r($send_params);echo "</pre>";
 
 /*
 Add Device - Post
@@ -1399,7 +1362,6 @@ Update - Put
 				$result = $curl->getresponse();
 				$feedback['result'][] = $result;
 				$result = json_decode($result,true);
-				// print_r($result);
 				PDOupdate("ha_voice_devices", array('bridge_id' => $result[0]['id']), array( 'id' => $vcID));
 			}
 		}
@@ -1449,8 +1411,6 @@ function decodeTPLink($raw) {
  }
  printf("\n");
 }*/
-//echo "<pre>";
-//echo "instring:".base64_encode($raw).CRLF;
 $code = chr(0xAB);
 $decoded = "";
 $c = substr( $raw, 4, 1 );
@@ -1459,9 +1419,6 @@ for( $i = 5; $i <= strlen($raw); $i++ ) {
     $code = $c;
     $c = substr( $raw, $i, 1 );
 }
-//echo "decoded:".$decoded.CRLF;
-//print_r(json_decode($decoded));
-//echo "</pre>";
 return json_decode($decoded,TRUE);
 }
 
@@ -1523,9 +1480,6 @@ function checkSyslog(&$params) {
 
 	//$devs = getDeviceProperties(array('description' => "Syslog Name"));
 	
-	// echo "<pre>".$feedback['Name'].': '; print_r($devs); echo "</pre>";
-
-
         $mysql = 'SELECT m.`deviceID`, s.`period`, s.`host`, sum(`sum`) as sum FROM `net_syslog_mapping` m 
                   RIGHT JOIN `net_syslog_stats` s ON s.host = m.fromhost 
                   WHERE DATE(s.`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY m.`deviceID`,s.`period`,s.`host` ';
@@ -1533,14 +1487,11 @@ function checkSyslog(&$params) {
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
 			$feedback['result']['debug'][]=$row;
-			// $dev = search_array_key_value($devs, 'value', $row['host']);
-			// echo "<pre>".$feedback['Name'].': '; print_r($dev); echo "</pre>";
 			if (empty($row['deviceID'])) {		// Not found
 				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>SCHEME_ALERT_NORMAL, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
 			} else {
 				$props = getDeviceProperties(array('deviceID' => $row['deviceID'])); 
 				$feedback['result']['debug'][]=$props;
-				// echo "<pre>".$feedback['Name'].' Props: '; print_r($props); echo "</pre>";
 				if (array_key_exists('Log Entries Critical Alert',$props) && $row['sum']>$props['Log Entries Critical Alert']['value']) {	// Critical
 					$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  'schemeID'=>SCHEME_ALERT_CRITICAL, 'commandvalue'=>' - Critical syslog messages: '.$row['sum']));
 				} else if (array_key_exists('Log Entries High Alert',$props) && $row['sum']>$props['Log Entries High Alert']['value']) {	// High
@@ -1563,15 +1514,21 @@ function checkDriveCapacity(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "";
 
-    $mysql = 'SELECT * FROM `os_df` WHERE capacity >= "90%"';
+        $mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 80';
+        
 	$deviceID = null;
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
 			$feedback['result']['debug'][]=$row;
 			$mysql = 'SELECT id FROM `ha_mf_devices` WHERE shortdesc ="'.$row['hostname'].'"';
 			if ($device = FetchRow($mysql)) $deviceID = $device['id']; 
-			$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
-				'schemeID'=>SCHEME_ALERT_HIGH, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
+			if ($row['capacity'] >= 95) {
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
+					'schemeID'=>SCHEME_ALERT_CRITICAL, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
+			} else {
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
+					'schemeID'=>SCHEME_ALERT_HIGH, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
+			}
 		}
 	}
 	debug($feedback, 'feedback');
@@ -1603,8 +1560,6 @@ function executeQuery($params) {
 	// $feedback['message'] = '';
 	// $feedback['error'] = "Error copying: ";
 	
-	// // echo "<pre>***".$feedback['Name'].CRLF;
-	// // print_r($params);
 	// $lastfile="";
 
 	// // User callerID instead
@@ -1624,7 +1579,6 @@ function executeQuery($params) {
 		// }
 	// }
 
-	// // print_r($list);
 	// $numfiles = 0;
 	// $feedback['commandstr'] = "MyCopy";
 	// foreach($list as $file) {
@@ -1713,15 +1667,11 @@ function extractVids($params) {
 	$result = readDirs($dir.LOCAL_IMPORT, $params['importprocess']);
 	$feedback['result']['files'] = $result['result'];
 
-//	print_r($files);
 
         foreach ($feedback['result']['files'] as $index => $file) {
 		if (strtolower($file['extension'])=='mp4') {
-//	 		print_r($file);
 			$oldname = $file['dirname'].$file['basename'];
 			$newname = $dir.'vids/'.$file['basename'];
-//			echo "oldname: $oldname".CRLF;
-//			echo "newname: $newname".CRLF;
 
 			$fp = fopen($oldname, "r+");
 			if (!flock($fp, LOCK_EX|LOCK_NB, $wouldblock)) {
@@ -1759,9 +1709,6 @@ function extractVids($params) {
 			}
 		}
 	}
-
-//	print_r($feedback);
-//	echo "<pre>".CRLF;
 
 	debug($feedback, 'feedback');
 	return $feedback;

@@ -19,11 +19,6 @@ set_time_limit(0);
 //	$result = $db->execute();
 //}
 
-//print_r($this->data);
-//echo $this->data['mc_import_mongoDB___period_raw'].'</br>';
-//echo $this->data['mc_import_mongoDB___filename'].'</br>';
-//print_r($this->data['mc_import_mongoDB___db_name_raw']);
-//echo $this->data['mc_import_mongoDB___db_name_raw'][0].'</br>';
 
 $file = $this->data['mc_import_mongoDB_tickets___filename'];
 //$type = $this->data['mc_import_mongoDB___file_type_raw'];
@@ -43,16 +38,9 @@ $count = 0;
 
 $dataArray = $dataArray['result'];
 
-//print_r($dataArray);
-//exit; 
  
 
 foreach ($dataArray as $key => $ticket) {
-//	unset($dataArray[$key]['migrated']);
-
-
-//	echo "$key $user".'</br>';
-//	print_r($dataArray[$key]);
 	$dataArray[$key]['siteID'] =  $this->data['mc_import_mongoDB_tickets___siteID'];
 	$dataArray[$key]['importdate'] = date("Y-m-d H:i:s",time());
 	$dataArray[$key]['main_productID'] = 4;
@@ -77,9 +65,6 @@ foreach ($dataArray as $key => $ticket) {
 	// Create a new query object.
 
 
-//	print_r($columns);
-//	print_r($values);
-
 	foreach($values as $vk => $value) {
 		$values[$vk] = $db->quote($value);
 	} 
@@ -102,7 +87,4 @@ foreach ($dataArray as $key => $ticket) {
 
 
 JFactory::getApplication()->enqueueMessage("$count Records imported.");
-//print_r($dataArray);
-
-//echo "</pre>";
 return;
