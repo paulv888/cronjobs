@@ -381,7 +381,7 @@ function getNowPlaying(&$params) {
 			}
 			$properties['File']['value'] = $result['result']['item']['file'];
 			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
-			$properties['PlayingID']['value'] =  $result['result']['item']['id'];
+			if (array_key_exists('id', $result['result']['item'])) $properties['PlayingID']['value'] =  $result['result']['item']['id'];
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
 		} else {
@@ -956,6 +956,7 @@ function sendGenericHTTP(&$params) {
 			debug($feedback['commandstr'],'DELETE - Sending');
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
+		$feedback['HTTP'] = $curl->getresponsecode();
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) 
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
@@ -975,6 +976,7 @@ function sendGenericHTTP(&$params) {
 		$feedback['commandstr'] = $url.implode('/', array_map('rawurlencode', explode('/', $tcomm)));
 		debug($url.$tcomm, 'GET - Sending');
 		$curl = restClient::get($url.$tcomm, null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
+		$feedback['HTTP'] = $curl->getresponsecode();
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 		else 
