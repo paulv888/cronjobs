@@ -685,7 +685,9 @@ function AddPlaylistOneByOne($playlist) {
 
 function findSongsByArtist($find, $latest = false) {
 
-	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE `artist` REGEXP "[[:<:]]'.$find.'[[:>:]]" '; 
+	$where = str_replace('SEARCHFIELD','`artist`',breakWords($find));
+	
+	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE '.$where; 
 	if (!$latest) 
 		$mysql .= 'ORDER BY RAND() LIMIT 500'; 
 	else
@@ -697,7 +699,10 @@ function findSongsByArtist($find, $latest = false) {
 }
 
 function findSongsByTitle($find) {
-	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE `title`  REGEXP "[[:<:]]'.$find.'[[:>:]]" ORDER BY RAND() LIMIT 500'; 
+	
+	$where = str_replace('SEARCHFIELD','`title`',breakWords($find));
+
+	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE  '.$where.' ORDER BY RAND() LIMIT 500'; 
 	$found = FetchRows($mysql);
 	return $found;
 //33034 	397 	Gravity Of Love 	Enigma 	Classical 	musicvideo 	-1 	smb://SRVMEDIA/media/My Music Videos/Classical/Eni... 	35 	Enigma - Gravity Of Love.mp4 	6 	2016-12-22 02:41:08 	2012-01-21 20:12:58 	1234567890
@@ -705,10 +710,33 @@ function findSongsByTitle($find) {
 }
 
 function findSongsByGenre($find) {
-	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE `genre`  REGEXP "[[:<:]]'.$find.'[[:>:]]" ORDER BY RAND() LIMIT 500'; 
+	$where = str_replace('SEARCHFIELD','`genre`',breakWords($find));
+
+	$mysql = 'SELECT * FROM `xbmc_video_musicvideos` WHERE '.$where.' ORDER BY RAND() LIMIT 500'; 
 	$found = FetchRows($mysql);
 	return $found;
 //33034 	397 	Gravity Of Love 	Enigma 	Classical 	musicvideo 	-1 	smb://SRVMEDIA/media/My Music Videos/Classical/Eni... 	35 	Enigma - Gravity Of Love.mp4 	6 	2016-12-22 02:41:08 	2012-01-21 20:12:58 	1234567890
 //33035 	398 	Indian Chanting 	Enigma 	Classical 	musicvideo 	-1 	smb://SRVMEDIA/media/My Music Videos/Classical/Eni... 	35 	Enigma - Indian Chanting.flv 	7 	2017-07-08 13:13:30 	2011-08-14 12:36:06 	1234567890
 }
+
+function breakWords($find) {
+
+	$words = explode(' ', $find);
+	
+	$x = 0;
+	$wordCount = count($words);
+	do {
+		if ($x == 0) {
+			$where =  ($wordCount == 1 ? 'SEARCHFIELD LIKE "'.$words[$x].'"' : 'SEARCHFIELD LIKE "'.$words[$x].' %"');
+		}
+		if ($x > 0) {
+			$where .=  ($x < $wordCount-1 ? ' AND SEARCHFIELD LIKE "% '.$words[$x].' %"' : ' AND SEARCHFIELD LIKE "% '.$words[$x].'"');
+		}
+		$x++;
+	} while ($x <= $wordCount - 1);
+	
+	return $where;
+	
+}
+
 ?>
