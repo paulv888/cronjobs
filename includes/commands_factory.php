@@ -1536,6 +1536,26 @@ function checkDriveCapacity(&$params) {
 	debug($feedback, 'feedback');
 	return $feedback;
 }
+function updateTimelapses(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'updateTimelapses';
+	$feedback['result'] = array();
+	$feedback['message'] = "";
+
+    $columns = ['deviceID', 'mdate', 'file', 'size'];
+	$values = explode('|', $params['commandvalue']);
+    $pairs = array_combine( $columns , $values );
+	$pairs['size'] = $pairs['size']/1024/1024;
+	$pairs['size'] = round($pairs['size'],1);
+	$pairs['mdate'] = substr($pairs['mdate'],0,4).'-'.substr($pairs['mdate'],4,2).'-'.substr($pairs['mdate'],6,2);
+	$pairs['lastfiletime'] = date('H:i:s');
+	$feedback['commandstr'] = $pairs;
+	$feedback['result'] = PDOupsert('ha_cam_timelapses', $pairs, Array('file' => $pairs['file']) );
+	debug($feedback, 'feedback');
+	return $feedback;
+}
 
 function executeQuery($params) {
 
