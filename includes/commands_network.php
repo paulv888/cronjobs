@@ -305,10 +305,9 @@ function getDrives(&$params) {
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
-        $cmd = 'ssh root@'.$hostName.' df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
-        //$cmd = 'df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+        $cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
         $output = shell_exec($cmd);
-        debug($output);
+        debug($output, 'shell_exec');
         $feedback['result'][$hostName] = $output;
 
         $lines = explode(PHP_EOL, $output);
