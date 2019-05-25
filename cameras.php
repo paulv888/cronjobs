@@ -43,6 +43,7 @@ function readCameras() {
 		$cameras[getLastKey($cameras)]['previous_properties'] = getDeviceProperties(Array('deviceID' => $cam['deviceID']));
 	}
 	//
+//	print_r($cameras);
 	return $cameras;
 }
 
@@ -68,14 +69,26 @@ function movePictures($camera) {
 			return $camera;
 		}
 		
+//  echo '<pre>';
+//  print_r($files);
+//print_r($filetimes);
+//  echo '</pre>';
+
+		//array_multisort($filetimes, $files); 
 		asort($files);
+		//echo '<pre>';
+		//print_r($files);
+		//print_r($filetimes);
+//echo "</pre>";
 		$seq = 0;
 		$group_dir = null;
 		$numfiles = 0;
 
+		// Sleep .5 second before moving...
 		sleep(10);
 		foreach ($files as $index => $file) {
 			$filetime = $filetimes[$index];		// Time of currently handled file
+			// echo ">$file<".CRLF;
 
 			$datedir = date ("Y-m-d", $filetime);
 			if (is_null($group_dir)) {		// Did we find a group dir? If not find the last one and the num files in it
@@ -130,7 +143,8 @@ function movePictures($camera) {
 			$camera['lastfiletime'] = $filetime;
 			//echo $dir.$file.'->';
 			//echo $targetdir.'/'.date("Y-m-d H:i:s",$filetime).'_'.str_pad($seq, 2, '0', STR_PAD_LEFT).'.jpg'.CRLF;
-			$newfilename = $targetdir.'/'.date('Y-m-d His',$filetime).'_'.str_pad($seq++, 2, '0', STR_PAD_LEFT).'.jpg';
+			//$newfilename = $targetdir.'/'.date('Y-m-d His',$filetime).'_'.str_pad($seq++, 2, '0', STR_PAD_LEFT).'.jpg';
+			$newfilename = $targetdir.'/'.$file;
 			rename($dir.$file, $newfilename);
 			$numfiles++;
 		}	// Handled all file in old to new order
@@ -226,6 +240,7 @@ function closeGroup($camera) {
 					//uploadPictures($camera);
 				} elseif ($alarm1on && !$camera['highalert'] && !empty($camera['previous_properties']['Cam Pics High Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics High Alert']['value'])  {
 					echo $camera['description']." Creating High Alert.".CRLF;
+					//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 					$camera['highalert'] = true;
 					$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
@@ -263,6 +278,7 @@ function findLastGroupDir($dir) {
 			closedir($handle);
 			if (count($files)>0) {
 				sort($files);
+//print_r($files);
 				return end($files);
 			}
 			return null;
@@ -275,8 +291,9 @@ function uploadPictures($camera) {
 
 //Send through create alert
 
+	$mutedon = getDeviceProperties(Array('deviceID' => DEVICE_MOTION_MUTED, 'description' => 'Status'))['value'] == "1";
 	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
-	if (array_key_exists('Send Pushbullet on Alert', $camera['previous_properties']) && $camera['previous_properties']['Send Pushbullet on Alert']['value'] == 'Y') {
+	if ($mutedon && array_key_exists('Send Pushbullet on Alert', $camera['previous_properties']) && $camera['previous_properties']['Send Pushbullet on Alert']['value'] == 'Y') {
 
 		$targetdir = $camera['datedir'].'/'.$camera['group_dir'];
 

@@ -298,4 +298,42 @@ function getDeviceList(&$params) {
 	return $feedback;
 
 }
+
+function getDrives(&$params) {
+
+        $hostName = $params['device']['shortdesc'];
+        $deviceID = $params['device']['id'];
+        $feedback['Name'] = 'getDrives';
+        $feedback['result'] = array();
+        $cmd = 'ssh root@'.$hostName.' df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+        //$cmd = 'df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+        $output = shell_exec($cmd);
+        debug($output);
+        $feedback['result'][$hostName] = $output;
+
+        $lines = explode(PHP_EOL, $output);
+        $feedback['result'][] = $lines;
+
+        $columns = ["deviceID", "filesystem", "blocks", "used", "available", "capacity", "mounted"];
+        $x = 0;
+        foreach ($lines as $line) {
+                $x++;
+                if ($x == 1) continue;
+                if (empty($line)) continue;
+                $line = $deviceID.' '.$line;
+                $values = preg_split('/\s+/', $line, -1, PREG_SPLIT_NO_EMPTY);
+                $values[0] = $deviceID;
+                $pairs = array_combine ( $columns , $values );
+//                print_r($pairs);
+                PDOinsert('os_df', $pairs );
+
+                $properties[substr($pairs['filesystem'], -4).' Size']['value'] = $pairs['blocks'];
+                $properties[substr($pairs['filesystem'], -4).' Capacity']['value'] = $pairs['capacity'];
+
+        }
+
+        $params['device']['properties'] = $properties;
+        return $feedback;
+
+}
 ?>
