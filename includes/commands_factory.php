@@ -1150,16 +1150,16 @@ function graphCreate($params) {
 									// echo $key.'<br.>';
 									// var_dump( $avgArray[$key]).'<br.>';
 									// echo '</pre>';
-									if (array_key_exists($key, $avgArray) && is_numeric($avgArray[$key])) {
-											$avgArray[$key] = $avgArray[$key] + $value;
+									if (array_key_exists($key, $avgArray)) {
+											$avgArray[$key] = $avgArray[$key] + (float)$value;
 											$avgCount[$key]++;
 									} else {
-										$avgArray[$key] = $value;
+										$avgArray[$key] = (float)$value;
 										$avgCount[$key] = 1;
 									}
 								} else {
 									if (!array_key_exists($key, $avgArray)) {		// if first one found then store space
-										$avgArray[$key] = $value;
+										$avgArray[$key] = (float)$value;
 										$avgCount[$key] = 0;
 									}
 								}
@@ -1272,6 +1272,25 @@ function graphCreate($params) {
 	debug($feedback, 'feedback');
 	return $feedback;
 
+}
+
+function loadSAR($params) {
+	debug($params, 'params');
+	$feedback['message'] = '<HTML>';	// close system message frame
+	$feedback['result'] = array();
+	parse_str(urldecode($params['commandvalue']), $fparams);
+	debug($fparams, 'fparams');
+	splitCommandvalue($params);
+	if (empty($params['value_parts'][0])) $feedback['error'] = "Please select a Date";
+	if (empty($params['value_parts'][1])) $feedback['error'] = "Please select a Server";
+	if (empty($params['value_parts'][2])) $feedback['error'] = "Please select a Report Option";
+	if (!empty($feedback['error'])) return $feedback;
+$sarDATA = '/data/sarDATA/';
+$myDate = substr($params['value_parts'][0], 5, 2).'_'.substr($params['value_parts'][0], 8, 2).'_'.substr($params['value_parts'][0], 0, 4);
+//	$feedback['message'] .= 'Date '.$params['value_parts'][0].'Server '.$params['value_parts'][1].'Option '.$params['value_parts'][2];
+//	$feedback['message'] .= '<br/>'.$myDate;
+	$feedback['message'] .= '<img style="width:100%" src="'.$sarDATA.$params['value_parts'][1].'/graphs/'.$myDate.'-'.$params['value_parts'][2].'.svg" alt="SAR Data was supoed to show here" />';
+	return $feedback;
 }
 
 function sendEchoBridge($params) {
