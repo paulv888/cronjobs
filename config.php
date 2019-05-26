@@ -1,0 +1,34 @@
+<?php
+define("SERVER_HOME", "https://home.vloons.com");		// SRVMEDIA - ASYNC
+define("SITE_NAME", "Vlo Home");
+define("VLO_SITE", "http://192.168.2.101/");
+define("PUSH_CHANNEL", "vlohome");
+define("MY_SUBNET", "192.168.2");
+define("MY_VPN_SUBNET", "192.168.10");
+
+define("LOCAL_L_DATA", "/mnt/ldata");
+define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos");
+
+if (strtoupper(gethostname()) == "VLOSITE") {
+	define("DOCUMENT_ROOT", "/home/www/vlohome");
+	define("LOCAL_DATA", DOCUMENT_ROOT."/data");
+	define("LOCAL_MUSIC_VIDEOS", LOCAL_DATA."/musicvideos");
+	define("LOCAL_PLAYLISTS", LOCAL_DATA."/mydocs/My Playlists");
+} else {
+	define("DOCUMENT_ROOT", "/mnt");
+	define("LOCAL_DATA", DOCUMENT_ROOT."/data");
+	define("LOCAL_MUSIC_VIDEOS", LOCAL_DATA."/My Music Videos");
+	define("LOCAL_PLAYLISTS", LOCAL_DATA."/Documents/My Playlists");
+}
+define("LOCAL_CAMERAS", LOCAL_L_DATA."/cameras");
+define("LOCAL_LASTIMAGEDIR", LOCAL_CAMERAS."/lastimage");
+define("LOCAL_RECYCLE", LOCAL_MUSIC_VIDEOS."/_XXX_recyclebin");
+define("LOCAL_IMPORT", LOCAL_MUSIC_VIDEOS."/_XXX_import");
+
+define("PUBLIC_LASTIMAGEDIR", "/data/cameras/lastimage");
+
+define("SCHEME_ALERT_PDO", 309);
+define("COMMAND_SNAPSHOT", 450);
+
+
+?>

@@ -1289,7 +1289,8 @@ $sarDATA = '/data/sarDATA/';
 $myDate = substr($params['value_parts'][0], 5, 2).'_'.substr($params['value_parts'][0], 8, 2).'_'.substr($params['value_parts'][0], 0, 4);
 //	$feedback['message'] .= 'Date '.$params['value_parts'][0].'Server '.$params['value_parts'][1].'Option '.$params['value_parts'][2];
 //	$feedback['message'] .= '<br/>'.$myDate;
-	$feedback['message'] .= '<img style="width:100%" src="'.$sarDATA.$params['value_parts'][1].'/graphs/'.$myDate.'-'.$params['value_parts'][2].'.svg" alt="SAR Data was supoed to show here" />';
+	$date=date_create();
+	$feedback['message'] .= '<img style="width:100%" src="'.$sarDATA.$params['value_parts'][1].'/graphs/'.$myDate.'-'.$params['value_parts'][2].'.svg?t='.date_timestamp_get($date).'" alt="SAR Data was supoed to show here" />';
 	return $feedback;
 }
 
@@ -1752,6 +1753,46 @@ function extractVids($params) {
 	}
 
 	debug($feedback, 'feedback');
+	return $feedback;
+
+}
+
+function refreshSAR(&$params) {
+
+	$hostName = $params['device']['connection']['targetaddress'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'refreshSAR';
+	$feedback['result'] = array();
+	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/collect_sar';
+	$feedback['commandstr'] = $cmd;
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	if (!empty(trim($output))) $feedback['error'] = $output;
+	$feedback['result'][$hostName] = $output;
+	return $feedback;
+}
+
+
+function switchMotionEye(&$params) {
+
+	$hostName = $params['device']['connection']['targetaddress'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'switchMotionEye';
+	$feedback['result'] = array();
+	if ($params['device']['previous_properties']['Status']['value'] == STATUS_ON) {
+		$params['device']['properties']['Status']['value'] = STATUS_OFF;
+		$onoff = 'off';
+	} else {
+		$params['device']['properties']['Status']['value'] = STATUS_ON;
+		$onoff = 'on';
+	}
+	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/meye '.$onoff;
+	$feedback['commandstr'] = $cmd;
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	if (!empty(trim($output))) $feedback['error'] = $output;
+	$feedback['result'][$hostName] = $output;
+
 	return $feedback;
 
 }
