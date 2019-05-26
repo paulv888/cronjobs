@@ -380,6 +380,8 @@ if(!window.scriptRemoteHasRun) {
 		
 		var debug = getUrlParameter('debug');
 		params.debug = debug;
+		var d = new Date();
+		params.time = +d.getTime();
 		
 		var keysRequest = jQuery.ajax({
 				dataType: "json",
