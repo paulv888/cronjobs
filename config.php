@@ -6,7 +6,7 @@ define("PUSH_CHANNEL", "vlohome");
 define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 
-define("LOCAL_L_DATA", "/mnt/ldata");
+define("LOCAL_L_DATA", "/mnt/data");
 define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos");
 
 if (strtoupper(gethostname()) == "VLOSITE") {
