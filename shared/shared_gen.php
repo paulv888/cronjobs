@@ -84,45 +84,59 @@ function dec2hex($num,$count=0)
         return strrev($ret);
 }
 
-function createthumb($name,$filename,$new_w,$new_h, $text = "")
+function createthumb($name,$destination,$new_w,$new_h, $text = "")
 {
 	$system=explode(".",$name);
 	if (preg_match("/jpg|jpeg/",$system[1])){$src_img=imagecreatefromjpeg($name);}
 	if (preg_match("/png/",$system[1])){$src_img=imagecreatefrompng($name);}
 	$old_x=imageSX($src_img);
 	$old_y=imageSY($src_img);
-	if ($old_x > $old_y) 
-	{
-		$thumb_w=$new_w;
-		$thumb_h=$old_y*($new_h/$old_x);
+	if ($new_w < $old_x) {
+		if ($old_x > $old_y) 
+		{
+			$thumb_w=$new_w;
+			$thumb_h=(int)($old_y*($new_h/$old_x));
+		}
+		if ($old_x < $old_y) 
+		{
+			$thumb_w=(int)($old_x*($new_w/$old_y));
+			$thumb_h=$new_h;
+		}
+		if ($old_x == $old_y) 
+		{
+			$thumb_w=$new_w;
+			$thumb_h=$new_h;
+		}
+
+		// echo $thumb_w.CRLF;
+		// echo $thumb_h.CRLF;
+		
+		//set image type and set image name
+		$dpath = pathinfo($destination);
+		// print_r($dpath);
+		$ipath = pathinfo($name);
+		// print_r($ipath);
+		$itype = strtolower($ipath["extension"]);
+		$iname = $dpath["filename"]."_".$thumb_w."_".$thumb_h.'.'.$itype;
+		// echo $dpath['dirname'].'/'.$iname.CRLF;
+		$dst_img=ImageCreateTrueColor($thumb_w,$thumb_h);
+		imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y); 
+		if ($text != "") {
+			$white = imagecolorallocate($dst_img, 0xff, 0xff, 0xff);
+			$grey = imagecolorallocate($dst_img, 128, 128, 128);
+			$font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+			imagettftext($dst_img, 12, 0, 11, 21, $grey, $font, $text);
+			imagettftext($dst_img, 12, 0, 10, 20, $white, $font, $text);
+		}
+		if (preg_match("/png/",$system[1]))
+		{
+			imagepng($dst_img,$dpath['dirname'].'/'.$iname); 
+		} else {
+			imagejpeg($dst_img,$dpath['dirname'].'/'.$iname); 
+		}
+		imagedestroy($dst_img); 
+		imagedestroy($src_img); 
 	}
-	if ($old_x < $old_y) 
-	{
-		$thumb_w=$old_x*($new_w/$old_y);
-		$thumb_h=$new_h;
-	}
-	if ($old_x == $old_y) 
-	{
-		$thumb_w=$new_w;
-		$thumb_h=$new_h;
-	}
-	$dst_img=ImageCreateTrueColor($thumb_w,$thumb_h);
-	imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y); 
-	if ($text != "") {
-		$white = imagecolorallocate($dst_img, 0xff, 0xff, 0xff);
-		$grey = imagecolorallocate($dst_img, 128, 128, 128);
-		$font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
-		imagettftext($dst_img, 12, 0, 11, 21, $grey, $font, $text);
-		imagettftext($dst_img, 12, 0, 10, 20, $white, $font, $text);
-	}
-	if (preg_match("/png/",$system[1]))
-	{
-		imagepng($dst_img,$filename); 
-	} else {
-		imagejpeg($dst_img,$filename); 
-	}
-	imagedestroy($dst_img); 
-	imagedestroy($src_img); 
 }
 
 //clean all empty values from array

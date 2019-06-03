@@ -125,19 +125,23 @@ function movePictures($camera) {
 				$camera['filetime'] = $filetime;
 				$camera = openGroup($camera);
 				$targetdir = $dir.$datedir.'/'.$group_dir;
+				if (!file_exists($dir)) {
+					mkdir($dir);
+				}
+				if (!file_exists($dir.$datedir)) {
+					mkdir($dir.$datedir);
+				}
+				if (!file_exists($targetdir)) {
+					mkdir($targetdir);
+					// echo "TargetDir: ".$targetdir.CRLF;
+				}
+				if (!file_exists($targetdir.'/vsig_thumbs')) {
+					mkdir($targetdir.'/vsig_thumbs');
+					echo "TargetDir: ".$targetdir.'/vsig_thumbs'.CRLF;
+				}
 				$numfiles = 0;
 			} 
 
-			if (!file_exists($dir)) {
-				mkdir($dir);
-			}
-			if (!file_exists($dir.$datedir)) {
-				mkdir($dir.$datedir);
-			}
-			if (!file_exists($targetdir)) {
-				mkdir($targetdir);
-				// echo "TargetDir: ".$targetdir.CRLF;
-			}
 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
 			$camera['lastfiletime'] = $filetime;
@@ -146,13 +150,14 @@ function movePictures($camera) {
 			//$newfilename = $targetdir.'/'.date('Y-m-d His',$filetime).'_'.str_pad($seq++, 2, '0', STR_PAD_LEFT).'.jpg';
 			$newfilename = $targetdir.'/'.$file;
 			rename($dir.$file, $newfilename);
+			makeThumbs($dir, $file, $targetdir, $newfilename);
 			$numfiles++;
 		}	// Handled all file in old to new order
 		echo $camera['description']." Creating Thumbnail.".CRLF;
 		if (!file_exists(LOCAL_LASTIMAGEDIR)) {
 			mkdir(LOCAL_LASTIMAGEDIR);
 		}
-		$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($camera['description']).'_small.jpg';
+		$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($camera['description']).'.jpg';
 		createthumb($newfilename,$thumbname,200,200, date('Y-m-d H:i:s'));
 
 		// Close group (for now)
@@ -244,7 +249,7 @@ function closeGroup($camera) {
 					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 					$camera['highalert'] = true;
 					$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___0"));
-					uploadPictures($camera);
+					//uploadPictures($camera);
 				}
 			}
 
@@ -257,8 +262,8 @@ function closeGroup($camera) {
 
 			$recording['count'] = $camera['numfiles'];
 			$recording['lastfiletime'] = date("H:i:s",$camera['lastfiletime']);
-			$recording['criticalalert'] =  $camera['criticalalert'];
-			$recording['highalert'] = $camera['highalert'];
+			if (array_key_exists('criticalalert',$camera)) $recording['criticalalert'] = $camera['criticalalert'];
+			if (array_key_exists('highalert',$camera)) $recording['highalert'] = $camera['highalert'];
 			PDOupdate("ha_cam_recordings", $recording, array('folder' => $camera['previous_properties']['Directory']['value'].'/'.$camera['datedir'].'/'.$camera['group_dir']));
 
 	return $camera;
@@ -316,6 +321,11 @@ function uploadPictures($camera) {
 	}
 	return;
 
+}
+
+function makeThumbs($dir, $file, $targetdir, $newfilename) {
+	createthumb($newfilename,$targetdir.'/vsig_thumbs/'.$file,990,990);
+	createthumb($newfilename,$targetdir.'/vsig_thumbs/'.$file,160,160);
 }
 
 function signal_handler($signo){
