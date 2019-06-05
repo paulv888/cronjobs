@@ -107,7 +107,6 @@ function createthumb($name,$destination,$new_w,$new_h, $text = "")
 			$thumb_w=$new_w;
 			$thumb_h=$new_h;
 		}
-
 		// echo $thumb_w.CRLF;
 		// echo $thumb_h.CRLF;
 		
