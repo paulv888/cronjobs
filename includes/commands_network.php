@@ -305,13 +305,20 @@ function getDrives(&$params) {
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
-        $cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+        if ($hostName != 'firebox') {
+			$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+		} else {
+			$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkht ufs';
+		}
+        debug($cmd, 'command');
         $output = shell_exec($cmd);
         debug($output, 'shell_exec');
         $feedback['result'][$hostName] = $output;
 
         $lines = explode(PHP_EOL, $output);
         $feedback['result'][] = $lines;
+
+        debug($lines, 'lines');
 
         $columns = ["deviceID", "filesystem", "blocks", "used", "available", "capacity", "mounted"];
         $x = 0;
@@ -334,5 +341,101 @@ function getDrives(&$params) {
         $params['device']['properties'] = $properties;
         return $feedback;
 
+}
+
+function natSessions(&$params) {
+
+
+   	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
+	$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
+
+
+	$hostName = $params['device']['shortdesc'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'natSessions';
+	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo  pftop -ab -f \"in and dst net 192.168.2.0/24 and src net not 192.168.2.0/24 and proto tcp\"';
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$feedback['result'][$hostName] = $output;
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+
+
+	$columns = ["class", "protocol", "flags", "remote_address", "remote_port", "local_address", "local_port", "TCPstate", "packets", "bytes"];
+	$x = 0;
+	foreach ($lines as $line) {
+			if (empty($line)) continue;
+			$x++;
+			if ($x < 3 ) continue;
+			$line = 'alert-danger '.$line;
+			$values = preg_split('/[:\s]+/', $line, -1, PREG_SPLIT_NO_EMPTY);
+			unset($values['8']);  // Split state
+			unset($values['9']);  // Expire
+			unset($values['10']);  // Age
+			
+			debug($columns, 'columns');
+			$pairs = array_combine ( $columns , $values );
+
+			$pairs['local_name']= findLocalName($pairs['local_address']); 
+			$pairs['remote_name']= gethostbyaddr($pairs['remote_address']); 
+			$pairs['active']= 1; 
+			debug($pairs, 'pairs');
+
+			PDOupsert('`net_sessions`', $pairs, array('remote_address' => $pairs['remote_address'], 'remote_port' => $pairs['remote_port'], 'local_address' => $pairs['local_address'], 'local_port' => $pairs['local_port']));
+
+			// $properties[substr($pairs['filesystem'], -4).' Size']['value'] = $pairs['blocks'];
+			// $properties[substr($pairs['filesystem'], -4).' Capacity']['value'] = $pairs['capacity'];
+
+	}
+
+	// $params['device']['properties'] = $properties;
+
+	$feedback['result']['moveHistory'] = MoveHistory()." Sessions moved to History <br/>\r\n";
+
+
+	return $feedback;
+
+}
+
+function moveHistory() {
+    $mysql = "INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
+	$result = PDOExec($mysql);
+    $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
+	$num_rows = PDOExec($mysql);
+	return $num_rows;
+}
+
+function findLocalName($ip) {
+	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
+
+	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
+
+	$res = FetchRow($mysql);
+
+	if (!$res) mySqlError();
+
+	if ($row=FetchRow($mysql)) {
+		return  $row['name'];
+	} else {
+		$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___l1" => 'IP Address', "ha_alerts___v1" => $ip);
+		echo Alerts(ALERT_UNKNOWN_IP_FOUND,$params)." Alerts generated <br/>\r\n";
+		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
+			`ip` ,
+			`mac` ,
+			`name` ,
+			`connection` ,
+			`trusted`
+			)
+		VALUES (' . 
+			'"'.$ip.'",'.
+			'"",'.
+			'"**Unknown",'.
+			'"",'.
+			'"0");';
+		if (!mysql_query($mysql)) mySqlError($mysql);	
+	}
+	return "***Unknown";
 }
 ?>
