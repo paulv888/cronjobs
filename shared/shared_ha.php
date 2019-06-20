@@ -503,10 +503,10 @@ function logEvent($log) {
 	elseif (isset($_SERVER['REMOTE_ADDR']) && $_SERVER['REMOTE_ADDR'] != '')
         	$log['ip'] = $_SERVER['REMOTE_ADDR'];
 	if (array_key_exists('ip', $log)) {
-		if ($lname = findLocalName($log['ip'])) {
+		if ($lname = gethostbyaddr($log['ip'])) {
 			$log['ip'] = $lname; 
 		} else {
-			$log['ip'] = findRemoteName($log['ip']);
+			$log['ip'] = gethostbyaddr($log['ip']);
 		}
 	}
  	if (!array_key_exists('deviceID', $log)) $log['deviceID'] = 0;
