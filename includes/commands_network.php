@@ -378,7 +378,7 @@ function natSessions(&$params) {
 			debug($columns, 'columns');
 			$pairs = array_combine ( $columns , $values );
 
-			$pairs['local_name']= findLocalName($pairs['local_address']); 
+			$pairs['local_name']= gethostbyaddr($pairs['local_address']); 
 			$pairs['remote_name']= gethostbyaddr($pairs['remote_address']); 
 			$pairs['active']= 1; 
 			debug($pairs, 'pairs');
@@ -407,35 +407,4 @@ function moveHistory() {
 	return $num_rows;
 }
 
-function findLocalName($ip) {
-	if (!defined('MY_DEVICE_ID')) define( 'MY_DEVICE_ID', DEVICE_REMOTE );
-
-	$mysql="SELECT * FROM  `ha_mf_device_ipaddress` WHERE ip='".$ip."';";  
-
-	$res = FetchRow($mysql);
-
-	if (!$res) mySqlError();
-
-	if ($row=FetchRow($mysql)) {
-		return  $row['name'];
-	} else {
-		$params = array('deviceID' => MY_DEVICE_ID, "ha_alerts___l1" => 'IP Address', "ha_alerts___v1" => $ip);
-		echo Alerts(ALERT_UNKNOWN_IP_FOUND,$params)." Alerts generated <br/>\r\n";
-		$mysql= 'INSERT INTO `ha_mf_device_ipaddress` (
-			`ip` ,
-			`mac` ,
-			`name` ,
-			`connection` ,
-			`trusted`
-			)
-		VALUES (' . 
-			'"'.$ip.'",'.
-			'"",'.
-			'"**Unknown",'.
-			'"",'.
-			'"0");';
-		if (!mysql_query($mysql)) mySqlError($mysql);	
-	}
-	return "***Unknown";
-}
 ?>
