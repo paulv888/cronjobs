@@ -90,34 +90,53 @@ function runTimerSteps($params) {
 	$deviceID = $params['callerID'];
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT st.id, t.description, st.deviceID, c.description as commandName,
-		st.commandID, st.value as commandvalue, st.runschemeID as schemeID 
+		st.commandID, st.value as commandvalue, st.runschemeID as schemeID, 
+		st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, 
+		"123" as cond_propertyID, st.cond_operator, st.cond_value
 		FROM (ha_timers t INNER JOIN ha_remote_scheme_steps st ON t.id = st.timerID
 			LEFT JOIN ha_mf_commands c ON st.commandID = c.id) 
 		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
-		
+
+
+	// $mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
+				// st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID, st.sort, st.alert_catalogID, 
+				// st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, 
+				// "123" as cond_propertyID, st.cond_operator, st.cond_value,
+				// s2.runasync as step_async 
+				// FROM ha_remote_schemes sh
+				// JOIN ha_remote_scheme_steps st ON sh.id = st.schemesID 
+				// LEFT JOIN ha_mf_commands c ON st.commandID = c.id
+				// LEFT JOIN ha_remote_schemes s2 ON st.runschemeID = s2.id
+				// WHERE sh.id ='.$schemeID.'
+				// ORDER BY st.sort';
+				
 	//$feedback['result'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
 			$description = $step['description'];
 			unset($step['description']);
-			$step['callerID'] = $params['callerID'];
-			$step['messagetypeID'] = "MESS_TYPE_COMMAND";
-			$step['loglevel'] = $params['loglevel'];
-			$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
-			if ($timer['runasync']) {
-				$getparams = http_build_query($step, '',' '); 
-				$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
-				$outputfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-o-' );
-				$pidfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-p-' );
-				echo "***".sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile)."****".CRLF;
-				exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-				$feedback['Name'] = $description;
-				if 	(!array_key_exists('result', $feedback)) $feedback['result'] = "";
-				$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
-				if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'result' => $feedback['result'] ));
+			$feedback['Name'] = $description;
+			$check_result = checkConditions(array($step), $params);
+			if ($check_result['result'][0]) {
+				$step['callerID'] = $params['callerID'];
+				$step['messagetypeID'] = "MESS_TYPE_COMMAND";
+				$step['loglevel'] = $params['loglevel'];
+				$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
+				if ($timer['runasync']) {
+					$getparams = http_build_query($step, '',' '); 
+					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
+					$outputfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-o-' );
+					$pidfile=  tempnam( sys_get_temp_dir(), 'async-T'.$timerID.'-p-' );
+					echo "***".sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile)."****".CRLF;
+					exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+					if 	(!array_key_exists('result', $feedback)) $feedback['result'] = "";
+					$feedback['result'] .= "Spawned: ".$feedback['Name']." ".$cmd." Log:".$outputfile.'</br>';
+					if ($timer['priorityID'] != PRIORITY_HIDE) logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => 316, 'data' => $timer['description'], 'result' => $feedback['result'] ));
+				} else {
+					$feedback['result']['runTimerSteps:'.$step['id'].'_'.$step['commandName']] = executeCommand($step);
+				}
 			} else {
-				$feedback['Name'] = $description;
-				$feedback['result']['runTimerSteps:'.$step['id'].'_'.$step['commandName']] = executeCommand($step);
+				$feedback['result'] = 'Skipped';
 			}
 		}
 		return $feedback;		// GET OUT
