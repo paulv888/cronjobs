@@ -97,19 +97,6 @@ function runTimerSteps($params) {
 			LEFT JOIN ha_mf_commands c ON st.commandID = c.id) 
 		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
 
-
-	// $mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
-				// st.deviceID, st.propertyID, st.commandID, st.value,st.runschemeID, st.sort, st.alert_catalogID, 
-				// st.cond_deviceID, st.has_condition as cond_type, NULL as cond_groupID, 
-				// "123" as cond_propertyID, st.cond_operator, st.cond_value,
-				// s2.runasync as step_async 
-				// FROM ha_remote_schemes sh
-				// JOIN ha_remote_scheme_steps st ON sh.id = st.schemesID 
-				// LEFT JOIN ha_mf_commands c ON st.commandID = c.id
-				// LEFT JOIN ha_remote_schemes s2 ON st.runschemeID = s2.id
-				// WHERE sh.id ='.$schemeID.'
-				// ORDER BY st.sort';
-				
 	//$feedback['result'] = "";
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {

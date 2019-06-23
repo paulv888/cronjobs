@@ -351,7 +351,8 @@ if(!window.scriptRemoteHasRun) {
 		}
 		
 		var debug = getUrlParameter('debug');
-		params.debug = debug;
+		if (typeof(debug) != "undefined") params.debug = debug;
+		console.log(params);
 		
 		var keysRequest = jQuery.ajax({
 				dataType: "json",
