@@ -72,6 +72,7 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 	$result = executeCommand($params);
 	if (is_array($result)) {
 		echo "ok";
+		// print_r($result);
 	}
 	else
 		// ob_start("ob_gzhandler");

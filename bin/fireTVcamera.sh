@@ -1,5 +1,6 @@
 #! /bin/bash
 set -x
+/home/www/ha/bin/check-connected.sh "$1"
 GALLERYNOCAM="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW"
 GALLERY="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW -e selectCameraName"
 SELECT="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.MAIN' -e selectView GALLERY_VIEW -e selectCameraName"

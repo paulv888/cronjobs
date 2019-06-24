@@ -116,7 +116,7 @@ function createthumb($name,$destination,$new_w,$new_h, $text = "")
 		$ipath = pathinfo($name);
 		// print_r($ipath);
 		$itype = strtolower($ipath["extension"]);
-		$iname = $dpath["filename"]."_".$thumb_w."_".$thumb_h.'.'.$itype;
+		$iname = $dpath["filename"]."_".$thumb_w.'.'.$itype;
 		// echo $dpath['dirname'].'/'.$iname.CRLF;
 		$dst_img=ImageCreateTrueColor($thumb_w,$thumb_h);
 		imagecopyresampled($dst_img,$src_img,0,0,0,0,$thumb_w,$thumb_h,$old_x,$old_y); 

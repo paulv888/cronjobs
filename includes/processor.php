@@ -6,7 +6,7 @@ function sendCommand(&$thiscommand) {
 	$callerparams = (array_key_exists('caller', $thiscommand) ? $thiscommand['caller'] : Array());
 	$thiscommand['loglevel'] = (array_key_exists('loglevel', $thiscommand['caller']) ? $thiscommand['caller']['loglevel'] : Null);
 	$thiscommand['deviceID'] = (array_key_exists('deviceID', $thiscommand) ? $thiscommand['deviceID'] : Null);
-	$thiscommand['deviceID'] = ($thiscommand['deviceID'] == DEVICE_CALLER_ID ? $callerparams['callerID'] : $thiscommand['deviceID']);
+	$thiscommand['deviceID'] = ($thiscommand['deviceID'] == DEVICE_CALLING_DEVICE_ID ? $callerparams['deviceID'] : $thiscommand['deviceID']);
 	if (IsNullOrEmptyString($thiscommand['deviceID'])) $thiscommand['deviceID'] = Null;
 	$thiscommand['commandID'] = (array_key_exists('commandID', $thiscommand) ? $thiscommand['commandID'] : Null);
 	$thiscommand['commandvalue'] = (array_key_exists('commandvalue', $thiscommand) ? $thiscommand['commandvalue'] : Null);
