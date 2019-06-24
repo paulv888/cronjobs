@@ -684,20 +684,25 @@ function storeCamImage($params) {
 	$file = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
 
+	debug($file, 'file imsage location');
+	debug($offline, 'offline image');
+
 	// echo "storeCamImage <pre>";
 	// echo $public_file;
 	// echo "</pre>";
 	copy($offline,$file);
+
+// echo $feedback['result']['result_raw'];
 
 	if (file_put_contents($file, $feedback['result']['result_raw']) === false) {
 		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];	
 		debug($feedback, 'feedback');
 		return $feedback;
 	}
-	$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'_medium.jpg';
+	$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	createthumb($file,$thumbname,500,500);
     
-	$feedback['result_raw'] = array('filename' => $public_file, 'filename_medium' => PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'_medium'.'.jpg'));
+	$feedback['result_raw'] = array('filename' => SERVER_HOME.$public_file, 'filename_medium' => SERVER_HOME.PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'_500'.'.jpg'));
 	
     $feedback['message'] = "Copy ".$params['command']['command'].' to '.$file;
 	unset($feedback['result']['result'][0]);
@@ -1763,7 +1768,7 @@ function refreshSAR(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'refreshSAR';
 	$feedback['result'] = array();
-	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/collect_sar';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/collect_sar';
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -1786,7 +1791,7 @@ function switchMotionEye(&$params) {
 		$params['device']['properties']['Status']['value'] = STATUS_ON;
 		$onoff = 'on';
 	}
-	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/meye '.$onoff;
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/meye '.$onoff;
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');

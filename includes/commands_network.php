@@ -306,9 +306,9 @@ function getDrives(&$params) {
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
         if ($hostName != 'firebox') {
-			$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+			$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
 		} else {
-			$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs df -Pkht ufs';
+			$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs df -Pkht ufs';
 		}
         debug($cmd, 'command');
         $output = shell_exec($cmd);
@@ -353,7 +353,7 @@ function natSessions(&$params) {
 	$hostName = $params['device']['shortdesc'];
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'natSessions';
-	$cmd = 'ssh remote-jobs@'.$hostName.' -i remote-jobs sudo  pftop -ab -f \"in and dst net 192.168.2.0/24 and src net not 192.168.2.0/24 and proto tcp\"';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo  pftop -ab -f \"in and dst net 192.168.2.0/24 and src net not 192.168.2.0/24 and proto tcp\"';
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');

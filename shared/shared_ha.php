@@ -664,7 +664,7 @@ function checkConditions($rows, $params) {
 		case SCHEME_CONDITION_DEVICE_PROPERTY_VALUE:
 			debug("SCHEME_CONDITION_DEVICE_PROPERTY_VALUE", 'SCHEME_CONDITION_DEVICE_PROPERTY_VALUE');
 			$condtype = "SCHEME_CONDITION_DEVICE_PROPERTY_VALUE";
-        		$deviceID = ($rowcond['cond_deviceID'] == DEVICE_CALLER_ID ? $params['caller']['callerID'] : $rowcond['cond_deviceID']);
+        		$deviceID = ($rowcond['cond_deviceID'] == DEVICE_CALLING_DEVICE_ID ? $params['caller']['deviceID'] : $rowcond['cond_deviceID']);
 			$testvalue[] = getDeviceProperties(Array('propertyID' => $rowcond['cond_propertyID'], 'deviceID' => $deviceID))['value'];
 			$message = getProperty($rowcond['cond_propertyID'])['description']." of device ".getDevice($deviceID)['description']." "." is not";
 			$savedeviceID = $rowcond['cond_deviceID'];
