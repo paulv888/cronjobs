@@ -31,7 +31,7 @@ if (!$runonce) {
 }
 
 while (true) {
-	monitorDevices("POLL2");
+	monitorDevices('"POLL2"');
         updateDLink(MY_DEVICE_ID);
  	sleep(5);
 	if ($runonce) break;

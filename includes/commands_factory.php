@@ -1506,7 +1506,17 @@ function checkSyslog(&$params) {
 	// if () $feedback['error'] = "Not so good";
 
 	//$devs = getDeviceProperties(array('description' => "Syslog Name"));
-	
+        $mysql = 'INSERT INTO `net_syslog_mapping` (`fromhost`) SELECT DISTINCT `host` FROM `vw_syslog` s Left Join net_syslog_mapping m ON s.host = m.fromhost WHERE s.date > CURDATE() - INTERVAL 1 DAY and m.id IS NULL';
+
+        $feedback['result'][] =  PDOExec($mysql) ." Rows inserted";
+
+        $mysql = 'SELECT * FROM `net_syslog_mapping` WHERE deviceID IS NULL';
+        if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $key => $row) {
+			$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>SCHEME_ALERT_NORMAL, 'commandvalue'=>' - "'.$row['fromhost'].'" - Missing Syslog device name'));
+		}
+	}
+
         $mysql = 'SELECT m.`deviceID`, s.`period`, s.`host`, sum(`sum`) as sum FROM `net_syslog_mapping` m 
                   RIGHT JOIN `net_syslog_stats` s ON s.host = m.fromhost 
                   WHERE DATE(s.`period`) = DATE(NOW() - INTERVAL 1 DAY) GROUP BY m.`deviceID`,s.`period`,s.`host` ';
@@ -1514,9 +1524,7 @@ function checkSyslog(&$params) {
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
 			$feedback['result']['debug'][]=$row;
-			if (empty($row['deviceID'])) {		// Not found
-				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'],  'schemeID'=>SCHEME_ALERT_NORMAL, 'commandvalue'=>' - "'.$row['host'].'" - Missing Syslog device name'));
-			} else {
+			if (!empty($row['deviceID'])) {		// Not found
 				$props = getDeviceProperties(array('deviceID' => $row['deviceID'])); 
 				$feedback['result']['debug'][]=$props;
 				if (array_key_exists('Log Entries Critical Alert',$props) && $row['sum']>$props['Log Entries Critical Alert']['value']) {	// Critical
@@ -1527,6 +1535,8 @@ function checkSyslog(&$params) {
 			}
 		}
 	}
+
+      //$devs = getDeviceProperties(array('description' => "Syslog Name"));
 
 	debug($feedback, 'feedback');
 	return $feedback;
