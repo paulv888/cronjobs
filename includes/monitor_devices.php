@@ -16,13 +16,14 @@ function monitorDevices($linkmonitor) {
 }
 
 function monitorDevice($deviceID, $pingport, $linkmonitor) {
-	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 
+	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 	$rowip = FetchRow($mysql);
 	$status = false;
 	if ($rowip['ip'] != NULL) {
 		if ($pingport>0) {
 			if ($linkmonitor=='NMAP') {
+				//echo pingnmp($rowip['ip'],$pingport);
 				$status = pingnmp($rowip['ip'],$pingport);
 			} else {
 				$status = pingport($rowip['ip'],$pingport,2);
@@ -43,10 +44,11 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 	$params['callerID'] = MY_DEVICE_ID;
 	$params['deviceID'] = $deviceID;
 	$params['commandID'] = COMMAND_PING;
-    	$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
+	$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 	$properties['Link']['value'] = $curlink;
 	$params['device']['properties'] = $properties;
 	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
+	return $feedback;
 }
 
 function pingport($host, $port, $timeout) {
@@ -56,7 +58,8 @@ function pingport($host, $port, $timeout) {
 }
 
 function pingnmp($host, $port) {
-	$fP = exec("nmap -sS -p".$port." ".$host, $output, $status);
+//	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
+	$fP = exec('nmap -sS -p'.$port.' '.$host, $output, $status);
 	if ($status==0) return true;
 	return false;
 }

@@ -14,8 +14,8 @@ include_once 'includes/commands_network.php';
 include_once 'includes/processor.php';
 include_once 'includes/timers.php';
 include_once 'includes/commands_weather.php';
-include_once 'shared/simple_html_dom.php';
 include_once 'includes/monitor_devices.php';
+include_once 'shared/simple_html_dom.php';
 include_once 'includes/commands_thermo.php';
 include_once 'includes/commands_media.php';
 

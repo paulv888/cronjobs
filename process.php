@@ -79,4 +79,5 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 		echo $result;
 		// ob_end_flush();
 }
+//echo get_current_user().CRLF;
 ?>
