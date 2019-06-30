@@ -399,6 +399,22 @@ function natSessions(&$params) {
 
 }
 
+// function templateFunction(&$params) {
+//      debug($params, 'params');
+
+        // $feedback['Name'] = 'templateFunction';
+        // $feedback['commandstr'] = "I send this";
+        // $feedback['result'] = array();
+        // $feedback['message'] = "all good";
+        // if () $feedback['error'] = "Not so good";
+
+        //      debug($stepValue, 'stepValue');
+
+        //      debug($feedback, 'feedback');
+        // return $feedback;
+// }
+
+
 function moveHistory() {
     $mysql = "INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
 	$result = PDOExec($mysql);
