@@ -91,12 +91,12 @@ function createAlert(&$params) {
 
 
 
-			if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+			if ($params['deviceID'] == DEVICE_SELECTED_PLAYER) {
 				if (array_key_exists('SESSION', $params)) {
 					$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 				} elseif (array_key_exists('SESSION', $params['caller'])) {
 					$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+				} else $params['SESSION']['properties']['SelectedPlayer']['value'] = getCurrentPlayer();
 			}
 			$feedback['result']['createAlerts_'.$params['deviceID']] = SendCommand($params);
 			$params =  $saveparams;
@@ -214,12 +214,12 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				$params['alert_catalogID'] = $step['alert_catalogID'];
 
 
-				if ($params['deviceID'] == DEVICE_CURRENT_SESSION) {
+				if ($params['deviceID'] == DEVICE_SELECTED_PLAYER) {
 					if (array_key_exists('SESSION', $params)) {
 						$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 					} else if (array_key_exists('SESSION', $params['caller'])) {
 						$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-					} else $params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+					} else $params['SESSION']['properties']['SelectedPlayer']['value'] = getCurrentPlayer();
 				}
 
 				$stepValue = replacePropertyPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
@@ -310,7 +310,7 @@ function setDevicePropertyCommand(&$params) {
 
 function setSessionVar(&$params) {
 
-	debug($params, 'params');
+//	debug($params, 'params');
 
 	$feedback['result'] = array();
 	
@@ -1551,19 +1551,17 @@ function checkDriveCapacity(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "";
 
-        $mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 80';
+	$mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 80';
         
 	$deviceID = null;
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
 			$feedback['result']['debug'][]=$row;
-			$mysql = 'SELECT id FROM `ha_mf_devices` WHERE shortdesc ="'.$row['hostname'].'"';
-			if ($device = FetchRow($mysql)) $deviceID = $device['id']; 
 			if ($row['capacity'] >= 95) {
-				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  
 					'schemeID'=>SCHEME_ALERT_CRITICAL, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
 			} else {
-				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $deviceID,  
+				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  
 					'schemeID'=>SCHEME_ALERT_HIGH, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
 			}
 		}
@@ -1571,6 +1569,7 @@ function checkDriveCapacity(&$params) {
 	debug($feedback, 'feedback');
 	return $feedback;
 }
+
 function updateTimelapses(&$params) {
 
 	debug($params, 'params');

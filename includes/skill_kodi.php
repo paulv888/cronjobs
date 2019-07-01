@@ -172,12 +172,12 @@ function PlaySongIntent($request, $session, $response) {
 		return $feedback;
 	}
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 
 	if (count($found) == 1) { 	// play 1 song
-		$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>232, 'commandvalue'=>$found[0]['file']));
+		$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>232, 'commandvalue'=>$found[0]['file']));
 	} else {
 		$songs = '#EXTM3U'."\n";
 		foreach ($found as $song) {
@@ -190,7 +190,7 @@ function PlaySongIntent($request, $session, $response) {
 		
 		
 		//$log = executeCommand(Array('callerID'=>MY_DEVICE_ID,'messagetypeID'=>"MESS_TYPE_SCHEME",'schemeID'=>221, 'commandvalue'=>'AlexaList.m3u'));
-		$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>221, 'commandvalue'=>$playlistname));
+		$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=>$playlistname));
 	}
 	
 	// $status = getFeedbackStatus($deviceID, $deviceProperties[$found]['value']);
@@ -240,18 +240,18 @@ $playLists = [
 		return $feedback;
 	}
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	if (array_key_exists(strtolower($find), $playLists )) {
 		switch ($playLists[$find][0]) {
 		case "Smart":
-			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>214, 'commandvalue'=>$playLists[$find][1]));
+			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>214, 'commandvalue'=>$playLists[$find][1]));
 			$answer = "Loaded playlist ".$playLists[$find][1]; 
 			break;
 		case "m3u":
-			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>221, 'commandvalue'=> $playLists[$find][1]));
+			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=> $playLists[$find][1]));
 			$answer = "Loaded playlist ". $playLists[$find][1]; 
 			break;
 		case "Genre":
@@ -280,7 +280,7 @@ $playLists = [
 
 
 		if (count($found) == 1) { 	// play 1 song
-			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>232, 'commandvalue'=>$found[0]['file']));
+			$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>232, 'commandvalue'=>$found[0]['file']));
 		} else {
 			$songs = '#EXTM3U'."\n";
 			foreach ($found as $song) {
@@ -294,10 +294,10 @@ $playLists = [
 			
 			//$log = executeCommand(Array('callerID'=>MY_DEVICE_ID,'messagetypeID'=>"MESS_TYPE_SCHEME",'schemeID'=>221, 'commandvalue'=>'AlexaList.m3u'));
 			if ($request->intentName == "PlayArtistIntent") {
-				$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>221, 'commandvalue'=>$playlistname));
+				$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=>$playlistname));
 			} else {
 				$feedback['result']['action'] = AddPlaylistOneByOne($found);
-				//$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>285, 'commandvalue'=>$playlistname));
+				//$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>285, 'commandvalue'=>$playlistname));
 			}
 		}
 		
@@ -326,12 +326,12 @@ function PlayPreviousSongIntent($request, $session, $response) {
 	
 	$responses = array("ok");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	debug($deviceProperties, 'deviceProperties');
-	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>283));
+	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>283));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
@@ -353,12 +353,12 @@ function PlayNextSongIntent($request, $session, $response) {
 	
 	$responses = array("ok");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	debug($deviceProperties, 'deviceProperties');
-	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>30));
+	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>30));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
@@ -380,11 +380,11 @@ function PlayLoudIntent($request, $session, $response) {
 	
 	$responses = array("ok");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>251));
+	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>251));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
@@ -406,11 +406,11 @@ function PlayExtraLoudIntent($request, $session, $response) {
 	
 	$responses = array("ok");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
-	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>284));
+	$feedback['result']['action'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>284));
 	
 	$answer = sprintf($responses[rand(0,count($responses)-1)]);
 	$response->respond($answer);
@@ -433,8 +433,8 @@ function WhatsPlayingIntent($request, $session, $response) {
 	
 	$responses = array("<speak>This is <break time=\"0.2s\" /> %s <break time=\"0.2s\" />by %s.</speak>","<speak>We're listening to <break time=\"0.2s\" /> %s  <break time=\"0.2s\" /> by %s </speak>", "<speak>%s  <break time=\"0.2s\" /> by %s.</speak>");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	debug($deviceProperties, 'deviceProperties');
@@ -459,9 +459,9 @@ function ShowIntent($request, $session, $response) {
 	
 	$responses = array("<speak>Please check the T.V. for a image off the Run Camera</speak>");
 
-//	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
+//	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
 	$deviceProperties = getDeviceProperties(array(259));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	debug($deviceProperties, 'deviceProperties');
@@ -471,7 +471,7 @@ function ShowIntent($request, $session, $response) {
 	$feedback['message'] = $answer;
 	$feedback['result']['tell'] = $response->tell();
 
-	$feedback['result']['display'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'schemeID'=>315));
+	$feedback['result']['display'] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>315));
 
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -670,15 +670,15 @@ function dateToSpeach($timestamp) {
 }
 
 function AddPlaylistOneByOne($playlist) {
-	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>58));
-	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>358));
-	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>364, 'commandvalue'=>'false'));
+	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>58));
+	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>358));
+	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>364, 'commandvalue'=>'false'));
 	
 	foreach ($playlist as $song) {
 	//getJsonRemote(host, port, 'Playlist.Add' , { 'playlistid' : 0 , 'item' : {'file' : '%s' % item } } )
-		$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>377, 'commandvalue'=>$song['file']));
+		$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>377, 'commandvalue'=>$song['file']));
 	}
-	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => DEVICE_DEFAULT_PLAYER,  'commandID'=>350));
+	$result[] = executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => getCurrentPlayer(),  'commandID'=>350));
 
 	return $result;
 }

@@ -4,7 +4,7 @@ function loadRemote($remoteID) {
 	if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
 		$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
 	} else {
-		$params['SESSION']['properties']['SelectedPlayer']['value'] = DEVICE_DEFAULT_PLAYER;
+		$params['SESSION']['properties']['SelectedPlayer']['value'] = getCurrentPlayer();
 	}
 
     $select = (substr  ($_SERVER['REMOTE_ADDR'],0,9) == '192.168.2' ? 3 : 2);
@@ -82,7 +82,7 @@ function loadRemoteDiv($divid, $params) {
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (!empty($rowremotekeys['deviceID'])) {
-					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_CURRENT_SESSION ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
+					$deviceID = ($rowremotekeys['deviceID'] == DEVICE_SELECTED_PLAYER ? $params['SESSION']['properties']['SelectedPlayer']['value'] : $rowremotekeys['deviceID']);
 					if  (!empty($deviceID)) {
 						$statuslink = array();
 						if (array_key_exists('Status',$statuslink)) {
