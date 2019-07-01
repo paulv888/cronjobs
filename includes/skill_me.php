@@ -458,8 +458,8 @@ function WhatsPlayingIntent($request, $session, $response) {
 	
 	$responses = array("<speak>This is <break time=\"0.2s\" /> %s <break time=\"0.2s\" />by %s.</speak>","<speak>We're listening to <break time=\"0.2s\" /> %s  <break time=\"0.2s\" /> by %s </speak>", "<speak>%s  <break time=\"0.2s\" /> by %s.</speak>");
 
-	$deviceProperties = getDeviceProperties(array('deviceID'=>DEVICE_DEFAULT_PLAYER));
-	$log['deviceID'] = DEVICE_DEFAULT_PLAYER;
+	$deviceProperties = getDeviceProperties(array('deviceID'=>getCurrentPlayer()));
+	$log['deviceID'] = getCurrentPlayer();
 	$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 	
 	debug($deviceProperties, 'deviceProperties');

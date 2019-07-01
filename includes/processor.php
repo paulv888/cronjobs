@@ -32,7 +32,7 @@ function sendCommand(&$thiscommand) {
 //	
 
 	if ($thiscommand['deviceID'] != NULL) {
-		if ($thiscommand['deviceID'] == DEVICE_CURRENT_SESSION) {
+		if ($thiscommand['deviceID'] == DEVICE_SELECTED_PLAYER) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
 		if (!$device = getDevice($thiscommand['deviceID'])) {
@@ -270,7 +270,7 @@ function executeCommand($callerparams) {
 						// $deviceID = $rowkeys['deviceID'] ;
 						// Not going trough sendCommand, replace device here
 						// echo $rowkeys['deviceID'].' -> ';
-						$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? $callerparams['SESSION']['properties']['SelectedPlayer']['value'] : $rowkeys['deviceID']);
+						$deviceID = ($rowkeys['deviceID'] == DEVICE_SELECTED_PLAYER ? $callerparams['SESSION']['properties']['SelectedPlayer']['value'] : $rowkeys['deviceID']);
 						// echo $deviceID.CRLF;
 						if (!is_null($rowkeys['propertyID'])) $propertyID = $rowkeys['propertyID'];
 						$devicesprop[$deviceID.$propertyID]['deviceID'] = $deviceID;
@@ -377,7 +377,7 @@ function RemoteKeys($in, $params) {
 				if (isset($node) && array_key_exists('DeviceID',$res[$node])) {
 					$wherestr = (array_key_exists('PropertyID', $res[$node]) ? ' AND propertyID ='.$res[$node]['PropertyID'] : ''); // Not getting propID for Link
 					// 06/19/18 Next line was commented out, so broke something. This is needed for updating remote keys with current_player as device
-					$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? $res[$node]['DeviceID'].','.DEVICE_CURRENT_SESSION : $res[$node]['DeviceID']);
+					$deviceStr = (array_key_exists('SESSION', $params) && $res[$node]['DeviceID'] == $params['SESSION']['properties']['SelectedPlayer']['value'] ? $res[$node]['DeviceID'].','.DEVICE_SELECTED_PLAYER : $res[$node]['DeviceID']);
 					//$deviceStr = $res[$node]['DeviceID'];
 					// echo "<pre>";
 					// var_dump($deviceStr);
@@ -417,7 +417,7 @@ function RemoteKeys($in, $params) {
 			$text.='&nbsp;(<i class="icon-clock btn-icon-small"></i>'.$res['updateStatus']['Timer Remaining'].')';
 									}
 									// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
-									$deviceID = ($rowkeys['deviceID'] == DEVICE_CURRENT_SESSION ? 
+									$deviceID = ($rowkeys['deviceID'] == DEVICE_SELECTED_PLAYER ? 
 											$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
 									// echo $deviceID.CRLF;
 									$text = replacePropertyPlaceholders($text, Array('deviceID' => $res['updateStatus']['DeviceID']));

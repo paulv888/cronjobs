@@ -76,7 +76,7 @@ function replaceText($params, $field){
 		}
 	}
 	
-	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_CURRENT_SESSION) {
+	if ($params['deviceID'] != null && $params['deviceID'] == DEVICE_SELECTED_PLAYER) {
 		$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 	}
 
@@ -116,7 +116,6 @@ function replacePropertyPlaceholders($mess_subject, $params){
 //		in: $mess_subject
 //		out: return
 //
-
 	debug($mess_subject, 'mess_subject');
 	debug($params, 'params');
 
@@ -146,9 +145,14 @@ function replacePropertyPlaceholders($mess_subject, $params){
 
 		if (!is_null($deviceID)) {
 			
+			if ($deviceID == DEVICE_SELECTED_PLAYER) {
+				$deviceID = $params['SESSION']['properties']['SelectedPlayer']['value'];
+			}
+
 			$mysqlp = 'SELECT ha_mi_properties.description, ha_mf_device_properties.value FROM ha_mf_device_properties 
 						JOIN ha_mi_properties ON ha_mf_device_properties.propertyID = ha_mi_properties.id 
 						WHERE ha_mf_device_properties.deviceID ='.$deviceID;
+						
 			if ($props = FetchRows($mysqlp)) {
 				unset ($pattern);
 				unset ($newprops);

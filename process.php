@@ -48,7 +48,7 @@ if (!headers_sent()) {
     } 
 	// unset($_SESSION['PARAMS']);
 	debug($_SESSION, 'Prev Session _SESSION');
-	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
+	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 3600)) {
 		// last request was more than 30 minutes ago
 		session_unset();     // unset $_SESSION variable for the run-time 
 		session_destroy();   // destroy session data in storage
@@ -60,7 +60,7 @@ if (!headers_sent()) {
 if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) && is_numeric($_SESSION['properties']['SelectedPlayer']['value'])) {
 	$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
 } else {
-	$params['SESSION']['properties']['SelectedPlayer']['value'] = (isset($params['playerID']) ? $params['playerID'] : DEVICE_DEFAULT_PLAYER);
+	$params['SESSION']['properties']['SelectedPlayer']['value'] = (isset($params['playerID']) ? $params['playerID'] : getCurrentPlayer());
 }
 $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
 session_write_close();
