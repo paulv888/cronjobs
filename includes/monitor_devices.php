@@ -7,10 +7,11 @@ function monitorDevices($linkmonitor) {
 			 ' AND l.active > 0' ;
 	$date = getdate();
 	$day = $date["wday"];
+
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $rowlinks) {
 			if ($rowlinks['active'] > 0)
-			monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['linkmonitor']);
+				monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['linkmonitor']);
 		}
 	}
 }
@@ -23,7 +24,6 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 	if ($rowip['ip'] != NULL) {
 		if ($pingport>0) {
 			if ($linkmonitor=='NMAP') {
-				//echo pingnmp($rowip['ip'],$pingport);
 				$status = pingnmp($rowip['ip'],$pingport);
 			} else {
 				$status = pingport($rowip['ip'],$pingport,2);
@@ -47,6 +47,7 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 	$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
 	$properties['Link']['value'] = $curlink;
 	$params['device']['properties'] = $properties;
+//print_r($params);
 	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
 	return $feedback;
 }
@@ -58,8 +59,8 @@ function pingport($host, $port, $timeout) {
 }
 
 function pingnmp($host, $port) {
-//	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
-	$fP = exec('nmap -sS -p'.$port.' '.$host, $output, $status);
+	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
+	$fP = exec($cmd, $output, $status);
 	if ($status==0) return true;
 	return false;
 }
