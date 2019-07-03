@@ -471,7 +471,7 @@ if (isset($GLOBALS['debug'])) {
 				$content = preg_replace('/(^\s*<pre( .*)?>)|(<\/pre>\s*$)/i', '', $content);
 				echo nl2br(htmlspecialchars($content));
 			} else {
-				echo $content;
+				echo $content.CRLF;
 			}
 		}
 		if (!isCLI()) echo '</div>';

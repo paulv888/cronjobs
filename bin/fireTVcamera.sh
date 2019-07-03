@@ -11,16 +11,7 @@ MSELECT="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewe
 adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
 adb -s "$1" shell am force-stop org.xbmc.kodi
 adb -s "$1" shell am force-stop com.android.deskclock
-case "$1" in
-192.168.2.18)
-        adb shell am force-stop com.netflix.mediaclient
-    ;;
-192.168.2.30)
-        adb -s "$1" shell am force-stop com.netflix.ninja
-    ;;
-*) echo Nothing Done
-   ;;
-esac
+adb -s "$1" shell am force-stop com.netflix.ninja
 
 
 case "$2" in
@@ -39,6 +30,7 @@ Coop) echo $MATRIX $2
 
    ;;
 esac
+/home/www/ha/bin/check-connected.sh "$1"
 
 #adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a "android.intent.action.MAIN" -e selectView GALLERY_VIEW -e selectGroupName Out$
 #adb shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a "android.intent.action.MAIN" -e selectView GALLERY_VIEW -e selectGroupName Coop
