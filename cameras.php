@@ -77,7 +77,7 @@ function movePictures($camera) {
 			// echo ">$file<".CRLF;
 			$datedir = date ("Y-m-d", $filetime);
 			if (is_null($group_dir)) {		// Did we find a group dir? If not find the last one and the num files in it
-				if ($group_dir = findLastGroupDir($dir.$datedir)) {		
+				if ($group_dir = findLastGroupDir($dir.$datedir)) {
 					$targetdir = $dir.$datedir.'/'.$group_dir;
 					// echo "Add to existing directory ".$targetdir.CRLF;
 					$numfiles  = iterator_count(new DirectoryIterator($targetdir)) - 2;
@@ -90,8 +90,9 @@ function movePictures($camera) {
 					$camera['lastfiletime'] = strtotime($recording['lastfiletime']);
 				} 
 			}
+
 			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {  // New Motion Group on; 1 minute gap OR max_files
-			
+
 				// If we had an old dir, update this first
 				//$camera['newfilename'] = $newfilename;
 				$camera['datedir'] = $datedir;
@@ -100,6 +101,8 @@ function movePictures($camera) {
 				$camera['updatetype'] = false;
 				$camera = closeGroup($camera);
 				// Open new group dir
+				$numfiles = 0;
+				$camera['numfiles'] = 0;
 				$camera['criticalalert'] = false;
 				$camera['highalert'] = false;
 				$group_dir = date("H-i-s",$filetime);
@@ -122,7 +125,6 @@ function movePictures($camera) {
 					mkdir($targetdir.'/vsig_thumbs');
 					echo "TargetDir: ".$targetdir.'/vsig_thumbs'.CRLF;
 				}
-				$numfiles = 0;
 			} 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
 			$camera['lastfiletime'] = $filetime;

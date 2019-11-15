@@ -759,6 +759,7 @@ function sendBullet($params) {
 	if(strpos($params['mess_text'],'<img') > 0) {
 		// Will not use mess_text but cv1 and cv2 directly
 		$type = 'IMAGE';
+//		$params['value_parts'][2] = "LOCAL_LASTIMAGEDIR"
 		$output = DOCUMENT_ROOT.$params['value_parts'][2];
 	} elseif(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
@@ -1295,7 +1296,7 @@ $myDate = substr($params['value_parts'][0], 5, 2).'_'.substr($params['value_part
 //	$feedback['message'] .= 'Date '.$params['value_parts'][0].'Server '.$params['value_parts'][1].'Option '.$params['value_parts'][2];
 //	$feedback['message'] .= '<br/>'.$myDate;
 	$date=date_create();
-	$feedback['message'] .= '<img style="width:100%" src="'.$sarDATA.$params['value_parts'][1].'/graphs/'.$myDate.'-'.$params['value_parts'][2].'.svg?t='.date_timestamp_get($date).'" alt="SAR Data was supoed to show here" />';
+	$feedback['message'] .= '<img style="width:100%" src="'.$sarDATA.$params['value_parts'][1].'/graphs/'.$myDate.'-'.$params['value_parts'][2].'.svg?t='.date_timestamp_get($date).'" alt="Could not load valid SAR svg data." />';
 	return $feedback;
 }
 
