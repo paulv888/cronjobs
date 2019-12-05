@@ -10,7 +10,7 @@ if(!window.scriptRemoteHasRun) {
 			'GROUP_NO_SELECTED' : 0,
 			'DIM_NO_SELECTED' : 19,
 			'url' : '/ha/process.php',
-			'timer' : 0
+			'timer' : false
 	};
 
 	var isMobile = {
@@ -39,7 +39,6 @@ if(!window.scriptRemoteHasRun) {
 	jQuery(document).ready(function(){
 
 		refreshDiv(true, true);
-
 		
 		// window.addEvent('domready', function() {
 			// document.getElements('.myDebugOutputTitle').each(function (title) {
@@ -101,7 +100,7 @@ if(!window.scriptRemoteHasRun) {
 		});	
 
 		function repeatSend(keys) {
-			console.log ("Sending " + keys);
+			// console.log ("Sending " + keys);
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
 			callAjax(params, false);
 			//jQuery(control).removeClass('sending');
@@ -194,7 +193,7 @@ if(!window.scriptRemoteHasRun) {
 				if (keys.length == 0) showMessage('Please select lights you want to dim or on/off together');
 			}
 		});
-		
+
 		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
 		// Update same as latest button dropdown, allow S C or Value
 		jQuery('.controlselect-button').unbind("change");
@@ -262,7 +261,7 @@ if(!window.scriptRemoteHasRun) {
 			jQuery('#system-message-container').html('');
 			//resetSelection();
 		});
-		
+
 		if (jQuery("#autorefresh").length > 0) {
 			eventname = isMobile.any() ? "touchend" : "click";
 			jQuery("#autorefresh").bind(eventname, function(event){
@@ -274,54 +273,19 @@ if(!window.scriptRemoteHasRun) {
 				}
 			});
 		};
-	
+
 		// Loosing focus stop 
-		(function() {
-		  var hidden = "hidden";
+		jQuery(window).blur(function(){
+			clearInterval(VloRemote.timer);
+			VloRemote.timer = false;
+			console.log('JQuery Hiding');
+		});
 
-		  // Standards:
-		  if (hidden in document)
-			document.addEventListener("visibilitychange", onchange);
-		  else if ((hidden = "mozHidden") in document)
-			document.addEventListener("mozvisibilitychange", onchange);
-		  else if ((hidden = "webkitHidden") in document)
-			document.addEventListener("webkitvisibilitychange", onchange);
-		  else if ((hidden = "msHidden") in document)
-			document.addEventListener("msvisibilitychange", onchange);
-		  // IE 9 and lower:
-		  else if ("onfocusin" in document)
-			document.onfocusin = document.onfocusout = onchange;
-		  // All others:
-		  else
-			window.onpageshow = window.onpagehide
-			= window.onfocus = window.onblur = onchange;
-
-		  function onchange (evt) {
-			var v = "visible", h = "hidden",
-				evtMap = {
-				  focus:v, focusin:v, pageshow:v, blur:h, focusout:h, pagehide:h
-				};
-
-			evt = evt || window.event;
-			if (evt.type in evtMap)
-			  document.body.className = evtMap[evt.type];
-			else {
-			  document.body.className = this[hidden] ? "hidden" : "visible";
-			  if (this[hidden]) {
-					clearInterval(VloRemote.timer);
-					VloRemote.timer = false;
-				} else {
-					// Show user we are refreshing
-					refreshDiv(true, false);
-					VloRemote.timer = startTimer();
-				}
-			}
-		  }
-
-		  // set the initial state (but only if browser supports the Page Visibility API)
-		  if( document[hidden] !== undefined )
-			onchange({type: document[hidden] ? "blur" : "focus"});
-		})();
+		jQuery(window).focus(function(){
+			refreshDiv(true, false);
+			VloRemote.timer = startTimer();
+			console.log('JQuery Re-Activate');
+		});
 
 		VloRemote.timer = startTimer();
 
@@ -329,6 +293,7 @@ if(!window.scriptRemoteHasRun) {
 
 	function refreshDiv (showSpin, force) {
 
+		console.log('refreshDiv');
 		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
 			var keys = [];
 			jQuery('.rem-button, .display').each(function() {
@@ -342,18 +307,21 @@ if(!window.scriptRemoteHasRun) {
 	};
 
 	function callAjax (params, showSpin) {
-	
+
 		if (showSpin === undefined) showSpin = true;
-	
 		if (showSpin) {
 				jQuery('#system-message-container').html ('');
 				jQuery('#spinner').show();
 		}
-		
+
 		var debug = getUrlParameter('debug');
 		if (typeof(debug) != "undefined") params.debug = debug;
-		console.log(params);
-		
+		// console.log(params);
+
+		// Start timer, incase we missed the unhide event
+		VloRemote.timer = startTimer();
+
+
 		var keysRequest = jQuery.ajax({
 				dataType: "json",
 				url: 	VloRemote.url,
@@ -375,10 +343,10 @@ if(!window.scriptRemoteHasRun) {
 	};
 
 	function callAjaxSync(params) {
-	
+
 		jQuery('#system-message-container').html ('');
 		jQuery('#spinner').show();
-		
+
 		var debug = getUrlParameter('debug');
 		params.debug = debug;
 		var d = new Date();
@@ -408,7 +376,7 @@ if(!window.scriptRemoteHasRun) {
 	function showMessage(message) {
 		if ((typeof(message) != "undefined") && message.length > 0) {
 			if (message.substring(0,6) != '<HTML>') {
-			console.log(message.substring(0,6));
+				// console.log(message.substring(0,6));
 				jQuery('#system-message-container').html('<div class="alert alert-success"><a data-dismiss="alert" class="close" href="#">&times</a>'+message+'</div>');
 			} else {
 				jQuery('#html-container').html('<div>'+message.substring(6)+'</div>');
@@ -433,7 +401,7 @@ if(!window.scriptRemoteHasRun) {
 	}
 
 	function processData(data) {
-				
+
 		jQuery.each(data, function(index, item){
 			if (index == 'message') {
 				showMessage(item);
@@ -467,7 +435,7 @@ if(!window.scriptRemoteHasRun) {
 			});
 		});
 	};
-	
+
 	function resetSelection() {
 		jQuery('.group-select').each(function() {
 			jQuery(this).removeClass('group-select');
@@ -475,13 +443,18 @@ if(!window.scriptRemoteHasRun) {
 	}
 
 	function startTimer() {
-		timer = window.setInterval(function(){
-			refreshDiv(false, false);
-		}, 6000);
-		return timer;
+		if (VloRemote.timer == false) {
+			clearInterval(VloRemote.timer);
+			timer = window.setInterval(function(){
+				refreshDiv(false, false);
+			}, 6000);
+			return timer;
+		} else {
+			return VloRemote.timer;
+		}
 	}
-	
-	var getUrlParameter = function getUrlParameter(sParam) {
+
+	function getUrlParameter(sParam) {
 		var sPageURL = window.location.search.substring(1),
 			sURLVariables = sPageURL.split('&'),
 			sParameterName,
@@ -494,5 +467,5 @@ if(!window.scriptRemoteHasRun) {
 				return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
 			}
 		}
-	};
+	}
 }

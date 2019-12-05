@@ -22,16 +22,14 @@ if (isset($_GET['name'])) {
 <link rel="stylesheet" href="/templates/protostar-remote/css/woffs.css" type="text/css" media="screen" /> 
 <script src="/media/jui/js/jquery.min.js"></script>
 <script src="/media/jui/js/bootstrap.min.js"></script>
-<script async src="/media/jui/js/jquery.min.js"></script>
 <script async src="<?php echo getPath(true);?>/js/remote.js"></script>
+</head>
+<body style="padding:0px;">
 <noscript>
-    <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; 
-                height: 100%; width: 100%; background-color: #E9ECE5">
+    <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; height: 100%; width: 100%; background-color: #E9ECE5">
         <p style="margin-left: 10px">JavaScript is not enabled.</p>
     </div>
 </noscript>
-</head>
-<body style="padding:0px;">
    <div id='system-message-container'></div>
 <?php
    require_once 'includes.php'; 
@@ -41,7 +39,7 @@ if (isset($_GET['name'])) {
    <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
 	</div>
-	<div id="myDebug" class="debug" style="none"></div>
+	<div id="myDebug" class="debug" style="display:none"></div>
 </body>
 </html>
 <?php //ob_end_flush();?>
