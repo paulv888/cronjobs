@@ -36,7 +36,7 @@ function sendCommand(&$thiscommand) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
 		if (!$device = getDevice($thiscommand['deviceID'])) {
-			$feedback['message'] = "Device not found or not active";
+			$feedback['message'] = "Device: ".$thiscommand['deviceID']." not found or not active";
 			debug($feedback, 'feedback');
 			return $feedback;			// silent abort	
 		}
