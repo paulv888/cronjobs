@@ -989,15 +989,17 @@ function sendGenericHTTP(&$params) {
 			$feedback['result_raw'] = $curl->getresponse();
 			$feedback['result'][] = $curl->getresponse();
 		break;
-	case "TCP":              // iTach (Only \r)
-		$url = setURL($params);
-		$feedback['commandstr'] = $url.$params['command']['command']."\r";
+	case "TCP":              // iTach (Only \r) and Yeelight (Now sending \r\n)
+		// For Yeelight
+		if ($params['commandID'] == COMMAND_ON && $params['commandvalue'] == NULL) $params['commandvalue']= $params['onlevel'];
+		$tcomm = $params['device']['connection']['page'].ltrim(replaceCommandPlaceholders($params['command']['command']."\r\n",$params), '?');
 		if (empty($params['device']['connection']['targetaddress'])) {
 			$ipaddress = $params['device']['ipaddress']['ip'];
 		} else {
 			$ipaddress = $params['device']['connection']['targetaddress'];
 		}
-		debug($ipaddress.':'.$params['device']['connection']['targetport'].' - '.$feedback['commandstr'], 'TCP - Sending');
+		$feedback['commandstr'] = 'tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'].'?'.$tcomm;
+		debug($tcomm, 'TCP - Sending');
 		// open a client connection
 		$client = stream_socket_client('tcp://'.$ipaddress.':'.$params['device']['connection']['targetport'], $errno, $errorMessage, $params['device']['connection']['timeout']);
 		if ($client === false) {
@@ -1006,12 +1008,12 @@ function sendGenericHTTP(&$params) {
 		} else {
 			stream_set_timeout($client, $params['device']['connection']['timeout']);
 			if ($targettype == "TCP") { 
-				$binout = $feedback['commandstr'];
+				$binout = $tcomm;
 			} else {
-				$binout = base64_decode($feedback['commandstr']);
+				$binout = base64_decode($tcomm);
 			}
 			fwrite($client, $binout);
-			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
+			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r\n" );	
 			fclose($client);
 		}
 		// TODO:: Error handling (GCache errors)

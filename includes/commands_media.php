@@ -70,7 +70,6 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 
 function refreshAllVideos(&$params = null) {
 	debug($params, 'params');
-	header('Content-Type: text/html; charset=utf-8');
 	echo "<pre>";
 	$dir = '';
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
@@ -90,7 +89,6 @@ function findDuplicateVideos(&$params = null) {
 // TODO:: export results to table, and allow fixing from there
 //
 	debug($params, 'params');
-	header('Content-Type: text/html; charset=utf-8');
 	echo "<pre>";
 	$dir = '';
 	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
@@ -117,7 +115,6 @@ function findDuplicateVideos(&$params = null) {
 
 function importVideos(&$params) {
 	debug($params, 'params');
-	header('Content-Type: text/html; charset=utf-8');
 
 	$params['directory'] = LOCAL_IMPORT.'/';
 	$params['importprocess'] = true;
@@ -135,10 +132,7 @@ function import1Video(&$params) {
 
 	$feedback['Name'] = 'import1Video';
 
-	header('Content-Type: text/html; charset=utf-8');
-	echo "<pre>Test 1 Video";echo $feedback['Name'].CRLF;
 	$params['commandvalue'] = $params['commandvalue'];
-	echo $params['commandvalue'].CRLF;
 
 	$params['importprocess'] = true;
 	$result = readDirs(LOCAL_IMPORT, $params['importprocess']); 
@@ -270,11 +264,15 @@ function refreshVideo(&$params) {
 	//
 	$result = getGenre($params['file']['dirname']);
 	$feedback[] = $result;
-	if (array_key_exists('error',$result)) {
-		echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
-		debug($feedback, 'feedback');
-		return $feedback;
-	}
+
+	//
+	// Not returning error anymore, maybe find genre over artist
+	//
+	// if (array_key_exists('error',$result)) {
+		// echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+		// debug($feedback, 'feedback');
+		// return $feedback;
+	// }
 	$params['file']['genre'] = $result['result']['genre'];
 
 	//
@@ -484,8 +482,10 @@ function readDirs($main, $importprocess){
 			$file_parts = mb_pathinfo($file);
 			// print_r($file_parts);
 			$file_parts['dirname'] = rtrim($main, '/') . '/';
-			if (substr($file, 0, 1) != "." && $file != ".." && strpos(EXCLUDE_EXTENTSIONS, $file_parts['extension']) === false) {
-				$files[] = $file_parts;
+			if (array_key_exists('extension', $file_parts)) {
+				if (substr($file, 0, 1) != "." && $file != ".." && strpos(EXCLUDE_EXTENTSIONS, $file_parts['extension']) === false) {
+					$files[] = $file_parts;
+				}
 			}
 		}
 	}
@@ -783,7 +783,8 @@ function getGenre($dirname) {
 	$result = array_intersect($genres, $path_break);
 
 	if (empty($result)) {
-		$feedback['error'] = "Could not find genre in: >".$dirname."<".CRLF;	
+		//$feedback['error'] = "Could not find genre in: >".$dirname."<".CRLF;	
+		$feedback['result']['genre'] = "Not Found from Import folder";
 	} else {
 		$feedback['result']['genre'] = reset($result);
 	}
@@ -797,6 +798,8 @@ function findBestMatch(&$file, $mvids) {
 
 	$file['moveto'] = LOCAL_DATA.$mvids[0]['strPath'];
 	$paths = array();
+	// echo "<pre>";
+	// print_r($mvids);
 	foreach($mvids as $mvid) {	// count occurences?
 		// [0] => Array
 		// (
@@ -815,15 +818,23 @@ function findBestMatch(&$file, $mvids) {
 			// [dateAdded] => 2010-12-24 16:47:50
 			// [strPath] => /musicvideos/Popular/_Assorted/
 		// )
-		if (array_key_exists($mvid['strPath'], $paths)) 
-			$paths[$mvid['strPath']]++;
-		else 
-			$paths[$mvid['strPath']] = 1;
+		if (array_key_exists($mvid['strPath'], $paths)) {
+			$paths[$mvid['strPath']]['count']++;
+		} else  {
+			$paths[$mvid['strPath']]['count'] = 1;
+			$paths[$mvid['strPath']]['genre'] = $mvid['genre'];
+		}
 	}
 	// echo "<pre>";
-	arsort($paths);
+	uasort($paths, function($a, $b) {
+		return ($a['count'] <=> $b['count']) * -1;
+	});
 	// print_r($paths);
 	$file['moveto'] = LOCAL_DATA.key($paths);
+	if (strpos($file['genre'],'Not Found') !==null) {
+			$file['genre'] = $paths[key($paths)]['genre'];
+			// echo "updated genre: ". $file['genre'].CRLF; 
+	}
 	// echo "mfrequent: ". $file['moveto'].CRLF; 
 	foreach($paths as $key => $value) {	// try to find non asorted
 		if (strpos($key, ASSORTED_DIR) === false) {
@@ -852,11 +863,9 @@ function findMoveTo(&$file, $importprocess) {
 	}
 
 	$feedback['Name'] = 'findMoveTo';
-	//$feedback['commandstr'] = "I send this";
-	// $feedback['message'] = "";
-//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
-	// echo "<pre>".$feedback['Name'].': '; print_r($file); echo "</pre>";
 	$file['moveto'] = $file['dirname'];
+
+
 
 	$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
 				JOIN xbmc_path p ON mv.strPathID = p.id 
@@ -868,11 +877,11 @@ function findMoveTo(&$file, $importprocess) {
 		// extract dir 
 		// Just get he first one? Care about majority?
 		findBestMatch($file, $mvids);
-	} elseif ($allow_change_genre) {								// Try for other genre
+	} else {								// Try to find artist
 		$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
 					WHERE artist = "'.$file['artist']. '";';
-		if ($mvids = FetchRows($mysql)) {		// Found this artist for this genre
+		if ($mvids = FetchRows($mysql)) {		// Found this artist
 			findBestMatch($file, $mvids);
 		} else {								// Must be new artist -> going to assorted for input genre
 			if (($key = array_search($file['genre'], $genres)) !== false) {
@@ -884,6 +893,7 @@ function findMoveTo(&$file, $importprocess) {
 			}
 		}
 	}
+
 
 	$feedback['result'] = $file;
 
