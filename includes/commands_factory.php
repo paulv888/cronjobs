@@ -145,8 +145,6 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		$params['macro___commandvalue'] = $params['commandvalue'];
 	}
 
-	$feedback['Name'] = getSchemeName($schemeID);
-
 	$mysql = 'SELECT type as cond_type, groupID as cond_groupID, deviceID as cond_deviceID, propertyID as cond_propertyID,
 				operator as cond_operator, value as cond_value 
 				FROM `ha_remote_scheme_conditions` WHERE `schemesID` = '.$schemeID.' ORDER BY SORT';
@@ -160,6 +158,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 	}
 
+	$feedback['Name'] = getSchemeName($schemeID);
 
 	//$callerparams['deviceID'] = (array_key_exists('deviceID', $callerparams) ? $callerparams['deviceID'] : $callerID);
 	$mysql = 'SELECT sh.name, sh.runasync, st.id, c.description as commandName,  
@@ -231,7 +230,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				debug($stepValue, 'stepValue');
 
 				debug((array_key_exists('value_parts',$params) ? $params['value_parts'] : array("No params to split")), 'value_parts');
-				
+
 				if ($step['step_async']) {			// Spawn it
 					unset($values);
 					$values['callerID'] = $callerparams['callerID'];
@@ -241,7 +240,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['schemeID'] = $params['schemeID'];
 					$values['debug'] = $GLOBALS['debug'];
 					$getparams = http_build_query($values, '',' ');
-					
+
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
 
 					$outputfile=  tempnam( sys_get_temp_dir(), 'async' );
@@ -649,6 +648,22 @@ function fireTVsleep($params) {
 
 }
 
+function fireTVwakeup($params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'fireTVwakeup';
+	$feedback['result'] = array();
+	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVwakeup.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
+	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
+	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
+	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+	debug($feedback, 'feedback');
+	return $feedback;               // GET OUT
+
+}
+
 function copyFile($params) {
 
 	debug($params, 'params');
@@ -1013,7 +1028,7 @@ function sendGenericHTTP(&$params) {
 				$binout = base64_decode($tcomm);
 			}
 			fwrite($client, $binout);
-			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r\n" );	
+			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
 		}
 		// TODO:: Error handling (GCache errors)
