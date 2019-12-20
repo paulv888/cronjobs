@@ -219,7 +219,6 @@ function handleTriggers($params, $propertyID, $triggertype) {
 			debug($trigger, 'trigger');
 			$thiscommand['commandID'] = COMMAND_RUN_SCHEME;
 			$thiscommand['schemeID'] = $trigger['schemeID'];
-			$thiscommand['loglevel'] = LOGLEVEL_MACRO;
 			$thiscommand['messagetypeID'] = MESS_TYPE_SCHEME;
 			$thiscommand['caller'] = $params['caller'];
 			$thiscommand['caller']['deviceID'] = $params['deviceID'];

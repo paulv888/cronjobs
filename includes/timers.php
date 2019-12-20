@@ -54,7 +54,7 @@ function RunTimers(){
 					// var_dump($timer['priorityID']);
 					if (!isset($GLOBALS['debug'])) ob_start();
 					if ($timer['priorityID'] != PRIORITY_HIDE) {
-						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer, 'loglevel' => LOGLEVEL_MACRO)); 
+						$message = runTimerSteps(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_SCHEME, 'timer' => $timer)); 
 						// logEvent($log = array('inout' => COMMAND_IO_BOTH, 'callerID' => $deviceID, 'deviceID' => $deviceID, 'commandID' => $step['commandID'], 
 									// 'data' => $timer['description'], 'result' => $feedback['result'] ));
 					} else {
@@ -107,7 +107,7 @@ function runTimerSteps($params) {
 			if ($check_result['result'][0]) {
 				$step['callerID'] = $params['callerID'];
 				$step['messagetypeID'] = "MESS_TYPE_COMMAND";
-				$step['loglevel'] = $params['loglevel'];
+                                if (array_key_exists('loglevel', $params)) $step['loglevel'] = $params['loglevel'];
 				$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 				if ($timer['runasync']) {
 					$getparams = http_build_query($step, '',' '); 
@@ -194,7 +194,6 @@ function updateTimers($params) {
 
 function startTimer($params) {
 
-	$thiscommand['loglevel'] = LOGLEVEL_COMMAND;
 	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
 	$thiscommand['caller'] = $params['caller'];
 	$thiscommand['commandID'] = COMMAND_ON;
