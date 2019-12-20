@@ -2,7 +2,7 @@
 <?php
 require_once 'includes.php';
 
-// $GLOBALS['debug'] = 1;
+
 
 define("MY_DEVICE_ID", 137);
 
@@ -16,6 +16,7 @@ if (isset($argv)) {
 	}
 }
 
+
 if (isset($_GET['ONLINE_DEBUG'])) {
 	echo date("Y-m-d H:i:s").": trying to connect to VLOSITE:3333".CRLF;
 	echo date("Y-m-d H:i:s").": send a command with nc -l 3333".CRLF;
@@ -27,13 +28,14 @@ if (isset($_GET['ONLINE_DEBUG'])) {
 	define("DEBUG_MODE", false);
 } 
 
-//$GLOBALS['debug'] = 10;
+// define("DEBUG_MODE", true);
+// $GLOBALS['debug'] = 1;
 
 if (!DEBUG_MODE) {
 	class console{
 		public static function log($msg, $arr=array()){
 			$str = vsprintf($msg, $arr);
-			fprintf(STDERR, "$str\n");
+			fprintf(STDERR, "$str".CRLF);
 		}
 	}
 
@@ -50,7 +52,7 @@ if (!DEBUG_MODE) {
 
 $errors = 0;
 
-echo "Initialize...\n";
+echo "Initialize...".CRLF;
 while (true) {
 
 	$last = strtotime(date("Y-m-d H:i:s"));
@@ -67,7 +69,7 @@ while (true) {
 		$clearurl = setURL(array('device' => $device), $page);
 	
 	}  else {
-			echo "Error: Insteon device not found\n";
+			echo "Error: Insteon device not found".CRLF;
 			exit();
 	}
 
@@ -85,10 +87,11 @@ while (true) {
 	while (true) {
 		
 		usleep(250000); // 250ms
+		// echo date("Y-m-d H:i:s")." Start curl:".$url.CRLF;
 		$curl = restClient::get($url,null, setAuthentication($device),  $device['connection']['timeout']);
 		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
 			// handle error?
-			echo $curl->getresponsecode().": ".$curl->getresponse();
+			echo date("Y-m-d H:i:s")." ".$curl->getresponsecode().": ".$curl->getresponse().CRLF;
 		} else {
 			preg_match('#<BS>(.*?)</BS>#', $curl->getresponse(), $matches);
 			$inbuffer = substr($matches[0],  4, strlen($matches[0]) -9 );
@@ -144,17 +147,17 @@ while (true) {
 					// check for to short for PLM message, if so save result for rest
 					// if (!array_key_exists("etdata", $plm_decode_result)) $plm_decode_result['extdata'] = "";
 					if ($plm_decode_result['length'] == ERROR_MESSAGE_TO_SHORT) {  							// leave result and wait for more
-						echo "\e[31mERROR_MESSAGE_TO_SHORT"." Empty mybuffer, refill from buffer\e[39;49m"."\n";
+						echo "\e[31mERROR_MESSAGE_TO_SHORT"." Empty mybuffer, refill from buffer\e[39;49m".CRLF;
 						$mybuffer = "";
 						// Need to make sure to not get stuck, retry and discard input buffer
 						//exit;
 					} elseif ($plm_decode_result['length'] == ERROR_STX_MISSING) {									// basically to short as well
-						echo "\e[31mERROR_STX_MISSING"." Start nibbling to catch up\e[39;49m"."\n";
+						echo "\e[31mERROR_STX_MISSING"." Start nibbling to catch up\e[39;49m".CRLF;
 						// $mybuffer = "";									// Clear result padding
 						// Need to handle these, for now start over
 						continue 3;
 					} elseif ($plm_decode_result['length'] <= -3) {									// basically to short as well
-						echo "\e[31mERROR_UNKNOWN_MESSAGE"." Do something\e[39;49m"."\n";
+						echo "\e[31mERROR_UNKNOWN_MESSAGE"." Do something\e[39;49m".CRLF;
 						// $mybuffer = "";									// Clear result padding
 						//
 						//
@@ -263,7 +266,7 @@ function signal_handler($signo){
 }
 
 function cleanup(){
-	echo "Cleaning up\n";
+	echo "Cleaning up".CRLF;
 	exit (1);
 }
 ?>
