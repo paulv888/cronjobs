@@ -385,7 +385,7 @@ if(!window.scriptRemoteHasRun) {
 	}
 
 	function showError(error, message) {
-		if (message.length > 0) {
+		if ((typeof(message) != "undefined") && message.length > 0) {
 			if (message.indexOf('myDebugOutputTitle') > 0) {
 				jQuery('#myDebug').html(message);
 			} else {
