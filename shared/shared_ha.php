@@ -56,6 +56,7 @@ function setDevicePropertyValue($params, $propertyName) {
 
 	// Could get these from previous+properties ??
 	$property = getProperty($propertyName);
+//	$propertyName = $property['description']; // Follow capitalization of stored value
 	$deviceproperty['propertyID'] = $property['id'];
 	$deviceproperty['deviceID'] = $params['deviceID'];
 	$deviceproperty['value'] = $params['device']['properties'][$propertyName]['value'];
@@ -86,7 +87,7 @@ function setDevicePropertyValue($params, $propertyName) {
 	$params['device']['properties'][$propertyName]['value'] = $deviceproperty['value'];
 	$oldvalue = (array_key_exists($propertyName, $params['device']['previous_properties']) ? $params['device']['previous_properties'][$propertyName]['value'] : Null);
 	if ($monitor) {
-	
+
 		$func = 'update'.str_replace(' ','',$propertyName);
 		$feedback['Monitor'] = $deviceproperty;
 		if (function_exists ($func)) {
@@ -178,13 +179,15 @@ function setDevicePropertyValue($params, $propertyName) {
 		unset($deviceproperty['trend']);
 		PDOinsert('ha_properties_log', $deviceproperty);
 	}
-	
-	
+
+
 	//
 	// Execute triggers
 	// 
 	if ($oldvalue !== $deviceproperty['value']) {
-		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
+                $feedback['debug']['oldvalue'] = var_export($oldvalue, true);
+                $feedback['debug']['prop_value'] = var_export($deviceproperty['value'], true);
+ 		if ($property['datatype']=="BINARY") { 		// Link can return link warning, no trigger for that
 			if ($deviceproperty['value'] == STATUS_ON ) {
 				$result = handleTriggers($params, $property['id'], TRIGGER_AFTER_ON);
 				if (!empty($result)) $feedback = array_merge($feedback, $result);
@@ -200,7 +203,6 @@ function setDevicePropertyValue($params, $propertyName) {
 		$result = handleTriggers($params, $property['id'], TRIGGER_AFTER_CHANGE);
 		if (!empty($result)) $feedback = array_merge($feedback, $result);
 	}
-	
 	debug($feedback, 'feedback');
 	return $feedback;
 }

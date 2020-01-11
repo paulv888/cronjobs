@@ -30,220 +30,65 @@ function getDeviceList(&$params) {
 
 	$feedback['Name'] = 'GetDeviceList';
 	$feedback['result'] = array();
-	$device = $params['device'];
-	//
-	//	Login
-	//
-	//curl -v -L -c c.txt "http://192.168.2.1/login.cgi"  -H "Content-Type: application/x-www-form-urlencoded"  -H "Referer: http://192.168.2.1/Main_Login.asp" 
-	//--data "login_authorization=YWRtaW46S2xvb3R6YWswMQ=="	
-	$url = setURL(array('device' => $device), '/login.cgi');
-	$url_r = setURL(array('device' => $device), '/Main_Login.asp');
-// echo $url.CRLF;
-// echo $url_r.CRLF;
-	$fields = array(
-		'login_authorization' => base64_encode($device['connection']['username'].":".$device['connection']['password'])
-	);
-	
-	$fields_string = "";
-	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value; }
-	debug($fields,'post fields');
-	
-	$cookie_file_path = $_SERVER['DOCUMENT_ROOT'].'/tmp/cookies.txt';
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_POST, count($fields));
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-	curl_setopt($ch, CURLOPT_REFERER, $url_r);
-	curl_setopt($ch, CURLOPT_HEADER, true);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
-	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
 
-
-	$response=curl_exec ($ch);
-	$information = curl_getinfo($ch);
-	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	if ($httpcode != 200 && $httpcode != 204) {
-		$feedback['error'] = $httpcode.": ".curl_error($ch);
-		return $feedback;
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'cat /etc/pihole/dhcp.leases\'';
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+//1578843631 54:04:a6:0a:58:20 192.168.2.246 paul-pc 01:54:04:a6:0a:58:20
+	$columns = ["leaseIime", "hwaddr", "ip", "name", "ip6"];
+	$x = 0;
+	foreach ($lines as $line) {
+		if (empty($line)) continue;
+		$values = explode(' ',$line);
+		$pairs = array_combine ( $columns , $values );
+//			PDOinsert('os_df', $pairs );
+		$addresses[$pairs['hwaddr']] = $pairs;
 	}
-	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Login']= $information;
-	curl_close ($ch);
-	debug($feedback,'login->feedback');
-	debug($response,'response');
+	debug($addresses, 'addresses');
 
-	//
-	// Scrape device list
-	//
-	//curl -v -b c.txt "http://192.168.2.1/update_clients.asp" -H "Referer: http://192.168.2.1/index.asp"
-	$url = setURL(array('device' => $device), '/update_clients.asp');
-	$url_r = setURL(array('device' => $device), '/index.asp');
-// echo $url.CRLF;
-// echo $url_r.CRLF;
-
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
-	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-	curl_setopt($ch, CURLOPT_REFERER, $url_r);
-	curl_setopt($ch, CURLOPT_HEADER, true);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
-	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
-	
-	$response=curl_exec ($ch);
-	$information = curl_getinfo($ch);
-	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	if ($httpcode != 200 && $httpcode != 204) {
-		$feedback['error'] = $httpcode.": ".curl_error($ch);
-		return $feedback;
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "SELECT * FROM network"\'';
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+//CREATE TABLE network ( id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, hwaddr TEXT NOT NULL, interface TEXT NOT NULL, name TEXT, firstSeen INTEGER NOT NULL, lastQuery INTEGER NOT NULL, numQueries INTEGER NOT NULL,macVendor TEXT)
+//9|192.168.2.1|f8:32:e4:a7:d5:d0|ens3||1578455520|0|0|ASUSTek COMPUTER INC.
+	$columns = ["id", "ip", "hwaddr", "interface", "name", "firstSeen", "lastQuery", "numQueries", "macVendor"];
+	$x = 0;
+	foreach ($lines as $line) {
+		if (empty($line)) continue;
+		$values = explode('|',$line);
+		$pairs = array_combine ( $columns , $values );
+//			PDOinsert('os_df', $pairs );
+		if (array_key_exists($pairs['hwaddr'], $addresses)) {
+			$addresses[$pairs['hwaddr']] = array_merge( $pairs, $addresses[$pairs['hwaddr']]);
+			//if (empty($addresses[$pairs['hwaddr']]['macVendor'])) $addresses[$pairs['hwaddr']]['macVendor'] = $pairs['macVendor'];
+		} else {
+			$addresses[$pairs['hwaddr']] = $pairs;
+		}
 	}
-	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Network']= $information;
-	curl_close ($ch);
-	$ch = curl_init();
-	debug($feedback,'update_clients->feedback');
-	debug($response,'response');
+	usort($addresses, function($a, $b) {return strnatcmp($a['ip'],$b['ip']);});
+	debug($addresses, 'addresses');
 
-	//
-	// Add traffic_warning_0 cookie
-	//
-	// printf "#HttpOnly_192.168.2.1   FALSE   /       FALSE   0       traffic_warning_0       2018.3:1\n" >> c.txt
-	$cookie = file_get_contents($cookie_file_path);
-	if (strpos($cookie, "traffic") === false) {
-		$cookie .= "#HttpOnly_192.168.2.1   FALSE   /       FALSE   0       traffic_warning_0       2018.3:1\n";
-		file_put_contents($cookie_file_path, $cookie);
-	}
-
-	//
-	// Refresh for next run
-	//
-	//curl -v -b c.txt "http://192.168.2.1/apply.cgi" -H "Content-Type: application/x-www-form-urlencoded" -H "Accept: text/html" 
-	//-H "Referer: http://192.168.2.1/device-map/clients.asp" --data "action_mode=refresh_networkmap&action_script=&action_wait=5&
-	//current_page=device-map/clients.asp&next_page=device-map/clients.asp"
-	$url = setURL(array('device' => $device), '/apply.cgi');
-	$url_r = setURL(array('device' => $device), '/device-map/clients.asp');
-
-	$fields = array(
-		'action_mode' => 'refresh_networkmap',
-		'action_script' => '',
-		'action_wait' => '5',
-		'current_page' => 'device-map/clients.asp',
-		'next_page' => 'device-map/clients.asp'
-	);
-	$fields_string = "";
-	foreach($fields as $key=>$value) { $fields_string .= $key.'='.$value.'&'; }
-	debug($fields_string,'fields_string');
-
-	
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_POST, count($fields));
-	curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	curl_setopt($ch, CURLINFO_HEADER_OUT, true);
-	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded','Accept: text/html'));
-	curl_setopt($ch, CURLOPT_REFERER, $url_r);
-	curl_setopt($ch, CURLOPT_HEADER, true);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
-	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
-
-	$tmpresponse=curl_exec ($ch);
-	$information = curl_getinfo($ch);
-	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	if ($httpcode != 200 && $httpcode != 204) {
-		$feedback['error'] = $httpcode.": ".curl_error($ch);
-	}
-	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Refresh']= $information;
-	curl_close ($ch);
-	debug($feedback,'device-map->feedback');
-	debug($tmpresponse,'tmpresponse');
-
-	//
-	// Logout
-	//
-	$url = setURL(array('device' => $device), '/Logout.asp');
-	$url_r = setURL(array('device' => $device), '/index.asp');
-// echo $url.CRLF;
-// echo $url_r.CRLF;
-
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file_path);
-	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	curl_setopt($ch, CURLINFO_HEADER_OUT, false);
-	curl_setopt($ch, CURLOPT_FAILONERROR, 1);
-	curl_setopt($ch, CURLOPT_MAXREDIRS, 100);
-	if (isset($GLOBALS['debug'])) curl_setopt($ch, CURLOPT_VERBOSE, 1);
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/x-www-form-urlencoded'));
-	curl_setopt($ch, CURLOPT_REFERER, $url_r);
-	curl_setopt($ch, CURLOPT_HEADER, true);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $device['connection']['timeout']); 
-	curl_setopt($ch, CURLOPT_TIMEOUT, $device['connection']['timeout']);
-	
-	$tmpresponse=curl_exec ($ch);
-	$information = curl_getinfo($ch);
-	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	if ($httpcode != 200 && $httpcode != 204) {
-		$feedback['error'] = $httpcode.": ".curl_error($ch);
-		return $feedback;
-	}
-	if (isset($GLOBALS['debug'])) $feedback['result']['curl']['Logout']= $information;
-	curl_close ($ch);
-	debug($feedback,'logout->feedback');
-
-/* 
- * 	There is more info here, wired wireless, DB, 2 or 5gb ...
- * 
-*/
-
-
-	$in = explode(PHP_EOL, $response);
-	if (array_key_exists(13, $in) and substr($in[13],0, 15) == 'fromNetworkmapd') {
-		debug($in,'logout->matches');
-		$noresult = rtrim(str_replace( 'fromNetworkmapd : ', '', $in[13]),",");
-		debug($noresult,'logout->noresult');
-		$deviceslist = json_decode($noresult,true);
-		debug($deviceslist[0],'logout->deviceslist');
-    } else {
-    	// echo $response;
-		$feedback['error'] = "Error: No devices found";
-		return $feedback;
-    } 
-
-	$feedback['result']['devicelist'] = $deviceslist;
+// storing
 
 	$newmacs=0;
 	$changedips=0;
 	$devicesimported=0;
-    if ($showlist) $feedback['message']="<pre><table><thead><tr><th>Name</th><th>IP</th><th>Vendor</th><th>Mac</th></tr></thead><tbody>";
-	foreach ($deviceslist[0] as $mac => $devicefull ) {
-		if ($mac == 'maclist') continue; 
-		unset($device);
-		$device['name'] = $devicefull['name'];
-		$device['vendor'] = $devicefull['vendor'];
-		$device['ip'] = $devicefull['ip'];
-		$device['mac'] = strtoupper($mac);
+    if ($showlist) $feedback['message']='<HTML><pre><table style="width:100%"><thead><tr><th>Name</th><th>IP</th><th>Vendor</th><th>Mac</th></tr></thead><tbody>';
+	
+	foreach ($addresses as $address) {
+		$device = array();
+		$device['name'] = $address['name'];
+		$device['vendor'] = (array_key_exists('macVendor',$address) ? $address['macVendor'] : "");
+		$device['ip'] = $address['ip'];
+		$device['mac'] = $address['hwaddr'];
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
 				" WHERE mac='".$device['mac']."'";  
@@ -301,7 +146,6 @@ function getDeviceList(&$params) {
 
 function getDrives(&$params) {
 
-        $hostName = $params['device']['shortdesc'];
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
@@ -343,44 +187,70 @@ function getDrives(&$params) {
 
 }
 
-function natSessions(&$params) {
+function storeNatSessions(&$params) {
 
 
    	$mysql = "UPDATE `net_sessions` SET `active` = '0';";
 	$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
 
 
-	$hostName = $params['device']['shortdesc'];
-	$deviceID = $params['device']['id'];
-	$feedback['Name'] = 'natSessions';
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo  pftop -ab -f \"in and dst net 192.168.2.0/24 and src net not 192.168.2.0/24 and proto tcp\"';
-	debug($cmd, 'command');
-	$output = shell_exec($cmd);
-	debug($output, 'shell_exec');
-	$feedback['result'][$hostName] = $output;
-	$lines = explode(PHP_EOL, $output);
-	$feedback['result'][] = $lines;
+	$feedback['Name'] = 'updateNatSessions';
+
+	$lines = explode(PHP_EOL, $params['commandvalue']);
 	debug($lines, 'lines');
 
+//tcp      6 1393 ESTABLISHED src=192.168.2.24 dst=54.236.3.170 sport=2644 dport=443 packets=2 bytes=84 src=54.236.3.170 dst=71.8.81.33 sport=443 dport=2644 packets=1 bytes=44 [ASSURED] mark=0 use=1
 
-	$columns = ["class", "protocol", "flags", "remote_address", "remote_port", "local_address", "local_port", "TCPstate", "packets", "bytes"];
+
+	$columns = ["class", "protocol", "TCPstate",  "local_address",  "remote_address", "local_port", "remote_port", "packets", "bytes", "flags"]; 
 	$x = 0;
 	foreach ($lines as $line) {
 			if (empty($line)) continue;
 			$x++;
-			if ($x < 3 ) continue;
-			$line = 'alert-danger '.$line;
-			$values = preg_split('/[:\s]+/', $line, -1, PREG_SPLIT_NO_EMPTY);
-			unset($values['8']);  // Split state
-			unset($values['9']);  // Expire
-			unset($values['10']);  // Age
-			
+			$line = 'class '.$line;
+			$values = array();
+			$tvalues = preg_split('/[=\s]+/', $line, -1, PREG_SPLIT_NO_EMPTY);
+			debug($tvalues, 'tvalues');
+			$values[] = $tvalues[0];
+			$values[] = $tvalues[1];
+			if ($tvalues[1] == 'tcp')  {
+				$state=true;
+				if ($tvalues['17'] == 'src') $state=false;
+				$values[] = $tvalues[4];
+				$values[] = $tvalues[6];
+				$values[] = ($state ? $tvalues[19] : $tvalues[18]);
+				$values[] = $tvalues[10];
+				$values[] = ($state ? $tvalues[23] : $tvalues[22]);
+				$values[] = $tvalues[14];
+				$values[] = $tvalues[16];
+				$values[] = $tvalues[29];
+			} else {		// udp - icmp
+				$state=true;
+				if ($tvalues['16'] == 'src') $state=false;
+				$values[] = ($state ? $tvalues[16] : "" );
+				$values[] = $tvalues[5];
+				$values[] = ($state ? $tvalues[18] : $tvalues[17]);
+				$values[] = $tvalues[9];
+				$values[] = ($state ? $tvalues[22] : $tvalues[21]);
+				$values[] = $tvalues[13];
+				$values[] = $tvalues[15];
+				$values[] = $tvalues[28];
+			}
+			debug($values, 'values');
 			debug($columns, 'columns');
 			$pairs = array_combine ( $columns , $values );
 
 			$pairs['local_name']= gethostbyaddr($pairs['local_address']); 
 			$pairs['remote_name']= gethostbyaddr($pairs['remote_address']); 
 			$pairs['active']= 1; 
+
+			$pairs['class'] = '';
+			if (substr($pairs['local_address'],0,strlen(MY_SUBNET)) != MY_SUBNET && substr($pairs['remote_address'],0,strlen(MY_SUBNET)) == MY_SUBNET) {
+				$temp = $pairs['local_address']; $pairs['local_address'] = $pairs['remote_address']; $pairs['remote_address'] = $temp;
+				$temp = $pairs['local_port']; $pairs['local_port'] = $pairs['remote_port']; $pairs['remote_port'] = $temp;
+				$temp = $pairs['local_name']; $pairs['local_name'] = $pairs['remote_name']; $pairs['remote_name'] = $temp;
+				$pairs['class'] = 'alert-danger';
+			}
 			debug($pairs, 'pairs');
 
 			PDOupsert('`net_sessions`', $pairs, array('remote_address' => $pairs['remote_address'], 'remote_port' => $pairs['remote_port'], 'local_address' => $pairs['local_address'], 'local_port' => $pairs['local_port']));
@@ -392,7 +262,7 @@ function natSessions(&$params) {
 
 	// $params['device']['properties'] = $properties;
 
-	$feedback['result']['moveHistory'] = MoveHistory()." Sessions moved to History <br/>\r\n";
+	$feedback['result']['message'] = count($lines)." Sesstions read".CRLF.MoveHistory()." Sessions moved to History".CRLF;
 
 
 	return $feedback;
@@ -422,5 +292,4 @@ function moveHistory() {
 	$num_rows = PDOExec($mysql);
 	return $num_rows;
 }
-
 ?>
