@@ -1,8 +1,8 @@
 #! /bin/bash
-HOST='192.168.2.1'
-USER=$1
-PASSWD=$2
-CMD=$3
+HOST=$1
+USER=$2
+PASSWD=$3
+CMD=$4
 
 (
 echo open "$HOST"
@@ -14,5 +14,5 @@ sleep 0.1
 echo "$CMD"
 sleep 0.1
 echo "exit"
-) | telnet
+) | telnet 
 

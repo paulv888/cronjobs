@@ -45,6 +45,7 @@ function GetSessions() {
 		exit; 
 	}
 	//echo "MyIP:".$myip.CRLF;
+	$cmd = 'cat /proc/net/nf_conntrack'; // What is different?
 	$cmd = 'cat /proc/net/ip_conntrack';
     $output = shell_exec(__DIR__.'/telnetcmd.sh '.FIREWALL_USER.' '.FIREWALL_PASSWORD.' '.'"'.$cmd.'"');
     

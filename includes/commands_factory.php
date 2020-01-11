@@ -120,10 +120,10 @@ function createAlertLog($params) {
 	$feedback['result'] = array();
 	$feedback['commandstr'] = 'PDOInsert: '.$params['mess_text'];
 	$params['caller']['deviceID'] = (array_key_exists('deviceID',$params['caller']) ? $params['caller']['deviceID'] : $params['caller']['callerID']);
-	$feedback['result']['params'] = json_encode($params);
+	//$feedback['result']['params'] = json_encode($params);
 	$feedback['message'] = 'AlertID: '.PDOInsert("ha_alerts_log", array('deviceID' => (empty($params['caller']['deviceID']) ? 0 : $params['caller']['deviceID']), 'description' => $params['mess_subject'], 'alert_date' => date("Y-m-d H:i:s"), 'alert_text' => $params['mess_text'], 'priorityID' => $params['priorityID'])).' created';
 	// if ($params['priorityID'] <= PRIORITY_HIGH) $feedback['result'][] = sendBullet($params);
-	
+
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -312,9 +312,8 @@ function setSessionVar(&$params) {
 //	debug($params, 'params');
 
 	$feedback['result'] = array();
-	
+
 	// calculateProperty($params) ;
-	
 	$tarr = explode("___",$params['commandvalue']);
 	$text = $tarr[1];
 	$text = replacePropertyPlaceholders($text, Array('deviceID' => $params['deviceID']));
@@ -352,10 +351,10 @@ function getNowPlaying(&$params) {
 	$command['deviceID'] = $params['deviceID']; 
 	$command['commandID'] = COMMAND_GET_VALUE;
 	$result = sendCommand($command); 
-	
+
 
 	// echo "<pre>";	
-	
+
 	if (array_key_exists('error', $result)) {
 		$properties['Playing']['value'] =  'Nothing';
 		$properties['File']['value'] = '*';
@@ -421,7 +420,7 @@ function moveToRecycle($params) {
 		'deviceID' => $params['deviceID'], 
 		'commandID' => COMMAND_RUN_SCHEME,
 		'schemeID' => SCHEME_ALERT_KODI);
-		
+
 	if (!array_key_exists('error',$result)) {
 		$command['macro___commandvalue'] = $result['message'];
 	} else {
@@ -894,9 +893,46 @@ function sendGenericPHP(&$params) {
 	$func = $params['command']['command'];
 	if ($func == "sleep") {
 		$feedback['result'][] = $func($params['commandvalue']);
+	} elseif ($params['command']['need_device']=="1") {
+
+		switch ($params['device']['connection']['targettype'])
+		{
+		case "TELNET":
+			$feedback = genericTelnet($params);
+			break;
+		default:
+			$feedback = $func($params);
+			break;
+		}
+
 	} else {
 		$feedback = $func($params);
 	}
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function genericTelnet(&$params) {
+	debug($params, 'params');
+
+	$feedback['Name'] = 'genericTelnet';
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	//	debug($stepValue, 'stepValue');
+        $feedback['result'] = array();
+	$cmd = getPath().'/bin/telnetcmd.sh '.$params['device']['ipaddress']['ip'].' '.$params['device']['connection']['username']. 
+                             ' '.$params['device']['connection']['password'].' "'.$params['command']['command'].'"';
+        debug($cmd, 'command');
+	$feedback['commandstr'] = str_replace($params['device']['connection']['password'],'*****',$cmd);
+        $output = shell_exec($cmd);
+        debug($output, 'shell_exec');
+	$start = strpos($output, $params['command']['command']);
+	$clean = substr($output, $start + strlen($params['command']['command']) + 2*strlen(PHP_EOL));
+        $lines = explode("\r\n", $clean);
+	array_pop($lines);
+        $feedback['result'][] = $lines;
+	$feedback['result_raw'] =implode(PHP_EOL, $lines);
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -974,7 +1010,7 @@ function sendGenericHTTP(&$params) {
 			$curl = restClient::delete($url, null, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 		} else { 
 			$feedback['commandstr'] = $url.$tcomm;
-			debug($feedback['commandstr'],'DELETE - Sending');
+			debug($feedback['commandstr'],'ELSE - Sending');
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
 		$feedback['HTTP'] = $curl->getresponsecode();
