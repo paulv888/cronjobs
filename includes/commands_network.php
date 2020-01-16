@@ -72,6 +72,7 @@ function getDeviceList(&$params) {
 		} else {
 			$addresses[$pairs['hwaddr']] = $pairs;
 		}
+		$addresses[$pairs['hwaddr']]['name'] = str_replace('.'.DOMAIN_NAME, '', $addresses[$pairs['hwaddr']]['name']);
 	}
 	usort($addresses, function($a, $b) {return strnatcmp($a['ip'],$b['ip']);});
 	debug($addresses, 'addresses');
@@ -106,7 +107,7 @@ function getDeviceList(&$params) {
 				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
 								'messagetypeID' => 'MESS_TYPE_SCHEME',
-								'schemeID' => SCHEME_ALERT_LOW,
+								'schemeID' => SCHEME_ALERT_NORMAL,
 								"commandvalue" => $rowdevice['friendly_name']." MAC: ".$device['mac']."|Old Name: ".$rowdevice['name']."<br/>New Name: "
 								              .$device['name']."<br/>Old IP: ".$rowdevice['ip']."<br/>New IP: ".$device['ip']);
 				$feedback['result']['Changed'][] = executeCommand($command);
@@ -240,8 +241,10 @@ function storeNatSessions(&$params) {
 			debug($columns, 'columns');
 			$pairs = array_combine ( $columns , $values );
 
-			$pairs['local_name']= gethostbyaddr($pairs['local_address']); 
-			$pairs['remote_name']= gethostbyaddr($pairs['remote_address']); 
+			//$pairs['local_name']= gethostbyaddr($pairs['local_address']);
+			//$pairs['remote_name']= gethostbyaddr($pairs['remote_address']);
+			$pairs['local_name']= $pairs['local_address'];
+			$pairs['remote_name']= $pairs['remote_address'];
 			$pairs['active']= 1; 
 
 			$pairs['class'] = '';
@@ -286,7 +289,7 @@ function storeNatSessions(&$params) {
 
 
 function moveHistory() {
-    $mysql = "INSERT INTO `net_sessions_history` SELECT * FROM `net_sessions` WHERE active=0;";
+    $mysql = "INSERT INTO `net_sessions_history` (`sessionid`, `protocol`, `local_address`, `local_name`, `local_port`, `remote_address`, `remote_name`, `remote_domain`, `remote_port`, `TCPstate`, `packets`, `bytes`, `flags`, `raw`, `active`, `class`,  `createdate` ) SELECT`sessionid`, `protocol`, `local_address`, `local_name`, `local_port`, `remote_address`, `remote_name`, `remote_domain`, `remote_port`, `TCPstate`, `packets`, `bytes`, `flags`, `raw`, `active`, `class`,  `createdate` FROM `net_sessions` WHERE active=0;";
 	$result = PDOExec($mysql);
     $mysql = "DELETE FROM `net_sessions` WHERE active=0;";
 	$num_rows = PDOExec($mysql);

@@ -183,6 +183,7 @@ define("DEVICE_MOTION_MUTED", 288);
 define("DEVICE_DARK_OUTSIDE", 170);
 define("DEVICE_PAUL_HOME", 161);
 define("DEVICE_REMOTE", 164);
+define("DEVICE_REMOTE_TEXT", 350);
 define("DEVICE_SELECTED_PLAYER", 260);
 define("DEVICE_SYSTEM_PARAMETERS", 342);
 define("DEVICE_CALLING_DEVICE_ID", 315);
@@ -202,6 +203,19 @@ define("PRIORITY_HIGH", 2);
 define("PRIORITY_NORMAL", 3);
 define("PRIORITY_LOW", 4);
 define("PRIORITY_HIDE", 99);
+
+define("Q_QUEUED", "10");
+define("Q_VERIFYING", "20");
+define("Q_VERIFY_SUCCESS", "30");
+define("Q_VERIFY_FAILED", "40");
+define("Q_DOWNLOADING", "50");
+define("Q_DOWNLOAD_SUCCESS", "60");
+define("Q_DOWNLOAD_FAILED", "70");
+define("Q_IMPORTING", "75");
+define("Q_IMPORT_SUCCESS", "80");
+define("Q_IMPORT_FAILED", "90");
+define("Q_CANCEL", "95");
+
 
 define("REPEAT_EVERY_RUN", -1);
 define("REPEAT_ONCE_DAY", 0);

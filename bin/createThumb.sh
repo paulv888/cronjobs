@@ -18,6 +18,7 @@ function checkthumb
 #  Main
 #
 
+set -x
   viddir="${1}"
   if [[ -d "${viddir}" ]]; then
     cd "${viddir}"
@@ -25,8 +26,7 @@ function checkthumb
     thumbfile="${2}.tbn"
     echo $curfile
     echo $thumbfile
-
-    if [ "$curfile" -nt "$thumbfile" ] ;then
+    if [ "$curfile" -nt "$thumbfile" ] || [ ! -s "$thumbfile" ];then
       keeptrying=-1
       itsoffset=5
       step=12
@@ -35,7 +35,12 @@ function checkthumb
       tmpfile=$(mktemp /tmp/ffmpeg.XXXXXX)
       while [ "$keeptrying" -eq "-1" ]
       do
-        ffmpeg  -itsoffset -$itsoffset  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile" > "$tmpfile" 2>&1
+        ffmpeg  -itsoffset -$itsoffset  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile"
+	if [ $? -ne 0 ];then
+	  echo "ffmpeg error"
+	  exit 1
+	fi
+#> "$tmpfile" 2>&1
         keeptrying=$(checkthumb "$thumbfile" "$tnsize")
         itsoffset=$(( itsoffset + step ))
         if [ "$keeptrying" -eq "-1" ] ;then echo "$keeptrying File: $thumbfile Size: $thumbsize Retry: $itsoffset $keeptrying" ; fi

@@ -1,8 +1,4 @@
 <?php
-define("SERVER_HOME", "https://home.vloons.com");		// SRVMEDIA - ASYNC
-define("SITE_NAME", "Vlo Home");
-define("VLO_SITE", "http://192.168.2.11/");
-define("PUSH_CHANNEL", "vlohome");
 define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 

@@ -301,11 +301,14 @@ function executeCommand($callerparams) {
 	if ($callerparams['callerID'] == DEVICE_REMOTE) {
 		$result = RemoteKeys($feedback, $callerparams);
 		$encode = true;
+	} elseif ($callerparams['callerID'] == DEVICE_REMOTE_TEXT) {
+		$result = RemoteKeys($feedback, $callerparams, true);
+		$encode = false;
 	} else {
 		$result = $feedback;
 	}
-	
-	if (isset($encode)) {
+
+	if (!empty($encode)) {
 		$result = json_encode($result,JSON_UNESCAPED_SLASHES);
 		switch (json_last_error()) {
 			case JSON_ERROR_NONE:
@@ -335,20 +338,24 @@ function executeCommand($callerparams) {
 
 	debug($result, 'result');
 	return 	$result;
-			
+
 }
 
-function RemoteKeys($in, $params) {
+function RemoteKeys($in, $params, $onlyfilter = false) {
+	debug($in, 'in');
 	debug($params, 'params');
 
 	if ($in['show_result']) {
-		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
+		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1, 'redirect' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1), $filterkeep, $result);
 	}
 	debug($result, 'result');
+	if ($onlyfilter) {
+		return $result;
+	}
 	if ($result != null) {
 		$feedback = Array();
 		foreach ($result as $key => $res) {
@@ -405,11 +412,10 @@ function RemoteKeys($in, $params) {
 											$feedback[$last_id]["status"]="undefined";
 										}
 									}
-									
+
 									if (array_key_exists('Link',$res['updateStatus'])) {
 										$feedback[$last_id]['link'] = ($res['updateStatus']['Link'] == LINK_UP ? '' : ($res['updateStatus']['Link'] == LINK_WARNING ? 'link-warning' : 'link-down'));
 									}
-									
 									$starttext = getDisplayText($rowkeys);
 									$text = $starttext;
 									if($rowkeys['inputtype']== "btndropdown" || $rowkeys['inputtype']== "button") {
