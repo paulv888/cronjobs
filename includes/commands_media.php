@@ -2,13 +2,15 @@
 define("EXCLUDE_EXTENTSIONS", "nfo|tbn|txt|db");
 define("ASSORTED_DIR", "_Assorted/");
 define("REFRESH_RENAME", 0x01);
-define("REFRESH_MOVE", 0x02);
+define("REFRESH_FIND_MOVE", 0x02);
 define("REFRESH_NFO", 0x04);
 define("REFRESH_THUMB", 0x08);		// Still bash process
 define("REFRESH_LIBRARY", 0x10);
 define("REFRESH_RECYCLE_DUPLICATE", 0x20);
 define("REFRESH_CHECK_DUPLICATES", 0x40);
-define("REFRESH_ALL", 0xFF);
+define("REFRESH_MOVE", 0x80);
+define("REFRESH_CHECK_REVERSE", 0x100);
+define("REFRESH_ALL", 0xFFFF);
 
 
 //
@@ -200,7 +202,6 @@ function refreshVideos(&$params) {
 		$feedback['result'] = $files;
 	}
 
-
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -212,7 +213,7 @@ function refreshVideo(&$params) {
 
 	$feedback['Name'] = 'refreshVideo';
 
-	$exectime = -microtime(true);
+	//$exectime = -microtime(true);
 	// echo $options.CRLF;
 	// $feedback['commandstr'] = "I send this";
 
@@ -240,45 +241,45 @@ function refreshVideo(&$params) {
 	// Clean name
 	//
 	$result = '';
-	$result = cleanName($params['file']['filename']);
+	$name = (array_key_exists('window_title',$params['file']) ? $params['file']['window_title'] : $params['file']['filename']);
+	$result = cleanName($name);
 	$params['file']['newname'] = $result['result'][0];
 	$feedback[] = $result;
 
 	//
 	// Get Artist/Title
 	//
-	$result = getArtistTitle($params['file']['newname']);
+	$result = getArtistTitle($params);
 	if (array_key_exists('error',$result)) {
-		echo "<pre>Error on: ".$result['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
 		$feedback[] = $result;
 		debug($feedback, 'feedback');
 		return $feedback;
 	}
-	$params['file']['artist'] = $result['result']['artist'];
-	$params['file']['title'] = $result['result']['title'];
-	if (array_key_exists('sidekicks', $result['result'])) $params['file']['sidekicks'] = $result['result']['sidekicks'];
 	$feedback[] = $result;
+
+	if ($params['refreshvideooptions'] & REFRESH_CHECK_REVERSE) {
+		$result = reverseArtistTitle($params);
+	}
+	if (array_key_exists('error',$result)) {
+		$feedback[] = $result;
+		debug($feedback, 'feedback');
+	}
 
 	//
 	// Get Genre
 	//
-	$result = getGenre($params['file']['dirname']);
+	$result = getGenre($params);
+	if (array_key_exists('error',$result)) {
+		$feedback[] = $result;
+		debug($feedback, 'feedback');
+		//return $feedback;
+	}
 	$feedback[] = $result;
-
-	//
-	// Not returning error anymore, maybe find genre over artist
-	//
-	// if (array_key_exists('error',$result)) {
-		// echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
-		// debug($feedback, 'feedback');
-		// return $feedback;
-	// }
-	$params['file']['genre'] = $result['result']['genre'];
 
 	//
 	// Find Dir to move to
 	//
-	if ($params['refreshvideooptions'] & REFRESH_MOVE) {
+	if ($params['refreshvideooptions'] & REFRESH_FIND_MOVE) {
 		$result = findMoveTo($params['file'], $params['importprocess']);
 		$feedback[] = $result;
 	} else {
@@ -286,22 +287,26 @@ function refreshVideo(&$params) {
 		$result['result']['moveto'] = $params['file']['dirname'];
 		$feedback[] = $result;
 	}
+
 	if (array_key_exists('error',$result)) {
-		echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
 		debug($feedback, 'feedback');
-		return $feedback;
+		//return $feedback;
 	}
 	$params['file']['moveto'] = $result['result']['moveto'];
+	debug($params);
 
 	//
-	// Check for old version and move to recycle, immediate
+	// Check for old version and abort process
 	//
-	if ($params['refreshvideooptions'] & REFRESH_RECYCLE_DUPLICATE) {
-			// Causing issues
-			//	Find prev file again when handling just recycled
-			//	Just use find dups for now
-			//$feedback[] = findDuplicateByArtistTitle($params);
+	if ($params['refreshvideooptions'] & REFRESH_CHECK_DUPLICATES) {
+		$result = findDuplicateByArtistTitle($params);
+		$feedback[] = $result;
+		if (array_key_exists('error',$result)) {
+			debug($feedback, 'feedback');
+			//return $feedback;
+		}
 	}
+
 
 	//
 	// Create NFO
@@ -311,9 +316,9 @@ function refreshVideo(&$params) {
 		$result = createNFO($params['file'], $params['importprocess']);
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
-			echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+			$feedback['error'] = "NFO Error";
 			debug($feedback, 'feedback');
-			return $feedback;
+			//return $feedback;
 		}
 	}
 
@@ -326,18 +331,17 @@ function refreshVideo(&$params) {
 		$result = createThumbNail($params['file'], $params['importprocess']);
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
-			echo "<pre>Error on: ".$feedback['Name'].': '; print_r($params['file']); print_r($result); echo "</pre>";
+			$feedback['error'] = "Thumbnail Error";
 			debug($feedback, 'feedback');
 			return $feedback;
 		}
 	}
 
+
 	//
 	// Now move it
 	//
-	if ($params['refreshvideooptions'] & REFRESH_MOVE && 
-		( ($params['file']['moveto'].$params['file']['newname'] != $params['file']['dirname'].$params['file']['filename']) ||
-		   $params['file']['batchfile'] != '')) {
+	if ($params['refreshvideooptions'] & REFRESH_MOVE && ( ($params['file']['moveto'].$params['file']['newname'] != $params['file']['dirname'].$params['file']['filename']) ||  $params['file']['batchfile'] != '')) {
 		if ($params['importprocess']) {		// Create batch file, and abort futher action?
 			$params['createbatchfile'] = 0;
 			$params['movetorecycle'] = 0;
@@ -359,31 +363,9 @@ function refreshVideo(&$params) {
 		}
 	}
 
-	$feedback['result'] = $params['file'];
-	if (array_key_exists('error', $feedback) && empty(trim($feedback['error']))) unset($feedback['error']);
-
-	// Log Event per file, and unset Result
-
-	$exectime += microtime(true);
-	if (!array_key_exists('message', $feedback)) $feedback['message']=Null;
-	if (!array_key_exists('commandstr', $feedback)) $feedback['commandstr']=Null;
-	if  (array_key_exists('error', $feedback)) {
-		$params['commandvalue'] = $feedback['error']; // Commandvalue so it will end up in data for log
-	} elseif (array_key_exists('message', $feedback)) {
-		$params['commandvalue'] = $feedback['message'];
-	} elseif (array_key_exists('Name', $feedback)) {
-		$params['commandvalue'] = $feedback['Name'];
-	}elseif (array_key_exists('Name', $feedback)) {
-		$params['commandvalue'] = $$params['file']['filename'];
-	}
-	if ($params['importprocess']) {
-		logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['caller']['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => $params['commandID'], 'data' => $params['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $params['loglevel'], 'commandstr' => $feedback['commandstr'], 'exectime' => $exectime));
-	} else {
-		// write to file?
-	}
-
-	if (array_key_exists('result', $feedback)) unset($feedback['result']);
-
+	//$feedback['result'] = $params['file'];
+	
+	//if (array_key_exists('error', $feedback) && empty(trim($feedback['error']))) unset($feedback['error']);
 
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -396,49 +378,31 @@ function findDuplicateByArtistTitle(&$params) {
 	$feedback['Name'] = 'findDuplicateByArtistTitle';
 	$feedback['result'] = array();
 
-	$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($params['file']['dirname'].$params['file']['basename']).'";'; 
-	if (!($thismvid = FetchRow($mysql)['id'])) {
-		$feedback['error'] = "Error - Abort, could not find myID for : ".$params['file']['dirname'].$params['file']['basename'];
-		debug($feedback, 'feedback');
-		return $feedback;
+	if (!$params['importprocess']) { // Find this video
+		$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($params['file']['dirname'].$params['file']['basename']).'";'; 
+		if (!($thismvid = FetchRow($mysql)['id'])) {
+			$feedback['error'] = "Error - Abort, could not find myID for : ".$params['file']['dirname'].$params['file']['basename'];
+			debug($feedback, 'feedback');
+			return $feedback;
+		}
+		$params['mvid'] = $thismvid;
+		$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
+					JOIN xbmc_path p ON mv.strPathID = p.id 
+					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" OR artist LIKE "%/ '.$params['file']['artist']. '")  
+					AND title = "'.$params['file']['title'].'" AND mv.id <>'.$thismvid.';'; 
+	} else {
+		$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
+					JOIN xbmc_path p ON mv.strPathID = p.id 
+					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' %" OR artist LIKE "% '.$params['file']['artist']. '")  
+					AND title = "'.$params['file']['title'].'";'; 
 	}
-	$params['mvid'] = $thismvid;
-	$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
-				JOIN xbmc_path p ON mv.strPathID = p.id 
-				WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" OR artist LIKE "%/ '.$params['file']['artist']. '")  
-				AND title = "'.$params['file']['title'].'" AND mv.id <>'.$thismvid.';'; 
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
-	if ($mvids = FetchRows($mysql)) {		// Found this artist & title, so duplicate
+	if ($mvids = FetchRows($mysql)) {		
 		// echo "<pre>".$feedback['Name'].': '; print_r($mvids); echo "</pre>";
-		foreach($mvids as $mvid) {	// count occurences?
-			// Send dups to recycle bin
-			$tmpparams = $params;
-			$tmpparams['file']['mvid'] = $mvid['id'];
-			$tmpparams['file'] = mb_pathinfo(mv_toLocal($mvid['file']));
-			$tmpparams['file']['dirname'] = rtrim($tmpparams['file']['dirname'], '/') . '/';
-			// echo '1>'.$mvid['id'].': '.strtolower($params['file']['dirname'].$params['file']['basename']).'<'.CRLF;
-			// echo '2>'.$mvid['id'].': '.strtolower($tmpparams['file']['dirname'].$tmpparams['file']['basename']).'<'.CRLF;
-			if ($thismvid != $mvid['id']) { 			// its not me, continue
-//				if (strtolower($params['file']['dirname'].$params['file']['basename']) == strtolower($tmpparams['file']['dirname'].$tmpparams['file']['basename'])) { 	// Same filename (location, move to recycle)
-					// echo '*>'.$mvid['id'].': '.strtolower($tmpparams['file']['dirname'].$tmpparams['file']['basename']).'<'.CRLF;
-					if ($params['importprocess']) {
-						// echo "Deleting: ".$mvid['file'].CRLF;
-						// $tmpparams['createbatchfile'] = 0;
-						// $tmpparams['movetorecycle'] = 1;
-						// $tmpparams['CAMEFROM'] = "DUPLICATE ONLINE";
-						// $feedback['result'] = moveMusicVideo($tmpparams);
-					} else {
-						$params['file']['match'] = $tmpparams['file'];
-						$feedback['result'] = $params['file'];
-						// $tmpparams['createbatchfile'] = 1;
-						// $tmpparams['movetorecycle'] = 1;
-						// $tmpparams['file']['batchfile'] = $params['file']['batchfile'];
-						// $tmpparams['CAMEFROM'] = "DUPLICATE BATCH";
-						// $feedback['result'] = moveMusicVideo($tmpparams);
-						// $params['file']['batchfile'] = '#Found by findDuplicateByArtistTitle'.$tmpparams['file']['batchfile'];
-					}
-			}
+		if (!empty($mvids)) { // Found this artist & title, so duplicate
+			$feedback['result'] = $mvids;
+			$feedback['error'] = "Duplicates found";
 		}
 	}
 	debug($feedback, 'feedback');
@@ -501,7 +465,9 @@ function cleanName($fname) {
 
 	$pattern[] = '/"/';							$replace[] = '';
 	$pattern[] = '/full1080p/'; 				$replace[] = '';
-	$pattern[] = '/_/'; 						$replace[] = '';
+	$pattern[] = '/ - youtube.*$/'; 			$replace[] = '';
+	$pattern[] = '/ \|.*$/'; 			$replace[] = '';
+	$pattern[] = '/_/'; 						$replace[] = ' ';
 	$pattern[] = '/new video/'; 				$replace[] = '';
 	$pattern[] = '/official music/'; 			$replace[] = '';
 	$pattern[] = '/new video/'; 				$replace[] = '';
@@ -545,7 +511,8 @@ function cleanName($fname) {
 	$pattern[] = '/remix$/';					$replace[] = '';
 	$pattern[] = '/mix$/';						$replace[] = '';
 	$pattern[] = '/original$/';					$replace[] = '';
-	$pattern[] = '/^(.*?) Y (.*? -)/';			$replace[] = '$1 & $2';
+	$pattern[] = '/^(.*?) y (.*? -)/';			$replace[] = '$1 & $2';
+	$pattern[] = '/^(.*?) x (.*? -)/';			$replace[] = '$1 & $2';
 	$pattern[] = '/^(.*?) with (.*? -)/';			$replace[] = '$1 & $2';
 	$pattern[] = '/^(.*?) ve (.*? -)/';			$replace[] = '$1 & $2';
 	$pattern[] = '/,/';							$replace[] = ' & ';
@@ -590,7 +557,7 @@ function cleanName($fname) {
 		$fname = preg_replace('/-/u', ' - ', $fname, 1);
 	}
 
-	if (substr_count ($fname, ' - ') == 0) $feedback['error'] =  "Error - No Artist title found: >$fname<".CRLF;
+	if (substr_count ($fname, ' - ') == 0) $feedback['error'] =  "No Dash";
 
 //	$fname = mb_convert_case($fname, MB_CASE_TITLE, 'UTF-8');
 	$fname = preg_replace_callback('/\b[a-z]/u',function ($matches) {return strtoupper($matches[0]);},$fname); // Uppercase on all word breaks
@@ -603,7 +570,7 @@ function cleanName($fname) {
 	$savname = trim($fname);
 	$fname = trim(preg_replace('/(.*?\s)(Ft.*?) - (.*?$)/', '$1- $3 $2', $fname)); // Handel Ft in wrong place
 	if ($fname != $savname) {
-		$feedback['message'] .= "Info - Ft replaced from: >$savname< "."to: >$fname< </br>";
+		$feedback['message'] .= "Info: Updated Ft old: >$savname< "."new: >$fname< </br>";
 	}
 
 	$feedback['Name'] = 'cleanName';
@@ -724,18 +691,20 @@ function createNFO($file, $importprocess) {
 	*/
 }
 
-function getArtistTitle($fname) {
-	debug($fname, 'fname');
+function getArtistTitle(&$params) {
+	debug($params, 'params');
+	$fname = $params['file']['newname'];
 
 	// Expecting correct format "
 	//              Artist1 & Artist2 - Name-Song Ft Sidekick 1 Sidekick2"
 
 	$feedback['Name'] = 'getArtistTitle';
+	$feedback['result'] = array();
 	$result = preg_match( '/^.*? & .*? -/', $fname, $m);	// Found & -
 	if ($result) {
 		$result = preg_match( '/^.*? & /', $fname, $m);	// Found BOL to & part
 		if (!array_key_exists('0',$m)) {
-			$feedback['error'] = "No artist found: >$fname<".CRLF;
+			$feedback['error'] = "No Artist";
 		}
 		$feedback['result']['artist'] =  substr($m[0], 0, -3);
 		$result = preg_match( '/ & .*? - /', $fname, $m);	// Get  & - part
@@ -743,7 +712,7 @@ function getArtistTitle($fname) {
 	} else {
 		$result = preg_match( '/^.*? -/', $fname, $m);
 		if (!array_key_exists('0',$m)) {
-			$feedback['error'] = "No artist found: >$fname<".CRLF;
+			$feedback['error'] = "No Artist";
 			// echo "No title found: >$fname<".CRLF;
 		} else {
 			$feedback['result']['artist'] =  substr($m[0], 0, -2);
@@ -754,13 +723,11 @@ function getArtistTitle($fname) {
 	if ($result) {
 		$feedback['result']['title'] =  substr($m[0], 3, -4);
 		$result = preg_match(  '/ Ft .*?$/', $fname, $m);
-		$feedback['result']['sidekicks'] = (array_key_exists('sidekicks', $feedback['result']) 
-				? $feedback['result']['sidekicks'].' '.substr($m[0], 4) 
-				: substr($m[0], 4));
+		$feedback['result']['sidekicks'] = (array_key_exists('sidekicks', $feedback['result']) 	? $feedback['result']['sidekicks'].' '.substr($m[0], 4) : substr($m[0], 4));
 	} else {
 		$result = preg_match(  '/ - .*?$/', $fname, $m);
 		if (!array_key_exists('0',$m)) {
-			$feedback['error'] = "No title found: >$fname<".CRLF;
+			$feedback['error'] = "No Title";
 		} else {
 			$feedback['result']['title'] =  substr($m[0], 3);
 		}
@@ -769,29 +736,66 @@ function getArtistTitle($fname) {
 	// $feedback['message'] = "";
 	// if () $feedback['error'] = "Not so good";
 
+	if (array_key_exists('artist', $feedback['result'])) $params['file']['artist'] = $feedback['result']['artist'];
+	if (array_key_exists('title', $feedback['result'])) $params['file']['title'] = $feedback['result']['title'];
+	if (array_key_exists('sidekicks', $feedback['result'])) $params['file']['sidekicks'] = $feedback['result']['sidekicks'];
 	debug($feedback, 'feedback');
 	return $feedback;
 }
 
-function getGenre($dirname) {
-	debug($dirname, 'dirname');
+function reverseArtistTitle(&$params) {
+	debug($params, 'params');
 
-	global $genres;
-	$feedback['Name'] = 'getGenre';
+	// Expecting correct format "
+	//              Artist1 & Artist2 - Name-Song Ft Sidekick 1 Sidekick2"
 
-	$path_break = explode('/', $dirname);
-	$result = array_intersect($genres, $path_break);
+	$feedback['Name'] = 'reverseArtistTitle';
 
-	if (empty($result)) {
-		//$feedback['error'] = "Could not find genre in: >".$dirname."<".CRLF;	
-		$feedback['result']['genre'] = "Not Found from Import folder";
-	} else {
-		$feedback['result']['genre'] = reset($result);
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+				JOIN xbmc_path p ON mv.strPathID = p.id 
+				WHERE artist = "'.$params['file']['artist']. '";';
+	if (!($mvids = FetchRows($mysql))) {	// Did not find this artist, check title if maybe reversed
+		$feedback['error'] = "Artist not found";
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+					JOIN xbmc_path p ON mv.strPathID = p.id 
+					WHERE artist = "'.$params['file']['title']. '";';
+		if ($mvids = FetchRows($mysql)) {	// Did find title as artist	
+			$temp = $params['file']['artist'];
+			$params['file']['artist'] = $params['file']['title'];
+			$params['file']['title'] = $temp;
+			$temp = $params['file']['newname'];
+			$params['file']['newname'] = trim(preg_replace('/(.*?) - (.*?)($|Ft.*?$)/', '$2 - $1 $3', $params['file']['newname'])); 
+			$feedback['error'] = "Reversed artist-title";
+		}
 	}
 
 	debug($feedback, 'feedback');
 	return $feedback;
 }
+
+
+function getGenre(&$params) {
+	
+	debug($params, 'params');
+
+	global $genres;
+	$feedback['Name'] = 'getGenre';
+	$path_break = explode('/', $params['file']['dirname']);
+	$result = array_intersect($genres, $path_break);
+
+	if (empty($result)) {
+		$params['file']['genre'] = (!empty($params['file']['genre']) ? $params['file']['genre'] : "Not Found");
+	} else {
+		$params['file']['genre'] = reset($result);
+	}
+
+	$feedback['result'] = $result;
+	// print_r($result);
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
 
 function findBestMatch(&$file, $mvids) {
 	debug($file, 'file');
@@ -865,8 +869,6 @@ function findMoveTo(&$file, $importprocess) {
 	$feedback['Name'] = 'findMoveTo';
 	$file['moveto'] = $file['dirname'];
 
-
-
 	$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
 				JOIN xbmc_path p ON mv.strPathID = p.id 
 				WHERE (`artist` = "'.$file['artist']. '" OR artist LIKE "'.$file['artist']. ' /%" )
@@ -889,14 +891,12 @@ function findMoveTo(&$file, $importprocess) {
 				$file['moveto'] = LOCAL_DATA.$genrefolders[$key].ASSORTED_DIR;
 				// echo "<pre> New Artist".': '; print_r($mvids); echo "</pre>";
 			} else {
-				$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
+				$feedback['error'] = "No Genre";
 			}
 		}
 	}
 
-
 	$feedback['result'] = $file;
-
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -908,16 +908,275 @@ function createThumbNail($file, $importprocess) {
 	$feedback['result'] = array();
 	$feedback['message'] = "No thumbnails created, kick of on srvmedia: </br>sudo ~/bin/spawn_create_thumbs";
 	if (!$importprocess) return $feedback; 
+	$feedback['message'] = "";
 	$params = '"'.$file['dirname'].'" "'.$file['filename'].'" "'.$file['extension'].'"';
 	$cmd = getPath().'/bin/createThumb.sh '.$params;
-	$outputfile=  tempnam( sys_get_temp_dir(), 'thumb' );
-	$pidfile=  tempnam( sys_get_temp_dir(), 'thumb' );
-	exec(sprintf("%s > %s 2>&1 echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['message'] = "Created Thumbnail ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+    exec($cmd, $output, $exitCode);
+	debug($output, 'exec');
+	if ($exitCode != 0) {
+		$feedback['error'] = "Error FFMPEG $exitCode";
+	}
+	$feedback['result'] = $output;
+	$feedback['exitCode'] = $exitCode;
 	debug($feedback, 'feedback');
-	return $feedback;		// GET OUT
+	return $feedback;
+}
+
+
+
+function handleDownloadQueue(&$params) {
+	
+	debug($params, 'params');
+
+	$feedback['Name'] = 'handleDownloadQueue';
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	//	debug($stepValue, 'stepValue');
+    $feedback['result'] = array();
+
+	$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+
+	while ($row = FetchRow($mysql)) {
+			switch ($row['statusID'])
+			{
+			case Q_QUEUED:
+				$url = $row['url'];
+				PDOUpdate('vd_queue', array('statusID' => Q_VERIFYING) , array('id' => $row['id']));
+				$params['importprocess'] = true;
+				$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_MOVE & ~REFRESH_THUMB & ~REFRESH_NFO;
+				$params['file']['window_title'] = $row['window_title'];
+				$params['file']['genre'] = $row['genre'];
+				$params['file']['dirname'] = LOCAL_IMPORT. '/';
+				$feedback = refreshVideo($params);
+				debug($params);
+				$pretty_result = $row['result'].'<br/><pre>VERIFY<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
+				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
+				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
+				if (array_key_exists('moveto', $params['file'])) {
+					$store['moved_to'] =  $params['file']['moveto'];
+					$store['subdir_move_to'] =  substr(rtrim($params['file']['moveto'],'/'), strrpos(rtrim($params['file']['moveto'],'/'), '/')+1);
+				} else {
+					$store['moved_to'] =  "";
+					$store['subdir_move_to'] =  "";
+				}
+				$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
+				$store['result']   = $pretty_result;
+
+				$error = "";
+				foreach ($feedback as $step) {
+					if (is_array($step) && array_key_exists('error', $step)) {
+						$store['duplicate_filename'] = ($step['error'] == "Duplicate found" ? $step['result'][0]['file'] : "");
+						$error .= $step['error'].CRLF;
+					}
+				}
+				if ($store['genre'] == 'Not Found') $error .= "No Genre".CRLF;
+				$store['last_error'] = 	substr($error, 0, -5);
+				if (!empty($error)) {
+					$store['statusID'] = Q_VERIFY_FAILED;
+					PDOUpdate('vd_queue', $store, array('id' => $row['id']));
+				} else {
+					$store['statusID'] = Q_VERIFY_SUCCESS;
+					PDOUpdate('vd_queue', $store , array('id' => $row['id']));
+				}
+				break;
+			case Q_VERIFY_SUCCESS:
+				$url = $row['url'];
+				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
+				$feedback = youtubeDL($url);
+				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				debug($params);
+				if (array_key_exists('error', $feedback)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $feedback['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				} else {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_SUCCESS, 'filename' => $feedback['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				}
+				break;
+			case Q_DOWNLOAD_SUCCESS:
+				$url = $row['url'];
+				PDOUpdate('vd_queue', array('statusID' => Q_IMPORTING) , array('id' => $row['id']));
+
+				$params['importprocess'] = true;
+				$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_CHECK_DUPLICATES &~REFRESH_CHECK_REVERSE;
+				$file_parts = mb_pathinfo($row['filename']);
+				$file_parts['dirname'] = rtrim($file_parts['dirname'], '/') . '/';
+				$params['file'] = $file_parts;
+				$params['file']['window_title'] = $row['newname'];
+				$params['file']['genre'] = $row['genre'];
+				$feedback = refreshVideo($params);
+				debug($params);
+				$pretty_result = $row['result'].'<br/><pre>IMPORT<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
+				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
+				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
+				$store['moved_to'] = (array_key_exists('moveto', $params['file']) ? $params['file']['moveto'] : '');
+				$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
+				$store['result']   = $pretty_result;
+				$error = "";
+				foreach ($feedback as $step) {
+					if (is_array($step) && array_key_exists('error', $step)) {
+						$store['duplicate_filename'] = ($step['error'] == "Duplicate found" ? $step['result'][0]['file'] : "");
+						$error .= $step['error'].CRLF;
+					}
+				}
+				if ($store['genre'] == 'Not Found') $error .= "No Genre".CRLF;
+				$store['last_error'] = 	substr($error, 0, -5);
+				if (!empty($error)) {
+					$store['statusID'] = Q_IMPORT_FAILED;
+					PDOUpdate('vd_queue', $store, array('id' => $row['id']));
+				} else {
+					$store['statusID'] = Q_IMPORT_SUCCESS;
+					PDOUpdate('vd_queue', $store , array('id' => $row['id']));
+				}
+				break;
+			default:
+				$feedback = $func($params);
+				break;
+			}
+//		}
+	}
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function findVideoArtistTitle($params) {
+
+	debug($params, 'params');
+	// echo "<pre>";
+	// print_r($params);
+	// echo "</pre>";
+	// exit;
+	
+	$feedback['Name'] = 'findVideoArtistTitle';
+	$feedback['received'] = $params['commandvalue'];
+	$feedback['result'] = array();
+	$name = urldecode($params['commandvalue']);
+	$result = cleanName($name);
+	$params['file']['newname'] = $result['result'][0];
+	$feedback[] = $result;
+	$url = '/index.php/music-videos?resetfilters=1';
+	$feedback['redirect'] = "refresh:3;url=".$url;
+	if (array_key_exists('error',$result)) {
+		$feedback[] = $result;
+		debug($feedback, 'feedback');
+		return $feedback;
+	}
+
+	//
+	// Get Artist/Title
+	//
+	$result[] = getArtistTitle($params);
+	$result[] = reverseArtistTitle($params);
+	if (array_key_exists('error',$result)) {
+		$feedback[] = $result;
+		debug($feedback, 'feedback');
+		return $feedback;
+	}
+	$artist = $params['file']['artist'];
+	$title  = substr($params['file']['title'], 0, 1);
+	$search = '&xbmc_video_mvids___artist[condition]=CONTAINS&xbmc_video_mvids___artist[value][]=%s';
+	$search .= '&xbmc_video_mvids___title[condition]=BEGINS WITH&xbmc_video_mvids___title[value][]=%s';
+	$feedback['redirect'] = "Location: ".sprintf($url.$search, $artist, $title);
+	$feedback['commandstr'] = $feedback['redirect'];
+	debug($feedback, 'feedback');
+	return $feedback;
 
 }
+
+
+function youtubeDL($url) {
+	
+	debug($url, 'url');
+
+	$feedback['Name'] = 'youtube-dl';
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	//	debug($stepValue, 'stepValue');
+    $feedback['result'] = array();
+	$cmd = getPath().'/bin/youtube-dl.sh "'.$url.'"';
+    debug($cmd, 'command');
+	//$feedback['commandstr'] = str_replace($params['device']['connection']['password'],'*****',$cmd);
+    $output = shell_exec($cmd);
+	// $output= '[youtube] dKKdJoXF7PI: Downloading webpage
+// [youtube] dKKdJoXF7PI: Downloading video info webpage
+// [youtube] Downloading just video dKKdJoXF7PI because of --no-playlist
+// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.info.json
+// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f248.webm
+// [download] 100% of 20.50MiB in 00:02
+// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f251.webm
+// [download] 100.0% of 2.46MiB at 9.52MiB/s ETA 00:00
+// [download] 100% of 2.46MiB in 00:00
+// [ffmpeg] Merging formats into "/home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.webm"
+// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f248.webm (pass -k to keep)
+// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f251.webm (pass -k to keep)
+// 0';
+    debug($output, 'shell_exec');
+// Success with merge
+// [youtube] 9cBtJYI6itg: Downloading webpage
+// [youtube] 9cBtJYI6itg: Downloading video info webpage
+// [youtube] Downloading just video 9cBtJYI6itg because of --no-playlist
+// [youtube] 9cBtJYI6itg: Downloading js player vflJiqSE7
+// [youtube] 9cBtJYI6itg: Downloading js player vflJiqSE7
+// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).info.json
+// WARNING: Requested formats are incompatible for merge and will be merged into mkv.
+// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f137.mp4
+// [download] 100% of 33.72MiB in 00:03
+// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f251.webm
+// [download] 100% of 2.74MiB in 00:00
+// [ffmpeg] Merging formats into "/home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).mkv"
+// WARNING: Cannot update utime of file
+// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f137.mp4 (pass -k to keep)
+// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f251.webm (pass -k to keep)
+
+// Already downloaded
+// pvloon@vlosite:/home/www/ha/bin$ /home/www/ha/bin/youtube-dl.sh "https://www.youtube.com/watch?v=9cBtJYI6itg"
+// [youtube] 9cBtJYI6itg: Downloading webpage
+// [youtube] 9cBtJYI6itg: Downloading video info webpage
+// [youtube] Downloading just video 9cBtJYI6itg because of --no-playlist
+// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).info.json
+// WARNING: Requested formats are incompatible for merge and will be merged into mkv.
+// [download] /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).mkv has already been downloaded and merged
+        // $lines = explode(PHP_EOL, $output);
+        // $feedback['result'][] = $lines;
+
+	if (strpos($output, '[download] 100%') !== null) {
+		// $found = preg_match('/\[info\] Writing video description metadata as JSON to: (.*)\n/',$output,$matches);
+		// if (array_key_exists(1, $matches)) { 	// JSON
+			// $filename = $matches[1];
+			// $feedback['json'] = $filename;
+		// }
+		// debug($matches, 'matches');
+		
+		$found = preg_match('/\[ffmpeg\] Merging formats into \"(.*)\"/',$output,$matches);
+		if (array_key_exists(1, $matches)) { 	// Filename found
+			$filename = $matches[1];
+			$feedback['filename'] = $filename;
+		}
+		debug($matches,'matches');
+
+		$found = preg_match('/\[download\] (.*) has already been downloaded/',$output,$matches);
+		if (array_key_exists(1, $matches)) { 	// Filename found
+			$filename = $matches[1];
+			$feedback['filename'] = $filename;
+		}
+		debug($matches,'matches');
+	} 
+	if (!array_key_exists('filename', $feedback)) $feedback['error'] = "No Filename";
+	// if (!array_key_exists('json', $feedback)) $feedback['error'] = "No JSON file";
+	
+	//$feedback['result'] = $output;
+	//$start = strpos($output, $params['command']['command']);
+	//$clean = substr($output, $start + strlen($params['command']['command']) + 2*strlen(PHP_EOL));
+    //$lines = explode("\r\n", $clean);
+	//array_pop($lines);
+    // $feedback['result_raw'] = $output;
+	//$feedback['result_raw'] =implode(PHP_EOL, $lines);
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
 
 function parseSideKicks($sidekickstr) {
 	debug($sidekickstr, 'sidekickstr');

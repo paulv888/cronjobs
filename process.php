@@ -27,6 +27,7 @@ if (isset($_POST['debug'])) {
 }
 debug($_POST, 'POST');
 
+
 $input = file_get_contents('php://input');
 // ob_start();
 // var_dump($input);
@@ -63,21 +64,32 @@ if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_e
 	$params['SESSION']['properties']['SelectedPlayer']['value'] = (isset($params['playerID']) ? $params['playerID'] : getCurrentPlayer());
 }
 $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
+debug($_SESSION, 'Current _SESSION');
 session_write_close();
 
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
 
 	debug($params, 'params');
-	
+
 	$result = executeCommand($params);
 	if (is_array($result)) {
-		echo "ok";
-		// print_r($result);
+		foreach ($result as $r) {
+			if (array_key_exists('redirect', $r)) {
+				header($r['redirect']);
+			}
+			if (array_key_exists('error', $r)) {
+				echo "KO\r\n".$r['error'];
+			} else {
+				echo "OK\r\n";
+			}
+			if (array_key_exists('message', $r)) echo $r['message'] ;
+		}
 	}
-	else
+	else {
 		// ob_start("ob_gzhandler");
 		echo $result;
 		// ob_end_flush();
+	}
 }
 //echo get_current_user().CRLF;
 ?>

@@ -198,6 +198,13 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 		}
 		
 		foreach ($rowshemesteps as $step) {
+			if ($step['cond_deviceID'] == DEVICE_SELECTED_PLAYER) {
+				if (array_key_exists('SESSION', $params)) {
+					$step['cond_deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
+				} else if (array_key_exists('SESSION', $params['caller'])) {
+					$step['cond_deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
+				} else $step['cond_deviceID'] = getCurrentPlayer();
+			}
 			$check_result = checkConditions(array($step), $params);
 
 			if ($check_result['result'][0]) {
@@ -455,7 +462,7 @@ function moveMusicVideo($params) {
 	
 	$matches = glob($file['moveto'].$file['newname'].'.*');
 	if (strtolower($file['dirname'].$file['filename']) != strtolower($file['moveto'].$file['newname'])) {
-		if (!empty($matches)) {			// Assume we found an upgrade and move to recycle
+		if (!empty($matches)) {			// Duplicate file name
 			// Find vid match
 			// echo "<pre>Found old one ".$feedback['Name'].' '.$dirname.$fparsed['basename'].CRLF;
 			foreach ($matches as $match) {
@@ -487,25 +494,28 @@ function moveMusicVideo($params) {
 				if (!in_array($ext, Array("tbn", "nfo"))) {
 					if ($copy && $unlink) {
 						$feedback['message'] .= $filename.'| moved to '.$tofile."\n";
-						$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
-						// Remove from Kodi Lib
-						if ($mvid = FetchRow($mysql)['id']) {
-							$command['caller'] = $params['caller'];
-							$command['callerparams'] = $params['caller'];
-							$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
-							$command['commandID'] = 374;					// removeMusicVideo
-							$command['commandvalue'] = $mvid;
-							$feedback[]['result'] = sendCommand($command);
-						}
-						// Refresh to directory
-						if (!$params['movetorecycle']) {
-							$command['caller'] = $params['caller'];
-							$command['callerparams'] = $params;
-							$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
-							$command['commandID'] = 	373;	// Scan Directory
-							$command['commandvalue'] = mv_toPublic($file['moveto']);
-							$result = sendCommand($command); 
-							$feedback[]['result'] = $result;
+						if (!array_key_exists('importprocess',$params)) $params['importprocess'] = false;
+						if (!$params['importprocess']) { 	// Only do for deletes for now
+							$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
+							// Remove from Kodi Lib
+							if ($mvid = FetchRow($mysql)['id']) {
+								$command['caller'] = $params['caller'];
+								$command['callerparams'] = $params['caller'];
+								$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
+								$command['commandID'] = 374;					// removeMusicVideo
+								$command['commandvalue'] = $mvid;
+								$feedback[]['result'] = sendCommand($command);
+							}
+							// Refresh to directory
+							if (!$params['movetorecycle']) {
+								$command['caller'] = $params['caller'];
+								$command['callerparams'] = $params;
+								$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
+								$command['commandID'] = 	373;	// Scan Directory
+								$command['commandvalue'] = mv_toPublic($file['moveto']);
+								$result = sendCommand($command); 
+								$feedback[]['result'] = $result;
+							}
 						}
 					} else {
 						$feedback['error'] = 'Error moving '.$infile.' | to '.$tofile."\n";
@@ -563,6 +573,44 @@ function addToFavorites(&$params) {
 		$feedback['error'] = 'Could not open playlist - '.$params['macro___commandvalue'].'|';
 	}
 
+	debug($feedback, 'feedback');
+	return $feedback;
+} 
+
+function addToQueue(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'addToQueue';
+	$feedback['received'] = $params['commandvalue'];
+	$feedback['result'] = array();
+
+	$feedback['commandstr'] = 'PDOInsert: '.$params['commandvalue'];
+	if (empty($params['commandvalue'])) {
+		$feedback['error'] = 'Error: commandvalue is empty';
+		return $feedback;
+	}
+	if (empty($params['value_parts'][0])) {
+		$feedback['error'] = 'Error: URL is empty';
+		return $feedback;
+	}
+	if (empty($params['value_parts'][1])) {
+		$feedback['error'] = 'Error: windows title is empty';
+		return $feedback;
+	}
+
+
+	$params['value_parts'][0] = urldecode($params['value_parts'][0]);
+	$params['value_parts'][1] = urldecode($params['value_parts'][1]);
+	$result = cleanName($params['value_parts'][1]);
+	$windowTitle = $result['result'][0];
+
+	try {
+		$feedback['result'][] = PDOInsert("vd_queue", array('url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+		$feedback['message']="Inserted: ".$windowTitle;
+	} catch (Exception $e) {
+		$feedback['error'] = 'Error: On insert on vd_queue';
+	}
 	debug($feedback, 'feedback');
 	return $feedback;
 } 
@@ -813,6 +861,7 @@ function sendBullet($params) {
 		$feedback['error'] = 'Error: '.$e->getMessage();
 		echo $e->getMessage().CRLF;
 	}
+
 	debug($feedback, 'feedback');
     return $feedback;
 
@@ -925,13 +974,13 @@ function genericTelnet(&$params) {
                              ' '.$params['device']['connection']['password'].' "'.$params['command']['command'].'"';
         debug($cmd, 'command');
 	$feedback['commandstr'] = str_replace($params['device']['connection']['password'],'*****',$cmd);
-        $output = shell_exec($cmd);
-        debug($output, 'shell_exec');
+    $output = shell_exec($cmd);
+    debug($output, 'shell_exec');
 	$start = strpos($output, $params['command']['command']);
 	$clean = substr($output, $start + strlen($params['command']['command']) + 2*strlen(PHP_EOL));
-        $lines = explode("\r\n", $clean);
+    $lines = explode("\r\n", $clean);
 	array_pop($lines);
-        $feedback['result'][] = $lines;
+    $feedback['result'][] = $lines;
 	$feedback['result_raw'] =implode(PHP_EOL, $lines);
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -1657,6 +1706,7 @@ function executeQuery($params) {
 	$mysql=str_replace("{DEVICE_PAUL_HOME}",DEVICE_PAUL_HOME,$mysql);
 
 	$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
+	$feedback['commandstr'] = $mysql;
 
 	debug($feedback, 'feedback');
 	return $feedback;

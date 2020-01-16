@@ -215,7 +215,7 @@ function handleTriggers($params, $propertyID, $triggertype) {
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
 			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.') ORDER BY sort';
 	$feedback =  array(); 
-	
+
 	if ($triggerrows = FetchRows($mysql)) {
 		foreach ($triggerrows as $trigger) {
 			debug($trigger, 'trigger');
