@@ -74,18 +74,22 @@ if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All
 	$result = executeCommand($params);
 	if (is_array($result)) {
 		foreach ($result as $r) {
-			if (array_key_exists('redirect', $r)) {
-				header($r['redirect']);
-			}
-			if (array_key_exists('error', $r)) {
-				echo "KO\r\n".$r['error'];
-			} else {
-				echo "OK\r\n";
-			}
-			if (array_key_exists('message', $r)) echo $r['message'] ;
+			if (is_array($r)) {
+				if (array_key_exists('redirect', $r)) {
+					header($r['redirect']);
+				}
+				if (array_key_exists('message', $r)) {
+					echo $r['message']."\r\n";
+				} 
+				if (array_key_exists('error', $r)) {
+					echo "KO\r\n".$r['error'];
+				} else {
+					echo "OK\r\n";
+				}
+				if (array_key_exists('message', $r)) echo $r['message'] ;
+			} 
 		}
-	}
-	else {
+	} else {
 		// ob_start("ob_gzhandler");
 		echo $result;
 		// ob_end_flush();

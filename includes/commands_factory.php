@@ -599,15 +599,23 @@ function addToQueue(&$params) {
 		return $feedback;
 	}
 
-
+	$feedback['message'] = "";
 	$params['value_parts'][0] = urldecode($params['value_parts'][0]);
 	$params['value_parts'][1] = urldecode($params['value_parts'][1]);
 	$result = cleanName($params['value_parts'][1]);
+	if (array_key_exists('message', $result)) {
+		$feedback['message'] = $result['message'];
+	}
 	$windowTitle = $result['result'][0];
 
 	try {
-		$feedback['result'][] = PDOInsert("vd_queue", array('url' => $params['value_parts'][0], 'window_title' => $windowTitle));
-		$feedback['message']="Inserted: ".$windowTitle;
+		if ($windowTitle != "Playlist") {
+			$feedback['result'][] = PDOInsert("vd_queue", array('url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['message'] .= "Inserted: ".$windowTitle;
+		} else {
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => 5, 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['message'] .= "Inserted: ".$windowTitle;
+		}
 	} catch (Exception $e) {
 		$feedback['error'] = 'Error: On insert on vd_queue';
 	}
@@ -1582,7 +1590,7 @@ function getStereoSettings(&$params) {
 		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
 		$properties['Status']['value'] =  ((string)$main->{$tcomm}->Basic_Status->Power_Control->Power == "Standby" ? "Off" : (string)$main->{$tcomm}->Basic_Status->Power_Control->Power);
 		$properties['Input']['value'] =  (string)$main->{$tcomm}->Basic_Status->Input->Input_Sel_Item_Info->Title;
-		$properties['Volume']['value'] =  (string)(int)(((int)($main->{$tcomm}->Basic_Status->Volume->Lvl->Val) + 500) / 5  ) ;
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->{$tcomm}->Basic_Status->Volume->Lvl->Val) + 800) / 6  ) ;
 		$properties['Muted']['value'] =  (string)$main->{$tcomm}->Basic_Status->Volume->Mute ;
 		if (isset($main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Enhancer )) $properties['Enhancer']['value'] =  (string)$main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Enhancer ;
 		if (isset($main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Straight )) $properties['Straight']['value'] =  (string)$main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Straight ;

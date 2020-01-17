@@ -508,6 +508,7 @@ function cleanName($fname) {
 	$pattern[] = '/-\s+$/';						$replace[] = '';
 	$pattern[] = '/-$/';						$replace[] = '';
 	$pattern[] = '/[\x{2013}}]/u';			 	$replace[] = '-';
+	$pattern[] = '/j\. balvin/';				$replace[] = 'j balvin';
 	$pattern[] = '/remix$/';					$replace[] = '';
 	$pattern[] = '/mix$/';						$replace[] = '';
 	$pattern[] = '/original$/';					$replace[] = '';
@@ -569,9 +570,9 @@ function cleanName($fname) {
 
 	$savname = trim($fname);
 	$fname = trim(preg_replace('/(.*?\s)(Ft.*?) - (.*?$)/', '$1- $3 $2', $fname)); // Handel Ft in wrong place
-	if ($fname != $savname) {
-		$feedback['message'] .= "Info: Updated Ft old: >$savname< "."new: >$fname< </br>";
-	}
+	// if ($fname != $savname) {
+		// $feedback['message'] .= "Info: Updated Ft old: >$savname< "."new: >$fname< </br>";
+	// }
 
 	$feedback['Name'] = 'cleanName';
 	$feedback['result'][] =  trim($fname);
@@ -935,11 +936,33 @@ function handleDownloadQueue(&$params) {
 	//	debug($stepValue, 'stepValue');
     $feedback['result'] = array();
 
-	$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+	$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
 
 	while ($row = FetchRow($mysql)) {
 			switch ($row['statusID'])
 			{
+			case Q_PLAYLIST_DOWNLOAD:
+				$url = $row['url'];
+				// PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
+				$feedback = youtubeDL($url, YT_GET_PLAYLIST);
+				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				debug($params);
+				if (array_key_exists('error', $feedback)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $feedback['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				} else {
+					//PARSE RESULTS
+					foreach($feedback['result'] as $download) {
+						$video = json_decode($download, true);
+						debug($video);
+						try {
+							$feedback['result'][] = PDOInsert("vd_queue", array('url' => 'youtube.com/watch?v='.$video['url'], 'window_title' => $video ['title']));
+						} catch (Exception $e) {
+							$feedback['error'] = 'Error: On insert on vd_queue';
+						}
+					}
+					PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS, 'filename' => $feedback['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				}
+				break;
 			case Q_QUEUED:
 				$url = $row['url'];
 				PDOUpdate('vd_queue', array('statusID' => Q_VERIFYING) , array('id' => $row['id']));
@@ -1010,7 +1033,13 @@ function handleDownloadQueue(&$params) {
 				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
 				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
 				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
-				$store['moved_to'] = (array_key_exists('moveto', $params['file']) ? $params['file']['moveto'] : '');
+				if (array_key_exists('moveto', $params['file'])) {
+					$store['moved_to'] =  $params['file']['moveto'];
+					$store['subdir_move_to'] =  substr(rtrim($params['file']['moveto'],'/'), strrpos(rtrim($params['file']['moveto'],'/'), '/')+1);
+				} else {
+					$store['moved_to'] =  "";
+					$store['subdir_move_to'] =  "";
+				}
 				$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
 				$store['result']   = $pretty_result;
 				$error = "";
@@ -1085,7 +1114,7 @@ function findVideoArtistTitle($params) {
 }
 
 
-function youtubeDL($url) {
+function youtubeDL($url, $options = YT_VIDEO_ONLY) {
 	
 	debug($url, 'url');
 
@@ -1095,84 +1124,57 @@ function youtubeDL($url) {
 
 	//	debug($stepValue, 'stepValue');
     $feedback['result'] = array();
-	$cmd = getPath().'/bin/youtube-dl.sh "'.$url.'"';
+	if ($options == YT_GET_PLAYLIST) $textOptions = "-j --flat-playlist";
+	if ($options == YT_VIDEO_ONLY) $textOptions = "--no-playlist ";
+	$cmd = getPath().'/bin/youtube-dl.sh "'.$textOptions.'" "'.$url.'"';
+	$feedback['commandstr'] = $cmd;
     debug($cmd, 'command');
-	//$feedback['commandstr'] = str_replace($params['device']['connection']['password'],'*****',$cmd);
-    $output = shell_exec($cmd);
-	// $output= '[youtube] dKKdJoXF7PI: Downloading webpage
-// [youtube] dKKdJoXF7PI: Downloading video info webpage
-// [youtube] Downloading just video dKKdJoXF7PI because of --no-playlist
-// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.info.json
-// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f248.webm
-// [download] 100% of 20.50MiB in 00:02
-// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f251.webm
-// [download] 100.0% of 2.46MiB at 9.52MiB/s ETA 00:00
-// [download] 100% of 2.46MiB in 00:00
-// [ffmpeg] Merging formats into "/home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.webm"
-// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f248.webm (pass -k to keep)
-// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Major_Lazer_ft._The_Partysquad_-_Original_Don_Official_Video.f251.webm (pass -k to keep)
-// 0';
-    debug($output, 'shell_exec');
-// Success with merge
-// [youtube] 9cBtJYI6itg: Downloading webpage
-// [youtube] 9cBtJYI6itg: Downloading video info webpage
-// [youtube] Downloading just video 9cBtJYI6itg because of --no-playlist
-// [youtube] 9cBtJYI6itg: Downloading js player vflJiqSE7
-// [youtube] 9cBtJYI6itg: Downloading js player vflJiqSE7
-// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).info.json
-// WARNING: Requested formats are incompatible for merge and will be merged into mkv.
-// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f137.mp4
-// [download] 100% of 33.72MiB in 00:03
-// [download] Destination: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f251.webm
-// [download] 100% of 2.74MiB in 00:00
-// [ffmpeg] Merging formats into "/home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).mkv"
-// WARNING: Cannot update utime of file
-// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f137.mp4 (pass -k to keep)
-// Deleting original file /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).f251.webm (pass -k to keep)
+    exec($cmd, $output, $exitCode);
+	$feedback['result'] = $output;
+	$feedback['exitCode'] = $exitCode;
+	debug($output, 'exec');
+	if ($exitCode != 0) {
+		$feedback['error'] = "Error Youtube-DL $exitCode";
+		return $feedback;
+	}
 
-// Already downloaded
-// pvloon@vlosite:/home/www/ha/bin$ /home/www/ha/bin/youtube-dl.sh "https://www.youtube.com/watch?v=9cBtJYI6itg"
-// [youtube] 9cBtJYI6itg: Downloading webpage
-// [youtube] 9cBtJYI6itg: Downloading video info webpage
-// [youtube] Downloading just video 9cBtJYI6itg because of --no-playlist
-// [info] Writing video description metadata as JSON to: /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).info.json
-// WARNING: Requested formats are incompatible for merge and will be merged into mkv.
-// [download] /home/www/vlohome/data/musicvideos/_XXX_import/Deorro - Bailar feat. Elvis Crespo (Official Video).mkv has already been downloaded and merged
-        // $lines = explode(PHP_EOL, $output);
-        // $feedback['result'][] = $lines;
 
-	if (strpos($output, '[download] 100%') !== null) {
-		// $found = preg_match('/\[info\] Writing video description metadata as JSON to: (.*)\n/',$output,$matches);
-		// if (array_key_exists(1, $matches)) { 	// JSON
-			// $filename = $matches[1];
-			// $feedback['json'] = $filename;
-		// }
-		// debug($matches, 'matches');
-		
-		$found = preg_match('/\[ffmpeg\] Merging formats into \"(.*)\"/',$output,$matches);
-		if (array_key_exists(1, $matches)) { 	// Filename found
-			$filename = $matches[1];
-			$feedback['filename'] = $filename;
+	switch ($options) {
+	case YT_GET_PLAYLIST:
+		if (count($output) == 1) {
+			$feedback['error'] = "No Playlist";
 		}
-		debug($matches,'matches');
+		break;
+	case YT_VIDEO_ONLY:
+		$strOut = implode(PHP_EOL, $output);
+		if (strpos($strOut, '[download] 100%') !== null) {
+			// $found = preg_match('/\[info\] Writing video description metadata as JSON to: (.*)\n/',$output,$matches);
+			// if (array_key_exists(1, $matches)) { 	// JSON
+				// $filename = $matches[1];
+				// $feedback['json'] = $filename;
+			// }
+			// debug($matches, 'matches');
+			
+			$found = preg_match('/\[ffmpeg\] Merging formats into \"(.*)\"/',$strOut,$matches);
+			if (array_key_exists(1, $matches)) { 	// Filename found
+				$filename = $matches[1];
+				$feedback['filename'] = $filename;
+			}
+			debug($matches,'matches');
+			$found = preg_match('/\[download\] (.*) has already been downloaded/',$strOut,$matches);
+			if (array_key_exists(1, $matches)) { 	// Filename found
+				$filename = $matches[1];
+				$feedback['filename'] = $filename;
+			}
+			debug($matches,'matches');
+		} 
+		if (!array_key_exists('filename', $feedback)) $feedback['error'] = "No Filename";
+		break;
+	}
+	
 
-		$found = preg_match('/\[download\] (.*) has already been downloaded/',$output,$matches);
-		if (array_key_exists(1, $matches)) { 	// Filename found
-			$filename = $matches[1];
-			$feedback['filename'] = $filename;
-		}
-		debug($matches,'matches');
-	} 
-	if (!array_key_exists('filename', $feedback)) $feedback['error'] = "No Filename";
 	// if (!array_key_exists('json', $feedback)) $feedback['error'] = "No JSON file";
 	
-	//$feedback['result'] = $output;
-	//$start = strpos($output, $params['command']['command']);
-	//$clean = substr($output, $start + strlen($params['command']['command']) + 2*strlen(PHP_EOL));
-    //$lines = explode("\r\n", $clean);
-	//array_pop($lines);
-    // $feedback['result_raw'] = $output;
-	//$feedback['result_raw'] =implode(PHP_EOL, $lines);
 	debug($feedback, 'feedback');
 	return $feedback;
 }
