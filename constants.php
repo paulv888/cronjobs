@@ -206,15 +206,14 @@ define("PRIORITY_HIDE", 99);
 
 define("Q_PLAYLIST_DOWNLOAD", 5);
 define("Q_QUEUED", 10);
-define("Q_VERIFYING", 20);
-define("Q_VERIFY_SUCCESS", 30);
-define("Q_VERIFY_FAILED", 40);
-define("Q_DOWNLOADING", 50);
-define("Q_DOWNLOAD_SUCCESS", 60);
-define("Q_DOWNLOAD_FAILED", 70);
-define("Q_IMPORTING", 75);
-define("Q_IMPORT_SUCCESS", 80);
-define("Q_IMPORT_FAILED", 90);
+define("Q_VERIFY_SUCCESS", 20);
+define("Q_VERIFY_FAILED", 30);
+define("Q_DOWNLOAD_SUCCESS", 40);
+define("Q_DOWNLOAD_FAILED", 50);
+define("Q_IMPORT_SUCCESS", 60);
+define("Q_IMPORT_FAILED", 70);
+define("Q_PROCESSING", 90);
+define("Q_DOWNLOADING", 93);
 define("Q_CANCEL", 95);
 
 define("YT_GET_PLAYLIST", "10");

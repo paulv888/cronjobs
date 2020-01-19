@@ -577,52 +577,6 @@ function addToFavorites(&$params) {
 	return $feedback;
 } 
 
-function addToQueue(&$params) {
-
-	debug($params, 'params');
-
-	$feedback['Name'] = 'addToQueue';
-	$feedback['received'] = $params['commandvalue'];
-	$feedback['result'] = array();
-
-	$feedback['commandstr'] = 'PDOInsert: '.$params['commandvalue'];
-	if (empty($params['commandvalue'])) {
-		$feedback['error'] = 'Error: commandvalue is empty';
-		return $feedback;
-	}
-	if (empty($params['value_parts'][0])) {
-		$feedback['error'] = 'Error: URL is empty';
-		return $feedback;
-	}
-	if (empty($params['value_parts'][1])) {
-		$feedback['error'] = 'Error: windows title is empty';
-		return $feedback;
-	}
-
-	$feedback['message'] = "";
-	$params['value_parts'][0] = urldecode($params['value_parts'][0]);
-	$params['value_parts'][1] = urldecode($params['value_parts'][1]);
-	$result = cleanName($params['value_parts'][1]);
-	if (array_key_exists('message', $result)) {
-		$feedback['message'] = $result['message'];
-	}
-	$windowTitle = $result['result'][0];
-
-	try {
-		if ($windowTitle != "Playlist") {
-			$feedback['result'][] = PDOInsert("vd_queue", array('url' => $params['value_parts'][0], 'window_title' => $windowTitle));
-			$feedback['message'] .= "Inserted: ".$windowTitle;
-		} else {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => 5, 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
-			$feedback['message'] .= "Inserted: ".$windowTitle;
-		}
-	} catch (Exception $e) {
-		$feedback['error'] = 'Error: On insert on vd_queue';
-	}
-	debug($feedback, 'feedback');
-	return $feedback;
-} 
-
 function fireTVreboot($params) {
 
 	debug($params, 'params');
