@@ -593,77 +593,54 @@ function fireTVreboot($params) {
 
 } 
 
-function fireTVnetflix($params) {
+function genericADB($params) {
 
 	debug($params, 'params');
 
-	$feedback['Name'] = 'fireTVnetflix';
+	$feedback['Name'] = 'genericADB';
 	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVnetflix.sh '.$params['device']['ipaddress']['ip'];
-	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
+	$temp = explode('?',$params['command']['command']);
+	$parameters = array();
+	if (array_key_exists(1,$temp)) {  // have ?, now split at &
+		$temp1 =  explode('&',$temp[1]);
+		foreach  ($temp1 as $keyvalue) {
+			list($k, $v) = explode('=', $keyvalue);
+			$parameters[$k] = $v;
+		}
+	}
+	foreach ($parameters as $key => $value) {
+		switch ($key) {
+		case "keyevent":
+		case "start":
+		case "reboot":
+			$cmd = getPath().'/bin/fireTV%s.sh "%s" "%s"';
+			$cmd = sprintf($cmd, $key, $params['device']['ipaddress']['ip'], $value);
+			break;
+		case "sleep":
+			sleep($value);
+			break;
+		}
+		$feedback['commandstr'] = $cmd;
+		exec($cmd, $output, $exitCode);
+		debug($output, 'exec');
+		if ($exitCode != 0) {
+			$feedback['error'] = "Error ADB $exitCode";
+		}
+		$feedback['result_raw'] = $output;
+		$feedback['exitCode'] = $exitCode;
+	}
 	debug($feedback, 'feedback');
-	return $feedback;               // GET OUT
+	return $feedback;		// GET OUT
 
-}
+} 
 
-function fireTVkodi($params) {
-
-	debug($params, 'params');
-
-	$feedback['Name'] = 'fireTVkodi';
-	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVkodi.sh '.$params['device']['ipaddress']['ip'];
-	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-	debug($feedback, 'feedback');
-	return $feedback;              
-
-}
-
-function fireTVcamera($params) {
-
-	debug($params, 'params');
-
-	$feedback['Name'] = 'fireTVcamera';
-	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVcamera.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
-	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-	debug($feedback, 'feedback');
-	return $feedback;               // GET OUT
-
-}
-
-function fireTVsleep($params) {
+function fireTVsleep_notallowed($params) {
 
 	debug($params, 'params');
 
 	$feedback['Name'] = 'fireTVsleep';
 	$feedback['result'] = array();
 	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVsleep.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
-	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
-	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
-	$feedback['message'] = "Initiated ".$feedback['Name'].' sequence'.'  Log:'.$outputfile;
-	debug($feedback, 'feedback');
-	return $feedback;               // GET OUT
-
-}
-
-function fireTVwakeup($params) {
-
-	debug($params, 'params');
-
-	$feedback['Name'] = 'fireTVwakeup';
-	$feedback['result'] = array();
-	$cmd = 'nohup nice -n 10 '.getPath().'/bin/fireTVwakeup.sh '.$params['device']['ipaddress']['ip'].' '.$params['commandvalue'];
 	$outputfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	$pidfile=  tempnam( sys_get_temp_dir(), 'adb' );
 	exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
@@ -910,6 +887,9 @@ function sendGenericPHP(&$params) {
 		{
 		case "TELNET":
 			$feedback = genericTelnet($params);
+			break;
+		case "ADB":
+			$feedback = genericADB($params);
 			break;
 		default:
 			$feedback = $func($params);
@@ -1401,7 +1381,6 @@ Add Device - Post
 :"http://192.168.2.101/process.php?callerID=264&deviceID=9&messagetypeID=MESS_TYPE_COMMAND&commandID
 =145&commandvalue=${intensity.percent}","onUrl":"http://192.168.2.101/process.php?callerID=264&deviceID
 =9&messagetypeID=MESS_TYPE_COMMAND&commandID=17"}
-
 
 Response
 [{"id":"78892528","name":"Kitchen Recess3","deviceType":"TCP","targetDevice":"Encapsulated","offUrl"

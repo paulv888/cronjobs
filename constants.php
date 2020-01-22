@@ -94,6 +94,7 @@ define ("COMMAND_CLASS_X10_INSTEON", 10);
 define ("COMMAND_CLASS_FOSCAM", 11);
 define ("COMMAND_CLASS_X10", 13);
 define ("COMMAND_CLASS_BULLET", 28);
+define ("COMMAND_CLASS_ADB", 39);
 
 // Properties
 define ("PROPERTY_STATUS", 123);

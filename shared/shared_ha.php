@@ -269,8 +269,6 @@ function getDevice($deviceID){
 }
 
 function getCurrentPlayer(){
-
-
 	$props = getDeviceProperties(array('deviceID' => DEVICE_SYSTEM_PARAMETERS, 'description' => 'SelectedPlayer')); 
 	return $props['value'];
 }
