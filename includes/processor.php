@@ -1,5 +1,5 @@
-<?php 
-function sendCommand(&$thiscommand) { 
+<?php
+function sendCommand(&$thiscommand) {
 	debug($thiscommand, 'thiscommand');
 
 	$exittrap=false;
@@ -18,18 +18,17 @@ function sendCommand(&$thiscommand) {
 	$feedback = Array();
 	$feedback['result'] = '';
 	$feedback['commandstr'] = "";
-	
-	$exectime = -microtime(true); 
-	
+
+	$exectime = -microtime(true);
 	if ($thiscommand['commandID'] == null) {
 		$feedback['error'] = "No Command given";
 		debug($feedback, 'feedback');
 		return $feedback;			// error abort
 	}
-	
+
 //
 //   Sends 1 single command to TCP, REST, EMAIL
-//	
+//
 
 	if ($thiscommand['deviceID'] != NULL) {
 		if ($thiscommand['deviceID'] == DEVICE_SELECTED_PLAYER) {
@@ -45,7 +44,7 @@ function sendCommand(&$thiscommand) {
 		$commandclassID = $thiscommand['device']['commandclassID'];
 
 	debug($thiscommand, 'thiscommand');
-		
+
 	// Do TOGGLE - DIM, we need to have propertyID, Status/Dim and previous value of property
 		if (!array_key_exists('propertyID', $thiscommand)) $thiscommand['propertyID'] = PROPERTY_STATUS;
 			$statusarr = search_array_key_value($thiscommand['device']['previous_properties'], 'propertyID', $thiscommand['propertyID']);
@@ -53,11 +52,11 @@ function sendCommand(&$thiscommand) {
 				$status_key = $statusarr[0]['description'];
 				$status = $thiscommand['device']['previous_properties'][$status_key]['value'];
 				$rowmonitor = $thiscommand['device']['previous_properties'][$status_key];
-			
+
 				// Special handling for toggle
-				if ($thiscommand['commandID']==COMMAND_TOGGLE) {   
+				if ($thiscommand['commandID']==COMMAND_TOGGLE) {
 					if ($thiscommand['commandvalue'] > 0 && $thiscommand['commandvalue'] < 100) { // if dimvalue given then update dim, else toggle
-						$thiscommand['commandID'] = COMMAND_ON;						
+						$thiscommand['commandID'] = COMMAND_ON;
 					} else {
 						if ($rowmonitor) {
 							debug($status, 'Status Toggle status');
@@ -118,7 +117,7 @@ function sendCommand(&$thiscommand) {
 			" ha_mf_commands.id=ha_mf_commands_detail.commandID" .
 			" WHERE ha_mf_commands.id =".$thiscommand['commandID']. " AND commandclassID = ".$commandclassID." AND `inout` IN (".COMMAND_IO_SEND.','.COMMAND_IO_BOTH.')';
 	debug($mysql, 'mysql');
-	
+
 	if (!$rowcommands = FetchRow($mysql))  {			// No device specific command found, try generic, else exit
 		$commandclassID = COMMAND_CLASS_GENERIC;
 		$mysql = "SELECT * FROM ha_mf_commands JOIN ha_mf_commands_detail ON ".
@@ -139,10 +138,10 @@ function sendCommand(&$thiscommand) {
 		if ($rowtext['priorityID'] != Null) $thiscommand['priorityID']= $rowtext['priorityID'];
 		if (strlen($thiscommand['mess_text']) == 0) $thiscommand['mess_text'] = " ";
 	}
-	
+
 	$thiscommand['command'] = $rowcommands;
 	debug($thiscommand, '***thiscommand');
-	
+
 	if (array_key_exists('device', $thiscommand) && $thiscommand['device']['connection']['targettype'] == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
 	debug(	"commandID ".$thiscommand['commandID']." commandclassID ".$commandclassID." commandvalue ".$thiscommand['commandvalue']." command ".$thiscommand['command']['command'].'Starting swich');
 
@@ -156,7 +155,8 @@ function sendCommand(&$thiscommand) {
 	case COMMAND_CLASS_3MFILTRETE:
 	case COMMAND_CLASS_GENERIC:
 	case COMMAND_CLASS_EMAIL:
-	case COMMAND_CLASS_BULLET:
+	case COMMAND_CLASS_ADB:
+	case COMMAND_CLASS_BULLET:	// Including ADB
 		debug("COMMAND_CLASS_GENERIC/COMMAND_CLASS_3MFILTRETE/EMAIL","commandclassID");
 		if ($thiscommand['command']['command'] == "exit") 
 			$exittrap=true;

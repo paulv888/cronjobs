@@ -1,12 +1,12 @@
 <?php
 define("EXCLUDE_EXTENTSIONS", "nfo|tbn|txt|db");
 define("ASSORTED_DIR", "_Assorted/");
-define("REFRESH_RENAME", 0x01);
+define("REFRESH_RENAME-NOTINUSE", 0x01);
 define("REFRESH_FIND_MOVE", 0x02);
 define("REFRESH_NFO", 0x04);
 define("REFRESH_THUMB", 0x08);		// Still bash process
-define("REFRESH_LIBRARY", 0x10);
-define("REFRESH_RECYCLE_DUPLICATE", 0x20);
+define("REFRESH_LIBRARY-NOTINUSE", 0x10);
+define("REFRESH_RECYCLE_DUPLICATE-NOTINUSE", 0x20);
 define("REFRESH_CHECK_DUPLICATES", 0x40);
 define("REFRESH_MOVE", 0x80);
 define("REFRESH_CHECK_REVERSE", 0x100);
@@ -269,7 +269,7 @@ function refreshVideo(&$params) {
 	//
 	if ($params['refreshvideooptions'] & REFRESH_NFO) {
 		// echo "move all".CRLF;
-		$result = createNFO($params['file'], $params['importprocess']);
+		$result = createNFO($params['file']);
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
 			$feedback['error'] = "NFO Error";
@@ -424,7 +424,45 @@ function cmp($a, $b) {
 	return strcmp($a["filename"],$b["filename"]);
 }
 
-function createNFO($file, $importprocess) {
+
+function recreateNFOs(&$params) {
+	
+	set_time_limit(0);
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'recreateNFOs';
+	//$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	// $mysql = 'SELECT * FROM xbmc_video_mvids WHERE idFile = "37969";'; 
+	// $mysql = 'SELECT * FROM xbmc_video_mvids WHERE strPathID = "1167";'; 
+	$mysql = 'SELECT * FROM xbmc_video_mvids'; 
+
+	// echo $mysql.CRLF;
+	$feedback['message'] = '';
+	if ($mvids = FetchRows($mysql)) {		
+		// echo "<pre>".$feedback['Name'].': '; print_r($mvids); echo "</pre>";
+		foreach ($mvids as $video) { // Itereate all
+			$file = $video;
+			$file_parts = mb_pathinfo(mv_toLocal($video['file']));
+			$file_parts['dirname'] = rtrim($file_parts['dirname'], '/') . '/';
+			$file = array_merge($file, $file_parts);
+			$params['file'] = $file;
+			$params['importprocess'] = true;
+			$params['refreshvideooptions'] = REFRESH_NFO ;
+			$params['file'] = $file_parts;
+			$feedback = refreshVideo($params);
+		}
+	}
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function createNFO($file) {
 	debug($file, 'file');
 
     // GetArtist $base
@@ -455,7 +493,7 @@ function createNFO($file, $importprocess) {
 	if (array_key_exists('sidekicks', $file)) {
 		$sidekicks = parseSideKicks($file['sidekicks']);
 		foreach ($sidekicks as $sidekick) {
-			$data .= "<artist>".$sidekick."</artist>";
+			$data .= "\n   <artist>".$sidekick."</artist>";
 		}
 	}
 	// FileInfo
@@ -482,40 +520,43 @@ function createNFO($file, $importprocess) {
 		debug($feedback, 'feedback');
 		return $feedback;
 	}
+
+	
 	$feedback[] = $result;
-	$streaminfo = $result['result'];
+	$audio = $result['result']['audio'];
+	$video = $result['result']['video'];
+	debug($audio, 'audio');
+	debug($video, 'video');
+
 	$data .= "\n   <fileinfo>";
 	$data .= "\n      <streamdetails>";
 	$data .= "\n         <video>";
-	$data .= "\n            <codec>".$streaminfo[0]['codec_name']."</codec>";
-	$data .= "\n            <aspect>".$streaminfo[0]['width']/$streaminfo[0]['height']."</aspect>";
-	$data .= "\n            <width>".$streaminfo[0]['width']."</width>";
-	$data .= "\n            <height>".$streaminfo[0]['height']."</height>";
+	$data .= "\n            <codec>".$video['codec_name']."</codec>";
+	$data .= "\n            <aspect>".$video['width']/$video['height']."</aspect>";
+	$data .= "\n            <width>".$video['width']."</width>";
+	$data .= "\n            <height>".$video['height']."</height>";
 	$str_time = 0;
-	if (array_key_exists(['TAG:DURATION'], $streaminfo[0])) {
-		$str_time = $streaminfo[0]['TAG:DURATION'];
+	if (array_key_exists('TAG:DURATION', $video)) {
+		$str_time = $video['TAG:DURATION'];
 		$str_time = preg_replace("/^([\d]{1,2})\:([\d]{2})$/", "00:$1:$2", $str_time);
-	} 
-	sscanf($str_time, "%d:%d:%d", $hours, $minutes, $seconds);
-	$time_seconds = $hours * 3600 + $minutes * 60 + $seconds;
+		sscanf($str_time, "%d:%d:%d", $hours, $minutes, $seconds);
+		$time_seconds = $hours * 3600 + $minutes * 60 + $seconds;
+	} else {
+		$time_seconds = (int)$video['duration'];
+	}
 	$data .= "\n            <durationinseconds>".$time_seconds."</durationinseconds>";
 	$data .= "\n         </video>";
 	$data .= "\n         <audio>";
-	$data .= "\n            <codec>".$streaminfo[1]['codec_name']."</codec>";
-	$data .= "\n            <language>".$streaminfo[1]['TAG:language']."</language>";
-	$data .= "\n            <channels>".$streaminfo[1]['channels']."</channels>";
+	$data .= "\n            <codec>".$audio['codec_name']."</codec>";
+	if (array_key_exists('TAG:language', $audio)) $data .= "\n            <language>".$audio['TAG:language']."</language>";
+	$data .= "\n            <channels>".$audio['channels']."</channels>";
 	$data .= "\n         </audio>";
 	$data .= "\n      </streamdetails>";
 	$data .= "\n   </fileinfo>";
-	debug($streaminfo);
 	debug($feedback);
 	$data .= "\n</musicvideo>";
 	$data = mb_convert_encoding($data, 'UTF-8', 'auto');
-	if ($importprocess) {
-		file_put_contents($file['dirname'].$file['filename'].'.nfo', $data);
-	} else {
-		file_put_contents($file['dirname'].$file['filename'].'.nfo', $data);
-	}
+	file_put_contents($file['dirname'].$file['filename'].'.nfo', $data);
 	debug($feedback, 'feedback');
 	return $feedback;
 
@@ -821,7 +862,10 @@ function readFFProbe($file) {
 		$streaminfo[$index][$temp[0]] = $temp[1];
 	}
 	
-	$feedback['result'] = $streaminfo;
+	$feedback['result']['audio'] = ($streaminfo[0]['codec_type'] == 'audio' ? $streaminfo[0] : $streaminfo[1]);
+	$feedback['result']['video'] = ($streaminfo[0]['codec_type'] == 'video' ? $streaminfo[0] : $streaminfo[1]);
+
+	
 	return $feedback;
 }
 
@@ -841,6 +885,7 @@ function createThumbNail($file, $importprocess) {
 	if ($exitCode != 0) {
 		$feedback['error'] = "Error FFMPEG $exitCode";
 	}
+	
 	$feedback['result'] = $output;
 	$feedback['exitCode'] = $exitCode;
 	debug($feedback, 'feedback');
@@ -880,6 +925,11 @@ function importDirectories(&$params) {
 	return $feedback;
 }
 
+function renameVideo($idFile){
+	echo "";
+}
+
+
 function addToQueue(&$params) {
 
 	debug($params, 'params');
@@ -910,6 +960,12 @@ function addToQueue(&$params) {
 		$feedback['message'] = $result['message'];
 	}
 	$windowTitle = $result['result'][0];
+	
+	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = "'.$windowTitle.'"';
+	if (FetchRow($mysql)) {
+		$feedback['error'] = 'Error: already in queue';
+		return $feedback;
+	}
 
 	try {
 		if ($windowTitle != "Playlist") {
@@ -929,7 +985,6 @@ function addToQueue(&$params) {
 function handleDownloadQueue(&$params) {
 	
 	debug($params, 'params');
-
 	$feedback['Name'] = 'handleDownloadQueue';
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
@@ -938,8 +993,6 @@ function handleDownloadQueue(&$params) {
     $feedback['result'] = array();
 
 	$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
-
-
 //
 //	Flow 1 FILE:
 //                                                    -----> has(FILENAME) - SKIP ----->   
@@ -1394,7 +1447,7 @@ function cleanName($fname) {
 	$fname = preg_replace('/Dj /','DJ ',$fname); // Lowercase after ' I'm Don't
 	$fname = preg_replace('/\$/u', 'S', $fname); // $-sign t- S
 
-	if ($m==1)	$feedback['message'] .= "Info - Multiple \"-\": >$fname"."<</br>";
+	if ($m==1)	$feedback['error'] =  "Multiple Dash";
 
 	$savname = trim($fname);
 	$fname = trim(preg_replace('/(.*?\s)(Ft.*?) - (.*?$)/', '$1- $3 $2', $fname)); // Handel Ft in wrong place

@@ -293,8 +293,8 @@ if(!window.scriptRemoteHasRun) {
 
 	function refreshDiv (showSpin, force) {
 
-		console.log('refreshDiv');
 		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
+			console.log('refreshDiv');
 			var keys = [];
 			jQuery('.rem-button, .display').each(function() {
 				keys.push(jQuery(jQuery(this)).attr('data-remotekey'));
@@ -357,7 +357,7 @@ if(!window.scriptRemoteHasRun) {
 				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
-				timeout: 10000,
+				timeout: 0,
 				async: false,
 				success: function(data)
 				{
