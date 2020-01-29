@@ -481,7 +481,7 @@ function moveMusicVideo($params) {
 		$filename = $file['filename'].'.'.$ext;
 		$infile = $file['dirname'].$file['filename'].'.'.$ext;
 		$tofile = $file['moveto'].$file['newname'].'.'.$ext;
-		
+
 		// echo "cp ".$infile.' '.$tofile.CRLF;
 		if (!array_key_exists('error', $feedback)) {
 			if (!$params['createbatchfile']) {
