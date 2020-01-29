@@ -11,6 +11,7 @@ define("REFRESH_CHECK_DUPLICATES", 0x40);
 define("REFRESH_MOVE", 0x80);
 define("REFRESH_CHECK_REVERSE", 0x100);
 define("REFRESH_ALL", 0xFFFF);
+define("MAX_DOWNLOADS", 2);
 
 
 //
@@ -19,7 +20,7 @@ define("REFRESH_ALL", 0xFFFF);
 //
 
 
-$genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', 'Celtic', 'Japanese',  'OtherEastern',  'Polish',  'Russian',  'Meditation',  'Nederlands', 'Popular',  'Spanish',  'Tropical',  'Turkish', '_XXX_recyclebin');
+$genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', 'Celtic', 'Japanese',  'OtherEastern',  'Polish',  'Russian',  'Meditation',  'Nederlands', 'Popular',  'Spanish',  'Tropical',  'Turkish', 'Halk', '_XXX_recyclebin');
 
 $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	'/musicvideos/Country/', '/musicvideos/Dance/', 'Eastern/Arabic/',
@@ -28,7 +29,8 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	'/musicvideos/Eastern/Polish/',  '/musicvideos/Eastern/Russian/', 
 	'/musicvideos/Meditation/',  '/musicvideos/Nederlands/',
 	'/musicvideos/Popular/',  '/musicvideos/Spanish/', 
-	'/musicvideos/Tropical/',  '/musicvideos/Turkish/');
+	'/musicvideos/Tropical/',  '/musicvideos/Turkish/',
+	'/musicvideos/Turkish/Halk/'                        );
 
 /*Array
 (
@@ -426,7 +428,7 @@ function cmp($a, $b) {
 
 
 function recreateNFOs(&$params) {
-	
+
 	set_time_limit(0);
 
 	debug($params, 'params');
@@ -454,6 +456,7 @@ function recreateNFOs(&$params) {
 			$params['importprocess'] = true;
 			$params['refreshvideooptions'] = REFRESH_NFO ;
 			$params['file'] = $file_parts;
+			print_r($file);		// Batch with temp file, so we can find corrupted files
 			$feedback = refreshVideo($params);
 		}
 	}
@@ -720,6 +723,7 @@ function getGenre(&$params) {
 		$params['file']['genre'] = reset($result);
 	}
 
+	//$result[] = $params['file']['genre'] = reset($result);
 	$feedback['result'] = $result;
 	// print_r($result);
 
@@ -847,11 +851,10 @@ function readFFProbe($file) {
 	if ($exitCode != 0) {
 		$feedback['error'] = "Error FFProbe $exitCode";
 	}
-	$feedback['result_raw'] = $output;
 	$feedback['exitCode'] = $exitCode;
 	debug($feedback, 'feedback');
 	
-	$feedback['result_raw'] = $output;
+	// $feedback['result_raw'] = $output;
 	$index = 0;
 	foreach ($output as $line) {
 		$temp = explode('=', $line);
@@ -983,16 +986,22 @@ function addToQueue(&$params) {
 } 
 
 function handleDownloadQueue(&$params) {
-	
+
 	debug($params, 'params');
 	$feedback['Name'] = 'handleDownloadQueue';
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 
 	//	debug($stepValue, 'stepValue');
-    $feedback['result'] = array();
+    	$feedback['result'] = array();
 
-	$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+
+	$mysql_t = 'SELECT count(*) as downloads FROM `vd_queue` q WHERE statusID IN ("'.Q_DOWNLOADING.'");'; 
+	if (FetchRow($mysql_t)['downloads'] >= MAX_DOWNLOADS) {
+		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+	} else {
+		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+	}
 //
 //	Flow 1 FILE:
 //                                                    -----> has(FILENAME) - SKIP ----->   
@@ -1011,20 +1020,20 @@ function handleDownloadQueue(&$params) {
 			case Q_PLAYLIST_DOWNLOAD:
 				$url = $row['url'];
 				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
-				$feedback = youtubeDL($url, YT_GET_PLAYLIST);
-				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$result = youtubeDL($url, YT_GET_PLAYLIST);
+				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
 				debug($params);
-				if (array_key_exists('error', $feedback)) {
-					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $feedback['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				if (array_key_exists('error', $result)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
 				} else {
 					//PARSE RESULTS
-					foreach($feedback['result'] as $download) {
+					foreach($result['result'] as $download) {
 						$video = json_decode($download, true);
 						debug($video);
 						try {
-							$feedback['result'][] = PDOInsert("vd_queue", array('url' => 'youtube.com/watch?v='.$video['url'], 'window_title' => $video ['title']));
+							$result[] = PDOInsert("vd_queue", array('url' => 'youtube.com/watch?v='.$video['url'], 'window_title' => $video ['title']));
 						} catch (Exception $e) {
-							$feedback['error'] = 'Error: On insert on vd_queue';
+							$result['error'] = 'Error: On insert on vd_queue';
 						}
 					}
 					PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS, 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
@@ -1043,9 +1052,9 @@ function handleDownloadQueue(&$params) {
 					$file_parts = mb_pathinfo($row['filename']);
 					$params['file']['dirname'] = $file_parts['dirname']. '/';
 				}
-				$feedback = refreshVideo($params);
+				$result = refreshVideo($params);
 				debug($params);
-				$pretty_result = $row['result'].'<br/><pre>VERIFY<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$pretty_result = $row['result'].'<br/><pre>VERIFY<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
 				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
 				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
 				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
@@ -1060,7 +1069,7 @@ function handleDownloadQueue(&$params) {
 				$store['result']   = $pretty_result;
 
 				$error = "";
-				foreach ($feedback as $step) {
+				foreach ($result as $step) {
 					if (is_array($step) && array_key_exists('error', $step)) {
 						if ($step['error'] == "Duplicates found" ) {
 							$store['duplicate_idFile'] = $step['result'][0]['idFile'];
@@ -1081,27 +1090,31 @@ function handleDownloadQueue(&$params) {
 				}
 				break;
 			case Q_VERIFY_SUCCESS:
+				$mysql_t = 'SELECT count(*) as downloads FROM `vd_queue` q WHERE statusID IN ("'.Q_DOWNLOADING.'");'; 
+				if (FetchRow($mysql_t)['downloads'] >= MAX_DOWNLOADS) {
+					$feedback['message'] = 'Reached max downloads getting out';
+					return;
+				}
 				$isDownloaded = !empty($row['filename']);
 				if (!$isDownloaded) {
 					$url = $row['url'];
 					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
-					$feedback = youtubeDL($url);
-					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+					$result = youtubeDL($url);
+					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
 					debug($params);
 				} else {
 					$pretty_result = $row['result'].'<pre>SKIPPING DOWNLOAD<br/></pre>';
-					$feedback['filename'] = $row['filename'];
+					$result['filename'] = $row['filename'];
 				}
-				if (array_key_exists('error', $feedback)) {
-					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $feedback['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				if (array_key_exists('error', $result)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
 				} else {
-					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_SUCCESS, 'filename' => $feedback['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_SUCCESS, 'filename' => $result['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
 				}
 				break;
 			case Q_DOWNLOAD_SUCCESS:
 				$url = $row['url'];
 				PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
-
 				$params['importprocess'] = true;
 				$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_CHECK_DUPLICATES &~REFRESH_CHECK_REVERSE;
 				$file_parts = mb_pathinfo($row['filename']);
@@ -1109,9 +1122,9 @@ function handleDownloadQueue(&$params) {
 				$params['file'] = $file_parts;
 				$params['file']['window_title'] = $row['newname'];
 				$params['file']['genre'] = $row['genre'];
-				$feedback = refreshVideo($params);
+				$result = refreshVideo($params);
 				debug($params);
-				$pretty_result = $row['result'].'<br/><pre>IMPORT<br/>'.prettyPrint(json_encode($feedback,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$pretty_result = $row['result'].'<br/><pre>IMPORT<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
 				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
 				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
 				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
@@ -1125,7 +1138,7 @@ function handleDownloadQueue(&$params) {
 				$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
 				$store['result']   = $pretty_result;
 				$error = "";
-				foreach ($feedback as $step) {
+				foreach ($result as $step) {
 					if (is_array($step) && array_key_exists('error', $step)) {
 						if ($step['error'] == "Duplicates found" ) {
 							$store['duplicate_idFile'] = $step['result'][0]['idFile'];
@@ -1145,12 +1158,10 @@ function handleDownloadQueue(&$params) {
 					PDOUpdate('vd_queue', $store , array('id' => $row['id']));
 				}
 				break;
-			default:
-				$feedback = $func($params);
-				break;
 			}
-//		}
+		$feedback[] = $result;
 	}
+	$feedback['count'] = count($feedback);
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -1158,10 +1169,6 @@ function handleDownloadQueue(&$params) {
 function findVideoArtistTitle($params) {
 
 	debug($params, 'params');
-	// echo "<pre>";
-	// print_r($params);
-	// echo "</pre>";
-	// exit;
 	
 	$feedback['Name'] = 'findVideoArtistTitle';
 	$feedback['received'] = $params['commandvalue'];
