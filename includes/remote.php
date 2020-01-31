@@ -144,6 +144,7 @@ function loadRemoteDiv($divid, $params) {
 					echo '"';
 					if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 					echo ' data-remotekey="'.$rowremotekeys['id'].'"';
+					echo ' title="'.$rowremotekeys['name'].'"';
 					if ($rowremotekeys['repeat_time'] != 0) echo ' data-repeat-time="'.$rowremotekeys['repeat_time'].'"';
 					echo '>';
 					if ($booticon != null) {								// if icon then do icon <i>
