@@ -459,7 +459,7 @@ function moveMusicVideo($params) {
 		$batchfile .= '#From: '.$file['dirname'].$file['filename']."\n";
 		$batchfile .= '#__To: '.$file['moveto'].$file['newname']."\n";
 	}
-	
+
 	$matches = glob($file['moveto'].$file['newname'].'.*');
 	if (strtolower($file['dirname'].$file['filename']) != strtolower($file['moveto'].$file['newname'])) {
 		if (!empty($matches)) {			// Duplicate file name
@@ -501,20 +501,10 @@ function moveMusicVideo($params) {
 							if ($mvid = FetchRow($mysql)['id']) {
 								$command['caller'] = $params['caller'];
 								$command['callerparams'] = $params['caller'];
-								$command['deviceID'] = 259;						// Will be back-end KODI now force Paul-PC
+								$command['deviceID'] = getCurrentPlayer();			// Will be back-end KODI now force Paul-PC
 								$command['commandID'] = 374;					// removeMusicVideo
 								$command['commandvalue'] = $mvid;
 								$feedback[]['result'] = sendCommand($command);
-							}
-							// Refresh to directory
-							if (!$params['movetorecycle']) {
-								$command['caller'] = $params['caller'];
-								$command['callerparams'] = $params;
-								$command['deviceID'] = 		259;	// Will be back-end KODI now force Paul-PC
-								$command['commandID'] = 	373;	// Scan Directory
-								$command['commandvalue'] = mv_toPublic($file['moveto']);
-								$result = sendCommand($command); 
-								$feedback[]['result'] = $result;
 							}
 						}
 					} else {
@@ -534,6 +524,20 @@ function moveMusicVideo($params) {
 			}
 		}
 	}
+
+	// After all got moved
+	// Refresh the directory
+	if (!$params['movetorecycle']) {
+		$command['caller'] = $params['caller'];
+		$command['callerparams'] = $params;
+		$command['deviceID'] = 	getCurrentPlayer();	// Will be back-end KODI now force Paul-PC
+		$command['commandID'] = 	373;	// Scan Directory
+		$command['commandvalue'] = mv_toPublic($file['moveto']); 
+		// $result = sendCommand($command);
+// ::TODOcommandvalue
+		$feedback[]['result'] = $result;
+	}
+
 	$file = 'log/mv_videos.log';
 	$log = file_get_contents($file);
 	if (array_key_exists('error', $feedback)) 

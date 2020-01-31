@@ -20,7 +20,10 @@ define("MAX_DOWNLOADS", 2);
 //
 
 
-$genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', 'Celtic', 'Japanese',  'OtherEastern',  'Polish',  'Russian',  'Meditation',  'Nederlands', 'Popular',  'Spanish',  'Tropical',  'Turkish', 'Halk', '_XXX_recyclebin');
+// If multiple matches, put in order of match needed i.e. Karadeniz before Tukish
+$genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', 'Celtic', 'Japanese',  
+        'OtherEastern',  'Polish',  'Russian',  'Meditation',  'Nederlands', 'Popular',  'Spanish',  'Tropical',  'Karadeniz', 'Halk', 'Turkish',
+         '_XXX_recyclebin');
 
 $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	'/musicvideos/Country/', '/musicvideos/Dance/', 'Eastern/Arabic/',
@@ -29,8 +32,8 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	'/musicvideos/Eastern/Polish/',  '/musicvideos/Eastern/Russian/', 
 	'/musicvideos/Meditation/',  '/musicvideos/Nederlands/',
 	'/musicvideos/Popular/',  '/musicvideos/Spanish/', 
-	'/musicvideos/Tropical/',  '/musicvideos/Turkish/',
-	'/musicvideos/Turkish/Halk/'                        );
+	'/musicvideos/Tropical/',  
+	'/musicvideos/Turkish/Halk/', '/musicvideos/Turkish/Karadeniz/', '/musicvideos/Turkish/'     );
 
 /*Array
 (
@@ -440,8 +443,8 @@ function recreateNFOs(&$params) {
 	// if () $feedback['error'] = "Not so good";
 
 	// $mysql = 'SELECT * FROM xbmc_video_mvids WHERE idFile = "37969";'; 
-	// $mysql = 'SELECT * FROM xbmc_video_mvids WHERE strPathID = "1167";'; 
-	$mysql = 'SELECT * FROM xbmc_video_mvids'; 
+	$mysql = 'SELECT * FROM xbmc_video_mvids WHERE strPathID = "1274";'; 
+	//$mysql = 'SELECT * FROM xbmc_video_mvids'; 
 
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
@@ -965,17 +968,17 @@ function addToQueue(&$params) {
 	$windowTitle = $result['result'][0];
 	
 	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = "'.$windowTitle.'"';
-	if (FetchRow($mysql)) {
+	if ($windowTitle <> "Playlist" && FetchRow($mysql)) {
 		$feedback['error'] = 'Error: already in queue';
 		return $feedback;
 	}
 
 	try {
 		if ($windowTitle != "Playlist") {
-			$feedback['result'][] = PDOInsert("vd_queue", array('url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('type' => 'MVID', 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		} else {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => 5, 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => 5, 'type' => 'LIST', 'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		}
 	} catch (Exception $e) {
@@ -1198,7 +1201,7 @@ function findVideoArtistTitle($params) {
 	$artist = $params['file']['artist'];
 	$title  = substr($params['file']['title'], 0, 1);
 	$search = '&xbmc_video_mvids___artist[condition]=CONTAINS&xbmc_video_mvids___artist[value][]=%s';
-	$search .= '&xbmc_video_mvids___title[condition]=BEGINS WITH&xbmc_video_mvids___title[value][]=%s';
+	//$search .= '&xbmc_video_mvids___title[condition]=BEGINS WITH&xbmc_video_mvids___title[value][]=%s';
 	$feedback['redirect'] = "Location: ".sprintf($url.$search, $artist, $title);
 	$feedback['commandstr'] = $feedback['redirect'];
 	debug($feedback, 'feedback');
