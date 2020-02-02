@@ -75,99 +75,6 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 	// return $feedback;
 // }
 
-function refreshAllVideos_Delete(&$params = null) {
-	debug($params, 'params');
-	echo "<pre>";
-	$dir = '';
-	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
-		$dir = ucwords(rtrim($params['commandvalue'], '/') . '/');
-	} 
-	$params['directory'] = LOCAL_MUSIC_VIDEOS.'/'.$dir;
-	$params['importprocess'] = false;
-	$params['refreshvideooptions'] = REFRESH_ALL;
-	// $params['refreshvideooptions'] = REFRESH_NFO;
-	$feedback = refreshVideos_Delete($params);
-	debug($feedback, 'feedback');
-	return $feedback;
-}
-
-function findDuplicateVideos(&$params = null) {
-//
-// TODO:: export results to table, and allow fixing from there
-//
-	debug($params, 'params');
-	echo "<pre>";
-	$dir = '';
-	if (array_key_exists('commandvalue', $params) && !empty($params['commandvalue'])) {
-		$dir = ucwords(rtrim($params['commandvalue'], '/') . '/');
-	} 
-
-	$params['directory'] = LOCAL_MUSIC_VIDEOS.'/'.$dir;
-	$params['importprocess'] = false;
-	$params['refreshvideooptions'] = REFRESH_CHECK_DUPLICATES;
-	$feedback = refreshVideos_Delete($params);
-	if (!empty($feedback['result'])) {
-		echo "Found Duplicate files: ".CRLF;
-		print_r($feedback['result']);
-	}
-	if (!empty($feedback['findDuplicateByArtistTitle'])) {
-		echo "Found Duplicate files, based on Artist - Title: ".CRLF;
-		usort($feedback['findDuplicateByArtistTitle'], "cmp");	
-		print_r($feedback['findDuplicateByArtistTitle']);
-	}
-
-	debug($feedback, 'feedback');
-	return $feedback;
-}
-
-function refreshVideos_Delete(&$params) {
-	debug($params, 'params');
-
-	//mb_internal_encoding("UTF-8");
-
-	set_time_limit(0);
-	$feedback['Name'] = 'refreshVideos';
-
-	// $feedback['message'] = "";
-	// $feedback['error'] = "";
-	// echo "<pre>";
-	$files = array();
-
-	$feedback['message'] = $params['directory'].CRLF;
-	$result = readDirs($params['directory'], $params['importprocess']); 
-	$files = $result['result'];
-	usort($files, "cmp");
-
-	if ($params['refreshvideooptions'] & REFRESH_MOVE && !$params['importprocess']) {
-		$file = 'mv_vids.sh';
-		file_put_contents($file, '#! /bin/bash'."\n");
-	}
-
-	foreach ($files as $index => $file) {
-		$params['file'] = $file;
-		$result = refreshVideo($params);
-		$files[$index] = $params['file'];		// Keep files array in order
-	}
-
-	if ($params['refreshvideooptions'] & REFRESH_CHECK_DUPLICATES && !$params['importprocess']) {
-		foreach ($files as $index => $file) {
-			$newnames[] = $file['newname'];
-			$params['file'] = $file;
-			$result = findDuplicateByArtistTitle($params);
-			if (!empty($result['result'])) {
-				$feedback['findDuplicateByArtistTitle'][] = $result['result'];
-			}
-		}
-		$feedback['result'] = checkDuplicates($newnames);
-	} else {
-		$feedback['result'] = $files;
-	}
-
-	debug($feedback, 'feedback');
-	return $feedback;
-}
-
-
 function refreshVideo(&$params) {
 	debug($params, 'params');
 
@@ -197,7 +104,6 @@ function refreshVideo(&$params) {
         // Create mp3 version (Leave Separate, batch process)
 
 
-	$params['file']['batchfile'] = '';
 	//
 	// Clean name
 	//
@@ -241,11 +147,10 @@ function refreshVideo(&$params) {
 	// Find Dir to move to
 	//
 	if ($params['refreshvideooptions'] & REFRESH_FIND_MOVE) {
-		$result = findMoveTo($params['file'], $params['importprocess']);
+		$result = findMoveTo($params['file']);
 		$feedback[] = $result;
 	} else {
-		// echo "move none".CRLF;
-		$result['result']['moveto'] = $params['file']['dirname'];
+		$result['result']['moveto'] = $params['file']['moveto'];
 		$feedback[] = $result;
 	}
 
@@ -289,7 +194,7 @@ function refreshVideo(&$params) {
 	// 	Only for online - Import
 	//
 	if ($params['refreshvideooptions'] & REFRESH_THUMB) {
-		$result = createThumbNail($params['file'], $params['importprocess']);
+		$result = createThumbNail($params['file']);
 		$feedback[] = $result;
 		if (array_key_exists('error',$result)) {
 			$feedback['error'] = "Thumbnail Error";
@@ -302,26 +207,10 @@ function refreshVideo(&$params) {
 	//
 	// Now move it
 	//
-	if ($params['refreshvideooptions'] & REFRESH_MOVE && ( ($params['file']['moveto'].$params['file']['newname'] != $params['file']['dirname'].$params['file']['filename']) ||  $params['file']['batchfile'] != '')) {
-		if ($params['importprocess']) {		// Create batch file, and abort futher action?
-			$params['createbatchfile'] = 0;
-			$params['movetorecycle'] = 0;
-			$params['CAMEFROM'] = "REFRESH ONLINE";
-			$feedback[] = moveMusicVideo($params);
-		} else {
-			// echo "move all".CRLF;
-			// echo "<pre>".$feedback['Name'].': '; print_r($params['file']); echo "</pre>";
-			//$result = findMoveTo($params['file'], $params['importprocess']);
-			$params['createbatchfile'] = 1;
-			$params['movetorecycle'] = 0;
-			$params['CAMEFROM'] = "REFRESH BATCH";
-			$result = moveMusicVideo($params);
-			$batchfile = $result['batchfile'];
-			$feedback[] = $result;
-			$file = 'mv_vids.sh';
-			$batch = file_get_contents($file);
-			file_put_contents($file, $batch . $batchfile);
-		}
+	if ($params['refreshvideooptions'] & REFRESH_MOVE && ( ($params['file']['moveto'].$params['file']['newname'] != $params['file']['dirname'].$params['file']['filename']) )) {
+		$feedback[] = moveMusicVideo($params);
+	} else {
+		$feedback[]['message'] = "File already in:".$params['file']['moveto'];
 	}
 
 	//$feedback['result'] = $params['file'];
@@ -339,28 +228,30 @@ function findDuplicateByArtistTitle(&$params) {
 	$feedback['Name'] = 'findDuplicateByArtistTitle';
 	$feedback['result'] = array();
 
-	if (!$params['importprocess']) { // Find this video
-		$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($params['file']['dirname'].$params['file']['basename']).'";'; 
-		if (!($thismvid = FetchRow($mysql)['id'])) {
-			$feedback['error'] = "Error - Abort, could not find myID for : ".$params['file']['dirname'].$params['file']['basename'];
-			debug($feedback, 'feedback');
-			return $feedback;
-		}
-		$params['mvid'] = $thismvid;
-		$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
-					JOIN xbmc_path p ON mv.strPathID = p.id 
-					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" OR artist LIKE "%/ '.$params['file']['artist']. '")  
-					AND title = "'.$params['file']['title'].'" AND mv.id <>'.$thismvid.';'; 
-	} else {
+	// 
+	// Find this video 
+	//
+	// if (!$params['importprocess']) { // Find this video
+		// $mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($params['file']['dirname'].$params['file']['basename']).'";'; 
+		// if (!($thismvid = FetchRow($mysql)['id'])) {
+			// $feedback['error'] = "Error - Abort, could not find myID for : ".$params['file']['dirname'].$params['file']['basename'];
+			// debug($feedback, 'feedback');
+			// return $feedback;
+		// }
+		// $params['mvid'] = $thismvid;
+		// $mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
+					// JOIN xbmc_path p ON mv.strPathID = p.id 
+					// WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" OR artist LIKE "%/ '.$params['file']['artist']. '")  
+					// AND title = "'.$params['file']['title'].'" AND mv.id <>'.$thismvid.';'; 
+	// } else {
 		$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
 					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' %" OR artist LIKE "% '.$params['file']['artist']. '")  
 					AND title = "'.$params['file']['title'].'";'; 
-	}
+	// }
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
 	if ($mvids = FetchRows($mysql)) {		
-		// echo "<pre>".$feedback['Name'].': '; print_r($mvids); echo "</pre>";
 		if (!empty($mvids)) { // Found this artist & title, so duplicate
 			// Height 
 			$mysql = 'SELECT iVideoHeight FROM `xbmc_video_streamdetails` WHERE iStreamType = 0 AND `idFile` = '.$mvids[0]['idFile'];
@@ -374,30 +265,12 @@ function findDuplicateByArtistTitle(&$params) {
 	return $feedback;
 }
 
-function checkDuplicates($newnames) {
-	debug($newnames, 'newnames');
 
-	$feedback['Name'] = 'checkDuplicates';
-	// Find duplicates
-	// print_r(array_count_values($newnames));
-	$dups = array();
-	foreach(array_count_values($newnames) as $val => $c) {
-		if($c > 1) $dups[] = $val;
-	}
-	debug($dups, 'dups');
-	return $dups;
-}
-
-function readDirs($main, $importprocess){
+function readDirs($main){
 	debug($main, 'main');
 	//echo "Entry: ".$main.CRLF;
 	$feedback['result'] = array();
 	if (strpos($main, LOCAL_RECYCLE) !== false) {
-		debug($feedback, 'feedback');
-		return $feedback;
-	}
-	
-	if (!$importprocess && strpos($main, LOCAL_IMPORT) !== false) {
 		debug($feedback, 'feedback');
 		return $feedback;
 	}
@@ -407,11 +280,10 @@ function readDirs($main, $importprocess){
 	while($file = readdir($dirHandle)){
 		// echo $main.$file.CRLF;
 		if (is_dir($main.$file) && $file != '.' && $file != '..') {
-			$files = array_merge ( $files, readDirs($main.$file.'/', $importprocess)['result']);
+			$files = array_merge ( $files, readDirs($main.$file.'/')['result']);
 		} else {
 			// echo $file.CRLF;
 			$file_parts = mb_pathinfo($file);
-			// print_r($file_parts);
 			$file_parts['dirname'] = rtrim($main, '/') . '/';
 			if (array_key_exists('extension', $file_parts)) {
 				if (substr($file, 0, 1) != "." && $file != ".." && strpos(EXCLUDE_EXTENTSIONS, $file_parts['extension']) === false) {
@@ -449,14 +321,12 @@ function recreateNFOs(&$params) {
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
 	if ($mvids = FetchRows($mysql)) {		
-		// echo "<pre>".$feedback['Name'].': '; print_r($mvids); echo "</pre>";
 		foreach ($mvids as $video) { // Itereate all
 			$file = $video;
 			$file_parts = mb_pathinfo(mv_toLocal($video['file']));
 			$file_parts['dirname'] = rtrim($file_parts['dirname'], '/') . '/';
 			$file = array_merge($file, $file_parts);
 			$params['file'] = $file;
-			$params['importprocess'] = true;
 			$params['refreshvideooptions'] = REFRESH_NFO ;
 			$params['file'] = $file_parts;
 			print_r($file);		// Batch with temp file, so we can find corrupted files
@@ -487,7 +357,6 @@ function createNFO($file) {
 
 	$feedback['Name'] = 'createNFO';
 	$feedback['result'] = array();
-	// echo "<pre>".$feedback['Name'].': '; print_r($file); echo "</pre>";
 
 	// $feedback['message'] = "all good";
 	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
@@ -728,7 +597,6 @@ function getGenre(&$params) {
 
 	//$result[] = $params['file']['genre'] = reset($result);
 	$feedback['result'] = $result;
-	// print_r($result);
 
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -740,8 +608,6 @@ function findBestMatch(&$file, $mvids) {
 
 	$file['moveto'] = LOCAL_DATA.$mvids[0]['strPath'];
 	$paths = array();
-	// echo "<pre>";
-	// print_r($mvids);
 	foreach($mvids as $mvid) {	// count occurences?
 		// [0] => Array
 		// (
@@ -771,7 +637,6 @@ function findBestMatch(&$file, $mvids) {
 	uasort($paths, function($a, $b) {
 		return ($a['count'] <=> $b['count']) * -1;
 	});
-	// print_r($paths);
 	$file['moveto'] = LOCAL_DATA.key($paths);
 	if (strpos($file['genre'],'Not Found') !==null) {
 			$file['genre'] = $paths[key($paths)]['genre'];
@@ -788,21 +653,15 @@ function findBestMatch(&$file, $mvids) {
 
 	debug($file, 'file');
 	return;
-	// echo "<pre> Same Genre".': '; print_r($mvids); echo "</pre>";
 }
 
-function findMoveTo(&$file, $importprocess) {
+function findMoveTo(&$file) {
 	debug($file, 'file');
 
 	global $genres;
 	global $genrefolders;
 
-	if ($importprocess) {
-		$allow_change_genre = true;
-	} else {
-		$allow_change_genre = false;
-		$allow_change_genre = true;
-	}
+	$allow_change_genre = true;
 
 	$feedback['Name'] = 'findMoveTo';
 	$file['moveto'] = $file['dirname'];
@@ -827,7 +686,6 @@ function findMoveTo(&$file, $importprocess) {
 			if (($key = array_search($file['genre'], $genres)) !== false) {
 				$key = array_search($file['genre'], $genres);
 				$file['moveto'] = LOCAL_DATA.$genrefolders[$key].ASSORTED_DIR;
-				// echo "<pre> New Artist".': '; print_r($mvids); echo "</pre>";
 			} else {
 				$feedback['error'] = "No Genre";
 			}
@@ -875,13 +733,12 @@ function readFFProbe($file) {
 	return $feedback;
 }
 
-function createThumbNail($file, $importprocess) {
+function createThumbNail($file) {
 	debug($file, 'file');
 
 	$feedback['Name'] = 'createThumb';
 	$feedback['result'] = array();
 	$feedback['message'] = "No thumbnails created, kick of on srvmedia: </br>sudo ~/bin/spawn_create_thumbs";
-	if (!$importprocess) return $feedback; 
 	$feedback['message'] = "";
 	$params = '"'.$file['dirname'].'" "'.$file['filename'].'" "'.$file['extension'].'"';
 	$cmd = getPath().'/bin/createThumb.sh '.$params;
@@ -904,7 +761,6 @@ function importDirectories(&$params) {
 	debug($params, 'params');
 
 	$params['directory'] = LOCAL_IMPORT.'/';
-	$params['importprocess'] = true;
 	$params['refreshvideooptions'] = REFRESH_ALL;
 
 
@@ -913,14 +769,14 @@ function importDirectories(&$params) {
 
 	$files = array();
 
-	$result = readDirs($params['directory'], $params['importprocess']); 
+	$result = readDirs($params['directory']); 
 	$files = $result['result'];
 	usort($files, "cmp");
 
 	//PARSE RESULTS
 	foreach($files as $file) {
 		try {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_QUEUED,  'window_title' => $file['filename'], 'filename' => $file['dirname'].$file['basename'] ));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'IMPORT',  'window_title' => $file['filename'], 'filename' => $file['dirname'].$file['basename'] ));
 		} catch (Exception $e) {
 			$feedback['error'] = 'Error: On insert on vd_queue';
 		}
@@ -935,6 +791,159 @@ function renameVideo($idFile){
 	echo "";
 }
 
+function createArtistDirs(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'createArtistDir';
+	//$feedback['received'] = $params['commandvalue'];
+	$feedback['result'] = array();
+
+	//$feedback['commandstr'] = 'PDOInsert: '.$params['commandvalue'];
+
+
+	$mysql = 'SELECT count(artist) as count, artist, file FROM `xbmc_video_musicvideos` WHERE instr(`file`,"Assorted")>1 GROUP BY artist, strPathID HAVING COUNT(*) > 3';
+	$count = 0;
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $row) { // Itereate all
+		
+			$result = Array();
+			$file_parts = mb_pathinfo($row['file']);
+			$params['file'] = $file_parts;
+			$params['file']['newname'] = $file_parts['filename'];
+			$result[] = getArtistTitle($params);
+			if (array_key_exists('error',$result)) {
+				$feedback['result'][] = $result;
+				debug($feedback, 'feedback');
+				return $feedback;
+			}
+
+			$artist = $params['file']['artist'];
+			$result[] = getGenre($params);
+			if (array_key_exists('error',$result)) {
+				$feedback['result'][] = $result;
+				debug($feedback, 'feedback');
+				//return $feedback;
+			}
+
+			$new_dir = str_replace(ASSORTED_DIR, '', mv_toLocal($file_parts['dirname']).'/').$artist;
+			if (!file_exists($new_dir)) {
+				if (mkdir($new_dir)) {
+					$result[] = 'Created dir: '. $new_dir;
+				} else {
+					$result[]['error'] = "Failed to create dir". $new_dir;
+				}
+			}
+
+//JOIN xbmc_path p ON mv.strPathID = p.id 			
+			$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
+					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' %" OR artist LIKE "% '.$params['file']['artist']. '")  
+					AND genre = "'.$params['file']['genre'].'";'; 
+
+			if ($mvids = FetchRows($mysql)) {		
+				foreach ($mvids as $mvid) {
+					$params['value_parts'][0] = $mvid['idFile'];
+					$params['value_parts'][1] = $new_dir;
+					$feedback['result'][] = moveToQueue($params);
+					$count++;
+				}
+			}
+		}
+	}
+	$feedback['message'] = $count.' move rows created';
+	debug($feedback, 'feedback');
+	return $feedback;
+	
+} 
+
+function moveToQueue($params) {
+	//
+	//	If empty value_parts_1 then move to import and create record to move back after edit
+	//
+	debug($params);
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE `idFile` = '.$params['value_parts'][0].';'; 
+	if ($mvid = FetchRow($mysql)) {		
+		debug($mvid, 'mvid');
+		$file_parts = mb_pathinfo(mv_toLocal($mvid['file']));
+		debug($file_parts, 'parts');
+		$store = Array();
+		$store['type']     = "MOVE";
+		$store['artist']   = $mvid['artist'];
+		$store['window_title']  = $file_parts['filename'];
+		$store['newname']  = $file_parts['filename'];
+		$store['title']    = $mvid['title'];
+		$store['genre']    = $mvid['genre'];
+		// if (empty(trim($params['value_parts'][1]))) $to_dir = mv_toLocal($file_parts['dirname']);
+		$store['statusID'] = Q_QUEUED;
+		if (empty(trim($params['value_parts'][1]))) {
+			$to_dir = LOCAL_IMPORT;
+			$store['statusID'] = Q_DOWNLOAD_SUCCESS;
+		}
+		$store['moved_to'] =  $to_dir.'/';
+		$store['subdir_move_to'] = $mvid['artist'] ;
+		$store['filename'] = mv_toLocal($mvid['file']);
+		$result[] = PDOInsert("vd_queue", $store);
+		if (empty(trim($params['value_parts'][1]))) {
+			$store['statusID'] = Q_QUEUED;
+			$store['type'] = "IMPORT";
+			$store['filename'] = LOCAL_IMPORT.'/'.$file_parts['basename'];
+			$store['moved_to'] =  '';
+			$store['subdir_move_to'] = '';
+			$result[] = PDOInsert("vd_queue", $store);
+		}
+		$result[] = $store['newname'];
+	} else {
+		$result['error'] = "Not found";
+	}
+	return $result;
+}
+
+function undoVideoImport(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'undoVideoImport';
+	$feedback['received'] = $params['commandvalue'];
+	$feedback['result'] = array();
+
+	//$feedback['commandstr'] = 'PDOInsert: '.$params['commandvalue'];
+	if (empty($params['commandvalue'])) {
+		$feedback['error'] = 'Error: No ID given';
+		return $feedback;
+	}
+	
+	$mysql = 'SELECT * FROM `vd_queue` WHERE id = '.$params['commandvalue'].' AND statusID = '.Q_IMPORT_SUCCESS;
+	if (!($row = FetchRow($mysql))) {
+		$feedback['error'] = 'Error: could not find id: '.$params['commandvalue'].' in imported Status' ;
+		return $feedback;
+	}
+
+	$file['dirname'] = $row['moved_to'];
+	$file['filename'] = $row['newname'];
+	$file['moveto'] = LOCAL_IMPORT.'/';
+	$file['newname'] = $row['newname'];
+	$file_parts = mb_pathinfo($row['filename']);
+	$file['extension'] = $file_parts['extension'];
+	$params['file'] = $file;
+	$params['movetorecycle'] = false;
+	$result = moveMusicVideo($params);
+	$feedback['result'][] = $result;
+	if (!array_key_exists('error',$result)) {
+		$command['commandvalue'] = 'DELETED: '.$result['message'];
+	} else {
+		$command['commandvalue'] = $result['error'];
+	}
+	
+	try {
+		$pretty_result = $row['result'].'<br/><pre>UNOD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+		PDOUpdate('vd_queue', array('statusID' => Q_QUEUED, 'last_error' => 'Undo', 'result' => $pretty_result) , array('id' => $row['id']));
+	} catch (Exception $e) {
+		$feedback['error'] = 'Error: On insert on vd_queue';
+	}
+	debug($feedback, 'feedback');
+	return $feedback;
+	
+} 
 
 function addToQueue(&$params) {
 
@@ -975,10 +984,10 @@ function addToQueue(&$params) {
 
 	try {
 		if ($windowTitle != "Playlist") {
-			$feedback['result'][] = PDOInsert("vd_queue", array('type' => 'MVID', 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'DLOAD',   'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		} else {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => 5, 'type' => 'LIST', 'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'PLIST', 'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		}
 	} catch (Exception $e) {
@@ -1001,95 +1010,100 @@ function handleDownloadQueue(&$params) {
 
 	$mysql_t = 'SELECT count(*) as downloads FROM `vd_queue` q WHERE statusID IN ("'.Q_DOWNLOADING.'");'; 
 	if (FetchRow($mysql_t)['downloads'] >= MAX_DOWNLOADS) {
-		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_RELEASED.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
 	} else {
-		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_PLAYLIST_DOWNLOAD.'","'.Q_QUEUED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
+		$mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_RELEASED.'","'.Q_VERIFY_SUCCESS.'","'.Q_DOWNLOAD_SUCCESS.'");'; 
 	}
 //
 //	Flow 1 FILE:
-//                                                    -----> has(FILENAME) - SKIP ----->   
-//                                                  ^                                  |
-//                                                  |                                  V
-//		addToQueue -> QUEUED -> VERIFYING -> VERIFY_SUCCESS  -> DOWNLOADING  -> DOWNLOAD_SUCCESS -> IMPORTING -> IMPORT_SUCCESS
-//                       ^                          ^                                                         -> IMPORT_FAILED
-//                       |                          |                        -> DOWNLOAD_FAILED (STOP)     
-//                       |                -> VERIFY_FAILED    
-//                       |                          |
-//						 ------------<---------------
+//                                                               -----> has(FILENAME) - (skip) ------>   
+//                                                              ^                                    |
+//                                                              |                                    V
+//		addToQueue     QUEUED -> RELEASED -> PROCESSING -> VERIFY_SUCCESS  -> DOWNLOADING  -> DOWNLOAD_SUCCESS -> PROCESSING -> IMPORT_SUCCESS
+//                                   ^                          ^                                                            -> IMPORT_FAILED
+//                                   |                          |                          -> DOWNLOAD_FAILED (STOP)     
+//                                   |                  -> VERIFY_FAILED    
+//                                   |                          |
+//				                     ------------<---------------
 //
 	while ($row = FetchRow($mysql)) {
 			switch ($row['statusID'])
 			{
-			case Q_PLAYLIST_DOWNLOAD:
-				$url = $row['url'];
-				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
-				$result = youtubeDL($url, YT_GET_PLAYLIST);
-				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
-				debug($params);
-				if (array_key_exists('error', $result)) {
-					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
-				} else {
-					//PARSE RESULTS
-					foreach($result['result'] as $download) {
-						$video = json_decode($download, true);
-						debug($video);
-						try {
-							$result[] = PDOInsert("vd_queue", array('url' => 'youtube.com/watch?v='.$video['url'], 'window_title' => $video ['title']));
-						} catch (Exception $e) {
-							$result['error'] = 'Error: On insert on vd_queue';
-						}
+			case Q_RELEASED:
+				switch ($row['type']) {
+				case "DLOAD":
+				case "IMPORT":
+					$store = Array();
+					$url = $row['url'];
+					// PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
+					$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_MOVE & ~REFRESH_THUMB & ~REFRESH_NFO;
+					$params['file']['window_title'] = $row['window_title'];
+					$params['file']['genre'] = $row['genre'];
+					if (empty($row['filename'])) {				
+						$params['file']['dirname'] = LOCAL_IMPORT. '/';
+					} else {		// Importing dir
+						$file_parts = mb_pathinfo($row['filename']);
+						$params['file']['dirname'] = $file_parts['dirname']. '/';
 					}
-					PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS, 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
-				}
-				break;
-			case Q_QUEUED:
-				$url = $row['url'];
-				// PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
-				$params['importprocess'] = true;
-				$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_MOVE & ~REFRESH_THUMB & ~REFRESH_NFO;
-				$params['file']['window_title'] = $row['window_title'];
-				$params['file']['genre'] = $row['genre'];
-				if (empty($row['filename'])) {				
-					$params['file']['dirname'] = LOCAL_IMPORT. '/';
-				} else {		// Importing dir
-					$file_parts = mb_pathinfo($row['filename']);
-					$params['file']['dirname'] = $file_parts['dirname']. '/';
-				}
-				$result = refreshVideo($params);
-				debug($params);
-				$pretty_result = $row['result'].'<br/><pre>VERIFY<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
-				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
-				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
-				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
-				if (array_key_exists('moveto', $params['file'])) {
-					$store['moved_to'] =  $params['file']['moveto'];
-					$store['subdir_move_to'] =  substr(rtrim($params['file']['moveto'],'/'), strrpos(rtrim($params['file']['moveto'],'/'), '/')+1);
-				} else {
-					$store['moved_to'] =  "";
-					$store['subdir_move_to'] =  "";
-				}
-				$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
-				$store['result']   = $pretty_result;
+					$result = refreshVideo($params);
+					debug($params);
+					$pretty_result = $row['result'].'<br/><pre>VERIFY<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+					$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
+					$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
+					$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
+					if (array_key_exists('moveto', $params['file'])) {
+						$store['moved_to'] =  $params['file']['moveto'];
+						$store['subdir_move_to'] =  substr(rtrim($params['file']['moveto'],'/'), strrpos(rtrim($params['file']['moveto'],'/'), '/')+1);
+					} else {
+						$store['moved_to'] =  "";
+						$store['subdir_move_to'] =  "";
+					}
+					$store['newname'] = (array_key_exists('moveto', $params['file']) ? $params['file']['newname'] : '');
+					$store['result']   = $pretty_result;
 
-				$error = "";
-				foreach ($result as $step) {
-					if (is_array($step) && array_key_exists('error', $step)) {
-						if ($step['error'] == "Duplicates found" ) {
-							$store['duplicate_idFile'] = $step['result'][0]['idFile'];
-							$error .= $step['error'].' '.$step['result'][0]['height'].CRLF;
-						} else {
-							$error .= $step['error'].CRLF;
+					$error = "";
+					foreach ($result as $step) {
+						if (is_array($step) && array_key_exists('error', $step)) {
+							if ($step['error'] == "Duplicates found" ) {
+								$store['duplicate_filename'] = $step['result'][0]['file'];
+								$error .= $step['error'].' '.$step['result'][0]['height'].CRLF;
+							} else {
+								$error .= $step['error'].CRLF;
+							}
 						}
 					}
-				}
-				if ($store['genre'] == 'Not Found') $error .= "No Genre".CRLF;
-				$store['last_error'] = 	substr($error, 0, -5);
-				if (!empty($error)) {
-					$store['statusID'] = Q_VERIFY_FAILED;
-					PDOUpdate('vd_queue', $store, array('id' => $row['id']));
-				} else {
-					$store['statusID'] = Q_VERIFY_SUCCESS;
-					PDOUpdate('vd_queue', $store , array('id' => $row['id']));
+					if ($store['genre'] == 'Not Found') $error .= "No Genre".CRLF;
+					$store['last_error'] = 	substr($error, 0, -5);
+					if (!empty($error)) {
+						$store['statusID'] = Q_VERIFY_FAILED;
+						PDOUpdate('vd_queue', $store, array('id' => $row['id']));
+					} else {
+						$store['statusID'] = Q_VERIFY_SUCCESS;
+						PDOUpdate('vd_queue', $store , array('id' => $row['id']));
+					}
+					break;
+				case "PLIST":
+					$url = $row['url'];
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
+					$result = youtubeDL($url, YT_GET_PLAYLIST);
+					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+					debug($params);
+					if (array_key_exists('error', $result)) {
+						PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+					} else {
+						//PARSE RESULTS
+						foreach($result['result'] as $download) {
+							$video = json_decode($download, true);
+							debug($video);
+							try {
+								$result[] = PDOInsert("vd_queue", array('url' => 'https://youtube.com/watch?v='.$video['url'], 'window_title' => $video ['title']));
+							} catch (Exception $e) {
+								$result['error'] = 'Error: On insert on vd_queue';
+							}
+						}
+						PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS, 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+					}
+					break;				
 				}
 				break;
 			case Q_VERIFY_SUCCESS:
@@ -1116,18 +1130,34 @@ function handleDownloadQueue(&$params) {
 				}
 				break;
 			case Q_DOWNLOAD_SUCCESS:
-				$url = $row['url'];
+				$store = Array();
 				PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
-				$params['importprocess'] = true;
-				$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_CHECK_DUPLICATES &~REFRESH_CHECK_REVERSE;
+				$pretty_result = $row['result'];
+				if (!empty($row['duplicate_filename'])) {		// Delete now, might not find globbing on Import 
+					$tempparams = $params;
+					$tempparams['commandvalue'] = $row['duplicate_filename'];
+					$result = moveToRecycle($tempparams);
+					$feedback[]['result'] = $result;
+					$pretty_result = $pretty_result.'<br/><pre>REMOVE DUPLICATE<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+				}
 				$file_parts = mb_pathinfo($row['filename']);
 				$file_parts['dirname'] = rtrim($file_parts['dirname'], '/') . '/';
 				$params['file'] = $file_parts;
 				$params['file']['window_title'] = $row['newname'];
 				$params['file']['genre'] = $row['genre'];
+				switch ($row['type']) {
+				case "DLOAD":
+				case "IMPORT":
+					$params['refreshvideooptions'] = REFRESH_ALL & ~REFRESH_CHECK_DUPLICATES &~REFRESH_CHECK_REVERSE;
+					break;
+				case "MOVE":
+					$params['file']['moveto'] = $row['moved_to'];
+					$params['refreshvideooptions'] = REFRESH_MOVE;
+					break;
+				}
 				$result = refreshVideo($params);
 				debug($params);
-				$pretty_result = $row['result'].'<br/><pre>IMPORT<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+				$pretty_result = $pretty_result.'<br/><pre>IMPORT<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
 				$store['artist']   = (array_key_exists('artist', $params['file']) ? $params['file']['artist'] : '');
 				$store['title']    = (array_key_exists('artist', $params['file']) ? $params['file']['title'] : '');
 				$store['genre']    = (array_key_exists('genre', $params['file']) ? $params['file']['genre'] : '');
@@ -1144,8 +1174,10 @@ function handleDownloadQueue(&$params) {
 				foreach ($result as $step) {
 					if (is_array($step) && array_key_exists('error', $step)) {
 						if ($step['error'] == "Duplicates found" ) {
-							$store['duplicate_idFile'] = $step['result'][0]['idFile'];
+							$store['duplicate_filename'] = $step['result'][0]['file'];
 							$error .= $step['error'].' '.$step['result'][0]['height'].CRLF;
+						} elseif ($step['error'] == "Multiple Dash") {
+							$a=1;
 						} else {
 							$error .= $step['error'].CRLF;
 						}
@@ -1287,13 +1319,9 @@ function parseSideKicks($sidekickstr) {
 	do {
 		$sks_split = preg_split('/[\s,&]/', $sidekickstr, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_OFFSET_CAPTURE);
 		$len_sks = count($sks_split);
-		// echo "cnt: ".$len_sks.CRLF;
 		$i = 0;
 		$len = strlen($sidekickstr);
-		// echo $len.CRLF;
 		$found = false;
-		// echo "<pre>".$feedback['Name'].': '; print_r($sks_split); //echo "</pre>";
-		// echo "<pre>".$feedback['Name'].': '; print_r($sidekicks); //echo "</pre>";
 		while (!$found && $i < $len_sks-1) {
 			$find = substr($sidekickstr, $sks_split[$i][1],$sks_split[$i+1][1] + strlen($sks_split[$i+1][0]));
 			// echo "find: $find $i".CRLF;
@@ -1320,8 +1348,6 @@ function parseSideKicks($sidekickstr) {
 		$len = strlen($sidekickstr);
 		// echo $len.CRLF;
 		$found = false;
-		// echo "<pre>".$feedback['Name'].': '; print_r($sks_split); //echo "</pre>";
-		// echo "<pre>".$feedback['Name'].': '; print_r($sidekicks); //echo "</pre>";
 		while (!$found && $i < $len_sks) {
 			$find = substr($sidekickstr, $sks_split[$i][1],$sks_split[$i][1] + strlen($sks_split[$i][0]));
 			// echo "find: $find $i".CRLF;
