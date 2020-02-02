@@ -59,12 +59,12 @@ define("COMMAND_GET_PROPERTIES", 325);
 define("COMMAND_LOG_EVENT", 378);
 define("COMMAND_GET_LIST", 444);
 define("COMMAND_SEND_MESSAGE", 452);
+define("COMMAND_SEND_MESSAGE_KODI", 152);
 
 define("SCHEME_ALERT_CRITICAL", 291);
 define("SCHEME_ALERT_HIGH", 288);
 define("SCHEME_ALERT_NORMAL", 290);
 define("SCHEME_ALERT_LOW", 292);
-define("SCHEME_ALERT_KODI", 224);
 
 // Triggers
 define("TRIGGER_AFTER_ON", 1);
@@ -205,8 +205,8 @@ define("PRIORITY_NORMAL", 3);
 define("PRIORITY_LOW", 4);
 define("PRIORITY_HIDE", 99);
 
-define("Q_PLAYLIST_DOWNLOAD", 5);
-define("Q_QUEUED", 10);
+define("Q_QUEUED", 5);
+define("Q_RELEASED", 10);
 define("Q_VERIFY_SUCCESS", 20);
 define("Q_VERIFY_FAILED", 30);
 define("Q_DOWNLOAD_SUCCESS", 40);

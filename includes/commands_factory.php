@@ -233,10 +233,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 				$stepValue = replaceCommandPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
 				$params['commandvalue'] = $stepValue;
-				splitCommandvalue($params);
 				debug($stepValue, 'stepValue');
-
-				debug((array_key_exists('value_parts',$params) ? $params['value_parts'] : array("No params to split")), 'value_parts');
 
 				if ($step['step_async']) {			// Spawn it
 					unset($values);
@@ -418,28 +415,31 @@ function moveToRecycle($params) {
 	$fparsed = mb_pathinfo($cmvfile);
 	$fparsed['dirname'] = rtrim($fparsed['dirname'], '/') . '/';
 	$params['file'] = $fparsed ;
-	$params['createbatchfile'] = 0;		// have to stay online, not returning $batchfile
 	$params['movetorecycle'] = 1;
 	$result = moveMusicVideo($params);
 	$feedback['result'][] = $result;
 	$command = array('callerID' => $params['caller']['callerID'], 
 		'caller'  => $params['caller'],
 		'deviceID' => $params['deviceID'], 
-		'commandID' => COMMAND_RUN_SCHEME,
-		'schemeID' => SCHEME_ALERT_KODI);
+		'commandID' => COMMAND_SEND_MESSAGE_KODI);
 
 	if (!array_key_exists('error',$result)) {
-		$command['macro___commandvalue'] = $result['message'];
+		$command['commandvalue'] = 'DELETED: '.$result['message'];
 	} else {
-		$command['macro___commandvalue'] = $result['error'];
+		$command['commandvalue'] = $result['error'];
 	}
-	if (!array_key_exists('createbatchfile',$params)) $feedback['result'][] = sendCommand($command);
+	$feedback['result'][] = sendCommand($command);
 
 	debug($feedback, 'feedback');
 	return $feedback;
 }
 	
 function moveMusicVideo($params) {
+//
+//	1) Move from Import into Lib
+//       b) Found existing one and move to Recycle first
+//       a) Did not exist, just add
+//  2) Called from moveToRecycle - Delete video ($params['movetorecycle'] = true)
 
 	debug($params, 'params');
 
@@ -448,18 +448,16 @@ function moveMusicVideo($params) {
 	$feedback['message'] = '';
 
 	$file = $params['file'];
+	if (!array_key_exists('movetorecycle', $params)) $params['movetorecycle'] = false;
 	if ($params['movetorecycle']) {
 		$rand = rand(100000,999999);
 		$file['moveto'] = LOCAL_RECYCLE.'/';
 		$file['newname'] = $file['filename'].' ('.$rand.')';
 	}
-	if ($params['createbatchfile']) {
-		$batchfile = $params['file']['batchfile'];
-		if ($params['movetorecycle']) $batchfile .= '#Recycle'."\n";
-		$batchfile .= '#From: '.$file['dirname'].$file['filename']."\n";
-		$batchfile .= '#__To: '.$file['moveto'].$file['newname']."\n";
-	}
 
+	//
+	//	Find matching based on basename and move to recycle
+	//
 	$matches = glob($file['moveto'].$file['newname'].'.*');
 	if (strtolower($file['dirname'].$file['filename']) != strtolower($file['moveto'].$file['newname'])) {
 		if (!empty($matches)) {			// Duplicate file name
@@ -484,43 +482,28 @@ function moveMusicVideo($params) {
 
 		// echo "cp ".$infile.' '.$tofile.CRLF;
 		if (!array_key_exists('error', $feedback)) {
-			if (!$params['createbatchfile']) {
-	// $cp=1;
-				$copy = copy($infile, $tofile) ;
-				// echo "$copy".CRLF;
-				if ($copy) $unlink = unlink($infile);
-				// echo "$unlink".CRLF;
-				touch ($tofile);
-				if (!in_array($ext, Array("tbn", "nfo"))) {
-					if ($copy && $unlink) {
-						$feedback['message'] .= $filename.'| moved to '.$tofile."\n";
-						if (!array_key_exists('importprocess',$params)) $params['importprocess'] = false;
-						if (!$params['importprocess']) { 	// Only do for deletes for now
-							$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
-							// Remove from Kodi Lib
-							if ($mvid = FetchRow($mysql)['id']) {
-								$command['caller'] = $params['caller'];
-								$command['callerparams'] = $params['caller'];
-								$command['deviceID'] = getCurrentPlayer();			// Will be back-end KODI now force Paul-PC
-								$command['commandID'] = 374;					// removeMusicVideo
-								$command['commandvalue'] = $mvid;
-								$feedback[]['result'] = sendCommand($command);
-							}
-						}
-					} else {
-						$feedback['error'] = 'Error moving '.$infile.' | to '.$tofile."\n";
+			$filedate = filemtime($infile);
+			$copy = copy($infile, $tofile) ;
+			// echo "$copy".CRLF;
+			if ($copy) $unlink = unlink($infile);
+			// echo "$unlink".CRLF;
+			touch ($tofile, $filedate);
+			if (!in_array($ext, Array("tbn", "nfo"))) {
+				if ($copy && $unlink) {
+					$feedback['message'] .= $filename.'| moved to '.$tofile;
+					$mysql = 'SELECT mv.id FROM `xbmc_video_musicvideos` mv JOIN xbmc_path p ON mv.strPathID = p.id WHERE file = "'.mv_toPublic($infile).'";'; 
+					// Remove from Kodi Lib
+					if ($mvid = FetchRow($mysql)['id']) {
+						$command['caller'] = $params['caller'];
+						$command['callerparams'] = $params['caller'];
+						$command['deviceID'] = getCurrentPlayer();			
+						$command['commandID'] = 374;						// removeMusicVideo
+						$command['commandvalue'] = $mvid;
+						$feedback[]['result'] = sendCommand($command);
 					}
-				}
-			} else {
-				if (strtolower($infile) != strtolower($tofile)) {
-					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'"'."\n");
 				} else {
-					// Trick to allow rename case (seems to be related to CIFS and duplicate inodes
-					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'" "'.$tofile.'.1"'."\n");
-					$batchfile .= str_replace('`' ,"\`", 'touch "'.$tofile.'.1"'."\n");
-					$batchfile .= str_replace('`' ,"\`", 'mv -vn "'.$infile.'.1" "'.$tofile.'"'."\n");
+					$feedback['error'] = 'Error moving '.$infile.' | to '.$tofile;
 				}
-				$feedback['batchfile'] = $batchfile;
 			}
 		}
 	}
@@ -530,20 +513,19 @@ function moveMusicVideo($params) {
 	if (!$params['movetorecycle']) {
 		$command['caller'] = $params['caller'];
 		$command['callerparams'] = $params;
-		$command['deviceID'] = 	getCurrentPlayer();	// Will be back-end KODI now force Paul-PC
+		$command['deviceID'] = 	getCurrentPlayer();	
 		$command['commandID'] = 	373;	// Scan Directory
 		$command['commandvalue'] = mv_toPublic($file['moveto']); 
-		// $result = sendCommand($command);
-// ::TODOcommandvalue
-		$feedback[]['result'] = $result;
+		// $result = sendCommand($command);					// Not doing for now, takes to long
+		// $feedback[]['result'] = $result;
 	}
 
 	$file = 'log/mv_videos.log';
 	$log = file_get_contents($file);
 	if (array_key_exists('error', $feedback)) 
-		$log .= date("Y-m-d H:i:s").": Error: ".$feedback['error'];
+		$log .= date("Y-m-d H:i:s").": Error: ".$feedback['error']."\n";
 	else 
-		$log .= date("Y-m-d H:i:s").": Moved: ".$feedback['message'];
+		$log .= date("Y-m-d H:i:s").": Moved: ".$feedback['message']."\n";
 	file_put_contents($file, $log);
 	$feedback['message'] .= '|'.'|';
 
@@ -1334,7 +1316,7 @@ function loadSAR($params) {
 	$feedback['result'] = array();
 	parse_str(urldecode($params['commandvalue']), $fparams);
 	debug($fparams, 'fparams');
-	splitCommandvalue($params);
+	// splitCommandvalue($params);
 	if (empty($params['value_parts'][0])) $feedback['error'] = "Please select a Date";
 	if (empty($params['value_parts'][1])) $feedback['error'] = "Please select a Server";
 	if (empty($params['value_parts'][2])) $feedback['error'] = "Please select a Report Option";
@@ -1768,8 +1750,7 @@ function extractVids($params) {
 
     $dir = LOCAL_CAMERAS.$params['device']['previous_properties']['Directory']['value'].'/';
 
-	$params['importprocess'] = true;
-	$result = readDirs($dir.LOCAL_IMPORT, $params['importprocess']);
+	$result = readDirs($dir.LOCAL_IMPORT);
 	$feedback['result']['files'] = $result['result'];
 
 
