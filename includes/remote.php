@@ -41,7 +41,7 @@ function loadRemote($remoteID) {
 
 function loadRemotePaneContent($remoteID, $select, $params) {
 
-    
+
     $mysql = 'SELECT a.remoteID, a.divID, b.* FROM ha_remote_divs_cross a LEFT JOIN ha_remote_divs b ON a.divID = b.id WHERE b.showonremote != "0" AND b.showonremote < "'.$select.'" AND a.remoteID = '.$remoteID.' ORDER BY sort';
     $mycount=1;
 	if ($rows = FetchRows($mysql)) {
@@ -167,7 +167,6 @@ function loadRemoteDiv($divid, $params) {
 						if (strlen($link)>1) echo ' '.$link;
 						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
-						
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						echo ' type="button" data-toggle="dropdown">';
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
@@ -177,7 +176,7 @@ function loadRemoteDiv($divid, $params) {
 							echo ' '.'rem-icon-left';
 							echo '">';
 							echo '</i>';
-						} 
+						}
 						$text = getDisplayText($rowremotekeys);
 						echo '<span class="buttontext">'.$text.'</span><span> </span><span class="caret"></span></button>';
 
@@ -264,7 +263,16 @@ echo "</table>";
 function getDisplayText($row) {
 	$text = null;
 	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
-		$text = (!empty($row['inputoptions']) ? $row['inputoptions'] : $row['name']);
+		if (!empty($row['inputoptions'])) {
+			if (substr($row['inputoptions'], 0, 2) == "@@") {
+				$fname = substr($row['inputoptions'], 2);
+				$text = fname($params);
+			} else {
+				$text = $row['inputoptions'];
+			}
+		} else {
+			$text = $row['name'];
+		}
 		if ($row['inputtype']=="btndropdown") $text = $row['name'];
 	}
 	$text = rtrim($text);

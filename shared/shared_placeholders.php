@@ -190,7 +190,9 @@ function splitCommandvalue(&$params) {
 	} else {
 		$params['value_parts'][0] = $params['commandvalue'];
 	}
-	
+
+	if (!array_key_exists(1, $params['value_parts'])) $params['value_parts'][1] = "";
+	if (!array_key_exists(2, $params['value_parts'])) $params['value_parts'][2] = "";
 	debug($params, 'resultParams');
 
 	return;

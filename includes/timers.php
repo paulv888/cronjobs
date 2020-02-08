@@ -66,7 +66,6 @@ function RunTimers(){
 					debug($mysql, 'mysql');
 					executeQuery(array( 'commandvalue' => $mysql));
 				}
-				
 			}
 		}
 	}
@@ -154,11 +153,11 @@ function checkTime ($setupstart,$setupend, $offset) {
 	} else {
 		$end = strtotime("today $end hours $offset minutes");
 	}
-	
+
 	debug($start, 'start');
 	debug($end, 'end');
 	return  time() >= $start AND time() < $end; ;
-	
+
 }
 
 function updateTimers($params) {
