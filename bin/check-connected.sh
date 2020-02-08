@@ -21,7 +21,7 @@ function_sleep () {
   fi
   return 0
 }
-set -x
+#set -x
 adb devices | grep -Fq "$1" | grep -Fq "device"
 IP="$1"
 function_connected $IP

@@ -438,6 +438,7 @@ function genericADB($params) {
 		switch ($key) {
 		case "keyevent":
 		case "start":
+		case "stop":
 		case "reboot":
 			$cmd = getPath().'/bin/fireTV%s.sh "%s" "%s"';
 			$cmd = sprintf($cmd, $key, $params['device']['ipaddress']['ip'], $value);
@@ -684,6 +685,7 @@ function sendInsteonCommand(&$params) {
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 	else
 		$feedback['result'][] = $curl->getresponse();
+		$feedback['result'][] = $curl->getresponsecode();
 
 	// reset SEMAPHORE
         PDOUpdate('ha_mi_connection', array('semaphore' => 0) , array('id' => $params['device']['connection']['id']));
@@ -708,7 +710,6 @@ function sendGenericPHP(&$params) {
 	if ($func == "sleep") {
 		$feedback['result'][] = $func($params['commandvalue']);
 	} elseif ($params['command']['need_device']=="1") {
-
 		switch ($params['device']['connection']['targettype'])
 		{
 		case "TELNET":

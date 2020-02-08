@@ -132,19 +132,17 @@ class Stat
 		$commandURL = $this->URL . $cmd;
 
 		curl_setopt( $this->ch, CURLOPT_URL, $commandURL );
-		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");       
-		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
-		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT); 
-		
+		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");
+		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT);
+		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT);
+
 		$outputs = curl_exec( $this->ch );
 		if (curl_errno ( $this->ch )<>0) throw new Thermostat_Exception( 'setStatData: ' . curl_error($this->ch) );
-		
+
 		if( $this->debug )
 		{
-			echo '<br>commandURL: ' . $commandURL . '<br>';
-			echo '<br>Stat says:<br><pre>';
-			echo var_dump( json_decode( $outputs ) );
-			echo '</pre><br><br>';
+			debug ($commandURL, '$commandURL');
+			debug ($outputs, 'Thermstat outputs');
 		}
 
 		/** Build in one second sleep after each command
@@ -167,14 +165,14 @@ class Stat
 
 		curl_setopt($this->ch, CURLOPT_URL,$commandURL);
 		curl_setopt($this->ch, CURLOPT_POSTFIELDS, json_encode($value));
-		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "POST");                                                                     
+		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "POST");
 		curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT); 
-		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT); 
-				
+		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT);
+		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT);
+
 		if( $this->debug)
 		{
-			echo '<br>commandURL: ' . $commandURL . '<br>';
+			debug ($commandURL, 'commandURL');
 		}
 
 		if( !$outputs = curl_exec( $this->ch ) )
@@ -182,7 +180,7 @@ class Stat
 			throw new Thermostat_Exception( 'setStatData: ' . curl_error($this->ch) );
 		}
 
-		
+
 		// Need to wait for a response...	object(stdClass)#4 (1) { ['success']=> int(0) }
 		return $outputs;
 	}
@@ -473,7 +471,7 @@ $this->debug = false;
 	{
 
 		$setpoint=(float)$setpoint;
-		
+
 		if ($this->tmode == 1) {
 			if ($setpoint > 75) return array('error'=> 'Temp greater than 24C/75F limit'); 							// Set protection limit, for voice misinterpretation
 			$value = array ('t_heat'=>$setpoint);
@@ -481,20 +479,20 @@ $this->debug = false;
 			if ($setpoint < 64) return array('error'=> 'Temp less than 18C/64F limit');    							// Set protection limit, for voice misinterpretation
 			$value = array ('t_cool'=>$setpoint);
 		}
-		
+
 		if ($this->tmode == 0) return 32;
-		
+
 		$cmd = '/tstat';
 		$outputs = $this->setStatData( $cmd, $value );
 		if( $this->debug)
 		{
-			echo var_dump( json_decode( $outputs ) );
+			debug($outputs, 'Thermostat outputs' );
 		}
 		$result = json_decode( $outputs, TRUE );
-		
+
 		if (array_key_exists("success", $result)) {
 			$this->setpoint=$setpoint;
-			return array('result'=>$setpoint);
+			return array('result'=>$result);
 		} else
 			return array('error'=>$result);
 	}
@@ -533,13 +531,13 @@ $this->debug = false;
 			}
 		}
 	}
-	
+
 	public function TempAdd($addTemp)
 	{
 		if ($this->tmode == 0) return 32;
 		if ($this->tmode == 1) {											// Heating Mode
 			$setpoint = $this->t_heat + $addTemp;							 	// Toggle Off
-		} else {												
+		} else {
 			$setpoint= $this->t_cool + $addTemp;								// Toggle Off
 		}
 
@@ -586,7 +584,7 @@ $this->debug = false;
 //		echo "ttemp:".$setpoint."</br>";
 
 		$this->setTemp($setpoint);
-		
+
 		return $status;
 	}
 

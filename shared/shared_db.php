@@ -104,7 +104,7 @@ function PDOExec($mysql) {
 	
 }
 
-function PDOupsert($table, $fields, $where) {
+function PDOUpsert($table, $fields, $where) {
 
 	debug($fields, $table.' fields');
 	debug($where, $table.' where');
@@ -132,7 +132,7 @@ function PDOupsert($table, $fields, $where) {
 }
 
 
-function PDOupdate($table, $fields, $where){
+function PDOUpdate($table, $fields, $where){
 
 	debug($fields, $table.' fields');
 	debug($where, $table.' where');
@@ -193,7 +193,7 @@ function PDOupdate($table, $fields, $where){
 	return $result;
 }
 
-function PDOinsert($table, $fields){
+function PDOInsert($table, $fields){
 
 	debug($fields, $table.' fields');
 

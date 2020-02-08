@@ -2,14 +2,14 @@
 function getThermoSettings(&$params) {
 	$feedback['result'][] = array();
 	$feedback['Name'] = 'getThermoSettings';
-	
+
 	try	{
 		$stat = new Stat( $params['device'] );
 		$stat->getStat();
-	
+
 		//
 		//	Handled in isRunning property update
-		//		
+		//
 		// $statData = $stat->getStat();
 		// $heatStatus = ($stat->tstate == 1) ? true : false;
 		// $coolStatus = ($stat->tstate == 2) ? true : false;
@@ -18,11 +18,11 @@ function getThermoSettings(&$params) {
 		// logIt( 'Cool: ' . ($coolStatus ? 'ON' : 'OFF'));
 		// logIt( 'Fan: ' . ($fanStatus ? 'ON' : 'OFF'));
 		// UpdateStatusCycle($params['deviceID'], $heatStatus, $coolStatus, $fanStatus);
-		
+
 
 		// Check heating/cooling or off mode and update device type
 		// Should I set $params['device']['type']['internal_type'] as well and do before UpdateCycle
-		if ($stat->tmode == 1) { 
+		if ($stat->tmode == 1) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_HEAT);
 		}	elseif ($stat->tmode == 2) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_COOL);
@@ -30,9 +30,9 @@ function getThermoSettings(&$params) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_AUTO);
 		} else {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_OFF);
-		}		
+		}
 
-		//Update Today/Yesterday runtimes from thermostat, TODO: duplicate with isRunning update 
+		//Update Today/Yesterday runtimes from thermostat, TODO: duplicate with isRunning update
 		$stat->getDataLog();
 
 		$today = date( 'Y-m-d' );
@@ -40,7 +40,7 @@ function getThermoSettings(&$params) {
 
 		$yesterday = date( 'Y-m-d', strtotime( 'yesterday' ));
 		PDOupsert('hvac_run_times', array('deviceID' => $params['deviceID'], 'date' => $yesterday, 'heat_runtime' => $stat->runTimeHeatYesterday, 'cool_runtime' =>$stat->runTimeCoolYesterday), array('date' => $yesterday, 'deviceID' => $params['deviceID']));
-					
+
 		$properties['Temperature']['value'] = to_celcius($stat->temp);
 		$properties['Setpoint']['value'] =  to_celcius($stat->setpoint);
 		$properties['Status']['value'] = $stat->getTargetOnOff();
@@ -88,6 +88,7 @@ function HvacToggle(&$params) {
 		echo 'Caught exception: ',  $e->getMessage(), CRLF;
 	}
 }
+
 function HvacOff(&$params) {
 	return HvacToggle($params);
 }
@@ -137,7 +138,7 @@ function HvacSetTemp(&$params) {
 		// $result['device'] = getDevice($params['deviceID']);
 		// $result['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $params['deviceID']));
 		$setpoint = ($params['commandvalue'] < 50 ? to_fahrenheit($params['commandvalue']) : $params['commandvalue']); 
-		$stat->setTemp($setpoint);
+		$feedback['result'] = $stat->setTemp($setpoint);
 
 		$properties['Status']['value'] = $stat->getTargetOnOff();
 		//$properties['Temperature']['value'] = to_celcius($stat->temp);
@@ -165,7 +166,7 @@ function HvacDown(&$params) {
 }
 
 function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $forcemove = false) {
-				
+
 	$pdo = openDB();
 	$now = (string)date('Y-m-d H:i:s');
 
@@ -173,17 +174,12 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 	{
 		$sql = "SELECT * FROM hvac_status WHERE deviceID=?"; // Really should name columns instead of using *
 		$queryStatus = $pdo->prepare( $sql );
-	
 		$sql = "INSERT INTO hvac_status( deviceID, date, start_date_heat, start_date_cool, start_date_fan, heat_status, cool_status, fan_status ) VALUES( ?, ?, ?, ?, ?, ?, ?, ? )";
 		$queryInsert = $pdo->prepare( $sql );
-	
 		$sql = "UPDATE hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
 		$statusUpdate = $pdo->prepare( $sql );
-	
 		$sql = "INSERT INTO hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
-	
-		
 	}
 	catch( Exception $e )
 	{
@@ -253,7 +249,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 			$cycleInsert->execute( array( $deviceID, 3, $priorStartDateFan, $now ) );
 			if (!$forcemove) $newStartDateFan = null;
 		}
-		
+
 		// update the status table
 		//logit( "Updating record with $now SDH $newStartDateHeat SDC $newStartDateCool SDF $newStartDateFan H $heatStatus C $coolStatus F $fanStatus for $deviceID" );
 		$statusUpdate->execute( array( $now, $newStartDateHeat, $newStartDateCool, $newStartDateFan, $heatStatus, $coolStatus, $fanStatus, $deviceID ) );
@@ -265,8 +261,6 @@ function UpdateDailyRuntime($deviceID) {
 	//
 	//	NOT IN USE, maybe re-use for smoker coop fan
 	//
-	
-	
 	// update hvac runtime from run-cycles broken timer upstarts
 	// Clear/Heat/Cool (Yesterday/Today)
 	$sql = 'delete FROM `hvac_run_times` 

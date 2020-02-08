@@ -310,7 +310,7 @@ if(!window.scriptRemoteHasRun) {
 
 		if (showSpin === undefined) showSpin = true;
 		if (showSpin) {
-				jQuery('#system-message-container').html ('');
+			//	jQuery('#system-message-container').html ('');
 				jQuery('#spinner').show();
 		}
 
@@ -327,7 +327,7 @@ if(!window.scriptRemoteHasRun) {
 				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
-				timeout: 10000,
+				timeout: 60000,
 				success: function(data)
 				{
 					processData(data);

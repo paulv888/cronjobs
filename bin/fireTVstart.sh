@@ -1,5 +1,5 @@
 #! /bin/bash
-set -x
+#set -x
 /home/www/ha/bin/check-connected.sh "$1"
 GALLERYNOCAM="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW"
 GALLERY="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewerActivity -a 'android.intent.action.VIEW' -e selectView GALLERY_VIEW -e selectCameraName"
@@ -49,6 +49,10 @@ netflix)
   adb -s "$1" shell am force-stop com.android.deskclock
   adb -s "$1" shell am force-stop com.netflix.ninja
   adb -s "$1" shell am start -n com.netflix.ninja/.MainActivity
+  ;;
+*)
+ echo "Unknown parameter: $2"
+ exit 1
   ;;
 esac
 
