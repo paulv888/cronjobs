@@ -13,6 +13,18 @@ define("REFRESH_CHECK_REVERSE", 0x100);
 define("REFRESH_ALL", 0xFFFF);
 define("MAX_DOWNLOADS", 2);
 
+// function templateFunction(&$params) {
+
+	// $feedback['Name'] = 'templateFunction';
+	// $feedback['commandstr'] = "I send this";
+	// $feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
+
+// debug($feedback, 'feedback');
+	// return $feedback;
+// }
+
 
 //
 //	Refresh all or All should be independent of DB. 
@@ -26,7 +38,7 @@ $genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', '
          '_XXX_recyclebin');
 
 $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
-	'/musicvideos/Country/', '/musicvideos/Dance/', 'Eastern/Arabic/',
+	'/musicvideos/Country/', '/musicvideos/Dance/', '/Eastern/Arabic/',
 	'/musicvideos/Eastern/Bulgarian/', '/musicvideos/Eastern/Celtic/', 
 	'/musicvideos/Eastern/Japanese/',  '/musicvideos/Eastern/OtherEastern/', 
 	'/musicvideos/Eastern/Polish/',  '/musicvideos/Eastern/Russian/', 
@@ -62,18 +74,6 @@ $genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
 //						'commandstr' 	(String)	-> for eventlog, actual command send
 //      if error then	'error'			(String)	-> Error description
 //						Nothing else allowed 
-
-// function templateFunction(&$params) {
-
-	// $feedback['Name'] = 'templateFunction';
-	// $feedback['commandstr'] = "I send this";
-	// $feedback['result'] = array();
-	// $feedback['message'] = "all good";
-	//	$feedback['error'] = "Error - Could not find genre folder for: >".$file['genre']."<".CRLF;
-
-// debug($feedback, 'feedback');
-	// return $feedback;
-// }
 
 function refreshVideo(&$params) {
 	debug($params, 'params');
@@ -283,6 +283,10 @@ function cmp($a, $b) {
 
 
 function createThumbNails(&$params) {
+//
+//	value_parts_0 1==Overwrite
+//  value_parts_1 strPathID 
+//  
 
 	set_time_limit(0);
 
@@ -294,9 +298,11 @@ function createThumbNails(&$params) {
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE idFile = "37969";'; 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = "29";'; 
+	if (!empty($params['value_parts'][1])) {
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = ('.$params['value_parts'][1].')'; 
+	} else {
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
+	}
 
 	$feedback['message'] = '';
 	if ($mvids = FetchRows($mysql)) {
@@ -309,37 +315,43 @@ function createThumbNails(&$params) {
 			$params['refreshvideooptions'] = REFRESH_THUMB ;
 			$params['file'] = $file_parts;
 			$params['file']['checkextension'] = 'tbn';
-			if (($params['commandvalue'] == "1") || (empty($params['commandvalue']) && checkFile($params))) {	//	Overwrite
-				print_r($file);		// Batch with temp file, so we can find corrupted files
+			if (($params['value_parts'][0] == "1") || (empty($params['commandvalue']) && checkFile($params))) {	//	Overwrite
+				$feedback['result'][] = $file;		// Batch with temp file, so we can find corrupted files
 				$feedback = refreshVideo($params);
-			} else {
-				echo "Skip: ".$params['file']['filename'].CRLF;
+				$count++;
 			}
 		}
 	}
 
+	$feedback['message'] = $count." Thumbnails created.";
 	debug($feedback, 'feedback');
 	return $feedback;
 }
 
 function createNFOs(&$params) {
+//
+//	value_parts_0 1==Overwrite
+//  value_parts_1 strPathID 
+//  
 
 	set_time_limit(0);
 
 	debug($params, 'params');
 
 	$feedback['Name'] = 'createNFOs';
-	//$feedback['commandstr'] = "I send this";
+	$feedback['commandstr'] = $params['commandvalue'];
 	$feedback['result'] = array();
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
-
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE idFile = "37969";'; 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = "29";'; 
+	if (!empty($params['value_parts'][1])) {
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = ('.$params['value_parts'][1].')'; 
+	} else {
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
+	}
 
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
+	$count = 0;
 	if ($mvids = FetchRows($mysql)) {
 		foreach ($mvids as $mvid) { // Itereate all
 			$file = $mvid;
@@ -351,15 +363,14 @@ function createNFOs(&$params) {
 			$params['file'] = $file_parts;
 			$params['file']['checkextension'] = 'nfo';
 //			print_r($file);		// Batch with temp file, so we can find corrupted files
-			if (($params['commandvalue'] == "1") || (empty($params['commandvalue']) && checkFile($params))) {	//	Overwrite
-				print_r($file);		// Batch with temp file, so we can find corrupted files
+			if (($params['value_parts'][0] == "1") || (empty($params['commandvalue']) && checkFile($params))) {	//	Overwrite
+				$feedback['result'][] = $file;		// Batch with temp file, so we can find corrupted files
 				$feedback = refreshVideo($params);
-			} else {
-				echo "Skip: ".$params['file']['filename'].CRLF;
+				$count++;
 			}
 		}
 	}
-
+	$feedback['message'] = $count." NFO files created.";
 	debug($feedback, 'feedback');
 	return $feedback;
 }
@@ -462,7 +473,7 @@ function createNFO($file) {
 	$data .= "\n</musicvideo>";
 	$data = mb_convert_encoding($data, 'UTF-8', 'auto');
 	file_put_contents($file['dirname'].$file['filename'].'.nfo', $data);
-	$feedback['result'] = $data;
+	// $feedback['result'] = $data;
 	debug($feedback, 'feedback');
 	return $feedback;
 
@@ -867,8 +878,8 @@ function searchTracksForAllArtist(&$params) {
 	if (!empty($params['commandvalue'])) {
 		$mysql = 'SELECT `id`,`name` FROM `xbmc_actor` WHERE (`id` >=  '.$params['value_parts'][0].' AND `id` <=  '.$params['value_parts'][1].')' ;
 	} else {
-$mysql = 'SELECT a.id , a.name FROM `vd_spotify_actor` s JOIN `xbmc_actor` a on s.actor_id = a.id WHERE s.`name`!=a.`name` and calc=-1SELECT a.id , a.name FROM `vd_spotify_actor` s JOIN `xbmc_actor` a on s.actor_id = a.id WHERE s.`name`!=a.`name` and calc=-1';
-
+		$mysql = 'SELECT a.id , a.name FROM `vd_spotify_actor` s JOIN `xbmc_actor` a on s.actor_id = a.id WHERE s.`name`!=a.`name` and calc=-1';
+		exit;
 		//$mysql = 'SELECT `id`,`name` FROM `xbmc_actor` WHERE 1' ;
 	}
 	$count = 0;
@@ -900,6 +911,7 @@ function searchTracksForArtist(&$params) {
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $row) { // Itereate all (till count of 4 found
 			$params['commandvalue'] = $params['file']['artist'].' '.$row['title'];
+			$params['function'] = 'search';
 			$params['search']['type'] = 'track';
 			$result = searchSpotify($params);
 			if (array_key_exists('error',$result)) {
@@ -925,9 +937,11 @@ function searchTracksForArtist(&$params) {
 	}
 
 	$params['commandvalue'] = $params['file']['artist'];
+	$params['function'] = 'search';
 	$params['search']['type'] = 'artist';
 	$result = searchSpotify($params);
 	debug($result, 'searchArtist');
+
 	$result = $result['result'];
 	$items = $result->artists->items;
 	if (array_key_exists(0, $items)) {
@@ -961,61 +975,69 @@ function searchTracksForArtist(&$params) {
 
 		if (empty($foundArtist)) $foundArtist = $artist[0];
 
-		if (array_key_exists('properties', $params['device']) && array_key_exists('Token', $params['device']['properties'])) {
-			$accessToken = $params['device']['properties']['Token']['value'];
-		} else {
-			$accessToken = $params['device']['previous_properties']['Token']['value'];
-		}
 		try {
-
-			$api = new SpotifyWebAPI\SpotifyWebAPI();
-			$api->setAccessToken($accessToken);
-			$spot_artist = $api->getArtist($foundArtist->id);
+			$params['function'] = 'getArtist';
+			$params['commandvalue'] = $foundArtist->id;	
+			$result = searchSpotify($params);
+			$spot_artist = $result['result'];
 			debug($spot_artist, 'spot_artist');
 		} catch (Exception $e) {
 			$feedback['error'] = 'Caught exception ('.$e->getCode().'): '.  $e->getMessage();
+			return;
 		}
-		
-		// Update Genres Counts or insert new one
-		foreach ($spot_artist->genres as $genre) {
-			$mysql = 'SELECT * FROM `vd_spotify_genre` WHERE lookup ="'.$genre.'"'; 
-			if ($genre_row = FetchRow($mysql)) {
-				PDOUpdate('vd_spotify_genre', array('uses' => $genre_row['uses']+1), array('id' => $genre_row['id']));
-			} else {
-				PDOInsert('vd_spotify_genre', array('lookup' => $genre,'description' => mb_convert_case($genre, MB_CASE_TITLE, 'UTF-8'),'uses' => $genre_row['uses']+1));
-			}
-		}
+		$feedback['result'][] = $result;
 
-		// Find vd_spotify_actor id
-		$mysql = 'SELECT id FROM vd_spotify_actor WHERE actor_id = '.$artistID ; 
-		if (!($vd_spotify_actorID = FetchRow($mysql)['id'])) $vd_spotify_actorID = PDOInsert('vd_spotify_actor', Array('actor_id' => $artistID, 'name' => '*',  'calc' => 0));
-		
-		debug($vd_spotify_actorID,'vd_spotify_actorID');
-		
-		// Find most used one and assign to artist
-		$genres = implode('","', $spot_artist->genres);
-		$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ("'.$genres.'") order by uses desc'; 
-		if ($SPgenre = FetchRow($mysql)) {
-			PDOUpsert('vd_spotify_actor_repeat_genres', array('parent_id' => $vd_spotify_actorID, 'genres' => $SPgenre['id']), array('parent_id' => $vd_spotify_actorID, 'genres' => $SPgenre['id']));
+		$result = insertSpotArtist($artistID, $foundArtist);
+		if (!empty($result['error'])) {
+			$feedback['result'][] = $result; 
 		} else {
-			echo "Not found: ".$genres;
+			PDOUpdate('vd_spotify_actor', array('matches' => $foundArtist->count), Array( 'actor_id' => $artistID ));
 		}
-	
-		$store = Array('actor_id' => $artistID, 'external_urls' => $spot_artist->external_urls->spotify,
-				'followers' => $spot_artist->followers->total , 
-				'image1' => $spot_artist->images[0]->url, 'image2' => $spot_artist->images[1]->url, 'image3' => $spot_artist->images[2]->url,
-				'name' => $spot_artist->name, 'uri' => $spot_artist->id, 'calc' => $foundArtist->count );
-	} else {
-		$store = Array('actor_id' => $artistID, 'name' => '*',  'calc' => 0);
 	}
 	
+	$feedback['result'][] = $result;
+	$feedback['message'] = 'Upserted row for:' .$params['file']['artist'];
+	return $feedback;
+}
+
+function insertSpotArtist($artistID, $spot_artist) {
+
+	
+		// Update Genres Counts or insert new one
+	foreach ($spot_artist->genres as $genre) {
+		$mysql = 'SELECT * FROM `vd_spotify_genre` WHERE lookup ="'.$genre.'"'; 
+		if ($genre_row = FetchRow($mysql)) {
+			PDOUpdate('vd_spotify_genre', array('uses' => $genre_row['uses']+1), array('id' => $genre_row['id']));
+		} else {
+			PDOInsert('vd_spotify_genre', array('lookup' => $genre,'description' => mb_convert_case($genre, MB_CASE_TITLE, 'UTF-8'),'uses' => $genre_row['uses']+1));
+		}
+	}
+
+	// Find vd_spotify_actor id
+	$mysql = 'SELECT id FROM vd_spotify_actor WHERE actor_id = '.$artistID ; 
+	if (!($vd_spotify_actorID = FetchRow($mysql)['id'])) $vd_spotify_actorID = PDOInsert('vd_spotify_actor', Array('actor_id' => $artistID, 'name' => '*',  'matches' => 0));
+	
+	debug($vd_spotify_actorID,'vd_spotify_actorID');
+	
+	// Find most used one and assign to artist
+	$genres = implode('","', $spot_artist->genres);
+	$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ("'.$genres.'") order by uses desc'; 
+	if ($SPgenre = FetchRow($mysql)) {
+		$genreID = $SPgenre['id'];
+	} else {
+		$genreID = 0;
+	}
+
+	$store = Array('actor_id' => $artistID, 'external_urls' => $spot_artist->external_urls->spotify,
+			'followers' => $spot_artist->followers->total , 
+			'image1' => $spot_artist->images[0]->url, 'image2' => $spot_artist->images[1]->url, 'image3' => $spot_artist->images[2]->url,
+			'name' => $spot_artist->name, 'uri' => $spot_artist->id, 'genreID' => $genreID);
+
+
 	if (!empty($spot_artist)) debug($spot_artist,'spot_artist');
 
-	$feedback['result'] = $result;
-	
-	PDOUpsert('vd_spotify_actor', $store, Array( 'actor_id' => $artistID ));
-	
-	$feedback['message'] = 'Upserted row for:' .$params['file']['artist'];
+	$feedback['result'] = PDOUpsert('vd_spotify_actor', $store, Array( 'actor_id' => $artistID ));
+
 	return $feedback;
 }
 
@@ -1037,7 +1059,11 @@ include_once 'includesSpotify.php';
 	try {
 		$api = new SpotifyWebAPI\SpotifyWebAPI();
 		$api->setAccessToken($accessToken);
-		$result = $api->search($params['commandvalue'], $params['search']['type']);
+		if ($params['function'] == 'search') {
+			$result = $api->search($params['commandvalue'], $params['search']['type']);
+		} elseif ($params['function'] == 'getArtist') {
+			$result = $api->getArtist($params['commandvalue']);
+		}
 	} catch (Exception $e) {
 		echo 'Caught exception ('.$e->getCode().'): ',  $e->getMessage(), "\n";
 		if ($e->getCode() == 429) { // 429 is Too Many Requests
@@ -1061,7 +1087,11 @@ include_once 'includesSpotify.php';
 			$feedback['error'] = 'Caught exception ('.$e->getCode().'): '.  $e->getMessage();
 			return $feedback;
 		}
-		$result = $api->search($params['commandvalue'], $params['search']['type']);
+		if ($params['function'] == 'search') {
+			$result = $api->search($params['commandvalue'], $params['search']['type']);
+		} elseif ($params['function'] == 'getArtist') {
+			$result = $api->getArtist($params['commandvalue']);
+		}
 	}
 	$feedback['result'] = $result;
 	debug($feedback, 'feedback');
@@ -1152,7 +1182,7 @@ function createArtistDirs(&$params) {
 
 //JOIN xbmc_path p ON mv.strPathID = p.id
 			$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
-					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' %" OR artist LIKE "% '.$params['file']['artist']. '")  
+					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" )  
 					AND genre = "'.$params['file']['genre'].'";'; 
 
 			if ($mvids = FetchRows($mysql)) {
@@ -1171,6 +1201,31 @@ function createArtistDirs(&$params) {
 	return $feedback;
 
 }
+
+function createMoveQueueItems($params) {
+
+	$feedback['Name'] = 'createMoveQueueItems';
+	$feedback['commandstr'] = implode(',', $params['commandvalue']);
+	$feedback['result'] = array();
+
+	$mysql = 'SELECT idFile FROM `vd_queue` WHERE id IN ('.implode(',',$params['commandvalue']).')';
+	if ($rows = FetchRows($mysql)) {
+		foreach ($rows as $row) {
+			$params['value_parts'][0] = $row['idFile'];
+			$params['value_parts'][1] = "";
+			$params['value_parts'][2] = "";
+			$feedback['result'] = createMoveQueueItem($params);
+		}
+	} else {
+		$feedback['error'] = "Error - Could not queue rows";
+	}
+	
+	// $feedback['message'] = count($rows)." Row Created.";
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+
 
 function createMoveQueueItem($params) {
 	//
@@ -1308,33 +1363,40 @@ function undoVideoImport(&$params) {
 		return $feedback;
 	}
 
-	$mysql = 'SELECT * FROM `vd_queue` WHERE id = '.$params['commandvalue'].' AND statusID = '.Q_IMPORT_SUCCESS;
-	if (!($row = FetchRow($mysql))) {
+echo "<pre>";
+print_r($params['commandvalue']);
+echo "</pre>";
+exit;
+
+	$mysql = 'SELECT * FROM `vd_queue` WHERE id IN ('.implode(',',$params['commandvalue']).') AND statusID = '.Q_IMPORT_SUCCESS;
+	if (!($rows = FetchRows($mysql))) {
 		$feedback['error'] = 'Error: could not find id: '.$params['commandvalue'].' in imported Status' ;
 		return $feedback;
 	}
 
-	$file['dirname'] = $row['move_to'];
-	$file['filename'] = $row['newname'];
-	$file['moveto'] = LOCAL_IMPORT.'/';
-	$file['newname'] = $row['newname'];
-	$file_parts = mb_pathinfo($row['filename']);
-	$file['extension'] = $file_parts['extension'];
-	$params['file'] = $file;
-	$params['movetorecycle'] = false;
-	$result = moveMusicVideo($params);
-	$feedback['result'][] = $result;
-	if (!array_key_exists('error',$result)) {
-		$command['commandvalue'] = 'DELETED: '.$result['message'];
-	} else {
-		$command['commandvalue'] = $result['error'];
-	}
+	foreach ($rows as $row) {
+		$file['dirname'] = $row['move_to'];
+		$file['filename'] = $row['newname'];
+		$file['moveto'] = LOCAL_IMPORT.'/';
+		$file['newname'] = $row['newname'];
+		$file_parts = mb_pathinfo($row['filename']);
+		$file['extension'] = $file_parts['extension'];
+		$params['file'] = $file;
+		$params['movetorecycle'] = false;
+		$result = moveMusicVideo($params);
+		if (!array_key_exists('error',$result)) {
+			$command['commandvalue'] = 'DELETED: '.$result['message'];
+		} else {
+			$command['commandvalue'] = $result['error'];
+		}
 
-	try {
-		$pretty_result = $row['result'].'<br/><pre>UNDO<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
-		PDOUpdate('vd_queue', array('statusID' => Q_QUEUED, 'last_error' => 'Undo', 'filename' => $file['moveto'].$file['newname'].'.'.$file['extension'], 'result' => $pretty_result) , array('id' => $row['id']));
-	} catch (Exception $e) {
-		$feedback['error'] = 'Error: On insert on vd_queue';
+		try {
+			$pretty_result = $row['result'].'<br/><pre>UNDO<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
+			PDOUpdate('vd_queue', array('statusID' => Q_QUEUED, 'last_error' => 'Undo', 'filename' => $file['moveto'].$file['newname'].'.'.$file['extension'], 'result' => $pretty_result) , array('id' => $row['id']));
+		} catch (Exception $e) {
+			$feedback['error'] = 'Error: On insert on vd_queue';
+		}
+		$feedback['result'][] = $result;
 	}
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -1393,6 +1455,54 @@ function addToQueue(&$params) {
 	return $feedback;
 }
 
+function linkArtist(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'linkArtist';
+	$feedback['received'] = $params['commandvalue'];
+	$feedback['result'] = array();
+
+	$feedback['commandstr'] = 'PDOInsert: '.$params['commandvalue'];
+	if (empty($params['commandvalue'])) {
+		$feedback['error'] = 'Error: commandvalue is empty';
+		return $feedback;
+	}
+	if (empty($params['value_parts'][0])) {
+		$feedback['error'] = 'Error: URL is empty';
+		return $feedback;
+	}
+	if (empty($params['value_parts'][1])) {
+		$feedback['error'] = 'Error: windows title is empty';
+		return $feedback;
+	}
+
+	$feedback['message'] = "";
+	$params['value_parts'][0] = urldecode($params['value_parts'][0]);
+	$params['value_parts'][1] = urldecode($params['value_parts'][1]);
+	$windowTitle = str_replace('Spotify – ','',$params['value_parts'][1]);
+	$windowTitle = str_replace(' - Google Chrome','',$windowTitle);
+	$feedback['result'][] = $params;
+
+	$newname = transliterate($windowTitle);
+
+	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = "'.$windowTitle.'"';
+	if (FetchRow($mysql)) {
+		$feedback['error'] = 'Error: already in queue';
+		return $feedback;
+	}
+	
+	try {
+		$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'SPOTART', 'url' => $params['value_parts'][0], 'window_title' => $windowTitle, 'newname' => $newname));
+		$feedback['message'] .= "Inserted: ".$windowTitle;
+	} catch (Exception $e) {
+		$feedback['error'] = 'Error: On insert on vd_queue';
+	}
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+
 function handleDownloadQueue(&$params) {
 
 	debug($params, 'params');
@@ -1412,7 +1522,7 @@ function handleDownloadQueue(&$params) {
 		// $mysql = 'SELECT * FROM `vd_queue` q WHERE statusID IN ("'.Q_RELEASED.'","'.Q_VERIFY_SUCCESS.'");'; 
 	}
 //
-//	Flow 1 FILE:
+//	Flow DLOAD/IMPORT/MOVE/DUPL/ARTIST:
 //                                                               -----> has(FILENAME) - (skip) ------>   
 //                                                              ^                                    |
 //                                                              |                                    V
@@ -1422,6 +1532,18 @@ function handleDownloadQueue(&$params) {
 //                                   |                  -> VERIFY_FAILED    
 //                                   |                          |
 //				                     ------------<---------------
+//
+//
+//	Flow PLAYLIST:
+//                                                      
+//
+//                                                      
+//		addToQueue     QUEUED -> RELEASED -> DOWNLOADING -> IMPORT_SUCCESS
+//                                        -> DOWNLOAD_FAILED
+//                                                      
+//                                                                          
+//                                                                
+//				                                                   
 //
 	while ($row = FetchRow($mysql)) {
 		$result = array();
@@ -1488,7 +1610,7 @@ function handleDownloadQueue(&$params) {
 				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
 				$result = youtubeDL($url, YT_GET_PLAYLIST);
 //					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
-				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
+				$pretty_result = $row['result'].'<pre>PLAYLIST<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
 				debug($params);
 				if (array_key_exists('error', $result)) {
 					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
@@ -1504,6 +1626,18 @@ function handleDownloadQueue(&$params) {
 						}
 					}
 					PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS, 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				}
+				break;
+			case "SPOTART":
+				PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
+				//FIND ARTIST
+				// Has movie actors as well :(
+				$mysql = 'SELECT * FROM `xbmc_actor` WHERE `name` LIKE "'.$row['newname'].'"';
+				$pretty_result = '<pre>SPOTART<br/>'.json_encode($row, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
+				if ($actor = FetchRow($mysql)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_VERIFY_SUCCESS, 'actor_id' => $actor['id'], 'artist' => $actor['name'], 'result' => $pretty_result) , array('id' => $row['id']));
+				} else {
+					PDOUpdate('vd_queue', array('statusID' => Q_VERIFY_FAILED, 'last_error' => 'Not Found', 'result' => $pretty_result) , array('id' => $row['id']));
 				}
 				break;
 			case "DUPL":
@@ -1526,27 +1660,62 @@ function handleDownloadQueue(&$params) {
 			}
 			break;
 		case Q_VERIFY_SUCCESS:
-			$mysql_t = 'SELECT count(*) as downloads FROM `vd_queue` q WHERE statusID IN ("'.Q_DOWNLOADING.'");'; 
-			if (FetchRow($mysql_t)['downloads'] >= MAX_DOWNLOADS) {
-				$feedback['message'] = 'Reached max downloads getting out';
-				return;
-			}
-			$isDownloaded = !empty($row['filename']);
-			if (!$isDownloaded) {
-				$url = $row['url'];
+			switch ($row['type']) {
+			case "SPOTART":
 				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
-				$result = youtubeDL($url);
-//					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
-				$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
-				debug($params);
-			} else {
-				$pretty_result = $row['result'].'<pre>SKIPPING DOWNLOAD<br/></pre>';
-				$result['filename'] = $row['filename'];
-			}
-			if (array_key_exists('error', $result)) {
-				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
-			} else {
-				PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_SUCCESS, 'filename' => $result['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				$temp = explode('/', $row['url']);
+				$spotID = end($temp);
+				try {
+					$tempparams = $params;
+					$tempparams['function'] = 'getArtist';
+					$tempparams['commandvalue'] = $spotID;
+					$tempparams['deviceID'] = 351;
+					$tempparams['commandID'] = 490;
+					$result = sendCommand($tempparams);
+					$spot_artist = $result['result'];
+					debug($spot_artist, 'spot_artist');
+				} catch (Exception $e) {
+					$feedback['error'] = 'Caught exception ('.$e->getCode().'): '.  $e->getMessage();
+					return;
+				}
+				$feedback['result'][] = $result;
+				$artistID = $row['actor_id'];
+				$result = insertSpotArtist($artistID, $spot_artist);
+				if (empty($result['error'])) {
+					PDOUpdate('vd_spotify_actor', array('status' => 1, 'matches' => 50), Array( 'actor_id' => $artistID ));
+				}
+				$feedback['result'][] = $result; 
+				$pretty_result = $row['result'].'<pre>SPOTIFY<br/>'.json_encode($feedback['result'], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
+				if (array_key_exists('error', $result)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				} else {
+					PDOUpdate('vd_queue', array('statusID' => Q_IMPORT_SUCCESS,  'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				}
+				break;
+			default:
+				$mysql_t = 'SELECT count(*) as downloads FROM `vd_queue` q WHERE statusID IN ("'.Q_DOWNLOADING.'");'; 
+				if (FetchRow($mysql_t)['downloads'] >= MAX_DOWNLOADS) {
+					$feedback['message'] = 'Reached max downloads getting out';
+					return;
+				}
+				$isDownloaded = !empty($row['filename']);
+				if (!$isDownloaded) {
+					$url = $row['url'];
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOADING) , array('id' => $row['id']));
+					$result = youtubeDL($url);
+	//					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.prettyPrint(json_encode($result,JSON_UNESCAPED_SLASHES)).'</pre>';
+					$pretty_result = $row['result'].'<pre>DOWNLOAD<br/>'.json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
+					debug($params);
+				} else {
+					$pretty_result = $row['result'].'<pre>SKIPPING DOWNLOAD<br/></pre>';
+					$result['filename'] = $row['filename'];
+				}
+				if (array_key_exists('error', $result)) {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_FAILED, 'last_error' => $result['error'], 'result' => $pretty_result) , array('id' => $row['id']));
+				} else {
+					PDOUpdate('vd_queue', array('statusID' => Q_DOWNLOAD_SUCCESS, 'filename' => $result['filename'], 'last_error' => '', 'result' => $pretty_result) , array('id' => $row['id']));
+				}
+				break;
 			}
 			break;
 		case Q_DOWNLOAD_SUCCESS:
@@ -1636,8 +1805,10 @@ function findVideoArtistTitle($params) {
 	$result = cleanName($name);
 	$params['file']['newname'] = $result['result'][0];
 	$feedback[] = $result;
-	$url = '/index.php/music-videos-list?resetfilters=1';
-	$feedback['redirect'] = "refresh:3;url=".$url;
+ 	$url = '/index.php/music-videos-list?resetfilters=1';
+	$search = '&order_by=xbmc_video_musicvideos_list___title&order_dir=asc';
+	$search .= '&xbmc_video_musicvideos_list___artist[condition]=CONTAINS&xbmc_video_musicvideos_list___artist[value][]=%s';
+	$feedback['redirect'] = "refresh:3;url=".sprintf($url.$search, urlencode($params['file']['newname']));
 	if (array_key_exists('error',$result)) {
 		$feedback[] = $result;
 		debug($feedback, 'feedback');
@@ -1656,8 +1827,6 @@ function findVideoArtistTitle($params) {
 	}
 	$artist = $params['file']['artist'];
 	$title  = substr($params['file']['title'], 0, 1);
-	$search = '&order_by=xbmc_video_musicvideos___title&order_dir=asc';
-	$search .= '&xbmc_video_musicvideos___artist[condition]=CONTAINS&xbmc_video_musicvideos___artist[value][]=%s';
 	//$search .= '&xbmc_video_musicvideos___title[condition]=BEGINS WITH&xbmc_video_musicvideos___title[value][]=%s';
 	$feedback['redirect'] = "Location: ".sprintf($url.$search, $artist, $title);
 	$feedback['commandstr'] = $feedback['redirect'];
@@ -1787,6 +1956,7 @@ function parseSideKicks($sidekickstr) {
 	debug($sidekicks, 'sidekicks');
 	return $sidekicks;
 }
+
 function moveToRecycle($params) {
 
 	debug($params, 'params');
@@ -1804,7 +1974,7 @@ function moveToRecycle($params) {
 	$feedback['result'][] = $result;
 	$command = array('callerID' => $params['caller']['callerID'], 
 		'caller'  => $params['caller'],
-		'deviceID' => $params['deviceID'], 
+		'deviceID' => getCurrentPlayer(), 
 		'commandID' => COMMAND_SEND_MESSAGE_KODI);
 
 	if (!array_key_exists('error',$result)) {
@@ -2089,7 +2259,7 @@ function cleanName($inname) {
 	$fname = preg_replace_callback('/\'[a-z]/ui',function ($matches) {return mb_strtolower($matches[0], 'UTF-8');},$fname); // Lowercase after ' I'm Don't
 	$pattern = array();
 	$pattern[] = '/\b(Mc)([a-z])/u';
-	$pattern[] = '/\b(Mac)([a-z])/u';
+//	$pattern[] = '/\b(Mac)([a-z])/u';
 	$pattern[] = '/\b([OD]\')([a-z])/u';
 	$fname = preg_replace_callback($pattern, function ($matches) {return $matches[1].mb_strtoupper($matches[2], 'UTF-8');},$fname); // Uppercase after Mc
 	$fname = preg_replace('/Dj /','DJ ',$fname); // 
@@ -2172,6 +2342,23 @@ exit;
 }
 
 
+function removeSpotifyLink(&$params) {
+
+	$feedback['Name'] = 'removeSpotifyLink';
+	$feedback['commandstr'] = implode(',',$params['commandvalue']);
+	$feedback['result'] = array();
+
+	$mysql = 'DELETE FROM `vd_spotify_actor` WHERE actor_id IN ('.implode(',',$params['commandvalue']).')';
+	if ($num_rows = PDOExec($mysql)) {
+		$feedback['message'] = $num_rows." Row Deleted.";
+	} else {
+		$feedback['error'] = "Error - Could not find Spotify Artist: >".$params['commandvalue']."<";
+	}
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
 function clearUTF($s)
 {
     $r = '';
@@ -2185,5 +2372,4 @@ function clearUTF($s)
     }
     return $r;
 }
-
 ?>

@@ -183,7 +183,7 @@ function splitCommandvalue(&$params) {
 //		out: add value_parts array to $params
 
 	debug($params, 'params');
-
+	if (is_array($params['commandvalue'])) return;
 	if (strpos($params['commandvalue'],'|') !== false) {
 		$value_parts = explode('|', $params['commandvalue']);
 		$params['value_parts']= $value_parts;
