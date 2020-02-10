@@ -144,7 +144,7 @@ function sendCommand(&$thiscommand) {
 	debug($thiscommand, '***thiscommand');
 
 	if (array_key_exists('device', $thiscommand) && $thiscommand['device']['connection']['targettype'] == 'NONE') $commandclassID = COMMAND_CLASS_GENERIC; // Treat command for devices with no outgoing as virtual, i.e. set day/night to on/off
-	debug(	"commandID ".$thiscommand['commandID']." commandclassID ".$commandclassID." commandvalue ".$thiscommand['commandvalue']." command ".$thiscommand['command']['command'].'Starting swich');
+	// debug(	"commandID ".$thiscommand['commandID']." commandclassID ".$commandclassID." commandvalue ".$thiscommand['commandvalue']." command ".$thiscommand['command']['command'].'Starting swich');
 
 
 	switch ($commandclassID)

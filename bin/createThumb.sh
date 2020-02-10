@@ -26,8 +26,8 @@ function checkthumb
     echo $curfile $thumbfile
     if [ "$overwrite" -eq "1" ] || [ "$curfile" -nt "$thumbfile" ] || [ ! -s "$thumbfile" ];then
       keeptrying=-1
-      ss=10
-      step=2
+      ss=15
+      step=1
 
       tnsize=15000
       tmpfile=$(mktemp /tmp/ffmpeg.XXXXXX)
@@ -41,9 +41,9 @@ function checkthumb
         keeptrying=$(checkthumb "$thumbfile" "$tnsize")
         if [ "$keeptrying" -eq "-1" ] ;then echo "$keeptrying File: $thumbfile LessThan: $tnsize StartSec: $ss" ; fi
         ss=$(( ss + step ))
-        if [ $ss -gt 20 ] ; then
-           ss=10
-           step=2
+        if [ $ss -gt 25 ] ; then
+           ss=15
+           step=1
            tnsize=$((tnsize -3000))
 	   if [ $tnsize -lt 0 ] ; then
 	  	echo "tnsize lt 0"
