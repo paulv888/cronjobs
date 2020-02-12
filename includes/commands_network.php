@@ -147,6 +147,7 @@ function getDeviceList(&$params) {
 
 function getDrives(&$params) {
 
+        $hostName = $params['device']['shortdesc'];
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
