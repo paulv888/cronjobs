@@ -524,6 +524,7 @@ function logEvent($log) {
 	if (!array_key_exists('message', $log)) $log['message'] = Null;
 	if (!array_key_exists('result', $log)) $log['result'] = Null;
 	if (!array_key_exists('commandstr', $log)) $log['commandstr']=Null;
+	$log['result']['logTime'] = date("Y-m-d H:i:s");
 
 	if ($log['loglevel'] == LOGLEVEL_NONE) {
 		debug("true", 'true');
