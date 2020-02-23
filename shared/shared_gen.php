@@ -426,7 +426,10 @@ if (isset($GLOBALS['debug'])) {
 		foreach ($trace as $key => $level) {
 			if ($key > $GLOBALS['debug']) return;
 			if ($level['function'] == 'sendCommand') {
-				$mysql = 'SELECT description FROM ha_mf_commands WHERE id = '.$level['args'][0]['commandID']; 
+				// echo "<pre>";
+				// print_r($level);
+				// echo "</pre>";
+				$mysql = 'SELECT description FROM ha_mf_commands WHERE id = '.(is_array($level['args'][0]) && array_key_exists('commandID', $level['args'][0]) ? $level['args'][0]['commandID'] : -1); 
 				$pdo = openDB();
 				$found = true;
 				try	{

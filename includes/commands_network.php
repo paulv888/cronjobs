@@ -296,4 +296,33 @@ function moveHistory() {
 	$num_rows = PDOExec($mysql);
 	return $num_rows;
 }
+
+function speedTest(&$params) {
+	set_time_limit(0);
+	debug($params, 'params');
+	$feedback['Name'] = 'speedTest';
+	$feedback['result'] = array();
+	// $params = '--progress=no --format=json';
+	$cmd = getPath().'/bin/speedTest.sh';
+	$feedback['commandstr'] = $cmd;
+	exec($cmd, $output, $exitCode);
+	debug($output, 'exec');
+	if ($exitCode != 0) {
+		$feedback['error'] = "Error speedTest $exitCode";
+	}
+	$feedback['exitCode'] = $exitCode;
+	debug($feedback, 'feedback');
+
+	// $feedback['result_raw'] = $output;
+	$index = 0;
+	$result = json_decode($output[0], true);
+	debug ($result);
+	$params['device']['properties']['Download']['value'] = (int)$result['download'];
+	$params['device']['properties']['Upload']['value'] = (int)$result['upload'];
+	$params['device']['properties']['Ping']['value'] = (int)$result['ping'];
+
+	$feedback['result']['speedTest'] = $result;
+	debug ($feedback, 'feedback');
+	return $feedback;
+}
 ?>

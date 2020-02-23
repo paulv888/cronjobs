@@ -173,9 +173,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				WHERE sh.id ='.$schemeID.'
 				ORDER BY st.sort';
 	//
-	// Trap any async SCHEMES here 
-	//		Trapping at first step after checking conditions. Nice for root level, however does not allow async in async
-	//		Adding to check individual steps as well and spawn immediately
+	// 	Check if async SCHEME and spawn 
 	//
 	if ($rowshemesteps = FetchRows($mysql)) {
 		if (!$asyncthread && current($rowshemesteps)['runasync']) {
@@ -196,7 +194,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			debug($feedback, 'feedback');
 			return $feedback;		// GET OUT
 		}
-		
+
 		foreach ($rowshemesteps as $step) {
 			if ($step['cond_deviceID'] == DEVICE_SELECTED_PLAYER) {
 				if (array_key_exists('SESSION', $params)) {
@@ -208,6 +206,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$check_result = checkConditions(array($step), $params);
 
 			if ($check_result['result'][0]) {
+				$step_feedback = array();
 				$stepValue =  $step['value'];
 				debug($stepValue, 'stepValue');
 
@@ -264,9 +263,9 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				debug((array_key_exists('last___result', $params) ? $params['last___result'] : 'Non-existent'), 'last___result');
 				debug((array_key_exists('last___message', $params) ? $params['last___message'] : 'Non-existent'), 'last___message');
 			} else {
-				$step_feedback = 'Skipped';
+				$step_feedback['message'] = 'Skipped';
 			}
-			$feedback['result']['executeMacro:'.$step['id'].'_'.$step['commandName']] = $step_feedback;
+			$feedback['result']['executeMacro:'.$step['sort'].'_'.$step['commandName']] = $step_feedback;
 		}
 	} else {
 		$feedback['error'] = 'No scheme steps found: '.$schemeID;
