@@ -193,6 +193,7 @@ function sendCommand(&$thiscommand) {
 
 	if  (!array_key_exists('commandstr', $feedback)) $feedback['commandstr'] ="Not set.";
 	if (!array_key_exists('message', $feedback)) $feedback['message']='';
+	$feedback['logTime'] = date("Y-m-d H:i:s");
 	logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $callerparams['callerID'], 'deviceID' => $thiscommand['deviceID'], 'commandID' => $thiscommand['commandID'], 'data' => $thiscommand['commandvalue'], 'message'=> $feedback['message'], 'result' => $feedback, 'loglevel' => $thiscommand['loglevel'], 'commandstr' => $feedback['commandstr'], 'exectime' => $exectime));
 	if ($exittrap) exit($thiscommand['commandvalue']);
 

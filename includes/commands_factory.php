@@ -997,7 +997,7 @@ function graphCreate($params) {
 		$tablename="graph_0";
 		$hidden = (isset($GLOBALS['debug']) ? '' : ' hidden ');
 
-		if (count($rows)> MAX_DATAPOINTS) {
+		if (count($rows)  > MAX_DATAPOINTS) {
 		//
 		// Average datapoint 
 		// 		Average point 
@@ -1006,19 +1006,19 @@ function graphCreate($params) {
 			$avg_temp = array();
 			foreach($rows as $item)
 			{
-				if ($avg_loop < $average_count) {	// Store value
+				if ($avg_loop < $average_count) {				// Store value
 					$avg_temp[] = $item;
 					$avg_loop++;
 				} else {							// Average and add to output
 					$avgArray = array();
-					foreach ($avg_temp as $k=>$subArray) {		// Sum in $avgArray
+					foreach ($avg_temp as $k=>$subArray) {			// Sum in $avgArray
 						foreach ($subArray as $key=>$value) {
 							if ($key == 'id') {
 								$avgArray[$key] = $value;
-								$avgCount[$key] = 0;
+								$avgCount[$key] = 99;
 							} elseif ($key == 'Date') {
 								$avgArray[$key] = $value;
-								$avgCount[$key] = 0;
+								$avgCount[$key] = 99;
 							} else {
 								if (strlen(trim($value))) {			// Non empty 
 									// echo '<pre>';
@@ -1044,6 +1044,8 @@ function graphCreate($params) {
 					}
 					foreach ($avgArray as $key=>$value) {
 						if ($avgCount[$key]==0) {
+							$avgArray[$key] = ""; //$value;
+						} elseif ($avgCount[$key]==99) { 	// Date or ID
 							$avgArray[$key] = $value;
 						} else {
 									// echo '<pre>';
@@ -1061,6 +1063,7 @@ function graphCreate($params) {
 			// $rows = array_slice($rows, -MAX_DATAPOINTS, count($rows) ); 
 			// $s = $rows[0]['Date'];
 			// $e = $rows[count($rows)-1]['Date'];
+			$average_count++;
 			$feedback['message'] .= '<p class="badge badge-info">Too much data; Averaging over: '.$average_count.' rows<p>';
 			$rows = $avg_rows;
 		}
@@ -1090,7 +1093,6 @@ function graphCreate($params) {
 					$t = explode('`',$header);
 					$propID = getProperty($t[0])['id'];
 					if (($prodIdx = findByKeyValue($rowsprops,'propertyID',$propID)) !== false) {
-						//echo "Found: ".$rowsprops[$prodIdx]['description'].CRLF;
 						if (!empty($rowsprops[$prodIdx]['color'])) {
 							if (strpos($rowsprops[$prodIdx]['color'],",")>0) { 	// First time  read RGB from DB
 								$rowsprops[$prodIdx]['color'] = rgb2hex(explode(",",$rowsprops[$prodIdx]['color']));
@@ -1109,7 +1111,7 @@ function graphCreate($params) {
 						if ($rowsprops[$prodIdx]['datalabels_color']) $datastr.='data-graph-datalabels-color="'.$rowsprops[$prodIdx]['datalabels_color'].'" ';
 						if ($rowsprops[$prodIdx]['markers_enabled']) $datastr.='data-graph-markers-enabled="'.$rowsprops[$prodIdx]['markers_enabled'].'" ';
 					} else {
-						$feedback['message'] .= "Property $header not found!!!: $prodIdx".CRLF;
+						$feedback['message'] .= "Property $header not configured!!!: $prodIdx".CRLF;
 					}
 				}
 				$feedback['message'] .= '<th id="'.$tablename.'_'.$header.'_header" '.$datastr;
