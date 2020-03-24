@@ -33,7 +33,8 @@ function checkthumb
       tmpfile=$(mktemp /tmp/ffmpeg.XXXXXX)
       while [ "$keeptrying" -eq "-1" ]
       do
-        ffmpeg  -ss $ss  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile" > /dev/null 2>&1
+        #ffmpeg  -ss $ss  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 "$thumbfile" > /dev/null 2>&1
+		ffmpeg  -ss $ss  -y -i "$curfile" -vcodec mjpeg -vframes 1 -an -f rawvideo -filter:v scale="320:-1"  "$thumbfile" 
 	if [ $? -ne 0 ];then
 	  echo "ffmpeg error"
 	  exit 1
