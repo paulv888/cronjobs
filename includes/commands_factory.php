@@ -509,7 +509,7 @@ function storeCamImage($params) {
 	
 	$offline = LOCAL_LASTIMAGEDIR.'/offline.jpg';
 	$file = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
-	$public_file = PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'.jpg');
+	$public_file = PUBLIC_LASTIMAGEDIR.'/'.rawurlencode(trim($params['device']['description']).'.jpg');
 
 	debug($file, 'file imsage location');
 	debug($offline, 'offline image');
@@ -529,7 +529,7 @@ function storeCamImage($params) {
 	$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	createthumb($file,$thumbname,500,500);
     
-	$feedback['result_raw'] = array('filename' => SERVER_HOME.$public_file, 'filename_medium' => SERVER_HOME.PUBLIC_LASTIMAGEDIR.'/'.urlencode(trim($params['device']['description']).'_500'.'.jpg'));
+	$feedback['result_raw'] = array('filename' => SERVER_HOME.$public_file, 'filename_medium' => SERVER_HOME.PUBLIC_LASTIMAGEDIR.'/'.rawurlencode(trim($params['device']['description']).'_500'.'.jpg'));
 	
     $feedback['message'] = "Copy ".$params['command']['command'].' to '.$file;
 	unset($feedback['result']['result'][0]);
