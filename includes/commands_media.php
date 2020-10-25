@@ -1913,7 +1913,7 @@ function findVideoArtistTitle($params) {
 	$feedback[] = $result;
  	$url = '/index.php/music-videos-list?resetfilters=1';
 	$search = '&order_by=xbmc_video_musicvideos_list___title&order_dir=asc';
-	$search .= '&xbmc_video_musicvideos_list___artist[condition]=CONTAINS&xbmc_video_musicvideos_list___artist[value][]=%s';
+	$search .= '&xbmc_video_musicvideos_list___artist[condition]=CONTAINS&xbmc_video_musicvideos_list___artist[value]=%s';
 	$feedback['redirect'] = "refresh:1;url=".sprintf($url.$search, urlencode($params['file']['newname']));
 	if (array_key_exists('error',$result)) {
 		$feedback[] = $result;
