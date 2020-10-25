@@ -873,6 +873,7 @@ function sendGenericHTTP(&$params) {
 		if ($client === false) {
 			echo $errno.' '.$errorMessage;
 			$feedback['error'] = "Failed to connect: $errorMessage";
+			$params['device']['properties']['Link']['value'] = LINK_DOWN;
 		} else {
 			stream_set_timeout($client, $params['device']['connection']['timeout']);
 			if ($targettype == "TCP") { 
@@ -883,6 +884,7 @@ function sendGenericHTTP(&$params) {
 			fwrite($client, $binout);
 			$feedback['result'][] = stream_get_line ( $client , 1024 , "\r" );	
 			fclose($client);
+			$params['device']['properties']['Link']['value'] = LINK_UP;
 		}
 		// TODO:: Error handling (GCache errors)
 		// completeir,1:1,2

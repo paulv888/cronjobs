@@ -33,19 +33,52 @@ define("MAX_DOWNLOADS", 2);
 
 
 // If multiple matches, put in order of match needed i.e. Karadeniz before Tukish
-$genres = Array('80s', 'Classical', 'Country', 'Dance', 'Arabic', 'Bulgarian', 'Celtic', 'Japanese',  
-        'OtherEastern',  'Polish',  'Russian',  'Meditation',  'Nederlands', 'Popular',  'Spanish',  'Tropical',  'Karadeniz', 'Halk', 'Turkish',
-         '_XXX_recyclebin');
+$genres = Array(
+	'80s', 
+	'Classical', 
+	'Country', 
+	'Dance', 
+	'Arabic', 
+	'Bulgarian', 
+	'Celtic', 
+	'Japanese', 
+	'OtherEastern',  
+	'Polish',  
+	'Russian',  
+	'Meditation',  
+	'Documentaries',  
+	'Nederlands', 
+	'Popular',  
+	'Spanish',  
+	'Tropical',  
+	'Karadeniz', 
+	'Halk', 
+	'Turkish',
+	'_XXX_recyclebin'
+	);
 
-$genrefolders = Array('/musicvideos/80s/', '/musicvideos/Classical/',
-	'/musicvideos/Country/', '/musicvideos/Dance/', '/Eastern/Arabic/',
-	'/musicvideos/Eastern/Bulgarian/', '/musicvideos/Eastern/Celtic/', 
-	'/musicvideos/Eastern/Japanese/',  '/musicvideos/Eastern/OtherEastern/', 
-	'/musicvideos/Eastern/Polish/',  '/musicvideos/Eastern/Russian/', 
-	'/musicvideos/Meditation/',  '/musicvideos/Nederlands/',
-	'/musicvideos/Popular/',  '/musicvideos/Spanish/', 
+$genrefolders = Array(
+	'/musicvideos/80s/', 
+	'/musicvideos/Classical/',
+	'/musicvideos/Country/', 
+	'/musicvideos/Dance/', 
+	'/musicvideos/Eastern/Arabic/',
+	'/musicvideos/Eastern/Bulgarian/', 
+	'/musicvideos/Eastern/Celtic/', 
+	'/musicvideos/Eastern/Japanese/',  
+	'/musicvideos/Eastern/OtherEastern/', 
+	'/musicvideos/Eastern/Polish/',  
+	'/musicvideos/Eastern/Russian/', 
+	'/musicvideos/Meditation/',  
+	'/musicvideos/Documentaries/',  
+	'/musicvideos/Nederlands/',
+	'/musicvideos/Popular/',  
+	'/musicvideos/Spanish/', 
 	'/musicvideos/Tropical/',  
-	'/musicvideos/Turkish/Halk/', '/musicvideos/Turkish/Karadeniz/', '/musicvideos/Turkish/'     );
+	'/musicvideos/Turkish/Halk/', 
+	'/musicvideos/Turkish/Karadeniz/', 
+	'/musicvideos/Turkish/'
+	);
 
 /*Array
 (
