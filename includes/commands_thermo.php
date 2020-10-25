@@ -99,6 +99,29 @@ function HvacStartTimer(&$params) {
 	return $result;
 }
 
+function HvacWinter(&$params) {
+
+	$feedback['Name'] = 'HvacWinter';
+	$feedback['result'] = array();
+	// $feedback['message'] = "all good";
+	// if () $feedback['error'] = "Not so good";
+
+	//	debug($stepValue, 'stepValue');
+
+	//	debug($feedback, 'feedback');
+	if ($params['commandvalue'] == "1") {
+		UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_HEAT);
+		$feedback['commandstr'] = $params['commandvalue'].' DEV_TYPE_THERMOSTAT_CT30_HEAT';
+	} else {
+		UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_COOL);
+		$feedback['commandstr'] = $params['commandvalue'].' DEV_TYPE_THERMOSTAT_CT30_COOL';
+	}
+	// $params['commandID'] = COMMAND_ON;
+	// $result = HvacOn($params);
+	$result = array();
+	return $feedback;
+}
+
 function HvacOn(&$params) {
 	return HvacToggle($params);
 }
