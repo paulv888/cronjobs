@@ -279,8 +279,11 @@ function executeCommand($callerparams) {
 						$devicesprop[$deviceID.$propertyID]['propertyID'] = $propertyID;
 					}
 				}
-				foreach ($devicesprop as $devprop) {
-					$feedback[]['updateStatus'] = getStatusLink($devprop);
+				$feedback[]['updateStatus'] = array();
+				if (isset($devicesprop)) {
+					foreach ($devicesprop as $devprop) {
+						$feedback[]['updateStatus'] = getStatusLink($devprop);
+					}
 				}
 			} else {
 				foreach ($callerparams['keys'] AS $remotekeyID) {
