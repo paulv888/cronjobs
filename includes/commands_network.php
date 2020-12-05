@@ -50,7 +50,7 @@ function getDeviceList(&$params) {
 	}
 	debug($addresses, 'addresses');
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "SELECT * FROM network"\'';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "select n.id, a.ip, n.hwaddr, n.interface, n.name, n.firstSeen, max(a.lastSeen),n.numQueries, n.macVendor from network n left join network_addresses a on n.id = a.network_id group by n.id;"\'';
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -59,11 +59,15 @@ function getDeviceList(&$params) {
 	debug($lines, 'lines');
 //CREATE TABLE network ( id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, hwaddr TEXT NOT NULL, interface TEXT NOT NULL, name TEXT, firstSeen INTEGER NOT NULL, lastQuery INTEGER NOT NULL, numQueries INTEGER NOT NULL,macVendor TEXT)
 //9|192.168.2.1|f8:32:e4:a7:d5:d0|ens3||1578455520|0|0|ASUSTek COMPUTER INC.
+//CREATE TABLE IF NOT EXISTS "network" ( id INTEGER PRIMARY KEY NOT NULL, hwaddr TEXT UNIQUE NOT NULL, interface TEXT NOT NULL, name TEXT, firstSeen INTEGER NOT NULL, lastQuery INTEGER NOT NULL, numQueries INTEGER NOT NULL, macVendor TEXT);
+
 	$columns = ["id", "ip", "hwaddr", "interface", "name", "firstSeen", "lastQuery", "numQueries", "macVendor"];
 	$x = 0;
 	foreach ($lines as $line) {
 		if (empty($line)) continue;
 		$values = explode('|',$line);
+	debug($columns, 'columns');
+	debug($values, 'values');
 		$pairs = array_combine ( $columns , $values );
 //			PDOinsert('os_df', $pairs );
 		if (array_key_exists($pairs['hwaddr'], $addresses)) {
