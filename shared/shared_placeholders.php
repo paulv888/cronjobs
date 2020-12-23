@@ -16,6 +16,7 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (strpos($stepValue, "{SERVER_HOME}") !== false) $stepValue = str_replace("{SERVER_HOME}",SERVER_HOME,$stepValue);
 	if (strpos($stepValue, "{mycommandID}") !== false) $stepValue = str_replace("{mycommandID}",trim($params['commandID']),$stepValue);
 	if (strpos($stepValue, "{deviceID}") !== false) $stepValue = str_replace("{deviceID}",trim($params['deviceID']),$stepValue);
+	if (strpos($stepValue, "{caller___deviceID}") !== false) $stepValue = str_replace("{caller___deviceID}",trim($params['callerparams']['deviceID']),$stepValue);
 	if (strpos($stepValue, "{unit}") !== false) $stepValue = str_replace("{unit}",trim($params['device']['unit']),$stepValue);
 
 	if (strpos($stepValue,"{port}") !== false) {
