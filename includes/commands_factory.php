@@ -499,11 +499,16 @@ function storeCamImage($params) {
 
 	debug($params, 'params');
 
+
 	$feedback['result'] = array();
     $feedback['Name'] = 'storeCamImage';
  	$command['caller'] = $params['caller'];
 	$command['callerparams'] = $params;
-	$command['deviceID'] = $params['deviceID']; 
+	if (array_key_exists('Use Motion', $params['device']['previous_properties']) &&  ($params['device']['previous_properties']['Use Motion']['value'] == 'Y')) {
+		$command['deviceID'] = 332; 
+	} else {
+		$command['deviceID'] = $params['deviceID']; 
+	}
 	$command['commandID'] = COMMAND_SNAPSHOT;
 	$feedback['result'] = sendCommand($command); 
 	
@@ -1425,7 +1430,7 @@ function checkDriveCapacity(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "";
 
-	$mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 80';
+	$mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 85';
         
 	$deviceID = null;
 	if ($rows = FetchRows($mysql)) {
@@ -1647,7 +1652,7 @@ function extractVids($params) {
 
 function refreshSAR(&$params) {
 
-	$hostName = $params['device']['connection']['targetaddress'];
+	$hostName = $params['device']['shortdesc'];
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'refreshSAR';
 	$feedback['result'] = array();
@@ -1663,7 +1668,7 @@ function refreshSAR(&$params) {
 
 function switchMotionEye(&$params) {
 
-	$hostName = $params['device']['connection']['targetaddress'];
+	$hostName = $params['device']['shortdesc'];
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'switchMotionEye';
 	$feedback['result'] = array();
