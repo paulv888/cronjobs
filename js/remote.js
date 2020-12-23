@@ -140,8 +140,8 @@ if(!window.scriptRemoteHasRun) {
 		eventname = isMobile.any() ? "touchend" : "click";
 		jQuery('.btndropdown li a').unbind(eventname);
 		jQuery('.btndropdown li a').bind(eventname, function(event){
-			//event.preventDefault()
-			// event.stopImmediatePropagation()
+			event.preventDefault()
+			event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = jQuery(this).attr('data-value');
@@ -316,7 +316,7 @@ if(!window.scriptRemoteHasRun) {
 
 		var debug = getUrlParameter('debug');
 		if (typeof(debug) != "undefined") params.debug = debug;
-		// console.log(params);
+		console.log(params);
 
 		// Start timer, incase we missed the unhide event
 		VloRemote.timer = startTimer();
