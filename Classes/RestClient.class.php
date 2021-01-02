@@ -60,10 +60,7 @@ class RestClient {
          	 curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT ,$this->timeOut); 
 			 curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->timeOut); //timeout in seconds
          }
-		 // echo "<pre>";
-		// echo $this->url;
-		// echo "</pre>";
-
+		debug($this->url,'curl $this-url');
          curl_setopt($this->curl,CURLOPT_URL,$this->url);
          $r = curl_exec($this->curl);
          $this->treatResponse($r); // Extract the headers and response
@@ -96,6 +93,7 @@ class RestClient {
 			$this->response = "Request Timeout";
             return;
         }
+		debug($r,'curl response');
         $parts  = explode("\n\r",$r); // HTTP packets define that Headers end in a blank line (\n\r) where starts the body
         while(preg_match('@HTTP/1.[0-1] 100 Continue@',$parts[0]) or preg_match("@Moved@",$parts[0])) {
             // Continue header must be bypass

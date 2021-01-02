@@ -26,6 +26,4 @@ define("PUBLIC_LASTIMAGEDIR", "/data/cameras/lastimage");
 
 define("SCHEME_ALERT_PDO", 309);
 define("COMMAND_SNAPSHOT", 450);
-
-
 ?>

@@ -1309,8 +1309,16 @@ function fabrikListButton($params) {
 	case 315:
 		$mysql = 'SELECT * FROM `xbmc_video_musicvideos_list` WHERE id IN ('.implode(',',$params['commandvalue']).')';
 		if ($rows = FetchRows($mysql)) {
+			$func = $params['action'];
+			switch ($func) {
+			case "playVideosNow":
+				// Handle all at once
+				$tempparams = $params;
+				$tempparams['commandvalue'] = $rows;
+				$feedback['result'][] = $func($tempparams);
+				break;
+			}
 			foreach ($rows as $row) {
-				$func = $params['action'];
 				switch ($func) {
 				case "createMoveQueueItem":
 					$params['value_parts'][0] = $row['idFile'];
@@ -1322,6 +1330,17 @@ function fabrikListButton($params) {
 					$tempparams = $params;
 					$tempparams['commandvalue'] = $row['file'];
 					$feedback['result'][] = $func($tempparams);
+					break;
+				case "playVideosNow":
+					// Already done above
+					break;
+				case "addVideosToQueue":
+					$command['callerparams'] = $params;
+					$command['deviceID'] = $params['deviceID']; 
+					$command['commandID'] = COMMAND_RUN_SCHEME;
+					$command['schemeID'] = 268;
+					$command['commandvalue'] = $row['file'];
+					$feedback['result'][] = sendCommand($command); 
 					break;
 				default:
 					$feedback['error'] = "Not a supported action: ".$params['action'];
@@ -1337,6 +1356,38 @@ function fabrikListButton($params) {
 	// $feedback['message'] = count($rows)." Row Created.";
 	debug($feedback, 'feedback');
 	return $feedback;
+}
+
+function playVideosNow(&$params) {
+	debug($params, 'params');
+
+	$rows = $params['commandvalue'];
+
+	$feedback['Name'] = 'playVideosNow';
+	if (count($rows) == 1 ) {
+		$command['caller'] = $params['caller'];
+		$command['callerparams'] = $params;
+		$command['deviceID'] = $params['deviceID']; 
+		$command['commandID'] = COMMAND_RUN_SCHEME;
+		$command['schemeID'] = 232;
+		$command['commandvalue'] = $rows[0]['file'];
+		$feedback['result'] = sendCommand($command); 
+	} else {
+		$songs = '#EXTM3U'."\n";
+		foreach ($rows as $song) {
+			$songs .= $song['file']."\n";
+		}
+		
+		$playlistname = 'VlohomeList';
+		$playlist = LOCAL_PLAYLISTS.'/'.$playlistname.'.m3u';
+		file_put_contents($playlist, $songs);
+		
+		
+		//$log = executeCommand(Array('callerID'=>MY_DEVICE_ID,'messagetypeID'=>"MESS_TYPE_SCHEME",'schemeID'=>221, 'commandvalue'=>'AlexaList.m3u'));
+		$feedback['result'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=>$playlistname));
+	}
+	debug($feedback, 'feedback');
+	return $feedback;		
 }
 
 function undoVideoImport(&$params) {
