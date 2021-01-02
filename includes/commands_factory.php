@@ -1,5 +1,5 @@
 <?php
-define( 'MAX_DATAPOINTS', 1000 );
+define( 'MAX_DATAPOINTS', 2000 );
 
 // @@TODO: DO NOT SEND MESSAGES TO KNOW OFFLINE DEVICES?
 //
@@ -534,7 +534,12 @@ function storeCamImage($params) {
 	$thumbname = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	createthumb($file,$thumbname,500,500);
     
-	$feedback['result_raw'] = array('filename' => SERVER_HOME.$public_file, 'filename_medium' => SERVER_HOME.PUBLIC_LASTIMAGEDIR.'/'.rawurlencode(trim($params['device']['description']).'_500'.'.jpg'));
+	$feedback['result_raw'] = array(
+ 'filename' => SERVER_HOME.$public_file,
+ 'filename_medium' => SERVER_HOME.PUBLIC_LASTIMAGEDIR.'/'.rawurlencode(trim($params['device']['description']).'_500'.'.jpg'),
+ 'filename_local' => $file,
+ 'filename_local_medium' => LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'_500'.'.jpg'
+ );
 	
     $feedback['message'] = "Copy ".$params['command']['command'].' to '.$file;
 	unset($feedback['result']['result'][0]);
@@ -592,7 +597,7 @@ function sendBullet($params) {
 		// Will not use mess_text but cv1 and cv2 directly
 		$type = 'IMAGE';
 //		$params['value_parts'][2] = "LOCAL_LASTIMAGEDIR"
-		$output = DOCUMENT_ROOT.$params['value_parts'][2];
+		$output = $params['last___result']['filename_local_medium'];
 	} elseif(strlen($params['mess_text']) != strlen(strip_tags($params['mess_text']))) {
 
 		// $str = 'My long <a href="http://example.com/abc" rel="link">string</a> has any
@@ -685,14 +690,15 @@ function sendInsteonCommand(&$params) {
 	// Send it anyway
     usleep(INSTEON_SLEEP_MICRO);
 	$curl = restClient::get($url.$tcomm.'=I=3',null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
-	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) 
+	if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
 		$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-	else
+		$params['device']['properties']['Status']['value'] = STATUS_ERROR;
+	} else {
 		$feedback['result'][] = $curl->getresponse();
 		$feedback['result'][] = $curl->getresponsecode();
-
+	}
 	// reset SEMAPHORE
-        PDOUpdate('ha_mi_connection', array('semaphore' => 0) , array('id' => $params['device']['connection']['id']));
+    PDOUpdate('ha_mi_connection', array('semaphore' => 0) , array('id' => $params['device']['connection']['id']));
 
 
 	if (array_key_exists('error', $feedback)) {
@@ -836,9 +842,10 @@ function sendGenericHTTP(&$params) {
 			$curl = restClient::post($url.$tcomm ,"" ,setAuthentication($params['device']) ,"" ,$params['device']['connection']['timeout']);
 		}
 		$feedback['HTTP'] = $curl->getresponsecode();
-		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) 
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201 && $curl->getresponsecode() != 204) {
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-		else 
+			$params['device']['properties']['Status']['value'] = STATUS_ERROR;
+		} else {
 			if ($targettype == "JSON" || $targettype == "PUT") {
 				$feedback['result_raw'] = json_decode($curl->getresponse(), true);
 				$feedback['result'][] = json_decode($curl->getresponse(), true);
@@ -846,6 +853,7 @@ function sendGenericHTTP(&$params) {
 				$feedback['result_raw'] = $curl->getresponse();
 				$feedback['result'][] = htmlentities($feedback['result_raw']);
 			}
+		}
 			if (!is_array($feedback['result'])) $feedback['result'][] = $feedback['result'];
 			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 		break;
@@ -856,11 +864,13 @@ function sendGenericHTTP(&$params) {
 		debug($url.$tcomm, 'GET - Sending');
 		$curl = restClient::get($url.$tcomm, null, setAuthentication($params['device']), $params['device']['connection']['timeout']);
 		$feedback['HTTP'] = $curl->getresponsecode();
-		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204)
+		if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 204) {
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
-		else 
+			$params['device']['properties']['Status']['value'] = STATUS_ERROR;
+		} else {
 			$feedback['result_raw'] = $curl->getresponse();
 			$feedback['result'][] = $curl->getresponse();
+		}
 		break;
 	case "TCP":              // iTach (Only \r) and Yeelight (Now sending \r\n)
 		// For Yeelight
@@ -1251,6 +1261,7 @@ Update - Put
 			$curl = restClient::put($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() == 200 || $curl->getresponsecode() == 201) {
 				$result = $curl->getresponse();
+				$params['device']['properties']['Status']['value'] = STATUS_ERROR;
 				$feedback['result'][] = $result;
 			} elseif ($curl->getresponsecode() == 400) { // Try Adding device does not exist (400: {"message":"Could not save an edited device, Device Id not found: 402389166 "} 
 				$send_params['id'] = "";
@@ -1264,6 +1275,7 @@ Update - Put
 			$curl = restClient::post($url, $postparams, setAuthentication($params['device']), "application/json" , $params['device']['connection']['timeout']);
 			if ($curl->getresponsecode() != 200 && $curl->getresponsecode() != 201) {
 				$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
+				$params['device']['properties']['Status']['value'] = STATUS_ERROR;
 			} else {
 				$result = $curl->getresponse();
 				$feedback['result'][] = $result;
