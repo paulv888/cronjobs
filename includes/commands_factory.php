@@ -1442,13 +1442,13 @@ function checkDriveCapacity(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "";
 
-	$mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 85';
+	$mysql = 'SELECT * FROM `os_df_vw_today` WHERE `capacity` >= 90';
         
 	$deviceID = null;
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $key => $row) {
 			$feedback['result']['debug'][]=$row;
-			if ($row['capacity'] >= 95) {
+			if ($row['capacity'] >= 97) {
 				$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $row['deviceID'],  
 					'schemeID'=>SCHEME_ALERT_CRITICAL, 'commandvalue'=>' Drive: '.$row['filesystem'].' at '.$row['capacity'].' capacity'));
 			} else {
