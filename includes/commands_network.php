@@ -28,7 +28,7 @@ function getDeviceList(&$params) {
 	$showlist=false;
 	if ($params['caller']['callerID'] == DEVICE_REMOTE) $showlist=true; 
 
-	$feedback['Name'] = 'GetDeviceList';
+	$feedback['Name'] = 'getDeviceList';
 	$feedback['result'] = array();
 
 	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'cat /etc/pihole/dhcp.leases\'';
@@ -50,7 +50,7 @@ function getDeviceList(&$params) {
 	}
 	debug($addresses, 'addresses');
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "select n.id, a.ip, n.hwaddr, n.interface, n.name, n.firstSeen, max(a.lastSeen),n.numQueries, n.macVendor from network n left join network_addresses a on n.id = a.network_id group by n.id;"\'';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "select n.id, a.ip, n.hwaddr, n.interface, a.name, n.firstSeen, max(a.lastSeen),n.numQueries, n.macVendor from network n left join network_addresses a on n.id = a.network_id group by n.id;"\'';
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
