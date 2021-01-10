@@ -1599,10 +1599,10 @@ function addToQueue(&$params) {
 
 	try {
 		if ($windowTitle != "Playlist") {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'DLOAD',   'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'DLOAD',   'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		} else {
-			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'PLIST', 'url' => 'https://'.$params['value_parts'][0], 'window_title' => $windowTitle));
+			$feedback['result'][] = PDOInsert("vd_queue", array('statusID' => Q_RELEASED, 'type' => 'PLIST', 'url' => $params['value_parts'][0], 'window_title' => $windowTitle));
 			$feedback['message'] .= "Inserted: ".$windowTitle;
 		}
 	} catch (Exception $e) {
@@ -1638,6 +1638,7 @@ function linkArtist(&$params) {
 	$params['value_parts'][0] = trim(urldecode($params['value_parts'][0]));
 	$params['value_parts'][1] = trim(urldecode($params['value_parts'][1]));
 	$windowTitle = str_replace('Spotify – ','',$params['value_parts'][1]);
+	$windowTitle = str_replace(' — Mozilla Firefox','',$windowTitle);
 	$windowTitle = str_replace(' - Google Chrome','',$windowTitle);
 	$feedback['result'][] = $params;
 
