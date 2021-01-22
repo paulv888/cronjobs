@@ -538,13 +538,14 @@ function logEvent($log) {
 		$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 		$mysql = 'SELECT invertstatus FROM `ha_mf_monitor_property` ' .
 					' WHERE propertyID = 123 AND deviceID = '.$log['deviceID']; 
-		$rowdevice=FetchRow($mysql);
-		if ($rowdevice['invertstatus'] == '0') {
-			$log['data'] .= ' Inverted'; 
-			if ($log['commandID'] == COMMAND_OFF) {
-				$log['commandID'] = COMMAND_ON;
-			} elseif ($log['commandID'] == COMMAND_ON) {
-				$log['commandID'] = COMMAND_OFF;
+		if ($rowdevice=FetchRow($mysql)) {
+			if ($rowdevice['invertstatus'] == '0') {
+				$log['data'] .= ' Inverted'; 
+				if ($log['commandID'] == COMMAND_OFF) {
+					$log['commandID'] = COMMAND_ON;
+				} elseif ($log['commandID'] == COMMAND_ON) {
+					$log['commandID'] = COMMAND_OFF;
+				}
 			}
 		}
 	}

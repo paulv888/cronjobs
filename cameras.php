@@ -19,7 +19,15 @@ while (1) {
 	foreach ($cameras AS $key => $camera) {
 //		echo "in".$cameras[$key]['lastfiletime'].CRLF;
 		if (!array_key_exists('lastfiletime', $camera)) $cameras[$key]['lastfiletime'] = 0;
-		$cameras[$key] = movePictures($cameras[$key]);		// Make Prop?
+		$basedir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
+		$indir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
+		$cameras[$key] = movePictures($cameras[$key], $basedir, $indir);
+
+		if (array_key_exists('Sound Directory', $camera['previous_properties'])) {
+			$indir = LOCAL_CAMERAS.$camera['previous_properties']['Sound Directory']['value'].'/';
+			$cameras[$key] = movePictures($cameras[$key], $basedir, $indir);
+		}
+
 //		echo "out".$cameras[$key]['lastfiletime'].CRLF;
 	}
 	sleep(5);
@@ -35,20 +43,21 @@ function readCameras() {
 		$cameras[getLastKey($cameras)]['previous_properties'] = getDeviceProperties(Array('deviceID' => $cam['deviceID']));
 	}
 	//
-//	print_r($cameras);
+	// print_r($cameras);
 	return $cameras;
 }
-function movePictures($camera) {
+function movePictures($camera, $basedir, $indir) {
 	$files = array();
 	$filetimes = array();
-	$dir = LOCAL_CAMERAS.$camera['previous_properties']['Directory']['value'].'/';
+
+
 	$lastfiletime = $camera['lastfiletime'];
-	if ($handle = opendir($dir)) {
+	if ($handle = opendir($indir)) {
 		while (false !== ($file = readdir($handle))) {
 			$file_parts = mb_pathinfo($file);
-			if ($file != "." && $file != ".." && !is_dir($dir.$file) && strtolower($file_parts['extension'])=='jpg') {
+			if ($file != "." && $file != ".." && !is_dir($indir.$file) && strtolower($file_parts['extension'])=='jpg') {
 				$files[] = $file;
-				$filetimes[] = filemtime($dir.$file);
+				$filetimes[] = filemtime($indir.$file);
 			}
 		}
 		closedir($handle);
@@ -57,10 +66,10 @@ function movePictures($camera) {
 			return $camera;
 		}
 		
-//  echo '<pre>';
-//  print_r($files);
-//print_r($filetimes);
-//  echo '</pre>';
+  // echo '<pre>';
+  // print_r($files);
+  // print_r($filetimes);
+  // echo '</pre>';
 		//array_multisort($filetimes, $files); 
 		asort($files);
 		//echo '<pre>';
@@ -77,8 +86,8 @@ function movePictures($camera) {
 			// echo ">$file<".CRLF;
 			$datedir = date ("Y-m-d", $filetime);
 			if (is_null($group_dir)) {		// Did we find a group dir? If not find the last one and the num files in it
-				if ($group_dir = findLastGroupDir($dir.$datedir)) {
-					$targetdir = $dir.$datedir.'/'.$group_dir;
+				if ($group_dir = findLastGroupDir($basedir.$datedir)) {
+					$targetdir = $basedir.$datedir.'/'.$group_dir;
 					// echo "Add to existing directory ".$targetdir.CRLF;
 					$numfiles  = iterator_count(new DirectoryIterator($targetdir)) - 2;
 					$mysql = 'SELECT * FROM `ha_cam_recordings` WHERE folder ="'.$camera['previous_properties']['Directory']['value'].'/'.$datedir.'/'.$group_dir.'"';
@@ -109,12 +118,13 @@ function movePictures($camera) {
 				// echo "Create new directory ".$datedir.'/'.$group_dir.CRLF;
 				$camera['group_dir'] = $group_dir;
 				$camera['filetime'] = $filetime;
+				$camera['indir'] = $indir;
 				$camera = openGroup($camera);
-				$targetdir = $dir.$datedir.'/'.$group_dir;
-				if (!file_exists($dir)) {
+				$targetdir = $basedir.$datedir.'/'.$group_dir;
+				if (!file_exists($basedir)) {
 					mkdir($dir);
 				}
-				if (!file_exists($dir.$datedir)) {
+				if (!file_exists($basedir.$datedir)) {
 					mkdir($dir.$datedir);
 				}
 				if (!file_exists($targetdir)) {
@@ -128,12 +138,11 @@ function movePictures($camera) {
 			} 
 			if ($camera['lastfiletime'] != $filetime) $seq = 0;		// Handle multiple files per second
 			$camera['lastfiletime'] = $filetime;
-			//echo $dir.$file.'->';
-			//echo $targetdir.'/'.date("Y-m-d H:i:s",$filetime).'_'.str_pad($seq, 2, '0', STR_PAD_LEFT).'.jpg'.CRLF;
-			//$newfilename = $targetdir.'/'.date('Y-m-d His',$filetime).'_'.str_pad($seq++, 2, '0', STR_PAD_LEFT).'.jpg';
 			$newfilename = $targetdir.'/'.$file;
-			rename($dir.$file, $newfilename);
-			makeThumbs($dir, $file, $targetdir, $newfilename);
+			// echo $indir.$file.'->';
+			// echo $newfilename."\n";
+			rename($indir.$file, $newfilename);
+			makeThumbs($file, $targetdir, $newfilename);
 			$numfiles++;
 		}	// Handled all file in old to new order
 		echo $camera['description']." Creating Thumbnail.".CRLF;
@@ -170,8 +179,14 @@ function openGroup($camera) {
 			$feedback['updateDeviceProperties'] = updateDeviceProperties($params); 
 			//logEvent(array('inout' => COMMAND_IO_SEND, 'callerID' => $params['callerID'], 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_LOG_EVENT, 'result' => $feedback));
 			debug($feedback, 'feedback');
-			if (!($recording['recording_typeID'] = getDeviceProperties(array('deviceID' => $params['deviceID'], 'description' => 'Recording Type'))['value'])) {
+			if (array_key_exists('Recording Type', $camera['previous_properties'])) {
+				$recording['recording_typeID'] = $camera['previous_properties']['Recording Type']['value'];
+			} elseif (strpos($camera['indir'],'snap') === false) {
 				$recording['recording_typeID'] = RECORDING_TYPE_MOTION_CAMERA;
+			} else {
+				$recording['recording_typeID'] = RECORDING_TYPE_SOUND_CAMERA;
+				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Sound___1"));
+				$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Sound___0"));
 			}
 			$recording['cam'] = $params['deviceID'];
 			$recording['mdate'] = date ("Y-m-d").'_';
@@ -197,16 +212,16 @@ function closeGroup($camera) {
 			$properties['Last File Time']['value'] = date("H:i:s",$camera['lastfiletime']); 
 			if ($camera['updatetype']) {		// Temp group closing at the end of moving files 
 				$properties['Recording']['value'] = STATUS_OFF;
-				// Only handle alarm at this point, do not want to generate old alarm form previous group and in meanwhile $alarm1 = on
-				$alarm1on = getDeviceProperties(Array('deviceID' => DEVICE_ALARM_ZONE1, 'description' => 'Status'))['value'] == "1";
-				if ($alarm1on && !$camera['criticalalert'] && !empty($camera['previous_properties']['Cam Pics Critical Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics Critical Alert']['value'])  {
+				// Only handle alarm at this point, do not want to generate old alarm form previous group and in meanwhile $nobodyhome = off
+				$nobodyhome = getDeviceProperties(Array('deviceID' => DEVICE_SOMEONE_HOME, 'description' => 'Status'))['value'] == "0";
+				if ($nobodyhome && !$camera['criticalalert'] && !empty($camera['previous_properties']['Cam Pics Critical Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics Critical Alert']['value'])  {
 					echo $camera['description']." Creating Critical Alert.".CRLF;
 					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 					$camera['criticalalert'] = true;
 					$camera['highalert'] = true;
 					$feedback['ExecuteCommand:'.COMMAND_SET_PROPERTY_VALUE]=executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "Critical Alert___0"));
 					//uploadPictures($camera);
-				} elseif ($alarm1on && !$camera['highalert'] && !empty($camera['previous_properties']['Cam Pics High Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics High Alert']['value'])  {
+				} elseif ($nobodyhome && !$camera['highalert'] && !empty($camera['previous_properties']['Cam Pics High Alert']['value']) && $camera['numfiles'] >= $camera['previous_properties']['Cam Pics High Alert']['value'])  {
 					echo $camera['description']." Creating High Alert.".CRLF;
 					//print_r(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
 					executeCommand(array('callerID' => MY_DEVICE_ID, 'messagetypeID' => MESS_TYPE_COMMAND, 'deviceID' => $params['deviceID'], 'commandID' => COMMAND_SET_PROPERTY_VALUE, 'commandvalue' => "High Alert___1", 'htmllong' => $htmllong, 'htmlshort' => $htmlshort));
@@ -273,7 +288,7 @@ function uploadPictures($camera) {
 	}
 	return;
 }
-function makeThumbs($dir, $file, $targetdir, $newfilename) {
+function makeThumbs($file, $targetdir, $newfilename) {
 	createthumb($newfilename,$targetdir.'/vsig_thumbs/'.$file,990,990);
 	createthumb($newfilename,$targetdir.'/vsig_thumbs/'.$file,160,160);
 }
