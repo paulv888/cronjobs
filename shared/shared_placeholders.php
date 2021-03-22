@@ -69,9 +69,11 @@ function replaceText($params, $field){
 		if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['callerID']))  {
 			$params['caller___description']= $cd['description']; 
 		}
+		
 		if (array_key_exists('deviceID', $params['caller']) && !empty($params['caller']['deviceID'])) {
-			if ($cd = FetchRow("SELECT description FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['deviceID'])) {
+			if ($cd = FetchRow("SELECT * FROM ha_mf_devices WHERE ha_mf_devices.id =".$params['caller']['deviceID'])) {
 				$params['caller___device___description']= $cd['description'];
+				$params['caller___device___shortdesc']= $cd['shortdesc'];
 			}
 			$params['caller___device___property'] = getDeviceProperties(Array( 'deviceID' => $params['caller']['deviceID']));
 		}
