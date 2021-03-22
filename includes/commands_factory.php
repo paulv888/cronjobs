@@ -527,7 +527,7 @@ function storeCamImage($params) {
 // echo $feedback['result']['result_raw'];
 
 	if (file_put_contents($file, $feedback['result']['result_raw']) === false) {
-		$feedback['error'] = "Error during copy: ".$errors['type']." ".$errors['message'];	
+		$feedback['error'] = "Error during copy to file: ".$file;	
 		debug($feedback, 'feedback');
 		return $feedback;
 	}
@@ -1302,7 +1302,7 @@ function sendtoplug ($ip, $port, $payload, $timeout) {
 		stream_set_timeout($client, $timeout);
 		fwrite($client, base64_decode($payload));
 //		return base64_encode(stream_get_line ( $client , 1024 ));	
-		return decodeTPLink(stream_get_line ( $client , 1024 ));	
+		return decodeTPLink(stream_get_line ( $client , 1024,  "\r" ));	
 		fclose($client);
 	}
 }
