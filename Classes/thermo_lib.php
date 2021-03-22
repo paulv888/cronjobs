@@ -473,7 +473,7 @@ $this->debug = false;
 		$setpoint=(float)$setpoint;
 
 		if ($this->tmode == 1) {
-			if ($setpoint > 75) return array('error'=> 'Temp greater than 24C/75F limit'); 							// Set protection limit, for voice misinterpretation
+			if ($setpoint > 78) return array('error'=> 'Temp greater than 24C/78F limit'); 							// Set protection limit, for voice misinterpretation
 			$value = array ('t_heat'=>$setpoint);
 		} else {
 			if ($setpoint < 64) return array('error'=> 'Temp less than 18C/64F limit');    							// Set protection limit, for voice misinterpretation
