@@ -87,10 +87,16 @@ function dec2hex($num,$count=0)
 function createthumb($name,$destination,$new_w,$new_h, $text = "")
 {
 	$system=explode(".",$name);
-	if (preg_match("/jpg|jpeg/",$system[1])){$src_img=imagecreatefromjpeg($name);}
-	if (preg_match("/png/",$system[1])){$src_img=imagecreatefrompng($name);}
-	$old_x=imageSX($src_img);
-	$old_y=imageSY($src_img);
+	try {
+		if (preg_match("/jpg|jpeg/",$system[1])){$src_img=imagecreatefromjpeg($name);}
+		if (preg_match("/png/",$system[1])){$src_img=imagecreatefrompng($name);}
+		$old_x=imageSX($src_img);
+		$old_y=imageSY($src_img);
+	}
+	catch (Exception $e) {
+		echo $e->getMessage();
+		return false;
+	}
 	if ($new_w < $old_x) {
 		if ($old_x > $old_y) 
 		{
@@ -136,6 +142,7 @@ function createthumb($name,$destination,$new_w,$new_h, $text = "")
 		imagedestroy($dst_img); 
 		imagedestroy($src_img); 
 	}
+	return true;
 }
 
 //clean all empty values from array
@@ -332,9 +339,6 @@ function setAuthentication($device) {
 	$authentication['method'] = $device['connection']['authentication'];
 	$authentication['username'] = $device['connection']['username'];
 	$authentication['password'] = $device['connection']['password'];
-	// echo "<pre>";
-	// print_r($authentication);
-	// echo "</pre>";
 	return $authentication;
 }
 
