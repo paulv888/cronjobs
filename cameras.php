@@ -100,7 +100,7 @@ function movePictures($camera, $basedir, $indir) {
 				} 
 			}
 
-			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || $numfiles >= MAX_FILES_DIR) {  // New Motion Group on; 1 minute gap OR max_files
+			if ((int)(abs($filetime-$camera['lastfiletime']) / 60) >= 1 || (date("Y-m-d", $filetime) != date("Y-m-d", $camera['lastfiletime'])) || $numfiles >= MAX_FILES_DIR) {  // New Motion Group when; a) 1 minute gap, b) new day, c) max_files
 
 				// If we had an old dir, update this first
 				//$camera['newfilename'] = $newfilename;
@@ -122,10 +122,10 @@ function movePictures($camera, $basedir, $indir) {
 				$camera = openGroup($camera);
 				$targetdir = $basedir.$datedir.'/'.$group_dir;
 				if (!file_exists($basedir)) {
-					mkdir($dir);
+					mkdir($basedir);
 				}
 				if (!file_exists($basedir.$datedir)) {
-					mkdir($dir.$datedir);
+					mkdir($basedir.$datedir);
 				}
 				if (!file_exists($targetdir)) {
 					mkdir($targetdir);
