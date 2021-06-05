@@ -64,7 +64,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'down'};
@@ -76,7 +76,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.click-down').unbind(eventname);
 		jQuery('.click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var keys = [];
 			keys.push(jQuery(this).attr("data-remotekey"));
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, mouse: 'up'};
@@ -88,7 +88,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.repeat-click-down').unbind(eventname);
 		jQuery('.repeat-click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopPropagation()
+			//event.stopPropagation()
 			//event.stopImmediatePropagation()
 			// handle repeat sending for volume and cursor up/down
 			var keys = [];
@@ -111,7 +111,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.repeat-click-down').unbind(eventname);
 		jQuery('.repeat-click-down').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopPropagation()
+			//event.stopPropagation()
 			// handle repeat stop
 			jQuery(this).removeClass('sending');
 			clearInterval(VloRemote.repeattimer);
@@ -123,7 +123,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.click-up').unbind(eventname);
 		jQuery('.click-up').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var commandvalue = 100;
 			// check if in dim mode
 			commandvalue = parseInt(jQuery('.tab-pane.active .dimmer').attr('data-myvalue'));
@@ -141,7 +141,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.btndropdown li a').unbind(eventname);
 		jQuery('.btndropdown li a').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = jQuery(this).attr('data-value');
@@ -199,7 +199,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.controlselect-button').unbind("change");
 		jQuery('.controlselect-button').change( function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var selected = jQuery(this.selectedOptions).attr('value');
 			var selectedtext = jQuery(this.selectedOptions).text();
  			var keys = [];
@@ -220,7 +220,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.jump-button').unbind(eventname);
 		jQuery('.jump-button').bind(eventname, function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var selected = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).attr('value');
 			var selectedtext = jQuery(jQuery(this).prev('.controlselect-button')[0].selectedOptions).text();
 			var keys = [];
@@ -239,7 +239,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.scheme-button').unbind('click');
 		jQuery('.scheme-button').click( function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', schemeID:jQuery(this).get('value')};
 			callAjax (params) ;
 		});	
@@ -248,7 +248,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.command-button').unbind('click');
 		jQuery('.command-button').click( function(event){
 			event.preventDefault()
-			event.stopImmediatePropagation()
+			//event.stopImmediatePropagation()
 			// event.stop();
 			var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID:jQuery(this).get('value')};
 			callAjax (params) ;
