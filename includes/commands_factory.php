@@ -424,7 +424,8 @@ function genericADB($params) {
 
 	$feedback['Name'] = 'genericADB';
 	$feedback['result'] = array();
-	$temp = explode('?',$params['command']['command']);
+	$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
+	$temp = explode('?',$tcomm);
 	$parameters = array();
 	if (array_key_exists(1,$temp)) {  // have ?, now split at &
 		$temp1 =  explode('&',$temp[1]);
