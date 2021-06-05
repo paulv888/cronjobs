@@ -9,11 +9,24 @@ MSELECT="adb -s $1 shell am start -n com.rcreations.WebCamViewerPaid/.IpCamViewe
 
 
 case "$2" in
-camera)
+stopall)
   adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
   adb -s "$1" shell am force-stop org.xbmc.kodi
   adb -s "$1" shell am force-stop com.android.deskclock
   adb -s "$1" shell am force-stop com.netflix.ninja
+  adb -s "$1" shell am force-stop com.amazon.firetv.youtube
+  adb -s "$1" shell am force-stop com.google.android.youtube
+  adb -s "$1" shell input keyevent 223
+  ;;
+
+camera)
+  adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
+  adb -s "$1" shell am force-stop org.xbmc.kodi
+  adb -s "$1" shell am force-stop com.android.deskclock
+  adb -s "$1" shell am force-stop com.amazon.firetv.youtube
+  adb -s "$1" shell am force-stop com.google.android.youtube
+  adb -s "$1" shell am force-stop com.netflix.ninja
+  adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
 
   case "$2" in
   Outside) echo $MATRIX $2
@@ -40,6 +53,8 @@ kodi)
   adb -s "$1" shell am force-stop org.xbmc.kodi
   adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
   adb -s "$1" shell am force-stop com.netflix.ninja
+  adb -s "$1" shell am force-stop com.amazon.firetv.youtube
+  adb -s "$1" shell am force-stop com.google.android.youtube
   adb -s "$1" shell am start -n org.xbmc.kodi/.Splash
   ;;
 
@@ -48,7 +63,16 @@ netflix)
   adb -s "$1" shell am force-stop org.xbmc.kodi
   adb -s "$1" shell am force-stop com.android.deskclock
   adb -s "$1" shell am force-stop com.netflix.ninja
+  adb -s "$1" shell am force-stop com.amazon.firetv.youtube
+  adb -s "$1" shell am force-stop com.google.android.youtube
   adb -s "$1" shell am start -n com.netflix.ninja/.MainActivity
+  ;;
+
+youtube)
+  adb -s "$1" shell am force-stop org.xbmc.kodi
+  adb -s "$1" shell am force-stop com.rcreations.WebCamViewerPaid
+  adb -s "$1" shell am force-stop com.netflix.ninja
+  adb -s "$1" shell am start -a android.intent.action.VIEW -d https://www.youtube.com/
   ;;
 *)
  echo "Unknown parameter: $2"
