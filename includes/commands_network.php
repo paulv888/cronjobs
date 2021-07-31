@@ -193,6 +193,50 @@ function getDrives(&$params) {
 
 }
 
+function getDomInfo(&$params) {
+
+        $hostName = $params['device']['shortdesc'];
+        $deviceID = $params['device']['id'];
+        $feedback['Name'] = 'getDomInfo';
+        $feedback['result'] = array();
+		$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@kvm-host -i remote-jobs sudo /home/remote-jobs/bin/getdominfo '.$hostName;
+        debug($cmd, 'command');
+        $output = shell_exec($cmd);
+        debug($output, 'shell_exec');
+        $feedback['result'][$hostName] = $output;
+
+        $lines = explode(PHP_EOL, $output);
+        $feedback['result'][] = $lines;
+
+        debug($lines, 'lines');
+
+        $x = 0;
+        foreach ($lines as $line) {
+                $x++;
+                if ($x == 1) continue;
+                if (empty($line)) continue;
+                $values=preg_split('/\s*:\s*/', trim($line), -1, PREG_SPLIT_NO_EMPTY);
+        debug($values, 'values');
+                $properties[$values[0]]['value'] = $values[1];
+        }
+
+        debug($properties, 'properties');
+
+	$thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
+	$thiscommand['caller'] = $params['caller'];
+	$thiscommand['commandID'] = COMMAND_NOP;
+	$thiscommand['deviceID'] = $params['deviceID'];
+	$thiscommand['device']['id'] =  $params['deviceID'];
+	$thiscommand['device']['properties'] = $properties;
+	$feedback['SendCommand']=sendCommand($thiscommand); 
+
+
+
+        // $params['device']['properties'] = $properties;
+        return $feedback;
+
+}
+
 function storeNatSessions(&$params) {
 
 
