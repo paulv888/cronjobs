@@ -31,6 +31,127 @@ function getDeviceList(&$params) {
 	$feedback['Name'] = 'getDeviceList';
 	$feedback['result'] = array();
 
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['ipaddress']['ip'].' -i remote-jobs \'/ip dhcp-server lease print terse without-paging
+\'';
+
+//address=192.168.2.11 mac-address=52:54:00:B9:1D:67 address-lists="" server=dhcp-lan dhcp-option="" status=bound expires-after=9m57s last-seen=3s active-address=192.168.2.11 active-mac-address=52:54:00:B9:1D:67 active-server=dhcp-lan host-name=vlosite 
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+//	$columns = ["leaseIime", "hwaddr", "ip", "name", "ip6"];
+//	$columns = ["id", "ip", "hwaddr", "interface", "name", "firstSeen", "lastQuery", "numQueries", "macVendor"];
+	$addresses = array();
+	foreach ($lines as $line) {
+		if (empty($line)) continue;
+		$values = explode(' ',$line);
+		$pairs = array();
+		foreach ($values as $value) {
+			if (empty($value)) continue;
+			$split = explode('=',$value);
+			switch ($split[0]) {
+			case 'address':
+				$pairs ['ip'] = $split[1];
+				break;
+			case 'mac-address':
+				$pairs ['hwaddr'] = $split[1];
+				break;
+			case 'comment':		// comment comes before host-name
+			case 'host-name':
+				if (empty($pairs ['name'])) $pairs ['name'] = $split['1'];
+				break;
+			}
+		}
+		if (!empty($pairs)) $addresses[$pairs['hwaddr']] = $pairs;
+	}
+	debug($addresses, 'addresses');
+
+//$addresses[$pairs['hwaddr']]['name'] = str_replace('.'.DOMAIN_NAME, '', $addresses[$pairs['hwaddr']]['name']);
+		// $device['name'] = $address['name'];
+		// $device['vendor'] = (array_key_exists('macVendor',$address) ? $address['macVendor'] : "");
+		// $device['ip'] = $address['ip'];
+		// $device['mac'] = $address['hwaddr'];
+		
+	usort($addresses, function($a, $b) {return strnatcmp($a['ip'],$b['ip']);});
+	debug($addresses, 'addresses');
+
+	$newmacs=0;
+	$changedips=0;
+	$devicesimported=0;
+    if ($showlist) $feedback['message']='<HTML><pre><table style="width:100%"><thead><tr><th>Name</th><th>IP</th><th>Vendor</th><th>Mac</th></tr></thead><tbody>';
+	
+	foreach ($addresses as $address) {
+		$device = array();
+		$device['name'] = (array_key_exists('name', $address) ? $address['name'] : "");
+		$device['vendor'] = (array_key_exists('macVendor',$address) ? $address['macVendor'] : "");
+		$device['ip'] = $address['ip'];
+		$device['mac'] = $address['hwaddr'];
+		$mysql="SELECT * ". 
+				" FROM  `ha_mf_device_ipaddress`" .  
+				" WHERE mac='".$device['mac']."'";  
+		debug($device,'handle->device');
+		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
+			if ($showlist) {
+					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$device['vendor'].'</td><td>'.$device['mac'].'</td></tr>';
+			}
+			if (strlen($device['name']) == 0) $device['name'] = $rowdevice['name'];
+			if ($rowdevice['name'] <> $device['name'] || $rowdevice['ip'] <> $device['ip']) {		// Something changed
+				$mysql="SELECT * ". 
+					" FROM  `ha_mf_devices`" .  
+					" WHERE ipaddressID =".$rowdevice['id'];  
+				if ($rowdev = FetchRow($mysql)) $deviceID = $rowdev['id']; else $deviceID = 0;
+				$command = array('callerID' => $params['caller']['callerID'], 
+								'deviceID' => $deviceID, 
+								'messagetypeID' => 'MESS_TYPE_SCHEME',
+								'schemeID' => SCHEME_ALERT_NORMAL,
+								"commandvalue" => $rowdevice['friendly_name']." MAC: ".$device['mac']."|Old Name: ".$rowdevice['name']."<br/>New Name: "
+								              .$device['name']."<br/>Old IP: ".$rowdevice['ip']."<br/>New IP: ".$device['ip']);
+				$feedback['result']['Changed'][] = executeCommand($command);
+				PDOUpdate('ha_mf_device_ipaddress', $device, array('id' => $rowdevice['id']));
+				$changedips++;
+			} else {
+				PDOUpdate('ha_mf_device_ipaddress', array('last_list_date' => date("Y-m-d H:i:s")), array('id' => $rowdevice['id']));
+				$devicesimported++;
+			}
+		}	else {				// New MAC
+			$command = array('callerID' => $params['caller']['callerID'], 
+							'deviceID' => $params['caller']['callerID'], 
+							'messagetypeID' => 'MESS_TYPE_SCHEME',
+							'schemeID' => SCHEME_ALERT_HIGH,
+							'commandvalue'   => 'New MAC '.$device['mac'].' found,<br/> IP '.$device['ip']);
+			$feedback['result']['New MAC'][] = executeCommand($command);
+			PDOInsert('ha_mf_device_ipaddress', $device);
+			$newmacs++;
+		}
+		//
+		//		Release duplicate IP's
+		//
+		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
+				" ip = NULL " .  
+				" WHERE mac<>'".$device['mac']."' AND  ip='".$device['ip']."'";  
+		PDOExec($mysql);
+    }
+    if ($showlist) 
+		$feedback['message'] .= "</tbody></table>";
+	else
+		$feedback['message'] = "Devices found: $devicesimported, New MACs: $newmacs, Changed IP's: $changedips";
+
+	debug($feedback,'feedback');
+	return $feedback;
+
+}
+
+
+function getDeviceListPiHole(&$params) {
+
+	$showlist=false;
+	if ($params['caller']['callerID'] == DEVICE_REMOTE) $showlist=true; 
+
+	$feedback['Name'] = 'getDeviceList';
+	$feedback['result'] = array();
+
 	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'cat /etc/pihole/dhcp.leases\'';
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
