@@ -339,6 +339,7 @@ function setAuthentication($device) {
 	$authentication['method'] = $device['connection']['authentication'];
 	$authentication['username'] = $device['connection']['username'];
 	$authentication['password'] = $device['connection']['password'];
+	$authentication['api_key'] = $device['connection']['api_key'];
 	return $authentication;
 }
 
