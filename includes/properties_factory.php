@@ -48,6 +48,15 @@ function updateGeneric(&$params, $propertyName) {
 function updateLocked(&$params, $propertyName) {
 	debug($propertyName, 'propertyName');
 	debug($params, 'params');
+	// $newvalue = STATUS_NOT_DEFINED;
+	// Only set if we got value, else get from command status
+	if (strtoupper($params['device']['properties'][$propertyName]['value']) == "LOCKED") {
+		$newvalue = STATUS_ON;
+		$params['device']['properties'][$propertyName]['value'] = $newvalue;
+	} elseif (strtoupper($params['device']['properties'][$propertyName]['value']) == "UNLOCKED") {
+		$newvalue = STATUS_OFF;
+		$params['device']['properties'][$propertyName]['value'] = $newvalue;
+	}
 	return updateStatus($params, $propertyName);
 }
 

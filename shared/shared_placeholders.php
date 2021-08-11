@@ -6,7 +6,7 @@ function replaceCommandPlaceholders($stepValue, $params) {
 //		out: return
 
 	if (strpos($stepValue,'{') === false) {
-		debug("return", 'return');
+		debug("getting out", 'return');
 		return $stepValue;
 	}
 
@@ -36,7 +36,7 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (strpos($stepValue, "{value}") !== false) $stepValue = str_replace("{value}",trim($params['value']),$stepValue);
 	if (strpos($stepValue, "{timervalue}") !== false) $stepValue = str_replace("{timervalue}",trim($params['timervalue']),$stepValue);
 	if (preg_match("/\{calculate___(.*?)\}/", $stepValue,$matches)) {
-		debug($matches, 'calculate->matches');
+		// debug($matches, 'calculate->matches');
 
 		$calcvalue = eval('return '.$matches[1].';');
 		$stepValue = str_replace($matches[0], $calcvalue, $stepValue);
@@ -46,7 +46,7 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (array_key_exists('mess_text',$params)) $stepValue = str_replace("{mess_text}",trim($params['mess_text']),$stepValue);
 
 	$stepValue = replaceText($params, $stepValue);
-	debug($stepValue, 'stepValue');
+	debug($stepValue, 'return Value');
 
 	return $stepValue;
 }
@@ -84,7 +84,7 @@ function replaceText($params, $field){
 	}
 
 	if (strpos($field,'{') === false) {
-		debug("return", 'return');
+		debug("nothing found getting out", 'return');
 		return $field;
 	}
 
@@ -101,8 +101,8 @@ function replaceText($params, $field){
 			$pattern[$key]="/\{".strtolower(str_replace(" ","_",$key))."\}/";
 		}
 
-		debug ($flat_params, 'flat_params');
-		debug ($pattern, 'pattern');
+		// debug ($flat_params, 'flat_params');
+		// debug ($pattern, 'pattern');
 
 		$field = preg_replace($pattern, $flat_params, $field);
 	}
@@ -206,7 +206,10 @@ function parseLastResult($resultin, $stepValue){
 //	$thiscommand['commandvalue'] = replaceResultPlaceholders($text (result___postion), $thiscommand, $feedback['result']);		// Replace placeholders in commandvalue
 
 
-	if (!is_array($resultin)) return $resultin;
+	if (!is_array($resultin)) {
+		debug("getting out", 'return');
+		return $resultin;
+	}
 
 	debug($stepValue, 'stepValue');
 	debug($resultin, 'resultin');

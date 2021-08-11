@@ -772,8 +772,14 @@ function sendGenericHTTP(&$params) {
 	debug($params, 'params');
 
 	$targettype = $params['device']['connection']['targettype'];
+	$targettype_org = $params['device']['connection']['targettype'];
 	$feedback['Name'] = 'sendGenericHTTP - '.$targettype;
 	$feedback['result'] = array();
+
+
+//
+// 	Really need to refact in verb/content
+//
 
 	switch ($params['command']['http_verb'])
 	{
@@ -869,8 +875,13 @@ function sendGenericHTTP(&$params) {
 			$feedback['error'] = $curl->getresponsecode().": ".$curl->getresponse();
 			$params['device']['properties']['Status']['value'] = STATUS_ERROR;
 		} else {
-			$feedback['result_raw'] = $curl->getresponse();
-			$feedback['result'][] = $curl->getresponse();
+			if ($targettype_org == "JSON" || $targettype == "PUT") {
+				$feedback['result_raw'] = json_decode($curl->getresponse(), true);
+				$feedback['result'][] = json_decode($curl->getresponse(), true);
+			} else {
+				$feedback['result_raw'] = $curl->getresponse();
+				$feedback['result'][] = htmlentities($feedback['result_raw']);
+			}
 		}
 		break;
 	case "TCP":              // iTach (Only \r) and Yeelight (Now sending \r\n)
