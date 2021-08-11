@@ -16,7 +16,7 @@ class RestClient {
      private $contentType = null;
      private $timeOut = null;
      private $file =null;
-
+	 private $request_headers = array();
      /**
       * Private Constructor, sets default options
       */
@@ -27,8 +27,6 @@ class RestClient {
          curl_setopt($this->curl,CURLOPT_FOLLOWLOCATION,true); // This too
          curl_setopt($this->curl,CURLOPT_HEADER,true); // THis verbose option for extracting the headers
 		 curl_setopt($this->curl,CURLOPT_USERAGENT, "PHP/".phpversion() );
-
-
 		 }
 
      /**
@@ -54,17 +52,20 @@ class RestClient {
              curl_setopt($this->curl,CURLOPT_CUSTOMREQUEST,$this->method);
          }
          if($this->contentType != null) {
-             curl_setopt($this->curl,CURLOPT_HTTPHEADER,array("Content-Type: ".$this->contentType));
+			$this->request_headers[] = "Content-Type: ".$this->contentType;
+
          }
          if($this->timeOut != null) {
          	 curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT ,$this->timeOut); 
 			 curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->timeOut); //timeout in seconds
          }
+		debug($this->request_headers,'curl headers');
+		curl_setopt($this->curl,CURLOPT_HTTPHEADER, $this->request_headers);
 		debug($this->url,'curl $this-url');
-         curl_setopt($this->curl,CURLOPT_URL,$this->url);
-         $r = curl_exec($this->curl);
-         $this->treatResponse($r); // Extract the headers and response
-         return $this ;
+		curl_setopt($this->curl,CURLOPT_URL,$this->url);
+		$r = curl_exec($this->curl);
+		$this->treatResponse($r); // Extract the headers and response
+		return $this ;
      }
 
      /**
@@ -228,6 +229,7 @@ class RestClient {
       * @return RestClient
       */
      public function setCredentials($credentials, $method=NULL, $url = NULL, $body = NULL) {
+		debug ($credentials,"creds");
 		if ($credentials['method'] == "BASIC") { 
 			if($credentials['username'] != null) {
 				curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC);
@@ -238,21 +240,26 @@ class RestClient {
 				$consumer = new OAuthConsumer($credentials['username'], $credentials['password']);
 				$request = OAuthRequest::from_consumer_and_token($consumer, NULL,$method , $url, $body);
 				$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);
-				curl_setopt($this->curl, CURLOPT_HTTPHEADER, array($request->to_header()));
+				$this->request_headers[] = $request->to_header();
 			}
 		} elseif ($credentials['method'] == "OAUTH2") {
 			if($credentials['username'] != null) {
                                 curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
                                 curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
                         }
-                } elseif ($credentials['method'] == "DIGEST") {
+        } elseif ($credentials['method'] == "BEAR") {
+                curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BEARER );
+				//curl_easy_setopt($this->curl, CURLOPT_XOAUTH2_BEARER, $credentials['api_key']);
+				$authorization = "Authorization: Bearer ". $credentials['api_key'];
+			    $this->request_headers[] = $authorization;
+        } elseif ($credentials['method'] == "DIGEST") {
                         if($credentials['username'] != null) {
                                 curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_DIGEST);
                                 curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
                                 curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
                         }
-                }
-                return $this;
+        }
+        return $this;
      }
 
      /**
