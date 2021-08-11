@@ -31,11 +31,11 @@ function getDeviceList(&$params) {
 	$feedback['Name'] = 'getDeviceList';
 	$feedback['result'] = array();
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['ipaddress']['ip'].' -i remote-jobs \'/ip dhcp-server lease print terse without-paging
-\'';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['ipaddress']['ip'].' -i remote-jobs \'/ip dhcp-server lease print detail terse without-paging where status!=conflict\'';
 
 //address=192.168.2.11 mac-address=52:54:00:B9:1D:67 address-lists="" server=dhcp-lan dhcp-option="" status=bound expires-after=9m57s last-seen=3s active-address=192.168.2.11 active-mac-address=52:54:00:B9:1D:67 active-server=dhcp-lan host-name=vlosite 
 	debug($cmd, 'command');
+	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
 	$lines = explode(PHP_EOL, $output);
@@ -57,6 +57,9 @@ function getDeviceList(&$params) {
 				break;
 			case 'mac-address':
 				$pairs ['hwaddr'] = $split[1];
+				break;
+			case 'status':
+				$pairs ['status'] = $split[1];
 				break;
 			case 'comment':		// comment comes before host-name
 			case 'host-name':
@@ -94,7 +97,7 @@ function getDeviceList(&$params) {
 		debug($device,'handle->device');
 		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
 			if ($showlist) {
-					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$device['vendor'].'</td><td>'.$device['mac'].'</td></tr>';
+					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$address['status'].'</td><td>'.$device['mac'].'</td></tr>';
 			}
 			if (strlen($device['name']) == 0) $device['name'] = $rowdevice['name'];
 			if ($rowdevice['name'] <> $device['name'] || $rowdevice['ip'] <> $device['ip']) {		// Something changed
@@ -138,6 +141,7 @@ function getDeviceList(&$params) {
 	else
 		$feedback['message'] = "Devices found: $devicesimported, New MACs: $newmacs, Changed IP's: $changedips";
 
+	$feedback['result_raw'] = $addresses;
 	debug($feedback,'feedback');
 	return $feedback;
 
@@ -358,6 +362,50 @@ function getDomInfo(&$params) {
 
 }
 
+function createBackup(&$params) {
+
+        $hostName = $params['device']['shortdesc'];
+        $deviceID = $params['device']['id'];
+        $feedback['Name'] = 'createBackup';
+        $feedback['result'] = array();
+		$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs /system backup save name backup.backup';
+        debug($cmd, 'command');
+        $output = shell_exec($cmd);
+        debug($output, 'shell_exec');
+        $feedback['result'][$hostName] = $output;
+
+        $lines = explode(PHP_EOL, $output);
+        $feedback['result'][] = $lines;
+
+        debug($lines, 'lines');
+
+        // $x = 0;
+        // foreach ($lines as $line) {
+                // $x++;
+                // if ($x == 1) continue;
+                // if (empty($line)) continue;
+                // $values=preg_split('/\s*:\s*/', trim($line), -1, PREG_SPLIT_NO_EMPTY);
+        // debug($values, 'values');
+                // $properties[$values[0]]['value'] = $values[1];
+        // }
+
+        // debug($properties, 'properties');
+
+	// $thiscommand['messagetypeID'] = MESS_TYPE_COMMAND;
+	// $thiscommand['caller'] = $params['caller'];
+	// $thiscommand['commandID'] = COMMAND_NOP;
+	// $thiscommand['deviceID'] = $params['deviceID'];
+	// $thiscommand['device']['id'] =  $params['deviceID'];
+	// $thiscommand['device']['properties'] = $properties;
+	// $feedback['SendCommand']=sendCommand($thiscommand); 
+
+
+
+        // $params['device']['properties'] = $properties;
+        return $feedback;
+
+}
+
 function storeNatSessions(&$params) {
 
 
@@ -492,6 +540,51 @@ function speedTest(&$params) {
 
 	$feedback['result']['speedTest'] = $result;
 	debug ($feedback, 'feedback');
+	return $feedback;
+}
+
+function updateUnifi(&$params) {
+
+	debug($params, 'params');
+	$addresses = $params['last___result'];
+	unset($params['last___message']);
+
+	$feedback['Name'] = 'updateUnifi';
+
+	debug($addresses, 'addresses');
+	$query = '';
+	foreach ($addresses as $address) {
+		$query .= 'db.user.findOneAndUpdate({"mac" : /^'.$address['hwaddr'].'$/i},{$set:{"name": "'.$address['name'].'"}});'."\n";
+	}
+
+	$file = './query.js';
+	if (file_put_contents($file, $query) === false) {
+		$feedback['error'] = "Error writing query.js";	
+		debug($feedback, 'feedback');
+		return $feedback;
+	}
+	$feedback['result'][] = $query;
+
+	$cmd = 'scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i remote-jobs ./query.js remote-jobs@'.$params['device']['shortdesc'].':~/query.js';
+	$feedback['commandstr'] = $cmd.CRLF;
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'mongo --port 27117 ace query.js\'';
+	$feedback['commandstr'] .= $cmd;
+	debug($cmd, 'command');
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	$lines = explode(PHP_EOL, $output);
+	$feedback['result'][] = $lines;
+	debug($lines, 'lines');
+
+
+	// debug($feedback, 'feedback');
 	return $feedback;
 }
 ?>
