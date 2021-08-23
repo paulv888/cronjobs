@@ -417,7 +417,7 @@ function getStatusLink($devprop) {
 			$feedback['Status'] = $property['value'];
 			$feedback['PropertyID'] =$devprop['propertyID'];
 		}
-		if ($link = FetchRow('SELECT ln FROM `ha_vw_monitor_link_status` WHERE active = 1 AND deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['ln'];
+		if ($link = FetchRow('SELECT link, ln FROM `ha_vw_monitor_link_status` WHERE active = 1 AND deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['link'] || $link['ln'];
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
 		$feedback['DeviceID'] = $devprop['deviceID'];
 	}
