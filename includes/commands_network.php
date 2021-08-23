@@ -38,7 +38,7 @@ function getDeviceList(&$params) {
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
-	$lines = explode(PHP_EOL, $output);
+	$lines =  preg_split('/\n|\r\n?/', $output);
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 //	$columns = ["leaseIime", "hwaddr", "ip", "name", "ip6"];
@@ -83,7 +83,7 @@ function getDeviceList(&$params) {
 	$newmacs=0;
 	$changedips=0;
 	$devicesimported=0;
-    if ($showlist) $feedback['message']='<HTML><pre><table style="width:100%"><thead><tr><th>Name</th><th>IP</th><th>Vendor</th><th>Mac</th></tr></thead><tbody>';
+    if ($showlist) $feedback['message']='<HTML><pre><table style="width:100%"><thead><tr><td><b>Name</b></td><td><b>IP</b></td><td><b>Status</b></td><td><b>Mac</b></td></tr></thead><tbody>';
 	
 	foreach ($addresses as $address) {
 		$device = array();
@@ -160,7 +160,7 @@ function getDeviceListPiHole(&$params) {
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
-	$lines = explode(PHP_EOL, $output);
+	$lines =  preg_split('/\n|\r\n?/', $output);
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 //1578843631 54:04:a6:0a:58:20 192.168.2.246 paul-pc 01:54:04:a6:0a:58:20
@@ -179,7 +179,7 @@ function getDeviceListPiHole(&$params) {
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
-	$lines = explode(PHP_EOL, $output);
+	$lines =  preg_split('/\n|\r\n?/', $output);
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 //CREATE TABLE network ( id INTEGER PRIMARY KEY NOT NULL, ip TEXT NOT NULL, hwaddr TEXT NOT NULL, interface TEXT NOT NULL, name TEXT, firstSeen INTEGER NOT NULL, lastQuery INTEGER NOT NULL, numQueries INTEGER NOT NULL,macVendor TEXT)
@@ -286,11 +286,12 @@ function getDrives(&$params) {
 			$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs df -Pkht ufs';
 		}
         debug($cmd, 'command');
+		$feedback['commandstr'] = $cmd;
         $output = shell_exec($cmd);
         debug($output, 'shell_exec');
         $feedback['result'][$hostName] = $output;
 
-        $lines = explode(PHP_EOL, $output);
+        $lines =  preg_split('/\n|\r\n?/', $output);
         $feedback['result'][] = $lines;
 
         debug($lines, 'lines');
@@ -330,7 +331,7 @@ function getDomInfo(&$params) {
         debug($output, 'shell_exec');
         $feedback['result'][$hostName] = $output;
 
-        $lines = explode(PHP_EOL, $output);
+        $lines =  preg_split('/\n|\r\n?/', $output);
         $feedback['result'][] = $lines;
 
         debug($lines, 'lines');
@@ -362,6 +363,24 @@ function getDomInfo(&$params) {
 
 }
 
+function readNatSessions(&$params) {
+
+	$hostName = $params['device']['shortdesc'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'readNatSessions';
+	$feedback['result'] = array();
+//	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip firewall connection  print detail terse where src-address~"192.168.2.50:*"\'';
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip firewall connection  print detail terse \'';
+	$feedback['commandstr'] = $cmd;
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	if (empty(trim($output))) $feedback['error'] = $output;
+	
+	$feedback['result_raw'] = $output;
+	// $feedback['result'][$hostName] = $output;
+	return $feedback;
+}
+
 function createBackup(&$params) {
 
         $hostName = $params['device']['shortdesc'];
@@ -374,7 +393,7 @@ function createBackup(&$params) {
         debug($output, 'shell_exec');
         $feedback['result'][$hostName] = $output;
 
-        $lines = explode(PHP_EOL, $output);
+        $lines =  preg_split('/\n|\r\n?/', $output);
         $feedback['result'][] = $lines;
 
         debug($lines, 'lines');
@@ -415,54 +434,128 @@ function storeNatSessions(&$params) {
 
 	$feedback['Name'] = 'updateNatSessions';
 
-	$lines = explode(PHP_EOL, $params['commandvalue']);
+	$lines =  preg_split('/\n|\r\n?/', $params['commandvalue']);
 	debug($lines, 'lines');
 
 //tcp      6 1393 ESTABLISHED src=192.168.2.24 dst=54.236.3.170 sport=2644 dport=443 packets=2 bytes=84 src=54.236.3.170 dst=71.8.81.33 sport=443 dport=2644 packets=1 bytes=44 [ASSURED] mark=0 use=1
+// 0  SAC Fs  protocol=tcp src-address=192.168.2.248:32815 dst-address=74.125.138.188:5228 reply-src-address=74.125.138.188:5228 reply-dst-address=174.85.202.204:32815 tcp-state=established timeout=23h49m47s orig-packets=346 orig-bytes=25 675 orig-fasttrack-packets=48 orig-fasttrack-bytes=5 395 repl-packets=242 repl-bytes=56 568 repl-fasttrack-packets=48 repl-fasttrack-bytes=20 460 orig-rate=0bps repl-rate=0bps
+
+    // [0] => class
+    // [1] => 0
+    // [2] => SAC
+    // [3] => Fs
+    // [4] => protocol
+    // [5] => tcp
+    // [6] => src-address
+    // [7] => 192.168.2.248
+    // [8] => 32815
+    // [9] => dst-address
+    // [10] => 74.125.138.188
+    // [11] => 5228
+    // [12] => reply-src-address
+    // [13] => 74.125.138.188
+    // [14] => 5228
+    // [15] => reply-dst-address
+    // [16] => 174.85.202.204
+    // [17] => 32815
+    // [18] => tcp-state
+    // [19] => established
+    // [20] => timeout
+    // [21] => 23h47m24s
+    // [22] => orig-packets
+    // [23] => 350
+    // [24] => orig-bytes
+    // [25] => 25
+    // [26] => 941
+    // [27] => orig-fasttrack-packets
+    // [28] => 48
+    // [29] => orig-fasttrack-bytes
+    // [30] => 5
+    // [31] => 395
+    // [32] => repl-packets
+    // [33] => 244
+    // [34] => repl-bytes
+    // [35] => 56
+    // [36] => 726
+    // [37] => repl-fasttrack-packets
+    // [38] => 48
+    // [39] => repl-fasttrack-bytes
+    // [40] => 20
+    // [41] => 460
+    // [42] => orig-rate
+    // [43] => 0bps
+    // [44] => repl-rate
+    // [45] => 0bps
 
 
 	$columns = ["class", "protocol", "TCPstate",  "local_address",  "remote_address", "local_port", "remote_port", "packets", "bytes", "flags"]; 
-	$x = 0;
 	foreach ($lines as $line) {
 			if (empty($line)) continue;
-			$x++;
-			$line = 'class '.$line;
-			$values = array();
-			$tvalues = preg_split('/[=\s]+/', $line, -1, PREG_SPLIT_NO_EMPTY);
-			debug($tvalues, 'tvalues');
-			$values[] = $tvalues[0];
-			$values[] = $tvalues[1];
-			if ($tvalues[1] == 'tcp')  {
-				$state=true;
-				if ($tvalues['17'] == 'src') $state=false;
-				$values[] = $tvalues[4];
-				$values[] = $tvalues[6];
-				$values[] = ($state ? $tvalues[19] : $tvalues[18]);
-				$values[] = $tvalues[10];
-				$values[] = ($state ? $tvalues[23] : $tvalues[22]);
-				$values[] = $tvalues[14];
-				$values[] = $tvalues[16];
-				$values[] = $tvalues[29];
-			} else {		// udp - icmp
-				$state=true;
-				if ($tvalues['16'] == 'src') $state=false;
-				$values[] = ($state ? $tvalues[16] : "" );
-				$values[] = $tvalues[5];
-				$values[] = ($state ? $tvalues[18] : $tvalues[17]);
-				$values[] = $tvalues[9];
-				$values[] = ($state ? $tvalues[22] : $tvalues[21]);
-				$values[] = $tvalues[13];
-				$values[] = $tvalues[15];
-				$values[] = $tvalues[28];
-			}
-			debug($values, 'values');
-			debug($columns, 'columns');
-			$pairs = array_combine ( $columns , $values );
 
-			//$pairs['local_name']= gethostbyaddr($pairs['local_address']);
-			//$pairs['remote_name']= gethostbyaddr($pairs['remote_address']);
-			$pairs['local_name']= $pairs['local_address'];
-			$pairs['remote_name']= $pairs['remote_address'];
+			$values = array();
+			$tvalues = preg_split('/[\s]+/', $line, -1, PREG_SPLIT_NO_EMPTY);
+			debug ($tvalues , 'tvalues');
+			
+			$x = 0;
+			$svalues = array();
+			foreach ($tvalues as $tvalue) {
+				$x++;
+				if ($x == 1) continue;
+				$temp = preg_split('/=/', $tvalue);
+				if (array_key_exists(1,$temp)) { 
+					$svalues[$temp[0]] = $temp[1];
+				} else {
+					if ($x == 2) $svalues['flags'] = $temp[0];
+					if ($x == 3) $svalues['flags'] = $svalues['flags'].$temp[0];
+					if ($x == 4) $svalues['flags'] = $svalues['flags'].$temp[0];
+				}
+			}
+			debug ($svalues , 'svalues');
+
+			$pairs = array();
+			$pairs['protocol'] = $svalues['protocol'];
+			if ($svalues['protocol'] == 'tcp')  {
+				$state=true;
+				//if ($tvalues['12'] == 'reply-src-address') $state=false;
+				$pairs['TCPstate'] = $svalues['tcp-state'];
+				$pairs['local_address'] = preg_split('/:/', $svalues['src-address'])[0];
+				// $values[] = ($state ? $tvalues[19] : $tvalues[18]);
+				$pairs['remote_address'] = preg_split('/:/', $svalues['reply-src-address'])[0];
+				$pairs['local_port'] =  preg_split('/:/', $svalues['src-address'])[1];
+				// $values[] = ($state ? $tvalues[23] : $tvalues[22]);
+				$pairs['remote_port'] = preg_split('/:/', $svalues['reply-src-address'])[1];
+				$pairs['packets'] = $svalues['orig-packets'];
+				$pairs['bytes'] = $svalues['orig-bytes'];
+				$pairs['flags'] = $svalues['flags'];
+			} elseif ($svalues['protocol'] == 'udp') {		// udp 
+				$state=true;
+				//if ($tvalues['12'] == 'reply-src-address') $state=false;
+				$pairs['TCPstate'] = "";
+				$pairs['local_address'] = preg_split('/:/', $svalues['src-address'])[0];
+				// $values[] = ($state ? $tvalues[19] : $tvalues[18]);
+				$pairs['remote_address'] = preg_split('/:/', $svalues['reply-src-address'])[0];
+				$pairs['local_port'] =  preg_split('/:/', $svalues['src-address'])[1];
+				// $values[] = ($state ? $tvalues[23] : $tvalues[22]);
+				$pairs['remote_port'] = preg_split('/:/', $svalues['reply-src-address'])[1];
+				$pairs['packets'] = $svalues['orig-packets'];
+				$pairs['bytes'] = $svalues['orig-bytes'];
+				$pairs['flags'] = $svalues['flags'];
+			} else { 	// icmp
+				//if ($tvalues['12'] == 'reply-src-address') $state=false;
+				$pairs['TCPstate'] = "";
+				$pairs['local_address'] = $svalues['src-address'];
+				$pairs['remote_address'] = $svalues['reply-src-address'];
+				$pairs['local_port'] =  '';
+				$pairs['remote_port'] = '';
+				$pairs['packets'] = $svalues['orig-packets'];
+				$pairs['bytes'] = $svalues['orig-bytes'];
+				$pairs['flags'] = $svalues['flags'];
+			}
+
+			$pairs['local_name']= gethostbyaddr($pairs['local_address']);
+			$pairs['remote_name']= gethostbyaddr($pairs['remote_address']);
+			// $pairs['local_name']= $pairs['local_address'];
+			// $pairs['remote_name']= $pairs['remote_address'];
 			$pairs['active']= 1; 
 
 			$pairs['class'] = '';
@@ -570,7 +663,7 @@ function updateUnifi(&$params) {
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
-	$lines = explode(PHP_EOL, $output);
+	$lines =  preg_split('/\n|\r\n?/', $output);
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 
@@ -579,7 +672,7 @@ function updateUnifi(&$params) {
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
-	$lines = explode(PHP_EOL, $output);
+	$lines =  preg_split('/\n|\r\n?/', $output);
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 
