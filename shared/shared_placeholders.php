@@ -31,6 +31,8 @@ function replaceCommandPlaceholders($stepValue, $params) {
 			str_replace("{macro___commandvalue}", (array_key_exists('macro___commandvalue', $params) ? trim($params['macro___commandvalue']) : ""),$stepValue);
 	if (strpos($stepValue, "{last___message}") !== false) $stepValue = 
 			str_replace("{last___message}", (array_key_exists('last___message', $params) ? trim($params['last___message']) : ""),$stepValue);
+	if (strpos($stepValue, "{last___result}") !== false) 
+			str_replace("{last___result}", (array_key_exists('last___result', $params) ? trim($params['last___result']) : ""),$stepValue);
 	if (strpos($stepValue, "{last___result___") !== false) $stepValue = parseLastResult($params['last___result'], $stepValue);
 	if (strpos($stepValue, "{commandvalue}") !== false) $stepValue = str_replace("{commandvalue}",trim($params['commandvalue']),$stepValue);
 	if (strpos($stepValue, "{value}") !== false) $stepValue = str_replace("{value}",trim($params['value']),$stepValue);
