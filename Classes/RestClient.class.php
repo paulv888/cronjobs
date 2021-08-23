@@ -248,7 +248,7 @@ class RestClient {
                                 curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
                         }
         } elseif ($credentials['method'] == "BEAR") {
-                curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BEARER );
+                // curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BEARER );
 				//curl_easy_setopt($this->curl, CURLOPT_XOAUTH2_BEARER, $credentials['api_key']);
 				$authorization = "Authorization: Bearer ". $credentials['api_key'];
 			    $this->request_headers[] = $authorization;
