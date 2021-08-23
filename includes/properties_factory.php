@@ -53,9 +53,16 @@ function updateLocked(&$params, $propertyName) {
 	if (strtoupper($params['device']['properties'][$propertyName]['value']) == "LOCKED") {
 		$newvalue = STATUS_ON;
 		$params['device']['properties'][$propertyName]['value'] = $newvalue;
+		$params['device']['properties']['Link']['value'] = LINK_UP;
 	} elseif (strtoupper($params['device']['properties'][$propertyName]['value']) == "UNLOCKED") {
 		$newvalue = STATUS_OFF;
 		$params['device']['properties'][$propertyName]['value'] = $newvalue;
+		$params['device']['properties']['Link']['value'] = LINK_UP;
+	} elseif (strtoupper($params['device']['properties'][$propertyName]['value']) == "UNAVAILABLE") {
+		$newvalue = STATUS_NOT_DEFINED;
+		$params['device']['properties'][$propertyName]['value'] = $newvalue;
+		$params['device']['properties']['Link']['value'] = LINK_DOWN;
+		updateLink($params, 'Link');
 	}
 	return updateStatus($params, $propertyName);
 }
