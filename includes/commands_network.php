@@ -381,6 +381,27 @@ function readNatSessions(&$params) {
 	return $feedback;
 }
 
+function getPublicIP(&$params) {
+
+	$hostName = $params['device']['shortdesc'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'getPublicIP';
+	$feedback['result'] = array();
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip dhcp-client print terse \'';
+	$feedback['commandstr'] = $cmd;
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	if (empty(trim($output))) $feedback['error'] = $output;
+
+	preg_match('#address=(.*?)/#',$output, $matches, PREG_OFFSET_CAPTURE);
+
+	debug($matches, 'matches');
+		
+	$feedback['result_raw'] = $matches[1][0];
+	// $feedback['result'][$hostName] = $output;
+	return $feedback;
+}
+
 function createBackup(&$params) {
 
         $hostName = $params['device']['shortdesc'];
