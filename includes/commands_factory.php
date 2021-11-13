@@ -719,7 +719,8 @@ function sendGenericPHP(&$params) {
 
 	$func = $params['command']['command'];
 	if ($func == "sleep") {
-		$feedback['result'][] = $func($params['commandvalue']);
+		$feedback['commandstr'] = 'Sleep('.$params['commandvalue'].')';
+		$func($params['commandvalue']);
 	} elseif ($params['command']['need_device']=="1") {
 		switch ($params['device']['connection']['targettype'])
 		{
