@@ -115,7 +115,7 @@ class RestClient {
 		preg_match("@HTTP/[1-2](.[0-1])? ([0-9]{3}) ([a-zA-Z ]+)?@",$parts[0],$reg); // This extracts the response header Code and Message
 		debug($reg,'matches');
 		$this->headers['code'] = $reg[2];
-		$this->headers['message'] = $reg[3];
+		if (array_key_exists(3, $reg)) $this->headers['message'] = $reg[3];
 		$this->response = "";
 		
 		for($i=1;$i<count($parts);$i++) {//This make sure that exploded response get back togheter
