@@ -30,7 +30,7 @@ function sendCommand(&$thiscommand) {
 //   Sends 1 single command to TCP, REST, EMAIL
 //
 
-	if ($thiscommand['deviceID'] != NULL) {
+	if (!empty($thiscommand['deviceID'])) {
 		if ($thiscommand['deviceID'] == DEVICE_SELECTED_PLAYER) {
 			$thiscommand['deviceID'] = $thiscommand['SESSION']['properties']['SelectedPlayer']['value'];
 		}
