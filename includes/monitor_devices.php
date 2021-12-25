@@ -10,45 +10,55 @@ function monitorDevices($linkmonitor) {
 
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $rowlinks) {
-			if ($rowlinks['active'] > 0)
+			if ($rowlinks['active'] > 0) {
 				monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['linkmonitor']);
+			}
+			
 		}
 	}
+}
+
+function dmonitorDevices() {
+	monitorDevices('"POLL","NMAP"');
 }
 
 function monitorDevice($deviceID, $pingport, $linkmonitor) {
 
 	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
-	$rowip = FetchRow($mysql);
-	$status = false;
-	if ($rowip['ip'] != NULL) {
-		if ($pingport>0) {
-			if ($linkmonitor=='NMAP') {
-				$status = pingnmp($rowip['ip'],$pingport);
+	if ($rowip = FetchRow($mysql)) {
+		$status = false;
+		//echo "$mysql\n";
+		if (isset($rowip['ip'])) {
+			if ($pingport>0) {
+				if ($linkmonitor=='NMAP') {
+					$status = pingnmp($rowip['ip'],$pingport);
+				} else {
+					$status = pingport($rowip['ip'],$pingport,2);
+				}
 			} else {
-				$status = pingport($rowip['ip'],$pingport,2);
+				$status = pingicmp($rowip['ip'],100);
 			}
-		} else {
-			$status = pingicmp($rowip['ip'],100);
 		}
-	}
 
-	if ($status) {
-		$curlink = LINK_UP;
-		$statverb = "Online";
+		if ($status) {
+			$curlink = LINK_UP;
+			$statverb = "Online";
+		} else {
+			$curlink = LINK_DOWN;
+			$statverb = "Offline";
+		}
+
+		$params['callerID'] = MY_DEVICE_ID;
+		$params['deviceID'] = $deviceID;
+		$params['commandID'] = COMMAND_PING;
+		$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
+		$properties['Link']['value'] = $curlink;
+		$params['device']['properties'] = $properties;
+	//print_r($params);
+		$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
 	} else {
-		$curlink = LINK_DOWN;
-		$statverb = "Offline";
+		$feedback['error'] = "Did not find deviceID" . $deviceID ;
 	}
-
-	$params['callerID'] = MY_DEVICE_ID;
-	$params['deviceID'] = $deviceID;
-	$params['commandID'] = COMMAND_PING;
-	$params['device']['previous_properties'] = getDeviceProperties(Array('deviceID' => $deviceID));
-	$properties['Link']['value'] = $curlink;
-	$params['device']['properties'] = $properties;
-//print_r($params);
-	$feedback['updateDeviceProperties:'][] = updateDeviceProperties($params);
 	return $feedback;
 }
 
