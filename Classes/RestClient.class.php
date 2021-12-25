@@ -229,36 +229,37 @@ class RestClient {
       * @return RestClient
       */
      public function setCredentials($credentials, $method=NULL, $url = NULL, $body = NULL) {
-		debug ($credentials,"creds");
-		if ($credentials['method'] == "BASIC") { 
-			if($credentials['username'] != null) {
-				curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC);
-				curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
+		if (isset($credentials)) {
+			if ($credentials['method'] == "BASIC") { 
+				if($credentials['username'] != null) {
+					curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BASIC);
+					curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
+				}
+			} elseif ($credentials['method'] == "OAUTH1") {
+				if($credentials['username'] != null) {
+					$consumer = new OAuthConsumer($credentials['username'], $credentials['password']);
+					$request = OAuthRequest::from_consumer_and_token($consumer, NULL,$method , $url, $body);
+					$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);
+					$this->request_headers[] = $request->to_header();
+				}
+			} elseif ($credentials['method'] == "OAUTH2") {
+				if($credentials['username'] != null) {
+									curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
+									curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
+							}
+			} elseif ($credentials['method'] == "BEAR") {
+					// curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BEARER );
+					//curl_easy_setopt($this->curl, CURLOPT_XOAUTH2_BEARER, $credentials['api_key']);
+					$authorization = "Authorization: Bearer ". $credentials['api_key'];
+					$this->request_headers[] = $authorization;
+			} elseif ($credentials['method'] == "DIGEST") {
+							if($credentials['username'] != null) {
+									curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_DIGEST);
+									curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
+									curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
+							}
 			}
-		} elseif ($credentials['method'] == "OAUTH1") {
-			if($credentials['username'] != null) {
-				$consumer = new OAuthConsumer($credentials['username'], $credentials['password']);
-				$request = OAuthRequest::from_consumer_and_token($consumer, NULL,$method , $url, $body);
-				$request->sign_request(new OAuthSignatureMethod_HMAC_SHA1(), $consumer, NULL);
-				$this->request_headers[] = $request->to_header();
-			}
-		} elseif ($credentials['method'] == "OAUTH2") {
-			if($credentials['username'] != null) {
-                                curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
-                                curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
-                        }
-        } elseif ($credentials['method'] == "BEAR") {
-                // curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_BEARER );
-				//curl_easy_setopt($this->curl, CURLOPT_XOAUTH2_BEARER, $credentials['api_key']);
-				$authorization = "Authorization: Bearer ". $credentials['api_key'];
-			    $this->request_headers[] = $authorization;
-        } elseif ($credentials['method'] == "DIGEST") {
-                        if($credentials['username'] != null) {
-                                curl_setopt($this->curl,CURLOPT_HTTPAUTH,CURLAUTH_DIGEST);
-                                curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
-                                curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
-                        }
-        }
+		}
         return $this;
      }
 
