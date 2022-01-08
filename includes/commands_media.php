@@ -1,5 +1,5 @@
 <?php
-define("EXCLUDE_EXTENTSIONS", "nfo|tbn|txt|db");
+define("EXCLUDE_EXTENTSIONS", "nfo|jpg|txt|db");
 define("ASSORTED_DIR", "_Assorted/");
 define("REFRESH_CLEAN_NAME", 0x01);
 define("REFRESH_FIND_MOVE", 0x02);
@@ -348,7 +348,7 @@ function createThumbNails(&$params) {
 			$params['file'] = $file;
 			$params['refreshvideooptions'] = REFRESH_THUMB ;
 			$params['file'] = $file_parts;
-			$params['file']['checkextension'] = 'tbn';
+			$params['file']['checkextension'] = 'jpg';
 			if (($params['value_parts'][0] == "1") || (empty($params['commandvalue']) && checkFile($params))) {	//	Overwrite
 				$feedback['result'][] = $file;		// Batch with temp file, so we can find corrupted files
 				$feedback = refreshVideo($params);
@@ -577,7 +577,7 @@ function createNFO($file) {
         </resume>
         <dateadded>2010-12-24 13:59:25</dateadded>
         <art>
-            <thumb>smb://SRVMEDIA/media/My Music Videos/Dance/_Assorted/2black - Waves Of Luv.tbn</thumb>
+            <thumb>smb://SRVMEDIA/media/My Music Videos/Dance/_Assorted/2black - Waves Of Luv.jpg</thumb>
         </art>
     </musicvideo>
 	*/
@@ -2034,7 +2034,7 @@ function youtubeDL($url, $options = YT_VIDEO_ONLY) {
 				// $feedback['json'] = $filename;
 			// }
 			// debug($matches, 'matches');
-			$found = preg_match('/\[ffmpeg\] Merging formats into \"(.*)\"/',$strOut,$matches);
+			$found = preg_match('/\[Merger\] Merging formats into \"(.*)\"/',$strOut,$matches);
 			if (array_key_exists(1, $matches)) { 	// Filename found
 				$filename = $matches[1];
 				$feedback['filename'] = $filename;
@@ -2150,7 +2150,7 @@ function moveMusicVideo($params) {
 			// echo "<pre>Found old one ".$feedback['Name'].' '.$dirname.$fparsed['basename'].CRLF;
 			foreach ($matches as $match) {
 				$fparsed = mb_pathinfo($match);
-				if (!in_array($fparsed['extension'], Array("tbn", "nfo"))) {
+				if (!in_array($fparsed['extension'], Array("jpg", "nfo"))) {
 					$feedback['message'] .= "***";
 					$dirname = rtrim($fparsed['dirname'], '/') . '/';
 					$params['commandvalue'] = mv_toPublic($dirname.$fparsed['basename']);
@@ -2160,10 +2160,16 @@ function moveMusicVideo($params) {
 		}
 	}
 
-	foreach (Array ($file['extension'], "tbn", "nfo") as $ext) {
-		$filename = $file['filename'].'.'.$ext;
-		$infile = $file['dirname'].$file['filename'].'.'.$ext;
-		$tofile = $file['moveto'].$file['newname'].'.'.$ext;
+	foreach (Array ($file['extension'], "jpg", "nfo") as $ext) {
+		if ($ext == "jpg") {
+			$filename = $file['filename'].'-thumb.'.$ext;
+			$infile = $file['dirname'].$file['filename'].'-thumb.'.$ext;
+			$tofile = $file['moveto'].$file['newname'].'-thumb.'.$ext;
+		} else {
+			$filename = $file['filename'].'.'.$ext;
+			$infile = $file['dirname'].$file['filename'].'.'.$ext;
+			$tofile = $file['moveto'].$file['newname'].'.'.$ext;
+		}
 
 		if (!array_key_exists('error', $feedback)) {
 			$cmd = 'mv -v "'.$infile.'" "'.$tofile.'"';
@@ -2178,7 +2184,7 @@ function moveMusicVideo($params) {
 				$feedback['error'] = "Error Moving file: $exitCode";
 				return $feedback;
 			}
-			if (!in_array($ext, Array("tbn", "nfo"))) {
+			if (!in_array($ext, Array("jpg", "nfo"))) {
 				if (!$exitCode) {
 					// Remove from Kodi Lib
 					$feedback['message'] .= $filename.'| moved to '.$tofile;
