@@ -1,2 +1,2 @@
 #! /bin/bash
-/usr/local/bin/youtube-dl $1 "$2"
+/usr/local/bin/yt-dlp $1 "$2"
