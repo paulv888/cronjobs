@@ -186,7 +186,11 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 			$values['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 			$getparams = http_build_query($values, '',' ');
 			$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;
-			$outputfile=  tempnam( sys_get_temp_dir(), 'async-M'.$schemeID.'-o-' );
+			// debug($cmd, "cmd");
+			// debug(sys_get_temp_dir(), "sys temp dir");
+			// debug('async-M'.$schemeID.'-o-' , "fnam");
+			// debug(is_writable(sys_get_temp_dir()) ? "Temp dir is writable" : "Temp dir is not writable" , "fnam");
+			$outputfile=  tempnam( "/tmp", 'async-M'.$schemeID.'-o-' );
 			$pidfile=  tempnam( sys_get_temp_dir(), 'async-M'.$schemeID.'-p-' );
 			exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $outputfile, $pidfile));
 			$feedback['message'] = "Initiated ".current($rowshemesteps)['name'].' sequence. Log: '.$outputfile;

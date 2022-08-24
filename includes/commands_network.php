@@ -688,6 +688,7 @@ function updateUnifi(&$params) {
 	$feedback['result'][] = $lines;
 	debug($lines, 'lines');
 
+	// ace is db
 	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'mongo --port 27117 ace query.js\'';
 	$feedback['commandstr'] .= $cmd;
 	debug($cmd, 'command');

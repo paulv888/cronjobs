@@ -2013,10 +2013,10 @@ function youtubeDL($url, $options = YT_VIDEO_ONLY) {
 	$feedback['result'] = $output;
 	$feedback['exitCode'] = $exitCode;
 	debug($output, 'exec');
-	if ($exitCode != 0) {
-		$feedback['error'] = "Error Youtube-DL $exitCode";
-		return $feedback;
-	}
+	// if ($exitCode != 0) {
+		// $feedback['error'] = "Error Youtube-DL $exitCode";
+		// return $feedback;
+	// }
 
 
 	switch ($options) {
