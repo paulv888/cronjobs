@@ -1,4 +1,15 @@
 <?php require_once 'includes.php';
+if (isset($_GET['key'])) {
+	$found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$_GET['key'].'"');
+	if ($found) {
+		$username = $found['username'];
+	} else {
+	    die('Not Authorized'); 
+    }
+	$apikey = $_GET['key'];
+} else {
+	die('Not Authorized');
+}
 if (isset($_GET['name'])) {
 	if (!$remoteID = FetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`)="'.strtoupper($_GET['name']).'"')['id']) die('Invalid Remote');
 } else {
@@ -33,7 +44,8 @@ if (isset($_GET['name'])) {
    <div id='system-message-container'></div>
 <?php
    require_once 'includes.php'; 
-   loadRemote($remoteID);?>
+   echo '<div class="keyscell" style="background-color: #222; color:#fff"> '.greeting().' '.$username.'</div>';
+   loadRemote($remoteID, $apikey);?>
    <div class=" row-fluid">
    <div class="pull-left" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div>
    <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
