@@ -1,5 +1,5 @@
 <?php
-function loadRemote($remoteID) {
+function loadRemote($remoteID, $apikey = null) {
 
 	if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
 		$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
@@ -33,6 +33,7 @@ function loadRemote($remoteID) {
 			echo '</ul>';
 			echo '<div id="myTabContent" class="tab-content">';
 		}
+		$params['apikey'] = $apikey;
 		loadRemotePaneContent($remoteID, $select, $params);
 		if (count($divs) > 1) echo '</div></div>';
 		echo '<div id="spinner">Executing...</div>';
@@ -79,6 +80,7 @@ function loadRemoteDiv($divid, $params) {
 				$status = '';
 				$link = '';
 				$booticon = null;
+				$rowremotekeys['inputoptions'] = str_replace('_apikey_', $params['apikey'], $rowremotekeys['inputoptions']);
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (!empty($rowremotekeys['deviceID'])) {
@@ -156,9 +158,10 @@ function loadRemoteDiv($divid, $params) {
 					if (isset($deviceID))$text = replacePropertyPlaceholders($text, Array('deviceID' => $deviceID));
 					//<a href="/index.php/outside" class="btn btn-block button">Outside</a>
 					if ($rowremotekeys['inputtype']=="link") $text = '<a target="_blank" href="'.$rowremotekeys['inputoptions'].'" class="buttontext">'.$rowremotekeys['name'].'</a>';
-					if ($text != null) 	echo '<span class="buttontext">'.$text.'</span>';
+					if ($text != null) 	echo $text;
+					//echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
-					echo "</td>\n\r";
+					echo "</td>";
 				} else {
 					if ($rowremotekeys['inputtype']=="btndropdown") {
 						echo '<div style="position: relative;height:100%">';
