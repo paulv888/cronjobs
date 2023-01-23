@@ -2,6 +2,7 @@
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
 
+
    var VloRemote = {
 			'COMMAND_SET_VALUE' : 145,
 			'COMMAND_GET_VALUE' : 136,
@@ -421,11 +422,17 @@ if(!window.scriptRemoteHasRun) {
 					jQuery(this).addClass(item.status);
 				} 
 				if (typeof item.text !== 'undefined') {
-					//jQuery(index).set('html',item.text);
-					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
-						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+					if (item.text.search('_apikey_')>=0) {
+						item.text = item.text.replace('_apikey_', getUrlParameter('key') );
+						console.log(item.text);
 					}
-				} 
+					jQuery(this).html(item.text);
+				}
+//				if (typeof item.text !== 'undefined') {
+//					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
+//						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+//					}
+//				} 
 				if (typeof item.groupselect !== 'undefined') {
 					jQuery(this).addClass('group-select');
 				} 
