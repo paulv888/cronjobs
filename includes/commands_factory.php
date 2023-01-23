@@ -1403,6 +1403,102 @@ function getStereoSettings(&$params) {
 	// echo "</pre>";	
 } 
 
+function volumeDownKey(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['result'][] = array();
+	$feedback['Name'] = 'volumeDownKey';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 391;
+	$result['VolumeDown'] = sendCommand($command); 
+
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 502;
+	$result['GetVolume'] = sendCommand($command); 
+
+
+	if (isset($result['error'])) return;;
+
+   	$main = new SimpleXMLElement($result['GetVolume']['result_raw']);
+
+  
+	if (array_key_exists('error', $result)) {
+		// $properties['Playing']['value'] =  'Nothing';
+		// $properties['File']['value'] = '*';
+		// $properties['Artist']['value'] = '*';
+		// $properties['Title']['value'] =  '*';
+		// $properties['Thumbnail']['value'] = "https://xxxx/images/headers/offline.png?t=".rand();
+		// $properties['PlayingID']['value'] =  '0';
+		// $params['device']['properties'] = $properties;
+		// $feedback['error']='Error - Nothing playing';
+	} else {
+		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
+
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 6  ) ;
+
+		$params['device']['properties'] = $properties;
+	}	
+	$feedback['result'] = $result;
+
+	debug($feedback, 'feedback');
+	return $feedback;
+
+	// echo "</pre>";	
+} 
+
+function volumeUpKey(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['result'][] = array();
+	$feedback['Name'] = 'volumeUpKey';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 392;
+	$result['VolumeDown'] = sendCommand($command); 
+
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 502;
+	$result['GetVolume'] = sendCommand($command); 
+
+
+	if (isset($result['error'])) return;;
+
+   	$main = new SimpleXMLElement($result['GetVolume']['result_raw']);
+
+  
+	if (array_key_exists('error', $result)) {
+		// $properties['Playing']['value'] =  'Nothing';
+		// $properties['File']['value'] = '*';
+		// $properties['Artist']['value'] = '*';
+		// $properties['Title']['value'] =  '*';
+		// $properties['Thumbnail']['value'] = "https://xxxx/images/headers/offline.png?t=".rand();
+		// $properties['PlayingID']['value'] =  '0';
+		// $params['device']['properties'] = $properties;
+		// $feedback['error']='Error - Nothing playing';
+	} else {
+		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
+
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 6  ) ;
+
+		$params['device']['properties'] = $properties;
+	}	
+	$feedback['result'] = $result;
+
+	debug($feedback, 'feedback');
+	return $feedback;
+
+	// echo "</pre>";	
+} 
+
 function checkSyslog(&$params) {
 
 	debug($params, 'params');

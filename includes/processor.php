@@ -351,7 +351,7 @@ function RemoteKeys($in, $params, $onlyfilter = false) {
 	debug($params, 'params');
 
 	if ($in['show_result']) {
-		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1, 'redirect' => 1);
+		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'result' => 1, 'message' => 1, 'Link' => 1,  'volume' => 1, 'error' => 1, 'Timer Remaining' => 1, 'redirect' => 1);
 		doFilter($in, array( 'updateStatus' => 1,  'groupselect' => 1, 'message' => 1), $filterkeep, $result);
 	} else {
 		$filterkeep = array( 'Status' => 1, 'DeviceID' => 1, 'PropertyID' => 1, 'Link' => 1, 'error' => 1, 'Timer Remaining' => 1);
