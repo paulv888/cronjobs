@@ -97,7 +97,7 @@ if(!window.scriptRemoteHasRun) {
 			var repeattime = jQuery(this).attr("data-repeat-time")
 			jQuery(this).addClass('sending');
 			VloRemote.repeattimer = setInterval( function() { repeatSend(keys) }, repeattime );
-			console.log(VloRemote.repeattimer + " time: " + repeattime + "\n");
+			// console.log(VloRemote.repeattimer + " time: " + repeattime + "\n");
 		});	
 
 		function repeatSend(keys) {
@@ -421,18 +421,23 @@ if(!window.scriptRemoteHasRun) {
 					jQuery(this).removeClass("unknown");
 					jQuery(this).addClass(item.status);
 				} 
+
+				// if (typeof item.text !== 'undefined') {
+					// if (item.text.search('_apikey_')>=0) {
+						// item.text = item.text.replace('_apikey_', getUrlParameter('key') );
+						// console.log(item.text);
+					// }
+					// jQuery(this).html(item.text);
+				// }
 				if (typeof item.text !== 'undefined') {
 					if (item.text.search('_apikey_')>=0) {
 						item.text = item.text.replace('_apikey_', getUrlParameter('key') );
-						console.log(item.text);
+						// console.log(item.text);
 					}
-					jQuery(this).html(item.text);
-				}
-//				if (typeof item.text !== 'undefined') {
-//					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
-//						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
-//					}
-//				} 
+					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
+						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+					}
+				} 
 				if (typeof item.groupselect !== 'undefined') {
 					jQuery(this).addClass('group-select');
 				} 
