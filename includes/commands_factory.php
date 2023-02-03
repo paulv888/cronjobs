@@ -1790,6 +1790,21 @@ function refreshSAR(&$params) {
 	return $feedback;
 }
 
+function cleanDB(&$params) {
+
+	$hostName = $params['device']['shortdesc'];
+	$deviceID = $params['device']['id'];
+	$feedback['Name'] = 'cleanDB';
+	$feedback['result'] = array();
+	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/purge-piholedb';
+	$feedback['commandstr'] = $cmd;
+	$output = shell_exec($cmd);
+	debug($output, 'shell_exec');
+	// if (!empty(trim($output))) $feedback['error'] = $output;
+	$feedback['result'][$hostName] = $output;
+	return $feedback;
+}
+
 function createTimelapse(&$params) {
 
 	$hostName = $params['device']['shortdesc'];
