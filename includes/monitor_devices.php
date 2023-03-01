@@ -11,15 +11,17 @@ function monitorDevices($linkmonitor) {
 	if ($rows = FetchRows($mysql)) {
 		foreach ($rows as $rowlinks) {
 			if ($rowlinks['active'] > 0) {
-				monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['linkmonitor']);
+				$feedback[] = monitorDevice($rowlinks['deviceID'],$rowlinks['pingport'],$rowlinks['linkmonitor']);
 			}
 			
 		}
 	}
+	return $feedback;
 }
 
 function dmonitorDevices() {
-	monitorDevices('"POLL","NMAP"');
+	$feedback[] = monitorDevices('"POLL","NMAP"');
+	return $feedback;
 }
 
 function monitorDevice($deviceID, $pingport, $linkmonitor) {
@@ -28,15 +30,20 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 	if ($rowip = FetchRow($mysql)) {
 		$status = false;
 		//echo "$mysql\n";
+		$feedback['Name'] = $rowip['friendly_name'];
+		$feedback['result'] = array();
 		if (isset($rowip['ip'])) {
 			if ($pingport>0) {
 				if ($linkmonitor=='NMAP') {
-					$status = pingnmp($rowip['ip'],$pingport);
+					$feedback['ping'] = pingnmp($rowip['ip'],$pingport);
+					$status = $feedback['ping']['result'];
 				} else {
-					$status = pingport($rowip['ip'],$pingport,2);
+					$feedback['ping'] = pingport($rowip['ip'],$pingport,2);
+					$status = $feedback['ping']['result'];
 				}
 			} else {
-				$status = pingicmp($rowip['ip'],100);
+				$feedback['ping'] = pingicmp($rowip['ip'],100);
+				$status = $feedback['ping']['result'];
 			}
 		}
 
@@ -64,21 +71,39 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 
 function pingport($host, $port, $timeout) {
 	$fP = @fSockOpen($host, $port, $errno, $errstr, $timeout);
-	if (is_resource($fP)) return true;
-	return false;
+	$feedback['command'] = "fSockOpen(".$host.", ".$port.", ".$errno.", ".$errstr.", ".$timeout.")";
+	if (is_resource($fP)) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
 }
 
 function pingnmp($host, $port) {
 	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
 	$fP = exec($cmd, $output, $status);
-	if ($status==0) return true;
-	return false;
+	$feedback['command'] = $cmd;
+	if ($status==0) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
 }
 
 function pingicmp($host, $timeout) { 
 	$tB = microtime(true); 
 	$fP = exec("fping -t$timeout $host", $output, $status);
-	if ($status==0) return true;
-	return false;
+	$feedback['command'] = "fping -t$timeout $host";
+	if ($status==0) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
 }
 ?>

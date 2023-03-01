@@ -150,7 +150,7 @@ function PDOUpdate($table, $fields, $where){
 	foreach( $fields as $key => $value ){
 //		echo "Key: $key; Value: $value<br />\n";
 		if (is_array($value)) $value = json_encode($value,JSON_UNESCAPED_SLASHES);
-		if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
+		// if (get_magic_quotes_gpc()) { $value = stripslashes($value); }
 		if (is_null($value)) {
 			$value="NULL";
 		} elseif (strlen($value)==0) {

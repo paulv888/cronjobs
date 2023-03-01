@@ -570,7 +570,7 @@ function logEvent($log) {
 	}
 		
 		
-	PDOinsert("ha_events", $log);
+	PDOinsert("ha_events_full", $log);
 	debug($log, 'log');
 	return;
 }
