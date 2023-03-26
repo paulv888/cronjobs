@@ -4,7 +4,7 @@ define("MY_VPN_SUBNET", "192.168.10");
 
 define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos");
 
-if (strtoupper(gethostname()) == "VLOSITE") {
+if (strtoupper(gethostname()) == "HOME") {
 	define("DOCUMENT_ROOT", "/home/www/vlohome");
 	define("LOCAL_DATA", DOCUMENT_ROOT."/data");
 	define("LOCAL_MUSIC_VIDEOS", LOCAL_DATA."/musicvideos");

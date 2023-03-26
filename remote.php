@@ -29,10 +29,12 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#E9ECE5"/>
-<link rel="stylesheet" href="/templates/protostar-remote/css/template.css" type="text/css" media="screen" /> 
-<link rel="stylesheet" href="/templates/protostar-remote/css/woffs.css" type="text/css" media="screen" /> 
-<script src="/media/jui/js/jquery.min.js"></script>
-<script src="/media/jui/js/bootstrap.min.js"></script>
+<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/template.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/user.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/global/colors_alternative.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/system/css/joomla-fontawesome.css" type="text/css" media="screen" /> 
+<script src="/media/vendor/jquery/js/jquery.min.js"></script>
+<script async src="/templates/cassiopeia/js/bstrap3.min.js"></script>
 <script async src="<?php echo getPath(true);?>/js/remote.js"></script>
 </head>
 <body style="padding:0px;">
@@ -47,8 +49,9 @@ if (isset($_GET['name'])) {
    echo '<div class="keyscell" style="background-color: #222; color:#fff"> '.greeting().' '.$username.'</div>';
    loadRemote($remoteID, $apikey);?>
    <div class=" row-fluid">
-   <div class="pull-left" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div>
-   <div class="pull-right" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
+   <!--div class="float-start" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div-->
+   <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="flexSwitchCheckDefault">Auto Refresh</label></div>
+   <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
 	</div>
 	<div id="myDebug" class="debug" style="display:none"></div>

@@ -186,7 +186,7 @@ function loadRemoteDiv($divid, $params) {
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
 						echo '<ul class="dropdown-menu btndropdown ';
-						if (strlen($class)>1) echo ' '.$class;
+						// if (strlen($class)>1) echo ' '.$class;
 						echo '" role="menu" data-myvalue="'.$option[0].'"'; 			// properly set default to first
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						if (strlen($cellid)>1) echo ' id="'.$cellid.'"';

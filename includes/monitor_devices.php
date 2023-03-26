@@ -20,7 +20,15 @@ function monitorDevices($linkmonitor) {
 }
 
 function dmonitorDevices() {
-	$feedback[] = monitorDevices('"POLL","NMAP"');
+	// $feedback[] = monitorDevices('"POLL","NMAP"');
+	$feedback = monitorDevices('"POLL2"');
+		logEvent(array(
+			'inout' => COMMAND_IO_SEND, 
+			'callerID' => MY_DEVICE_ID, 
+			'commandID' => 464, 
+			'result' => $feedback,  
+			'commandstr' => $feedback['commandstr'], 
+			'data' => "monit-fast"));
 	return $feedback;
 }
 
@@ -71,7 +79,7 @@ function monitorDevice($deviceID, $pingport, $linkmonitor) {
 
 function pingport($host, $port, $timeout) {
 	$fP = @fSockOpen($host, $port, $errno, $errstr, $timeout);
-	$feedback['command'] = "fSockOpen(".$host.", ".$port.", ".$errno.", ".$errstr.", ".$timeout.")";
+	$feedback['commandstr'] = "fSockOpen(".$host.", ".$port.", ".$errno.", ".$errstr.", ".$timeout.")";
 	if (is_resource($fP)) {
 		$feedback['result'] = 1;
 		return $feedback;
@@ -84,7 +92,7 @@ function pingport($host, $port, $timeout) {
 function pingnmp($host, $port) {
 	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
 	$fP = exec($cmd, $output, $status);
-	$feedback['command'] = $cmd;
+	$feedback['commandstr'] = $cmd;
 	if ($status==0) {
 		$feedback['result'] = 1;
 		return $feedback;
@@ -97,7 +105,7 @@ function pingnmp($host, $port) {
 function pingicmp($host, $timeout) { 
 	$tB = microtime(true); 
 	$fP = exec("fping -t$timeout $host", $output, $status);
-	$feedback['command'] = "fping -t$timeout $host";
+	$feedback['commandstr'] = "fping -t$timeout $host";
 	if ($status==0) {
 		$feedback['result'] = 1;
 		return $feedback;

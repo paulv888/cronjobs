@@ -26,7 +26,7 @@ adb devices | grep -Fq "$1" | grep -Fq "device"
 IP="$1"
 function_connected $IP
 if [ $? == 0 ]; then
-  adb connect $IP
+  adb connect $IP:5555
   sleep 1
 fi
 
@@ -34,7 +34,7 @@ function_unauthorized
 if [ $? == 1 ]; then
   adb kill-server
   sleep 1
-  adb connect $IP
+  adb connect $IP:5555
   sleep 1
 fi
 
