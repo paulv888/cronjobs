@@ -191,7 +191,7 @@ function HvacDown(&$params) {
 function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $forcemove = false) {
 
 	$pdo = openDB();
-	$now = (string)date('Y-m-d H:i:s');
+	$now = '"'.(string)date('Y-m-d H:i:s').'"';
 
 	try
 	{
@@ -201,7 +201,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 		$queryInsert = $pdo->prepare( $sql );
 		$sql = "UPDATE hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
 		$statusUpdate = $pdo->prepare( $sql );
-		$sql = "INSERT INTO hvac_cycles( deviceID, system, start_time, end_time ) VALUES( ?, ?, ?, ? )";
+		$sql = "INSERT INTO hvac_cycles( `deviceID`, `system`, `start_time`, `end_time` ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
 	}
 	catch( Exception $e )
@@ -233,9 +233,9 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 		while( $row = $queryStatus->fetch( PDO::FETCH_ASSOC ) )
 		{ // This SQL had better pull only one row or else there is a data integrity problem!
 			// and without an ORDER BY on the SELECT there is no way to know you're geting the same row from this each time
-			$priorStartDateHeat = $row['start_date_heat'];			// NULL or actual start
-			$priorStartDateCool = $row['start_date_cool'];
-			$priorStartDateFan = $row['start_date_fan'];
+			$priorStartDateHeat = '"'.$row['start_date_heat'].'"';			// NULL or actual start
+			$priorStartDateCool = '"'.$row['start_date_cool'].'"';
+			$priorStartDateFan = '"'.$row['start_date_fan'].'"';
 			$priorHeatStatus = (bool)$row['heat_status'];			// 0 or 1
 			$priorCoolStatus = (bool)$row['cool_status'];
 			$priorFanStatus = (bool)$row['fan_status'];
@@ -263,7 +263,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 			if (!$forcemove) $newStartDateHeat = null;
 		}
 		if (($forcemove && $priorCoolStatus) || ($priorCoolStatus && !$coolStatus)) {
-			//logit( "$deviceID Finished Cool Cycle - Adding Hvac Cycle Record for $deviceID 2 $priorStartDateCool $now" );
+			debug(array( $deviceID, 2, $priorStartDateCool, $now ), 'cycleInsert');
 			$cycleInsert->execute( array( $deviceID, 2, $priorStartDateCool, $now ) );
 			if (!$forcemove) $newStartDateCool = null;
 		}

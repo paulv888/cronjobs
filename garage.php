@@ -23,7 +23,7 @@
    require_once 'includes.php'; 
    loadRemote(6);?>
    <div id='system-message-container'></div>
-   <div class="pull-right" style="padding:2px"><input type="button" class="btn button btn-info"  value="Refresh" 
+   <div class="float-end" style="padding:2px"><input type="button" class="btn button btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
 </body>
 </html>

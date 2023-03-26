@@ -31,8 +31,16 @@ if (!$runonce) {
 }
 
 while (true) {
-	monitorDevices('"POLL2"');
-        updateDLink(MY_DEVICE_ID);
+	$feedback = monitorDevices('"POLL2"');
+	$feedback['logTime'] = date("Y-m-d H:i:s");
+	logEvent(array(
+			'inout' => COMMAND_IO_SEND, 
+			'callerID' => MY_DEVICE_ID, 
+			'commandID' => 464, 
+			'result' => $feedback,  
+			'commandstr' => $feedback['commandstr'], 
+			'data' => "monit-fast"));
+	updateDLink(MY_DEVICE_ID);
  	sleep(5);
 	if ($runonce) break;
 }

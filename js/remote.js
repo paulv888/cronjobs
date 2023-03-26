@@ -1,4 +1,3 @@
-
 if(!window.scriptRemoteHasRun) { 
 	window.scriptRemoteHasRun = true; 
 
@@ -266,7 +265,7 @@ if(!window.scriptRemoteHasRun) {
 		if (jQuery("#autorefresh").length > 0) {
 			eventname = isMobile.any() ? "touchend" : "click";
 			jQuery("#autorefresh").bind(eventname, function(event){
-				if (jQuery(this).hasClass('active')) {
+				if (jQuery(this).is(":checked")) {
 					clearInterval(VloRemote.timer);
 					VloRemote.timer = false;
 				} else {
@@ -294,7 +293,7 @@ if(!window.scriptRemoteHasRun) {
 
 	function refreshDiv (showSpin, force) {
 
-		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").hasClass('active')) {
+		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").is(":checked")) {
 			console.log('refreshDiv');
 			var keys = [];
 			jQuery('.rem-button, .display').each(function() {
@@ -317,7 +316,7 @@ if(!window.scriptRemoteHasRun) {
 
 		var debug = getUrlParameter('debug');
 		if (typeof(debug) != "undefined") params.debug = debug;
-		console.log(params);
+		// console.log(params);
 
 		// Start timer, incase we missed the unhide event
 		VloRemote.timer = startTimer();

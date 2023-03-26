@@ -521,7 +521,7 @@ function storeCamImage($params) {
 	$file = LOCAL_LASTIMAGEDIR.'/'.trim($params['device']['description']).'.jpg';
 	$public_file = PUBLIC_LASTIMAGEDIR.'/'.rawurlencode(trim($params['device']['description']).'.jpg');
 
-	debug($file, 'file imsage location');
+	debug($file, 'file image location');
 	debug($offline, 'offline image');
 
 	// echo "storeCamImage <pre>";
@@ -1098,7 +1098,7 @@ function graphCreate($params) {
 			// $s = $rows[0]['Date'];
 			// $e = $rows[count($rows)-1]['Date'];
 			$average_count++;
-			$feedback['message'] .= '<p class="badge badge-info">Too much data; Averaging over: '.$average_count.' rows<p>';
+			$feedback['message'] .= '<p class="badge bg-info">Too much data; Averaging over: '.$average_count.' rows<p>';
 			$rows = $avg_rows;
 		}
 		$s = $rows[0]['Date'];
