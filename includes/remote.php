@@ -264,7 +264,7 @@ echo "</table>";
 }
 
 function getDisplayText($row) {
-	$text = null;
+	$text = "";
 	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
 		if (!empty($row['inputoptions'])) {
 			if (substr($row['inputoptions'], 0, 2) == "@@") {

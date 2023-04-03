@@ -201,7 +201,7 @@ function UpdateStatusCycle($deviceID, $heatStatus, $coolStatus, $fanStatus, $for
 		$queryInsert = $pdo->prepare( $sql );
 		$sql = "UPDATE hvac_status SET date = ?, start_date_heat = ?, start_date_cool = ?, start_date_fan = ?, heat_status = ?, cool_status = ?, fan_status = ? WHERE deviceID = ?";
 		$statusUpdate = $pdo->prepare( $sql );
-		$sql = "INSERT INTO hvac_cycles( `deviceID`, `system`, `start_time`, `end_time` ) VALUES( ?, ?, ?, ? )";
+		$sql = "INSERT INTO hvac_cycles( `deviceID`, `heat_cool`, `start_time`, `end_time` ) VALUES( ?, ?, ?, ? )";
 		$cycleInsert = $pdo->prepare( $sql );
 	}
 	catch( Exception $e )
@@ -296,8 +296,8 @@ function UpdateDailyRuntime($deviceID) {
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
 				FROM `hvac_cycles`
-				WHERE deviceID = '.$deviceID.' AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
-				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+				WHERE deviceID = '.$deviceID.' AND heat_cool = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
+				GROUP BY deviceID, heat_cool, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `heat_runtime` = c.runtime';
 	executeQuery(array( 'commandvalue' => $sql));		// Update Yesterday heat runtime
@@ -305,8 +305,8 @@ function UpdateDailyRuntime($deviceID) {
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
 				FROM `hvac_cycles`
-				WHERE deviceID ='.$deviceID.' AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
-				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+				WHERE deviceID ='.$deviceID.' AND heat_cool = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = subdate( DATE_FORMAT( NOW( ) , "%Y-%m-%d" ) , 1 )
+				GROUP BY deviceID, heat_cool, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `cool_runtime` = c.runtime';
 	executeQuery(array( 'commandvalue' => $sql));	// Update Yesterday Cool runtime
@@ -320,8 +320,8 @@ function UpdateDailyRuntime($deviceID) {
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
 				FROM `hvac_cycles`
-				WHERE deviceID ='.$deviceID.' AND system = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
-				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+				WHERE deviceID ='.$deviceID.' AND heat_cool = 1 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
+				GROUP BY deviceID, heat_cool, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `heat_runtime` = c.runtime';
 	executeQuery(array( 'commandvalue' => $sql));	// Update Heat runtime
@@ -329,8 +329,8 @@ function UpdateDailyRuntime($deviceID) {
 			(
 				SELECT deviceID, DATE_FORMAT( start_time,"%Y-%m-%d" ) AS date, sum( TIMESTAMPDIFF(MINUTE , start_time, end_time ) ) AS runtime
 				FROM `hvac_cycles`
-				WHERE deviceID = '.$deviceID.' AND system = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
-				GROUP BY deviceID, system, DATE_FORMAT( start_time, "%Y-%m-%d" )
+				WHERE deviceID = '.$deviceID.' AND heat_cool = 2 AND DATE_FORMAT( start_time, "%Y-%m-%d" ) = DATE_FORMAT( NOW( ) , "%Y-%m-%d" )
+				GROUP BY deviceID, heat_cool, DATE_FORMAT( start_time, "%Y-%m-%d" )
 			) c ON h.deviceID = c.deviceID AND c.date = h.date
 			SET `cool_runtime` = c.runtime';
 	executeQuery(array( 'commandvalue' => $sql)); // Update Cool runtime

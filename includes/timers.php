@@ -106,7 +106,7 @@ function runTimerSteps($params) {
 			if ($check_result['result'][0]) {
 				$step['callerID'] = $params['callerID'];
 				$step['messagetypeID'] = "MESS_TYPE_COMMAND";
-                                if (array_key_exists('loglevel', $params)) $step['loglevel'] = $params['loglevel'];
+                if (array_key_exists('loglevel', $params)) $step['loglevel'] = $params['loglevel'];
 				$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 				if ($timer['runasync']) {
 					$getparams = http_build_query($step, '',' '); 
