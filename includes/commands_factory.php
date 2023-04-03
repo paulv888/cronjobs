@@ -30,16 +30,60 @@ define( 'MAX_DATAPOINTS', 2000 );
 	//	debug($feedback, 'feedback');
 	// return $feedback;
 // }
-function monitorDevicesTimeout($params) {
+function monitorDevices($params) {
+
+function pingport($host, $port, $timeout) {
+	$fP = @fSockOpen($host, $port, $errno, $errstr, $timeout);
+	$feedback['commandstr'] = "fSockOpen(".$host.", ".$port.", ".$errno.", ".$errstr.", ".$timeout.")";
+	if (is_resource($fP)) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
+}
+
+function pingnmp($host, $port) {
+	$cmd = 'nmap -sS -p'.$port.' '.$host.' | grep -Fq "1 host"';
+	$fP = exec($cmd, $output, $status);
+	$feedback['commandstr'] = $cmd;
+	if ($status==0) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
+}
+
+function pingicmp($host, $timeout) { 
+	$tB = microtime(true); 
+	$fP = exec("fping -t$timeout $host", $output, $status);
+	$feedback['commandstr'] = "fping -t$timeout $host";
+	if ($status==0) {
+		$feedback['result'] = 1;
+		return $feedback;
+	} else {
+		$feedback['result'] = 0;
+		return $feedback;
+	}
+}
 
 	debug($params, 'params');
 
+
+	$feedback['Name'] = 'monitorDevices';
+	$feedback['result'] = array();
+	$params['callerID'] = $params['callerID'];
 	// Need to handle inuse and active
 	$devs = getDevicesWithProperties(Array( 'properties' => Array("Link")));
 
-	$feedback['Name'] = 'monitorDevicesTimeout';
-	$feedback['result'] = array();
-	$params['callerID'] = $params['callerID'];
+	if ($params['callerID'] == DEVICE_REMOTE) {
+		// test run
+		$onedev[$params['deviceID']] = $devs[$params['deviceID']];
+		$devs = $onedev;
+	}
 	// $date = getdate();
 	// $day = $date["wday"];	
 	foreach ($devs as $key => $props) {
@@ -48,6 +92,8 @@ function monitorDevicesTimeout($params) {
 			// ($props['Link']['active'] == 2 && ($day > 0 && $day < 6 )) ||
 			// ($props['Link']['active'] == 3 && ($day == 0 || $day == 6 )))) 
 		// {
+		debug($key, 'deviceID');
+		debug($props, 'props');
 		if (array_key_exists('linkmonitor', $props['Link']) && 
 			($props['Link']['active'] > 0)) 
 		{
@@ -56,13 +102,49 @@ function monitorDevicesTimeout($params) {
 				$params['device']['previous_properties'] = $props;
 				$properties['Link']['value'] = LINK_TIMEDOUT;
 				$params['device']['properties'] = $properties;
-				$feedback['result'] = updateDeviceProperties($params);
+				$feedback['result'][$params['deviceID']] = updateDeviceProperties($params);
+			}
+			if($props['Link']['linkmonitor'] == "NMAP" || $props['Link']['linkmonitor'] == "POLL" || $props['Link']['linkmonitor'] == "POLL2") {
+				$params['deviceID'] = $key;
+				$device = getDevice($params['deviceID']);
+				$status = false;
+
+				if (isset($device['ipaddress']['ip'])) {
+					if ((int)$props['Link']['pingport'] > 0) {
+						if ($props['Link']['linkmonitor'] == 'NMAP') {
+							$result = pingnmp($device['ipaddress']['ip'], (int)$props['Link']['pingport']);
+							$status = $result['result'];
+							$feedback['result'][$params['deviceID']]['ping'] = $result;
+						} else {
+							$result = pingport($device['ipaddress']['ip'],(int)$props['Link']['pingport'],2);
+							$status = $result['result'];
+							$feedback['result'][$params['deviceID']]['ping'] = $result;
+						}
+					} else {
+						$result = pingicmp($device['ipaddress']['ip'],100);
+						$status = $result['result'];
+						$feedback['result'][$params['deviceID']]['ping'] = $result;
+					}
+				}
+
+				if ($status) {
+					$curlink = LINK_UP;
+					$statverb = "Online";
+				} else {
+					$curlink = LINK_DOWN;
+					$statverb = "Offline";
+				}
+				$params['device']['previous_properties'] = $props;
+				$properties['Link']['value'] = $curlink;
+				$params['device']['properties'] = $properties;
+				$feedback['result'][$params['deviceID']]['updateDeviceProperties'] = updateDeviceProperties($params);
 			}
 		}
 	}
 
 	debug($feedback, 'feedback');
 	return $feedback;
+	
 }
 
 function createAlert(&$params) {

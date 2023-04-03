@@ -48,7 +48,7 @@ function dec2hex($num,$count=0)
  
         while ($num > 0)
         {
-                $tmp = $num % 16;
+                $tmp = (int)$num % 16;
                 $num = (int)$num / 16;
  
                 if ($num == 0) break;
@@ -475,7 +475,7 @@ if (isset($GLOBALS['debug'])) {
 		if (!isCLI()) echo '<div class="myDebugOutput myDebugHidden">';
 
 		if (is_object($content) || is_array($content)) {
-			echo (!isCLI() ? '<pre>' . htmlspecialchars(print_r($content, true)) . '</pre>' : print_r($content, true));
+			echo (!isCLI() ? '<pre>' . print_r($content, true) . '</pre>' : print_r($content, true));
 		} else {
 			// Remove any <pre> tags provided by e.g. JQuery::dump
 			if (!isCLI()) {
