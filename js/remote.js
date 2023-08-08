@@ -17,17 +17,11 @@ if(!window.scriptRemoteHasRun) {
 		Android: function() {
 			return /Android/i.test(navigator.userAgent);
 		},
-		BlackBerry: function() {
-			return /BlackBerry/i.test(navigator.userAgent);
-		},
 		iOS: function() {
 			return /iPhone|iPad|iPod/i.test(navigator.userAgent);
 		},
-		Windows: function() {
-			return /IEMobile/i.test(navigator.userAgent);
-		},
 		any: function() {
-			return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Windows());
+			return (isMobile.Android() || isMobile.iOS());
 		}
 	};
 
@@ -118,10 +112,9 @@ if(!window.scriptRemoteHasRun) {
 		});
 
 		// regular up
-		//jQuery('.click-up').unbind('click');
 		eventname = isMobile.any() ? "touchend" : "click";
 		jQuery('.click-up').unbind(eventname);
-		jQuery('.click-up').bind(eventname, function(event){
+		jQuery('.click-up').on(eventname, function(event){
 			event.preventDefault()
 			//event.stopImmediatePropagation()
 			var commandvalue = 100;
@@ -138,8 +131,8 @@ if(!window.scriptRemoteHasRun) {
 
 		// Generic dropdown button
 		eventname = isMobile.any() ? "touchend" : "click";
-		jQuery('.btndropdown li a').unbind(eventname);
-		jQuery('.btndropdown li a').bind(eventname, function(event){
+		jQuery('.btndropdown a').unbind(eventname);
+		jQuery('.btndropdown a').bind(eventname, function(event){
 			event.preventDefault()
 			//event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
@@ -148,7 +141,7 @@ if(!window.scriptRemoteHasRun) {
 			var selectedtext = jQuery(this).text();
 			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
 			var keys = [];
-			keys.push(jQuery(this.parentNode.parentNode).attr("data-remotekey"));
+			keys.push(jQuery(this.parentNode.parentNode).find('.rem-button').attr('data-remotekey'));
 			if (selected.charAt(0) == 'S') {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
 			} else if (selected.charAt(0) == 'C') {
@@ -157,41 +150,6 @@ if(!window.scriptRemoteHasRun) {
 				var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandvalue:selected.substring(1)};
 			}
 			callAjax (params) ;
-		});
-
-		// Dimmer dropdowns
-		eventname = isMobile.any() ? "touchend" : "click";
-		jQuery('.dimmer li a').unbind(eventname);
-		jQuery('.dimmer li a').bind(eventname, function(event){
-			event.preventDefault()
-			// event.stopImmediatePropagation()
-			var mbut = this.parentNode.parentNode.parentNode;
-			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
-			var selected = jQuery(this).attr('data-value');
-			var selectedtext = jQuery(this).text();
-			jQuery(this.parentNode.parentNode).attr('data-myvalue', selected);
-
-			// now find all selected button and send dim value (Either selected over click or over group)
-			var keys = [];
-			jQuery('.group-select').each(function() {
-				keys.push(jQuery(jQuery(this)).attr('data-remotekey'));
-			}) ;
-			if (keys.length > 0) {
-				if (selected.charAt(0) == 'S') {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_SCHEME', keys: keys, schemeID:selected.substring(1), commandvalue:selectedtext};
-				} else if (selected.charAt(0) == 'C') {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys , commandID:selected.substring(1)};
-				} else if (selected.charAt(0) == 'V') {
-					var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_REMOTE_KEY', keys: keys, commandID: VloRemote.COMMAND_SET_VALUE, commandvalue: parseInt(selected.substring(1))};
-				}
-				callAjax (params) ;
-			}
-			if (selected == "19") {					// On/Off toggle
-				jQuery(mbut).removeClass('btn-info');
-				jQuery(mbut).addClass('btn-warning');
-			} else {								// dim value
-				if (keys.length == 0) showMessage('Please select lights you want to dim or on/off together');
-			}
 		});
 
 		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
@@ -433,8 +391,17 @@ if(!window.scriptRemoteHasRun) {
 						item.text = item.text.replace('_apikey_', getUrlParameter('key') );
 						// console.log(item.text);
 					}
-					if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
-						jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+					// if (typeof jQuery(this .getElementsByClassName("buttontext")[0]) !== 'undefined') {
+						// jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+					// }
+				
+					if (jQuery(this).find('.buttontext').length > 0) {  // User this for dropdowns where text is in buttontext
+						jQuery(this).find('.buttontext').html(item.text);
+						// jQuery(this .getElementsByClassName("buttontext")[0]).html(item.text);
+						// console.log ("found"+this);
+					} else {
+						// console.log ("not"+this);
+						this.innerHTML = item.text;
 					}
 				} 
 				if (typeof item.groupselect !== 'undefined') {
