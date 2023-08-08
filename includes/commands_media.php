@@ -2046,6 +2046,12 @@ function youtubeDL($url, $options = YT_VIDEO_ONLY) {
 				$feedback['filename'] = $filename;
 			}
 			debug($matches,'matches');
+			$found = preg_match('/\[download\]  Destination:(.*)/',$strOut,$matches);
+			if (array_key_exists(1, $matches)) { 	// Filename found
+				$filename = $matches[1];
+				$feedback['filename'] = $filename;
+			}
+			debug($matches,'matches');
 		} 
 		if (!array_key_exists('filename', $feedback)) $feedback['error'] = "No Filename";
 		break;

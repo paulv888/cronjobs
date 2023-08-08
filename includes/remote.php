@@ -164,13 +164,15 @@ function loadRemoteDiv($divid, $params) {
 					echo "</td>";
 				} else {
 					if ($rowremotekeys['inputtype']=="btndropdown") {
-						echo '<div style="position: relative;height:100%">';
-						echo '<button class="btn btn-block dropdown-toggle rem-button';
+						echo '<div class="dropdown" style="position: relative;height:100%"';
+						echo '>';
+						echo '<button class="rem-button btn btn-block dropdown-toggle';
 						if (strlen($status)>1) echo ' '.$status;
 						if (strlen($link)>1) echo ' '.$link;
 						if (strlen($class)>1) echo ' '.$class;
 						echo '"';
 						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
+						echo ' data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" ';
 						echo ' type="button" data-toggle="dropdown">';
 //							echo '<div>'.$rowremotekeys['name'].'</div> </button>';
 //							echo '<i class="btn-icon icon-arrow-down-3 rem-icon-left"></i>';
@@ -181,26 +183,29 @@ function loadRemoteDiv($divid, $params) {
 							echo '</i>';
 						}
 						$text = getDisplayText($rowremotekeys);
-						echo '<span class="buttontext">'.$text.'</span><span> </span><span class="caret"></span></button>';
+						echo '<span class="buttontext">'.$text.'&nbsp;</span>';
+						// <span> </span><span class="caret"></span>
+						echo '</button>';
 
 						$options = explode(";",$rowremotekeys['inputoptions']);
 						$option = explode(",",$options[0]);
-						echo '<ul class="dropdown-menu btndropdown ';
+						echo '<div class="dropdown-menu btndropdown "';
 						// if (strlen($class)>1) echo ' '.$class;
-						echo '" role="menu" data-myvalue="'.$option[0].'"'; 			// properly set default to first
-						echo ' data-remotekey="'.$rowremotekeys['id'].'"';
+						echo 'aria-labelledby="dropdownMenuButton"';
+						echo ' data-myvalue="'.$option[0].'"'; 			// properly set default to first
+						// echo ' data-remotekey="'.$rowremotekeys['id'].'"';
 						if (strlen($cellid)>1) echo ' id="'.$cellid.'"';
 						echo '>';
 						//$first= true;
 						foreach ($options as $optionstring) {
 							$option = explode(",",$optionstring);
 							if ($option[0] == '-') {
-								echo '<li class="divider"></li>';
+								echo '<span class="dropdown-item divider"></span>';
 							} else {
-								echo '<li><a href=# data-value="'.$option[0].'">'.$option[1].'</a></li>';
+								echo '<a class="dropdown-item" href=# data-value="'.$option[0].'">'.$option[1].'</a>';
 							}
 						}
-						echo '</ul></div>';
+						echo '</div>';
 						echo '</td>';
 					}
 					if ($rowremotekeys['inputtype']=="dropdown") {
