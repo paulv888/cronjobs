@@ -4,7 +4,17 @@ require_once 'includes.php';
 if (isset($_GET['callerID'])) {
 	$_POST=$_GET;
 }
-
+// if (isset($_POST['apikey'])) {
+	// $found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$_POST['apikey'].'"');
+	// if ($found) {
+		// $username = $found['username'];
+	// } else {
+	    // die('Not Authorized'); 
+    // }
+	// $apikey = $_POST['apikey'];
+// } else {
+	// die('Not Authorized');
+// }
 
 if (isset($argv)) {
 	// var_dump($argv);
