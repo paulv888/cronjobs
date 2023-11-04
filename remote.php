@@ -29,12 +29,12 @@ if (isset($_GET['name'])) {
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#E9ECE5"/>
-<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/template.css" type="text/css" media="screen" /> 
-<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/user.css" type="text/css" media="screen" /> 
-<link rel="stylesheet" href="/media/templates/site/cassiopeia/css/global/colors_alternative.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/template.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/user.css" type="text/css" media="screen" /> 
+<link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/global/colors_alternative.css" type="text/css" media="screen" /> 
 <link rel="stylesheet" href="/media/system/css/joomla-fontawesome.css" type="text/css" media="screen" /> 
 <script src="/media/vendor/jquery/js/jquery.min.js"></script>
-<script async src="/templates/cassiopeia/js/bstrap3.min.js"></script>
+<script async src="/templates/mod-cassiopeia/js/bstrap3.min.js"></script>
 <script async src="<?php echo getPath(true);?>/js/remote.js"></script>
 </head>
 <body style="padding:0px;">

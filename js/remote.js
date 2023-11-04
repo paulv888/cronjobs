@@ -274,6 +274,9 @@ if(!window.scriptRemoteHasRun) {
 
 		var debug = getUrlParameter('debug');
 		if (typeof(debug) != "undefined") params.debug = debug;
+
+    	params.apikey = getUrlParameter('key');
+
 		// console.log(params);
 
 		// Start timer, incase we missed the unhide event
@@ -307,6 +310,8 @@ if(!window.scriptRemoteHasRun) {
 
 		var debug = getUrlParameter('debug');
 		params.debug = debug;
+    	params.apikey = getUrlParameter('key');
+		
 		var d = new Date();
 		params.time = +d.getTime();
 		
