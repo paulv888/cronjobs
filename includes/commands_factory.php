@@ -903,7 +903,8 @@ function sendGenericHTTP(&$params) {
 			$morepage = $tmp1[0];
 			array_shift($tmp1);
 			$tcomm = implode('?',$tmp1);
-		} 
+		}
+		$tcomm = trim($tcomm);
 		$url = setURL($params, $morepage);
 		if ($targettype == "POSTTEXT") { 
 			$feedback['commandstr'] = $url.' '.htmlentities($tcomm);
@@ -1573,6 +1574,45 @@ function volumeUpKey(&$params) {
 
 		$params['device']['properties'] = $properties;
 	}	
+	$feedback['result'] = $result;
+
+	debug($feedback, 'feedback');
+	return $feedback;
+
+	// echo "</pre>";	
+} 
+
+function setDefaultVolume(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['result'][] = array();
+	$feedback['Name'] = 'setDefaultVolume';
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+
+
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = 382;
+
+	$DayOfWeekNumber = date("w");
+	switch($DayOfWeekNumber)
+	{
+		case 0 : 
+		case 6 : 
+			$command['commandvalue'] = 50;
+			break;
+		default :
+			$hour = intval(date("H"));
+			if ($hour > 6 and $hour <= 16) {
+				$command['commandvalue'] = 30;
+			} else {
+				$command['commandvalue'] = 50;
+			}
+			break;
+	}
+
+	$result['setVolumeAbsolute'] = sendCommand($command); 
 	$feedback['result'] = $result;
 
 	debug($feedback, 'feedback');
