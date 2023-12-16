@@ -574,6 +574,7 @@ function storeNatSessions(&$params) {
 			}
 
 			$pairs['local_name']= gethostbyaddr($pairs['local_address']);
+			$pairs['remote_name']= $pairs['remote_address'];
 			// $pairs['remote_name']= gethostbyaddr($pairs['remote_address']);
 			// $pairs['local_name']= $pairs['local_address'];
 			// $pairs['remote_name']= $pairs['remote_address'];
