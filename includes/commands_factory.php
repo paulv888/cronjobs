@@ -428,66 +428,6 @@ function setSessionVar(&$params) {
 	return $feedback;
 }
 
-function getNowPlaying(&$params) {
-
-	debug($params, 'params');
-
-	$feedback['Name'] = 'getNowPlaying';
-	$feedback['result'] = array();
-
- 	$command['caller'] = $params['caller'];
-	$command['callerparams'] = $params;
-	$command['deviceID'] = $params['deviceID']; 
-	$command['commandID'] = COMMAND_GET_VALUE;
-	$result = sendCommand($command); 
-
-
-	// echo "<pre>";	
-
-	if (array_key_exists('error', $result)) {
-		$properties['Playing']['value'] =  'Nothing';
-		$properties['File']['value'] = '*';
-		$properties['Artist']['value'] = '*';
-		$properties['Title']['value'] =  '*';
-		$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
-		$properties['PlayingID']['value'] =  '0';
-		$params['device']['properties'] = $properties;
-		$feedback['error']='Error - Nothing playing';
-	} else {
- 		$result = $result['result_raw'];
-		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
-			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
-		} else {
-			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
-		}
-		if (!empty(trim($result['result']['item']['file']))) {
-			$br = strpos( $properties['Playing']['value'] , ' - ');
-			if ($br !== false) {
-				$properties['Artist']['value'] = substr($properties['Playing']['value'], 0, $br);
-				$properties['Title']['value'] =  substr($properties['Playing']['value'], $br + 3);
-			}
-			$properties['File']['value'] = $result['result']['item']['file'];
-			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
-			if (array_key_exists('id', $result['result']['item'])) $properties['PlayingID']['value'] =  $result['result']['item']['id'];
-			$params['device']['properties'] = $properties;
-			$feedback['message'] = $properties['Playing']['value'];
-		} else {
-			$properties['Playing']['value'] =  'Nothing';
-			$properties['File']['value'] = '*';
-			$properties['Artist']['value'] = '*';
-			$properties['Title']['value'] =  '*';
-			$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
-			$properties['PlayingID']['value'] =  '0';
-			$params['device']['properties'] = $properties;
-			$feedback['error']='Error - Nothing playing';
-		}
-		// Handle KODI error
-	}	
-
-	debug($feedback, 'feedback');
-	return $feedback;
-} 
-
 function fireTVreboot($params) {
 
 	debug($params, 'params');
