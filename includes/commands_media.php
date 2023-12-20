@@ -1306,8 +1306,9 @@ function fabrikListButton($params) {
 		}
 		break;
 		//var params = {callerID: VloRemote.MY_DEVICE_ID, messagetypeID: 'MESS_TYPE_COMMAND', commandID: 492, deviceID: 260, commandvalue: rows[ids].xbmc_video_musicvideos_list___idFile+'|'};
-	case 315:
-		$mysql = 'SELECT * FROM `xbmc_video_musicvideos_list` WHERE id IN ('.implode(',',$params['commandvalue']).')';
+	case 167: // Music Videos
+	case 315: // Music Videos List
+		$mysql = 'SELECT * FROM `xbmc_video_musicvideos_list` WHERE idFile IN ('.implode(',',$params['commandvalue']).') ORDER BY FIND_IN_SET(idFile, "'.implode(',',$params['commandvalue']).'")' ;
 		if ($rows = FetchRows($mysql)) {
 			$func = $params['action'];
 			switch ($func) {
@@ -1319,6 +1320,7 @@ function fabrikListButton($params) {
 				break;
 			}
 			foreach ($rows as $row) {
+				debug ($row, "Current Row");
 				switch ($func) {
 				case "createMoveQueueItem":
 					$params['value_parts'][0] = $row['idFile'];
@@ -1335,12 +1337,11 @@ function fabrikListButton($params) {
 					// Already done above
 					break;
 				case "addVideosToQueue":
-					$command['callerparams'] = $params;
-					$command['deviceID'] = $params['deviceID']; 
-					$command['commandID'] = COMMAND_RUN_SCHEME;
-					$command['schemeID'] = 268;
-					$command['commandvalue'] = $row['file'];
-					$feedback['result'][] = sendCommand($command); 
+					$tempparams = $params;
+					$tempparams['commandvalue'] = $row['file'];
+					$tempparams['commandID'] = COMMAND_RUN_SCHEME;
+					$tempparams['schemeID'] = 268;
+					$feedback['result'][] = sendCommand($tempparams); 
 					break;
 				default:
 					$feedback['error'] = "Not a supported action: ".$params['action'];
@@ -1357,6 +1358,107 @@ function fabrikListButton($params) {
 	debug($feedback, 'feedback');
 	return $feedback;
 }
+
+
+function checkFavorites(&$params) {
+
+	$feedback['Name'] = 'checkFavorites';
+	$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+	$feedback['message'] = "all good";
+	
+	// UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1
+	$mysql='SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title;';
+	debug($mysql, 'mysql');
+
+	$feedback['result'] = array();
+	if ($rows = FetchRows($mysql)) {
+		$message = "";
+		foreach ($rows as $row) {
+			$message .= implode(" ", $row).CRLF;
+		}
+		$message .= 'Verify: SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title'.CRLF;
+		$message .= 'Update: UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1';
+	
+		debug ($message, "$message");
+		$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'], 
+		   'schemeID'=>SCHEME_ALERT_HIGH, 
+		   'commandvalue'=>"Found non-matching artist/titles in playlists|".$message));
+		$feedback['error'] = "Found non-matching artist/titles in playlists".CRLF;
+
+	}
+
+
+	debug($feedback, 'feedback');
+	
+	return $feedback;
+}
+
+
+
+function getNowPlaying(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'getNowPlaying';
+	$feedback['result'] = array();
+
+ 	$command['caller'] = $params['caller'];
+	$command['callerparams'] = $params;
+	$command['deviceID'] = $params['deviceID']; 
+	$command['commandID'] = COMMAND_GET_VALUE;
+	$result = sendCommand($command); 
+
+
+	// echo "<pre>";	
+
+	if (array_key_exists('error', $result)) {
+		$properties['Playing']['value'] =  'Nothing';
+		$properties['File']['value'] = '*';
+		$properties['Artist']['value'] = '*';
+		$properties['Title']['value'] =  '*';
+		$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
+		$properties['PlayingID']['value'] =  '0';
+		$params['device']['properties'] = $properties;
+		$feedback['error']='Error - Nothing playing';
+	} else {
+ 		$result = $result['result_raw'];
+		if (array_key_exists('artist', $result['result']['item']) && array_key_exists('0', $result['result']['item']['artist'])) {
+			$properties['Playing']['value'] =  $result['result']['item']['artist'][0].' - '.$result['result']['item']['title'];
+		} else {
+			$properties['Playing']['value'] = substr($result['result']['item']['label'], 0, strrpos ($result['result']['item']['label'], "."));
+		}
+		if (!empty(trim($result['result']['item']['file']))) {
+			$br = strpos( $properties['Playing']['value'] , ' - ');
+			if ($br !== false) {
+				$properties['Artist']['value'] = substr($properties['Playing']['value'], 0, $br);
+				$properties['Title']['value'] =  substr($properties['Playing']['value'], $br + 3);
+			}
+			$properties['File']['value'] = $result['result']['item']['file'];
+			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
+			if (array_key_exists('id', $result['result']['item'])) {
+				$properties['PlayingID']['value'] =  
+					FetchRow('select idFile from xbmc_video_musicvideos where idMVideo='.$result['result']['item']['id'])['idFile'];
+			}
+			$params['device']['properties'] = $properties;
+			$feedback['message'] = $properties['Playing']['value'];
+		} else {
+			$properties['Playing']['value'] =  'Nothing';
+			$properties['File']['value'] = '*';
+			$properties['Artist']['value'] = '*';
+			$properties['Title']['value'] =  '*';
+			$properties['Thumbnail']['value'] = SERVER_HOME."/images/headers/offline.png?t=".rand();
+			$properties['PlayingID']['value'] =  '0';
+			$params['device']['properties'] = $properties;
+			$feedback['error']='Error - Nothing playing';
+		}
+		// Handle KODI error
+	}	
+
+	debug($feedback, 'feedback');
+	return $feedback;
+} 
+
 
 function playVideosNow(&$params) {
 	debug($params, 'params');
@@ -2234,35 +2336,148 @@ function moveMusicVideo($params) {
 	return $feedback;
 } 
 
-function addToFavorites(&$params) {
+function startPlaylistIntent(&$params) {
+
+	$feedback['Name'] = 'StartPlaylistIntent';
+	$feedback['commandstr'] = "I send this";
+	$feedback['result'] = array();
+	debug($params, 'params');
+
+	if ($playlist = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['commandvalue']).'"')) {
+		$playlistID = $playlist['id'];
+		$playlistDescription = $playlist['description'];
+
+		$mysql = 'SELECT file FROM `vd_playlist_files` f join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.playlistID = '
+				  .$playlistID;
+				  
+		if ($rows = FetchRows($mysql)) {	// Has files
+			// Handle all at once
+			$tempparams = $params;
+			$tempparams['commandvalue'] = $rows;
+			$feedback['result'][] = playVideosNow($tempparams);
+			$feedback['message'] = "all good";
+		}
+
+		$feedback['message'] = "all good";
+	} else {
+		$feedback['error'] = "Error - Could not find playlist files".$params['commandvalue']."<".CRLF;
+	}
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
+function updatePlaylist(&$params) {
 
 	debug($params, 'params');
 
-	$feedback['Name'] = 'addToFavorites';
+	$feedback['Name'] = 'updatePlaylist';
 	$feedback['result'] = array();
- 
-	$file = LOCAL_PLAYLISTS.'/'.$params['macro___commandvalue'].'.m3u';
+
 	$error = "";
-	if (($playlist = file_get_contents($file)) !== false) {
-		$playingfile = $params['device']['previous_properties']['File']['value'];
-		$playing = $params['device']['previous_properties']['Playing']['value'];
-		if (strpos($playlist, $playingfile) === false) {
-			$playlist .= $playingfile."\n";
-			if (file_put_contents($file, $playlist) === false) $error = "Could not write playlist ".$file.'|';
-			$feedback['message'] = 'Added to - '.$params['macro___commandvalue'].'|'.$playing;
+ 
+
+	if (strtoupper($params['macro___commandvalue']) == '#REMOVE') {
+		$addMode = false;
+	} else {
+		$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['macro___commandvalue']).'"')['id'];
+		$addMode = true;
+	}
+		
+
+	$playingArtist = $params['device']['previous_properties']['Artist']['value'];
+	$playingTitle = $params['device']['previous_properties']['Title']['value'];
+	
+	if ($playingArtist != '*') { 
+
+		
+		if ($addMode) {// Add it
+			$mysql = 'SELECT id FROM vd_playlist_files 
+				WHERE 
+				  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
+				  UCASE(`title`)="'.strtoupper($playingTitle).'" AND 
+				  `playlistID` ='. $playlistID.';' ;
+		  
+			$playlistFilesID = FetchRow($mysql)['id'] ;
+			debug($playlistFilesID);
+
+			if (!$playlistFilesID) { 
+				PDOUpsert("vd_playlist_files", 
+						array('playlistID' => $playlistID, 
+							'idFile' => $params['device']['previous_properties']['PlayingID']['value'],
+							'artist' => $playingArtist,
+							'title' => $playingTitle), 
+						array('idFile' => $params['device']['previous_properties']['PlayingID']['value'])); 
+				PDOUpdate("xbmc_video_musicvideos_list", 
+						array('playlist' => $playlistID), array('idFile' => $params['device']['previous_properties']['PlayingID']['value'])); 
+				$feedback['message'] = 'Added to - '.$params['macro___commandvalue'].'|'.$playingArtist." - ".$playingTitle;
+			} else {
+				$feedback['message'] = 'Already part of - '.$playingArtist." - ".$playingTitle.'|'.$playingArtist." - ".$playingTitle;
+			}
 		} else {
-			$feedback['message'] = 'Already part of - '.$params['macro___commandvalue'].'|'.$playing;
+			$mysql = 'SELECT id FROM vd_playlist_files 
+				WHERE 
+				  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
+				  UCASE(`title`)="'.strtoupper($playingTitle).'"' ;
+		  
+			$playlistFilesID = FetchRow($mysql)['id'] ;
+			debug($playlistFilesID);
+			if ($playlistFilesID) { 
+				$mysql = 'DELETE FROM vd_playlist_files WHERE id = '.$playlistFilesID;
+				debug($mysql);
+				$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
+				$feedback['result'][] = PDOUpdate("xbmc_video_musicvideos_list", 
+						array('playlist' => Null), array('idFile' => $params['device']['previous_properties']['PlayingID']['value'])); 
+				$feedback['message'] = 'Removed from playlist - '.$playingArtist." - ".$playingTitle.'|'.$playingArtist." - ".$playingTitle;
+			} else {
+				$feedback['message'] = 'Cannot Remove, Not on a playlist';
+			}
 		}
 	} else {
-		$error = 'Could not open playlist: '.$params['macro___commandvalue'].'|';
-	}
-	if (!empty($error)) {
-		$feedback['error'] = 'Could not open playlist - '.$params['macro___commandvalue'].'|';
+		$feedback['message'] = 'Cannot add, nothing is playing';
 	}
 
 	debug($feedback, 'feedback');
 	return $feedback;
 } 
+
+function removeFromFavorites(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'removeFromFavorites';
+	$feedback['result'] = array();
+ 
+// $params['macro___commandvalue'] = "Dance"; 
+ 
+	if (!$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['macro___commandvalue']).'"')['id'])
+		
+
+	$error = "";
+	$playingArtist = $params['device']['previous_properties']['Artist']['value'];
+	$playingTitle = $params['device']['previous_properties']['Title']['value'];
+
+	$mysql = 'SELECT id FROM vd_playlist_files 
+		WHERE 
+		  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
+		  UCASE(`title`)="'.strtoupper($playingTitle).'";';
+  
+	if (!$playlistFilesID = FetchRow($mysql)) { // Add it
+		PDOInsert("vd_playlist_files", 
+				array('playlistID' => $playlistID, 
+					'idFile' => $params['device']['previous_properties']['PlayingID']['value'],
+					'artist' => $playingArtist,
+					'title' => $playingTitle)); 
+		$feedback['message'] = 'Added to - '.$params['macro___commandvalue'].'|'.$playingArtist." - ".$playingTitle;
+	} else {
+		$feedback['message'] = 'Already part of - '.$params['macro___commandvalue'].'|'.$playingArtist." - ".$playingTitle;
+	}
+
+	debug($feedback, 'feedback');
+	return $feedback;
+} 
+
+
 
 function mv_toLocal($filename) {
 	return (str_ireplace(KODI_MUSIC_VIDEOS,LOCAL_MUSIC_VIDEOS,$filename));
