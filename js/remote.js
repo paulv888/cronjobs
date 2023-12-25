@@ -236,7 +236,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery(window).blur(function(){
 			clearInterval(VloRemote.timer);
 			VloRemote.timer = false;
-			console.log('JQuery Hiding');
+			console.log('Not Active, update 5 min');
 		});
 
 		jQuery(window).focus(function(){
@@ -288,7 +288,7 @@ if(!window.scriptRemoteHasRun) {
 				url: 	VloRemote.url,
 				method: 'post',
 				data: params,
-				timeout: 60000,
+				timeout: 360000,
 				success: function(data)
 				{
 					processData(data);
@@ -433,7 +433,12 @@ if(!window.scriptRemoteHasRun) {
 			}, 6000);
 			return timer;
 		} else {
-			return VloRemote.timer;
+			clearInterval(VloRemote.timer);
+			timer = window.setInterval(function(){
+				refreshDiv(false, false);
+			}, 60000);
+			return timer;
+			// return VloRemote.timer;
 		}
 	}
 
