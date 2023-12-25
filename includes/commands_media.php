@@ -332,9 +332,9 @@ function createThumbNails(&$params) {
 	// if () $feedback['error'] = "Not so good";
 
 	if (!empty($params['value_parts'][1])) {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
 	} else {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list'; 
 	}
 
 	$feedback['message'] = '';
@@ -378,9 +378,9 @@ function createNFOs(&$params) {
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 	if (!empty($params['value_parts'][1])) {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
 	} else {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list'; 
 	}
 
 	// echo $mysql.CRLF;
@@ -595,8 +595,6 @@ function findBadNamesLocations(&$params) {
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE idFile = "37969";';
-	//$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = "1379";';
 	$mysql = 'SELECT * FROM xbmc_video_musicvideos';
 
 	// echo $mysql.CRLF;
@@ -692,12 +690,12 @@ function reverseArtistTitle(&$params) {
 
 	$feedback['Name'] = 'reverseArtistTitle';
 
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 				JOIN xbmc_path p ON mv.strPathID = p.id 
 				WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" )';
 	if (!($mvids = FetchRows($mysql))) {	// Did not find this artist, check title if maybe reversed
 		$feedback['error'] = "Artist not found";
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
 					WHERE artist = "'.$params['file']['title']. '";';
 		if ($mvids = FetchRows($mysql)) {	// Did find title as artist	
@@ -816,7 +814,7 @@ function findMoveTo(&$file) {
 		$file['moveto'] = LOCAL_DATA.$genrefolders[$key].$file['artist'].'/';
 	} else {
 
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
 					WHERE (`artist` = "'.$file['artist']. '" OR artist LIKE "'.$file['artist']. ' /%" )
 					AND genre = "'.$file['genre'].'";'; 
@@ -827,7 +825,7 @@ function findMoveTo(&$file) {
 			// Just get he first one? Care about majority?
 			findBestMatch($file, $mvids);
 		} else {								// Try to find artist
-			$mysql = 'SELECT * FROM xbmc_video_musicvideos mv 
+			$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 						JOIN xbmc_path p ON mv.strPathID = p.id 
 						WHERE (`artist` = "'.$file['artist']. '" OR artist LIKE "'.$file['artist']. ' /%");';
 			if ($mvids = FetchRows($mysql)) {		// Found this artist
@@ -1044,6 +1042,110 @@ function searchTracksForArtist(&$params) {
 	return $feedback;
 }
 
+function testSearchSpotify(&$params) {
+
+	debug($params, 'params');
+	$feedback['Name'] = 'testSearchSpotify';
+	$feedback['result'] = array();
+
+	$artistID = $params['commandvalue'];
+	$mysql = 'SELECT `actor_id`,`artist`,`title` FROM `xbmc_actor_link` WHERE `actor_id`= '.$artistID;
+	$count = 0;
+	$result = Array();
+	$artist = Array();
+	// if ($rows = FetchRows($mysql)) {
+		// foreach ($rows as $row) { // Itereate all (till count of 4 found
+			// $params['commandvalue'] = $params['file']['artist'].' '.$row['title'];
+			// $params['function'] = 'search';
+			// $params['search']['type'] = 'track';
+			// $result = searchSpotify($params);
+			// if (array_key_exists('error',$result)) {
+				// $feedback['result'][] = $result;
+				// debug($feedback, 'feedback');
+				// return $feedback;
+			// } else {
+				// $result = $result['result'];
+				// $items = $result->tracks->items;
+				// if (array_key_exists(0, $items)) {
+					// $id = $items[0]->album->artists[0]->id;
+					// if (array_key_exists($id, $artist)) {
+						// $artist[$id]->count++;
+						// if ($artist[$id]->count > 3) break; 
+					// } else {
+						// $artist[$id] = $items[0]->album->artists[0];
+						// $artist[$id]->count = 1;
+					// }
+				// }
+				// $feedback['result']['tracks'][] = $result;
+			// }
+		// }
+	// }
+
+	$params['commandvalue'] = "Adele";
+	$params['function'] = 'search';
+	$params['search']['type'] = 'artist';
+	$result = searchSpotify($params);
+	debug($result, 'searchArtist');
+
+	$result = $result['result'];
+	$items = $result->artists->items;
+	if (array_key_exists(0, $items)) {
+		$id = $items[0]->id;
+		if (array_key_exists($id, $artist)) {
+			$artist[$id]->count++;
+		} else {
+			$artist[$id] = $items[0];
+			$artist[$id]->count = 1;
+		}
+	}
+
+	usort($artist, function($a, $b) {return $a->count < $b->count;});
+	$feedback['result'][] = $artist;
+	debug($artist, 'Artists/Tracks found');
+
+	foreach ($artist as $art) {
+		debug(strtolower(clearUTF ($art->name)), 'clearUTF'); 
+		debug(strtolower(clearUTF ($params['file']['artist'])), 'clearUTF');
+		if (strtolower(clearUTF ($art->name)) == 
+			 strtolower(clearUTF ($params['file']['artist']))) {
+			$foundArtist = $art;
+			$foundArtist->count = $foundArtist->count+10;
+			debug (true, 'Found matching name');
+			break;
+		}
+	}
+
+
+	if (count($artist) > 0) {
+
+		if (empty($foundArtist)) $foundArtist = $artist[0];
+
+		try {
+			$params['function'] = 'getArtist';
+			$params['commandvalue'] = $foundArtist->id;	
+			$result = searchSpotify($params);
+			$spot_artist = $result['result'];
+			debug($spot_artist, 'spot_artist');
+		} catch (Exception $e) {
+			$feedback['error'] = 'Caught exception ('.$e->getCode().'): '.  $e->getMessage();
+			return;
+		}
+		$feedback['result'][] = $result;
+
+		$result = insertSpotArtist($artistID, $foundArtist);
+		if (!empty($result['error'])) {
+			$feedback['result'][] = $result; 
+		} else {
+			PDOUpdate('vd_spotify_actor', array('matches' => $foundArtist->count), Array( 'actor_id' => $artistID ));
+		}
+	}
+	
+	$feedback['result'][] = $result;
+	$feedback['message'] = 'Upserted row for:' .$params['file']['artist'];
+	return $feedback;
+}
+
+
 function insertSpotArtist($artistID, $spot_artist) {
 
 	
@@ -1225,7 +1327,7 @@ function createArtistDirs(&$params) {
 			}
 
 //JOIN xbmc_path p ON mv.strPathID = p.id
-			$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
+			$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos_list mv 
 					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" )  
 					AND genre = "'.$params['file']['genre'].'";'; 
 
@@ -1367,8 +1469,8 @@ function checkFavorites(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "all good";
 	
-	// UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1
-	$mysql='SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title;';
+	// UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos_list m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1
+	$mysql='SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title OR m.artist IS NULL OR m.title IS NULL;';
 	debug($mysql, 'mysql');
 
 	$feedback['result'] = array();
@@ -1377,8 +1479,9 @@ function checkFavorites(&$params) {
 		foreach ($rows as $row) {
 			$message .= implode(" ", $row).CRLF;
 		}
-		$message .= 'Verify: SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title'.CRLF;
-		$message .= 'Update: UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1';
+		$message .= '*** ISSUE with deleted file, select does not find null files'.CRLF;
+		$message .= 'Verify: SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title OR m.artist IS NULL OR m.title IS NULL;'.CRLF;
+		$message .= 'Update: UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos_list m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1';
 	
 		debug ($message, "$message");
 		$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'], 
@@ -1438,7 +1541,7 @@ function getNowPlaying(&$params) {
 			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
 			if (array_key_exists('id', $result['result']['item'])) {
 				$properties['PlayingID']['value'] =  
-					FetchRow('select idFile from xbmc_video_musicvideos where idMVideo='.$result['result']['item']['id'])['idFile'];
+					FetchRow('select idFile from xbmc_video_musicvideos_list where idMVideo='.$result['result']['item']['id'])['idFile'];
 			}
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
@@ -1487,6 +1590,7 @@ function playVideosNow(&$params) {
 		
 		//$log = executeCommand(Array('callerID'=>MY_DEVICE_ID,'messagetypeID'=>"MESS_TYPE_SCHEME",'schemeID'=>221, 'commandvalue'=>'AlexaList.m3u'));
 		$feedback['result'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=>$playlistname));
+		
 	}
 	debug($feedback, 'feedback');
 	return $feedback;		
@@ -1553,7 +1657,7 @@ function createMoveQueueItem($params) {
 	} else {
 		$to_dir = rtrim($params['value_parts'][1], '/');
 	}
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE `idFile` = '.$params['value_parts'][0].';'; 
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE `idFile` = '.$params['value_parts'][0].';'; 
 	if ($mvid = FetchRow($mysql)) {	
 		debug($mvid, 'mvid');
 		$file_parts = mb_pathinfo(mv_toLocal($mvid['file']));
@@ -1604,9 +1708,7 @@ function findDuplicateVideos(&$params) {
 	$feedback['Name'] = 'findDuplicateVideos';
 	$feedback['result'] = array();
 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE idFile = "54208";'; 
-	// $mysql = 'SELECT * FROM xbmc_video_musicvideos WHERE strPathID = "365";'; 
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos'; 
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list'; 
 
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
@@ -2339,7 +2441,7 @@ function moveMusicVideo($params) {
 function startPlaylistIntent(&$params) {
 
 	$feedback['Name'] = 'StartPlaylistIntent';
-	$feedback['commandstr'] = "I send this";
+	$feedback['commandstr'] = $params['commandID'].$params['commandvalue']." ".$params['deviceID'];
 	$feedback['result'] = array();
 	debug($params, 'params');
 
@@ -2347,7 +2449,7 @@ function startPlaylistIntent(&$params) {
 		$playlistID = $playlist['id'];
 		$playlistDescription = $playlist['description'];
 
-		$mysql = 'SELECT file FROM `vd_playlist_files` f join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.playlistID = '
+		$mysql = 'SELECT file FROM `vd_playlist_files` f join xbmc_video_musicvideos_list m on f.idFile = m.idFile WHERE f.playlistID = '
 				  .$playlistID;
 				  
 		if ($rows = FetchRows($mysql)) {	// Has files
