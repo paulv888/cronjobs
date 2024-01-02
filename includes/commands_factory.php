@@ -287,7 +287,10 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$step['cond_deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 				} else if (array_key_exists('SESSION', $params['caller'])) {
 					$step['cond_deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-				} else $step['cond_deviceID'] = getCurrentPlayer();
+				} else {
+					$step['cond_deviceID'] = getCurrentPlayer();
+					debug ($params, "condition");
+				}
 			}
 			$check_result = checkConditions(array($step), $params);
 
@@ -305,12 +308,17 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 				$params['alert_catalogID'] = $step['alert_catalogID'];
 
 
-				if ($params['deviceID'] == DEVICE_SELECTED_PLAYER) {
+				if ($step['deviceID'] == DEVICE_SELECTED_PLAYER) {
 					if (array_key_exists('SESSION', $params)) {
 						$params['deviceID'] = $params['SESSION']['properties']['SelectedPlayer']['value'];
 					} else if (array_key_exists('SESSION', $params['caller'])) {
 						$params['deviceID'] = $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
-					} else $params['SESSION']['properties']['SelectedPlayer']['value'] = getCurrentPlayer();
+					} else if ($params['deviceID'] != DEVICE_SELECTED_PLAYER) {
+						// Keep it, was maybe already send in
+					} else {
+						$params['SESSION']['properties']['SelectedPlayer']['value'] = getCurrentPlayer();
+
+					}
 				}
 
 				$stepValue = replacePropertyPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue

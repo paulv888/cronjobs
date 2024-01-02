@@ -268,6 +268,20 @@ function getDevice($deviceID){
 	return false ;
 }
 
+function NEWgetCurrentPlayer($params){
+	
+	if ($params['deviceID'] == DEVICE_SELECTED_PLAYER) {
+		return $params['SESSION']['properties']['SelectedPlayer']['value'];
+	} elseif (array_key_exists('SESSION', $params['caller'])) {
+		return $params['caller']['SESSION']['properties']['SelectedPlayer']['value'];
+	} else {
+		$props = getDeviceProperties(array('deviceID' => DEVICE_SYSTEM_PARAMETERS, 'description' => 'SelectedPlayer')); 
+		return $props['value'];
+	}
+
+	return $params['deviceID'];
+}
+
 function getCurrentPlayer(){
 	$props = getDeviceProperties(array('deviceID' => DEVICE_SYSTEM_PARAMETERS, 'description' => 'SelectedPlayer')); 
 	return $props['value'];

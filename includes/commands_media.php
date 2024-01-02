@@ -44,6 +44,7 @@ $genres = Array(
 	'Japanese', 
 	'OtherEastern',  
 	'Polish',  
+	'Native American',  
 	'Russian',  
 	'Meditation',  
 	'Documentaries',  
@@ -68,6 +69,7 @@ $genrefolders = Array(
 	'/musicvideos/Eastern/Japanese/',  
 	'/musicvideos/Eastern/OtherEastern/', 
 	'/musicvideos/Eastern/Polish/',  
+	'/musicvideos/Native/', 
 	'/musicvideos/Eastern/Russian/', 
 	'/musicvideos/Meditation/',  
 	'/musicvideos/Documentaries/',  
@@ -1589,7 +1591,7 @@ function playVideosNow(&$params) {
 		
 		
 		//$log = executeCommand(Array('callerID'=>MY_DEVICE_ID,'messagetypeID'=>"MESS_TYPE_SCHEME",'schemeID'=>221, 'commandvalue'=>'AlexaList.m3u'));
-		$feedback['result'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => getCurrentPlayer(),  'schemeID'=>221, 'commandvalue'=>$playlistname));
+		$feedback['result'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['deviceID'],  'schemeID'=>221, 'commandvalue'=>$playlistname));
 		
 	}
 	debug($feedback, 'feedback');
@@ -2307,7 +2309,7 @@ function moveToRecycle($params) {
 	$feedback['result'][] = $result;
 	$command = array('callerID' => $params['caller']['callerID'], 
 		'caller'  => $params['caller'],
-		'deviceID' => getCurrentPlayer(), 
+		'deviceID' => getCurrentPlayer($params), 
 		'commandID' => COMMAND_SEND_MESSAGE_KODI);
 
 	if (!array_key_exists('error',$result)) {
@@ -2445,7 +2447,7 @@ function startPlaylistIntent(&$params) {
 	$feedback['result'] = array();
 	debug($params, 'params');
 
-	if ($playlist = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['commandvalue']).'"')) {
+	if ($playlist = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['commandvalue']).'"')) {
 		$playlistID = $playlist['id'];
 		$playlistDescription = $playlist['description'];
 
@@ -2482,7 +2484,7 @@ function updatePlaylist(&$params) {
 	if (strtoupper($params['macro___commandvalue']) == '#REMOVE') {
 		$addMode = false;
 	} else {
-		$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['macro___commandvalue']).'"')['id'];
+		$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['macro___commandvalue']).'"')['id'];
 		$addMode = true;
 	}
 		
@@ -2552,7 +2554,7 @@ function removeFromFavorites(&$params) {
  
 // $params['macro___commandvalue'] = "Dance"; 
  
-	if (!$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`description`)="'.strtoupper($params['macro___commandvalue']).'"')['id'])
+	if (!$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['macro___commandvalue']).'"')['id'])
 		
 
 	$error = "";

@@ -429,7 +429,7 @@ function RemoteKeys($in, $params, $onlyfilter = false) {
 									}
 									// echo $rowkeys['id'].' '.$rowkeys['deviceID'].CRLF;
 									$deviceID = ($rowkeys['deviceID'] == DEVICE_SELECTED_PLAYER ? 
-											$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
+									$params['SESSION']['properties']['SelectedPlayer']['value'] : $res[$node]['DeviceID']);
 									// echo $deviceID.CRLF;
 									$text = replacePropertyPlaceholders($text, Array('deviceID' => $res['updateStatus']['DeviceID']));
 									if (!empty($text)) $feedback[$last_id]["text"] = $text;
