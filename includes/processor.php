@@ -178,6 +178,7 @@ function sendCommand(&$thiscommand) {
 	}
 
 	if ($rowcommands['need_device']) {
+		$feedback['parseProperties'] = parseDeviceResult($thiscommand, $feedback);
 		$feedback['updateDeviceProperties'] = updateDeviceProperties($thiscommand);
 	}
 	// Check for errors first?

@@ -890,7 +890,7 @@ function sendGenericHTTP(&$params) {
 			$params['device']['properties']['Status']['value'] = STATUS_ERROR;
 		} else {
 			if ($targettype == "JSON" || $targettype == "PUT") {
-				$feedback['result_raw'] = json_decode($curl->getresponse(), true);
+				$feedback['result_raw'] = $curl->getresponse();
 				$feedback['result'][] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();
@@ -912,7 +912,7 @@ function sendGenericHTTP(&$params) {
 			$params['device']['properties']['Status']['value'] = STATUS_ERROR;
 		} else {
 			if ($targettype_org == "JSON" || $targettype == "PUT") {
-				$feedback['result_raw'] = json_decode($curl->getresponse(), true);
+				$feedback['result_raw'] = $curl->getresponse();
 				$feedback['result'][] = json_decode($curl->getresponse(), true);
 			} else {
 				$feedback['result_raw'] = $curl->getresponse();
