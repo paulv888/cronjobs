@@ -19,6 +19,8 @@ function RunTimers(){
 
 	$runcount = 0;
 
+	// syslog(LOG_INFO, "Next Run");
+	
 	foreach ($timers as $timer) {
 		// check if we are ready to generate
 		debug($timer['id']." ".$timer['description'], 'Timer:');
@@ -51,6 +53,7 @@ function RunTimers(){
 				}
 				if ($doit) {																	// Still good doit
 					$runcount++;
+					// syslog(LOG_INFO, "Run timer: ".$timer['description']);
 					// var_dump($timer['priorityID']);
 					if (!isset($GLOBALS['debug'])) ob_start();
 					if ($timer['priorityID'] != PRIORITY_HIDE) {
@@ -97,6 +100,8 @@ function runTimerSteps($params) {
 		WHERE(((t.id) = '.$timerID.')) ORDER BY st.sort';
 
 	//$feedback['result'] = "";
+	
+
 	if ($timersteps = FetchRows($mysql)) {
 		foreach ($timersteps as $step) {
 			$description = $step['description'];
