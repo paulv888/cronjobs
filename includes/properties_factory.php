@@ -360,12 +360,13 @@ function parseDeviceResult(&$params, $last_feedback) {
 //
 	debug($params, 'params');
 	debug($last_feedback, 'last_feedback');
-	$feedback['result'][] = array();
+	// $feedback['result'][] = array();
 	$feedback['Name'] = 'parseDeviceResult';
 	
 	
 	$properties = array();
-	if ($params['commandID'] == COMMAND_GET_VALUE) { // statusrequest -
+	if ($params['commandID'] == COMMAND_GET_VALUE || 
+	   ($params['command']['commandclassID'] == COMMAND_CLASS_KODI )) { // GETVALUE AND KODI GETPROPERTIES (POSITON)
 
 
 		if (array_key_exists('result_raw', $last_feedback)) {
@@ -373,65 +374,78 @@ function parseDeviceResult(&$params, $last_feedback) {
 		} 
 	
 		if (isset($rcv_message)) {
+
 			debug($rcv_message, 'rcv_message');
+
+			if ($params['commandID'] == COMMAND_GET_VALUE) {  // getValue
 			
-			// Front Door Lock
-			if ($params['device']['typeID'] == DEV_TYPE_LOCK) {
-				$properties['Locked']['value'] = $rcv_message['state'];
-				$properties['Link']['value'] = LINK_UP;
+				// Front Door Lock
+				if ($params['device']['typeID'] == DEV_TYPE_LOCK) {
+					$properties['Locked']['value'] = $rcv_message['state'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				
+				if ($params['device']['typeID'] == DEV_TYPE_ARDUINO_MODULES) {
+					// Extended Data is there
+					if (array_key_exists('M',$rcv_message['ExtData'])) $properties['Memory']['value'] = $rcv_message['ExtData']['M'];
+					if (array_key_exists('U',$rcv_message['ExtData']))$properties['Uptime']['value'] = $rcv_message['ExtData']['U'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				if ($params['device']['typeID']  == DEV_TYPE_LIGHT_SENSOR_ANALOG) {
+					// Extended Data is there
+					if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Value']['value'] = $rcv_message['ExtData']['V'];
+					if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+					if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				if ($params['device']['typeID']  == DEV_TYPE_AUTO_DOOR) {
+					// Extended Data is there
+					if (array_key_exists('P',$rcv_message['ExtData'])) $properties['Power']['value'] = $rcv_message['ExtData']['P'];
+					if (array_key_exists('D',$rcv_message['ExtData'])) $properties['Direction']['value'] = $rcv_message['ExtData']['D'];
+					if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Top Switch']['value'] = $rcv_message['ExtData']['T'];
+					if (array_key_exists('B',$rcv_message['ExtData'])) $properties['Bottom Switch']['value'] = $rcv_message['ExtData']['B'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				if ($params['device']['typeID'] ==  DEV_TYPE_THERMOSTAT_ARD_HEAT || $params['device']['typeID'] == DEV_TYPE_THERMOSTAT_ARD_COOL) {
+					// Extended Data is there
+					if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Temperature']['value'] = $rcv_message['ExtData']['V'];
+					if (array_key_exists('R',$rcv_message['ExtData'])) $properties['IsRunning']['value'] = $rcv_message['ExtData']['R'];
+					if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+					if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				if ($params['device']['typeID'] == DEV_TYPE_WATER_LEVEL) {
+					// Extended Data is there
+					if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Value']['value'] = $rcv_message['ExtData']['V'];
+					if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
+					if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+				if ($params['device']['typeID'] == DEV_TYPE_TEMP_HUMIDITY) {
+					if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Temperature']['value'] = $rcv_message['ExtData']['T'];
+					if (array_key_exists('H',$rcv_message['ExtData'])) $properties['Humidity']['value'] = $rcv_message['ExtData']['H'];
+					$properties['Status']['value'] = $rcv_message['Status'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+			}
+				
+			if ($params['command']['commandclassID'] == COMMAND_CLASS_KODI) {   // KODI getPROPERTIES (POSITON)
+				if (array_key_exists('result',$rcv_message) && is_array($rcv_message['result'])) {
+					if (array_key_exists('position',$rcv_message['result'])) $properties['position']['value'] = $rcv_message['result']['position'];
+					if (array_key_exists('size',$rcv_message['result'])) $properties['size']['value'] = $rcv_message['result']['size'];
+				}
 			}
 			
-			if ($params['device']['typeID'] == DEV_TYPE_ARDUINO_MODULES) {
-				// Extended Data is there
-				if (array_key_exists('M',$rcv_message['ExtData'])) $properties['Memory']['value'] = $rcv_message['ExtData']['M'];
-				if (array_key_exists('U',$rcv_message['ExtData']))$properties['Uptime']['value'] = $rcv_message['ExtData']['U'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
-			if ($params['device']['typeID']  == DEV_TYPE_LIGHT_SENSOR_ANALOG) {
-				// Extended Data is there
-				if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Value']['value'] = $rcv_message['ExtData']['V'];
-				if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
-				if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
-			if ($params['device']['typeID']  == DEV_TYPE_AUTO_DOOR) {
-				// Extended Data is there
-				if (array_key_exists('P',$rcv_message['ExtData'])) $properties['Power']['value'] = $rcv_message['ExtData']['P'];
-				if (array_key_exists('D',$rcv_message['ExtData'])) $properties['Direction']['value'] = $rcv_message['ExtData']['D'];
-				if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Top Switch']['value'] = $rcv_message['ExtData']['T'];
-				if (array_key_exists('B',$rcv_message['ExtData'])) $properties['Bottom Switch']['value'] = $rcv_message['ExtData']['B'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
-			if ($params['device']['typeID'] ==  DEV_TYPE_THERMOSTAT_ARD_HEAT || $params['device']['typeID'] == DEV_TYPE_THERMOSTAT_ARD_COOL) {
-				// Extended Data is there
-				if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Temperature']['value'] = $rcv_message['ExtData']['V'];
-				if (array_key_exists('R',$rcv_message['ExtData'])) $properties['IsRunning']['value'] = $rcv_message['ExtData']['R'];
-				if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
-				if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
-			if ($params['device']['typeID'] == DEV_TYPE_WATER_LEVEL) {
-				// Extended Data is there
-				if (array_key_exists('V',$rcv_message['ExtData'])) $properties['Value']['value'] = $rcv_message['ExtData']['V'];
-				if (array_key_exists('S',$rcv_message['ExtData'])) $properties['Setpoint']['value'] = $rcv_message['ExtData']['S'];
-				if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Threshold']['value'] = $rcv_message['ExtData']['T'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
-			if ($params['device']['typeID'] == DEV_TYPE_TEMP_HUMIDITY) {
-				if (array_key_exists('T',$rcv_message['ExtData'])) $properties['Temperature']['value'] = $rcv_message['ExtData']['T'];
-				if (array_key_exists('H',$rcv_message['ExtData'])) $properties['Humidity']['value'] = $rcv_message['ExtData']['H'];
-				$properties['Status']['value'] = $rcv_message['Status'];
-				$properties['Link']['value'] = LINK_UP;
-			}
 			debug($properties, 'properties');
 
 			if (isset($properties)) {
 				$params['device']['properties'] = $properties;
+				$feedback['properties'] = $properties;
 				$error_message = (array_key_exists('ExtData', $rcv_message) ? implode(" - ", $rcv_message['ExtData'] ) : null);
 			}
 		}
@@ -442,5 +456,3 @@ function parseDeviceResult(&$params, $last_feedback) {
 }
 
 ?>
-
-
