@@ -1471,7 +1471,9 @@ function checkFavorites(&$params) {
 	$feedback['result'] = array();
 	$feedback['message'] = "all good";
 	
-	// UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos_list m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1
+	// UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on f.artist = m.artist AND f.title = m.title 
+	//SET f.idFile = m.idFile
+	//WHERE f.idFile <> m.idFile;
 	$mysql='SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title OR m.artist IS NULL OR m.title IS NULL;';
 	debug($mysql, 'mysql');
 
@@ -1483,7 +1485,7 @@ function checkFavorites(&$params) {
 		}
 		$message .= '*** ISSUE with deleted file, select does not find null files'.CRLF;
 		$message .= 'Verify: SELECT f.idFile, f.artist, f.title, m.idFile, m.artist, m.title FROM `vd_playlist_files` f left join xbmc_video_musicvideos m on f.idFile = m.idFile WHERE f.artist <> m.artist OR f.title <> m.title OR m.artist IS NULL OR m.title IS NULL;'.CRLF;
-		$message .= 'Update: UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos_list m on `f`.`idFile` = `m`.`idFile` SET `f`.`artist`= `m`.`artist`, `f`.`title` = `m`.`title` WHERE 1';
+		$message .= 'Improved Update based on artist title: UPDATE `vd_playlist_files` f left join xbmc_video_musicvideos m on f.artist = m.artist AND f.title = m.title SET f.idFile = m.idFileWHERE f.idFile <> m.idFile;';
 	
 		debug ($message, "$message");
 		$feedback['result']['action'] = executeCommand(array('callerID' => $params['callerID'], 'messagetypeID' => MESS_TYPE_SCHEME, 'deviceID' => $params['callerID'], 
@@ -2447,7 +2449,7 @@ function startPlaylistIntent(&$params) {
 	$feedback['result'] = array();
 	debug($params, 'params');
 
-	if ($playlist = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['commandvalue']).'"')) {
+	if ($playlist = FetchRow('SELECT * FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['commandvalue']).'"')) {
 		$playlistID = $playlist['id'];
 		$playlistDescription = $playlist['description'];
 
