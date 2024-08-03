@@ -2,6 +2,7 @@
 define ("SAY_ASKIM", '<phoneme alphabet="ipa" ph="/ə\'ʃkom">askim</phoneme>');
 
 $log = array();
+//$debug = 5;
 
 function handleRequest($alexaRequest) {
 	debug($alexaRequest, 'alexaRequest');
@@ -301,9 +302,9 @@ function DeviceStatusIntent($request, $session, $response) {
 	$deviceProperties = getDeviceProperties(array('deviceID'=>$deviceID));
 	debug($deviceProperties, 'deviceProperties');
 
-	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
+	$found = findByKeyValue($deviceProperties, 'primary_status' , 1);
  
-	if ($deviceProperties[$found]['invertstatus'] == "0") {  
+	if (array_key_exists('invertstatus', $deviceProperties[$found]) && $deviceProperties[$found]['invertstatus'] == "0") {  
 		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
 			$deviceProperties[$found]['value'] == STATUS_ON;
 		} else if ($deviceProperties[$found]['value'] == STATUS_ON) {
@@ -359,7 +360,7 @@ function DeviceReportIntent($request, $session, $response) {
 
 	$answer = sprintf($responses[rand(0,count($responses)-1)], defaultFeedbackName($deviceID));
 
-	$found = findByKeyValue($deviceProperties, 'primary_status' , "1");
+	$found = findByKeyValue($deviceProperties, 'primary_status' , 1);
 
 	if ($deviceProperties[$found]['invertstatus'] == "0") {  
 		if ($deviceProperties[$found]['value'] == STATUS_OFF) {
@@ -373,7 +374,7 @@ function DeviceReportIntent($request, $session, $response) {
 	$answer .= " <break time=\"0.2s\" /> ";
 	$answer .= sprintf($responseProperty, $found , $status);
 
-	while ($found = findByKeyValue($deviceProperties, 'report_status' , "1")) {
+	while ($found = findByKeyValue($deviceProperties, 'report_status' , 1)) {
 		$answer .= "<break time=\"0.2s\" />";
 		if ($deviceProperties[$found]['invertstatus'] == "0") {  
 			if ($deviceProperties[$found]['value'] == STATUS_OFF) {
