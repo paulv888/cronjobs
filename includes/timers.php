@@ -23,6 +23,8 @@ function RunTimers(){
 	
 	foreach ($timers as $timer) {
 		// check if we are ready to generate
+		// $GLOBALS['debug'] = 1;
+		// if ($timer['id'] == 145) $GLOBALS['debug'] = 10;
 		debug($timer['id']." ".$timer['description'], 'Timer:');
 		$date = getdate();
 		if (is_int(strpos($timer['generate_days'],(string)$date["wday"])) === true) {								// Check Day
@@ -48,6 +50,8 @@ function RunTimers(){
 					if ((date('Y-m-d') != date('Y-m-d', $last)) || (timeExpired($last, $timer['repeat']))) {
 						$doit = true;
 						$last = time();
+					} else {
+						debug ("Interval not expired yet");
 					}
 					break;
 				}
@@ -69,6 +73,8 @@ function RunTimers(){
 					debug($mysql, 'mysql');
 					executeQuery(array( 'commandvalue' => $mysql));
 				}
+			} else {
+				debug ('Failed', 'Check Time');
 			}
 		}
 	}
@@ -137,7 +143,7 @@ function runTimerSteps($params) {
 }
 
 function checkTime ($setupstart,$setupend, $offset) {
-	// TODO:: implement dawn/dusk
+	// TODO:: handle over midnight
 	$start= $setupstart;
 	if ($setupstart == TIME_DAWN) $start = getDawn();
 	if ($setupstart == TIME_DUSK) $start = getDusk();
