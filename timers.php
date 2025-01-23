@@ -5,6 +5,8 @@ require_once 'includes.php';
 define("MY_DEVICE_ID", 97);
 
 if (isset($_GET['DEBUG'])) {
+	define( 'DEBUG', TRUE );
+	$GLOBALS['debug'] = 1;
 	echo date("Y-m-d H:i:s").": ".RunTimers()." Timers Executed".CRLF;
 	exit;
 } 
