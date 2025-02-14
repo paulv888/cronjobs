@@ -198,31 +198,26 @@ function getDawnDusk(&$params) {
 	// $feedback['commandstr'] = setURL($params);
 	$feedback['result'] = array();
 
-	$feedback['commandstr'] = setUrl($params, '/weather?&units=metric&id='.$params['commandvalue'].'&appid='.$params['device']['connection']['api_key'] );
-	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']), $params['device']['connection']['timeout']);
+	$feedback['commandstr'] = setUrl($params, '?latitude=33.543682&longitude=-86.779633&date='.date("Y-m-d"));
+	$headers = array();
+	$headers['x-rapidapi-host'] = 'sunrise-sunset-times-pro.p.rapidapi.com';
+	$headers['x-rapidapi-key']=	$params['device']['connection']['api_key'] ;
+	
+	
+	
+	$get = RestClient::get($feedback['commandstr'],null,setAuthentication($params['device']), $params['device']['connection']['timeout'], $headers);
 	$feedback['result']['current'] = $get->getresponse();
 
 	$error = false;
 	if ($get->getresponsecode()!= 200) $error=true;
 	if (!$error) {
 		$result = json_decode($get->getresponse());
-		debug($result, 'extended weather');
-		if (!isset($result->{'weather'})) {
-			$error = true;
-		} else {
-
-			debug($result->{'sys'}, 'sys');
-			if (isset($result->{'sys'})) {
-				$properties['Astronomy Sunrise']['value'] = date("H:i",$result->{'sys'}->{'sunrise'});
-				$properties['Astronomy Sunset']['value'] = date("H:i",$result->{'sys'}->{'sunset'});
-				$properties['Link']['value'] = LINK_UP;
-				$params['device']['properties'] = $properties;
-				debug($params, 'dark_params');
-			}
-
-			debug($result, 'result');
+		$properties['Astronomy Sunrise']['value'] = date("H:i",strtotime($result->{'localTimeSunrise'}));
+		$properties['Astronomy Sunset']['value'] = date("H:i",strtotime($result->{'localTimeSunset'}));
+		$properties['Link']['value'] = LINK_UP;
+		$params['device']['properties'] = $properties;
+		debug($params, 'dark_params');
 		}
-	}
 	if ($error) {
 		$feedback['error'] = $get->getresponsecode();
 		$properties['Status']['value'] = STATUS_ERROR;

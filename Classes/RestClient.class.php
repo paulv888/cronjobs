@@ -68,6 +68,7 @@ class RestClient {
 		return $this ;
      }
 
+
      /**
       * Treats URL
       */
@@ -130,11 +131,11 @@ class RestClient {
      /*
       * @return array
       */
-     public function getHeaders() {
+    public function getHeaders() {
         return $this->headers;
-     }
+    }
 
-     /*
+   /*
       * @return string
       */ 
      public function getResponse() {
@@ -207,6 +208,15 @@ class RestClient {
          $this->contentType = $contentType;
          return $this;
      }
+
+  	public function setRequestHeaders($rh){
+		if(is_array($rh)) { 
+			foreach($rh as $key => $item){
+				$this->request_headers[] = $key.': '.$item;
+			}
+		}
+		return $this;
+	}
 
      /**
       * Set the Content-Type of the request to be send
@@ -309,8 +319,8 @@ class RestClient {
       * @return RestClient
       */
 //   public static function post($url,$params=null,$user=null,$pwd=null,$contentType="multipart/form-data",$timeout=null) {
-     public static function post($url,$params=null,$credentials=null,$contentType="application/json", $timeout=null) {
-         return self::call("POST",$url,$params,$credentials,$contentType,$timeout);
+     public static function post($url,$params=null,$credentials=null,$contentType="application/json", $timeout=null,$request_headers=null) {
+         return self::call("POST",$url,$params,$credentials,$contentType,$timeout,$request_headers);
      }
 
      /**
@@ -321,8 +331,8 @@ class RestClient {
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function put($url,$body,$credentials=null,$contentType="application/json",$timeout=null) {
-         return self::call("PUT",$url,$body,$credentials,$contentType,$timeout);
+     public static function put($url,$body,$credentials=null,$contentType="application/json",$timeout=null,$request_headers=null) {
+         return self::call("PUT",$url,$body,$credentials,$contentType,$timeout,$request_headers);
      }
 
      /**
@@ -332,8 +342,8 @@ class RestClient {
       * @param string $credentials [optional]
       * @return RestClient
       */
-     public static function get($url,array $params=null, $credentials=null, $timeout=null) {
-         return self::call("GET",$url,$params,$credentials,"application/json",$timeout);
+     public static function get($url,array $params=null, $credentials=null, $timeout=null, $request_headers=null) {
+         return self::call("GET",$url,$params,$credentials,"application/json",$timeout,$request_headers);
      }
 
      /**
@@ -344,7 +354,7 @@ class RestClient {
       * @return RestClient
       */
      public static function delete($url,array $params=null,$credentials=null,$timeout=null) {
-         return self::call("DELETE",$url,$params,$credentials, "application/json",$timeout);
+         return self::call("DELETE",$url,$params,$credentials, "application/json",$timeout,$request_headers=null);
      }
 
      /**
@@ -356,10 +366,11 @@ class RestClient {
       * @param string $contentType=null [optional] 
       * @return RestClient
       */
-     public static function call($method,$url,$body,$credentials,$contentType="application/json",$timeout=null) {
+     public static function call($method,$url,$body,$credentials,$contentType="application/json",$timeout=null, $request_headers=null) {
 
          return self::createClient($url)
              ->setParameters($body)
+			 ->setRequestHeaders($request_headers)
              ->setContentType($contentType)
              ->setMethod($method)
              ->setCredentials($credentials, $method, $url, $body)
