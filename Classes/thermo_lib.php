@@ -135,13 +135,16 @@ class Stat
 		curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, "GET");
 		curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT, THERMO_CONNECTION_TIMEOUT);
 		curl_setopt($this->ch, CURLOPT_TIMEOUT, THERMO_CONNECTION_TIMEOUT);
+		if( $this->debug )
+		{
+			debug ($commandURL, '$commandURL');
+		}
 
 		$outputs = curl_exec( $this->ch );
 		if (curl_errno ( $this->ch )<>0) throw new Thermostat_Exception( 'getStatData: ' . curl_error($this->ch) );
 
 		if( $this->debug )
 		{
-			debug ($commandURL, '$commandURL');
 			debug ($outputs, 'Thermstat outputs');
 		}
 
