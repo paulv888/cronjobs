@@ -1548,14 +1548,14 @@ function setDefaultVolume(&$params) {
 	{
 		case 0 : 
 		case 6 : 
-			$command['commandvalue'] = 50;
+			$command['commandvalue'] = 40;
 			break;
 		default :
 			$hour = intval(date("H"));
 			if ($hour > 6 and $hour <= 16) {
 				$command['commandvalue'] = 30;
 			} else {
-				$command['commandvalue'] = 50;
+				$command['commandvalue'] = 40;
 			}
 			break;
 	}

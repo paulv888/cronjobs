@@ -365,8 +365,10 @@ function parseDeviceResult(&$params, $last_feedback) {
 	
 	
 	$properties = array();
-	if ($params['commandID'] == COMMAND_GET_VALUE || 
-	   ($params['command']['commandclassID'] == COMMAND_CLASS_KODI )) { // GETVALUE AND KODI GETPROPERTIES (POSITON)
+	if ($params['commandID'] == COMMAND_GET_VALUE || 					  // GETVALUE 
+	   ($params['command']['commandclassID'] == COMMAND_CLASS_KODI )  ||  // OR KODI 
+	   ($params['command']['commandclassID'] == COMMAND_CLASS_HASS )  ) {   // OR HASS
+	   
 
 
 		if (array_key_exists('result_raw', $last_feedback)) {
@@ -376,6 +378,15 @@ function parseDeviceResult(&$params, $last_feedback) {
 		if (isset($rcv_message)) {
 
 			debug($rcv_message, 'rcv_message');
+
+			if ($params['commandID'] == 500) {  // getBatteryLevel
+			
+				// Front Door Lock
+				if ($params['device']['typeID'] == DEV_TYPE_LOCK) {
+					$properties['BatteryLevel']['value'] = $rcv_message['state'];
+					$properties['Link']['value'] = LINK_UP;
+				}
+			}
 
 			if ($params['commandID'] == COMMAND_GET_VALUE) {  // getValue
 			
