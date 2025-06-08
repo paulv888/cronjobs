@@ -272,12 +272,7 @@ function getDisplayText($row) {
 	$text = "";
 	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
 		if (!empty($row['inputoptions'])) {
-			if (substr($row['inputoptions'], 0, 2) == "@@") {
-				$fname = substr($row['inputoptions'], 2);
-				$text = fname($params);
-			} else {
 				$text = $row['inputoptions'];
-			}
 		} else {
 			$text = $row['name'];
 		}
