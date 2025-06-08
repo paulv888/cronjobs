@@ -1,5 +1,5 @@
 <?php
-function monitorDevices-old($linkmonitor) {
+function monitorDevicesold($linkmonitor) {
 	$mysql = 'SELECT d.`id` AS `deviceID`, l.`linkmonitor` AS `linkmonitor` , l.`active` AS `active` , l.`pingport` AS `pingport` ' .
 			 ' FROM ha_mf_monitor_link l' .
 			 ' LEFT JOIN ha_mf_devices d ON l.deviceID = d.id ' .
@@ -38,7 +38,7 @@ function testMonitorDevice() {
 	return $feedback;
 }
 
-function monitorDevice-odsfs($deviceID, $pingport, $linkmonitor) {
+function monitorDeviceNotInUse($deviceID, $pingport, $linkmonitor) {
 
 	$mysql = 'SELECT `ip`, `name`,`friendly_name` FROM `ha_mf_device_ipaddress` i JOIN `ha_mf_devices` d ON d.ipaddressID = i.id WHERE d.`id` = '.$deviceID;
 	if ($rowip = FetchRow($mysql)) {
