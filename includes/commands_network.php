@@ -703,4 +703,24 @@ function updateUnifi(&$params) {
 	// debug($feedback, 'feedback');
 	return $feedback;
 }
+
+function storeFCMtoken(&$params) {
+
+	debug($params, 'params');
+
+	$feedback['Name'] = 'storeFCMtoken';
+	$feedback['commandstr'] = "";
+
+	$feedback['result'] = Array();
+
+	$pairs = [];
+	$pairs['machine_id'] = $params['value_parts'][0];
+	$pairs['fcm_token'] = $params['value_parts'][1];
+	$feedback['commandstr'] = $pairs;
+	$feedback['result'] = PDOupsert('`fcm_tokens`', $pairs, array('machine_id' => $params['value_parts'][0]));
+
+	debug($feedback, 'feedback');
+	return $feedback;
+}
+
 ?>
