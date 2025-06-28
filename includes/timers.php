@@ -167,6 +167,7 @@ function checkTime ($setupstart,$setupend, $offset) {
 
 	debug($start, 'start');
 	debug($end, 'end');
+	date_default_timezone_set('America/Chicago');
 	return  time() >= $start AND time() < $end; ;
 
 }

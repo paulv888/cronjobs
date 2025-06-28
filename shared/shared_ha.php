@@ -721,6 +721,7 @@ function checkConditions($rows, $params) {
 		case SCHEME_CONDITION_CURRENT_TIME:
 			debug("SCHEME_CONDITION_CURRENT_TIME", 'SCHEME_CONDITION_CURRENT_TIME');
 			$condtype = "SCHEME_CONDITION_CURRENT_TIME";
+			date_default_timezone_set('America/Chicago');
 			$testvalue[] = time();
 			$message = "Current time is ".$device['group_description'];
 			break;
