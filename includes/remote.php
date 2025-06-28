@@ -157,7 +157,7 @@ function loadRemoteDiv($divid, $params) {
 					} 
 					if (isset($deviceID))$text = replacePropertyPlaceholders($text, Array('deviceID' => $deviceID));
 					//<a href="/index.php/outside" class="btn btn-block button">Outside</a>
-					if ($rowremotekeys['inputtype']=="link") $text = '<a target="_blank" href="'.$rowremotekeys['inputoptions'].'" class="buttontext">'.$rowremotekeys['name'].'</a>';
+					if ($rowremotekeys['inputtype']=="link") $text = '<a target="_self" href="'.$rowremotekeys['inputoptions'].'" class="buttontext">'.$rowremotekeys['name'].'</a>';
 					if ($text != null) 	echo $text;
 					//echo '<span class="buttontext">'.$text.'</span>';
 					echo '</'.$fieldtype.'>';
@@ -272,7 +272,12 @@ function getDisplayText($row) {
 	$text = "";
 	if ($row['type_image'] == 0 || $row['type_image'] == 2) {
 		if (!empty($row['inputoptions'])) {
+			if (substr($row['inputoptions'], 0, 2) == "@@") {
+				$fname = substr($row['inputoptions'], 2);
+				$text = fname($params);
+			} else {
 				$text = $row['inputoptions'];
+			}
 		} else {
 			$text = $row['name'];
 		}
