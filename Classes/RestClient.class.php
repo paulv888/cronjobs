@@ -239,6 +239,7 @@ class RestClient {
       * @return RestClient
       */
      public function setCredentials($credentials, $method=NULL, $url = NULL, $body = NULL) {
+		 debug($credentials,'credentials');
 		if (isset($credentials)) {
 			if ($credentials['method'] == "BASIC") { 
 				if($credentials['username'] != null) {
@@ -268,6 +269,69 @@ class RestClient {
 									curl_setopt($this->curl,CURLOPT_REFERER,"aview.htm");
 									curl_setopt($this->curl,CURLOPT_USERPWD,"{$credentials['username']}:{$credentials['password']}");
 							}
+			} elseif ($credentials['method'] == "GOOGLE") {
+					$authConfigString = file_get_contents($credentials['api_key']);
+
+					// Parse service account details
+					$authConfig = json_decode($authConfigString);
+
+					// Read private key from service account details
+					$secret = openssl_get_privatekey($authConfig->private_key);
+
+					// Create the token header
+					$header = json_encode([
+						'typ' => 'JWT',
+						'alg' => 'RS256'
+					]);
+
+					// Get seconds since 1 January 1970
+					$time = time();
+
+					// Allow 1 minute time deviation between client en server (not sure if this is necessary)
+					$start = $time - 60;
+					$end = $start + 3600;
+
+					// Create payload
+					$payload = json_encode([
+						"iss" => $authConfig->client_email,
+						"scope" => "https://www.googleapis.com/auth/firebase.messaging",
+						"aud" => "https://oauth2.googleapis.com/token",
+						"exp" => $end,
+						"iat" => $start
+					]);
+
+					// Encode Header
+					$base64UrlHeader = base64UrlEncode($header);
+
+					// Encode Payload
+					$base64UrlPayload = base64UrlEncode($payload);
+
+					// Create Signature Hash
+					$result = openssl_sign($base64UrlHeader . "." . $base64UrlPayload, $signature, $secret, OPENSSL_ALGO_SHA256);
+
+					// Encode Signature to Base64Url String
+					$base64UrlSignature = base64UrlEncode($signature);
+
+					// Create JWT
+					$jwt = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+
+					//-----Request token, with an http post request------
+					$options = array('http' => array(
+						'method'  => 'POST',
+						'content' => 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion='.$jwt,
+						'header'  => "Content-Type: application/x-www-form-urlencoded"
+					));
+					$context  = stream_context_create($options);
+					$responseText = file_get_contents("https://oauth2.googleapis.com/token", false, $context);
+
+					$response = json_decode($responseText);		
+
+					debug($response,'response');					
+					
+					$authorization = "Authorization: Bearer ". $response->access_token;
+					$this->request_headers[] = $authorization;
+					
+					debug($this->request_headers,'curl headers');
 			}
 		}
         return $this;
@@ -379,4 +443,5 @@ class RestClient {
              ->close();
      }
 }
+
 ?>
