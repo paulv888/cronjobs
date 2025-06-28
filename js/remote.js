@@ -134,7 +134,7 @@ if(!window.scriptRemoteHasRun) {
 		jQuery('.btndropdown a').unbind(eventname);
 		jQuery('.btndropdown a').bind(eventname, function(event){
 			event.preventDefault()
-			//event.stopImmediatePropagation()
+			event.stopImmediatePropagation()
 			var mbut = this.parentNode.parentNode.parentNode;
 			mbut.getElementsByClassName("buttontext")[0].textContent = this.text+' ';
 			var selected = jQuery(this).attr('data-value');
