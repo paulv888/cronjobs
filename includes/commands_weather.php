@@ -198,9 +198,9 @@ function getDawnDusk(&$params) {
 	// $feedback['commandstr'] = setURL($params);
 	$feedback['result'] = array();
 
-	$feedback['commandstr'] = setUrl($params, '?latitude=33.543682&longitude=-86.779633&date='.date("Y-m-d"));
+	$feedback['commandstr'] = setUrl($params, '?timeZoneId=America%2FChicago&latitude=33.543682&longitude=-86.779633&date='.date("Y-m-d"));
 	$headers = array();
-	$headers['x-rapidapi-host'] = 'sunrise-sunset-times-pro.p.rapidapi.com';
+	$headers['x-rapidapi-host'] = 'sunrise-sunset-times.p.rapidapi.com';
 	$headers['x-rapidapi-key']=	$params['device']['connection']['api_key'] ;
 	
 	
@@ -212,8 +212,9 @@ function getDawnDusk(&$params) {
 	if ($get->getresponsecode()!= 200) $error=true;
 	if (!$error) {
 		$result = json_decode($get->getresponse());
-		$properties['Astronomy Sunrise']['value'] = date("H:i",strtotime($result->{'localTimeSunrise'}));
-		$properties['Astronomy Sunset']['value'] = date("H:i",strtotime($result->{'localTimeSunset'}));
+		date_default_timezone_set('America/Chicago');
+		$properties['Astronomy Sunrise']['value'] = date("H:i",strtotime(str_replace("[America/Chicago]","",$result->{'sunrise'})));
+		$properties['Astronomy Sunset']['value'] = date("H:i",strtotime( str_replace("[America/Chicago]","",$result->{'sunset'})));
 		$properties['Link']['value'] = LINK_UP;
 		$params['device']['properties'] = $properties;
 		debug($params, 'dark_params');
