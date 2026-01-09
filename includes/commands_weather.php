@@ -217,6 +217,7 @@ function getDawnDusk(&$params) {
 		$properties['Astronomy Sunset']['value'] = date("H:i",strtotime( str_replace("[America/Chicago]","",$result->{'sunset'})));
 		$properties['Link']['value'] = LINK_UP;
 		$params['device']['properties'] = $properties;
+		date_default_timezone_set('UTC');
 		debug($params, 'dark_params');
 		}
 	if ($error) {

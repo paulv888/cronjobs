@@ -798,6 +798,7 @@ function checkConditions($rows, $params) {
 		}
 	}
 	
+	date_default_timezone_set('UTC');
 	// All passed unset false result
 	$feedback['result'] = array (true);
 	debug($feedback, 'feedback');

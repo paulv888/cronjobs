@@ -33,7 +33,7 @@ function RunTimers(){
 				debug($timer['last_run_date'], 'Last Ran');
 				debug("Right Time", 'Right Time');
 				debug($timer['repeat'], 'Repeat');
-
+				
 				$doit = false;
 				$last = strtotime($timer['last_run_date']);
 				switch ($timer['repeat']) {
@@ -167,7 +167,6 @@ function checkTime ($setupstart,$setupend, $offset) {
 
 	debug($start, 'start');
 	debug($end, 'end');
-	date_default_timezone_set('America/Chicago');
 	return  time() >= $start AND time() < $end; ;
 
 }
