@@ -11,7 +11,7 @@ function RunTimers(){
 
 
 	// Check Active Timers
-	$mysql='SELECT * FROM `ha_timers` WHERE `active` = "1"';
+	$mysql='SELECT * FROM `ha_timers` WHERE `active` = "1" ORDER BY `id`';
 
 	if (!$timers = FetchRows($mysql)) {
 		exit;
@@ -25,14 +25,14 @@ function RunTimers(){
 		// check if we are ready to generate
 		// $GLOBALS['debug'] = 1;
 		// if ($timer['id'] == 145) $GLOBALS['debug'] = 10;
-		debug($timer['id']." ".$timer['description'], 'Timer:');
+		debug("-->".$timer['id']." ".$timer['description'], 'Timer:');
 		$date = getdate();
 		if (is_int(strpos($timer['generate_days'],(string)$date["wday"])) === true) {								// Check Day
-			debug("Run Today", 'Run Today');
+			debug((string)$date["weekday"], 'generate_days matching');
 			if (checktime($timer['generate_start'],$timer['generate_end'], $timer['generate_offset'])) {			// Between Hours
 				debug($timer['last_run_date'], 'Last Ran');
-				debug("Right Time", 'Right Time');
-				debug($timer['repeat'], 'Repeat');
+				debug("Start ".$timer['generate_start']." End: ".$timer['generate_end'], 'Run Between');
+				debug($timer['repeat'], '(-1 = Each run, 0 = Once Day, or e.g. 10 minutes)');
 				
 				$doit = false;
 				$last = strtotime($timer['last_run_date']);
@@ -72,6 +72,8 @@ function RunTimers(){
 						" SET last_run_date = '". date("Y-m-d H:i:00")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					debug($mysql, 'mysql');
 					executeQuery(array( 'commandvalue' => $mysql));
+				} else {
+					debug ('Skipped', 'Skipped');
 				}
 			} else {
 				debug ('Failed', 'Check Time');
