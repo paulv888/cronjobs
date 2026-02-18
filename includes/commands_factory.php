@@ -335,7 +335,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['messagetypeID'] = "MESS_TYPE_SCHEME";
 					$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
 					$values['schemeID'] = $params['schemeID'];
-					$values['debug'] = $GLOBALS['debug'];
+					$values['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 					$getparams = http_build_query($values, '',' ');
 
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;

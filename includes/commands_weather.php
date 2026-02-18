@@ -212,12 +212,12 @@ function getDawnDusk(&$params) {
 	if ($get->getresponsecode()!= 200) $error=true;
 	if (!$error) {
 		$result = json_decode($get->getresponse());
-		date_default_timezone_set('America/Chicago');
+		// date_default_timezone_set('America/Chicago');
 		$properties['Astronomy Sunrise']['value'] = date("H:i",strtotime(str_replace("[America/Chicago]","",$result->{'sunrise'})));
 		$properties['Astronomy Sunset']['value'] = date("H:i",strtotime( str_replace("[America/Chicago]","",$result->{'sunset'})));
 		$properties['Link']['value'] = LINK_UP;
 		$params['device']['properties'] = $properties;
-		date_default_timezone_set('UTC');
+		// date_default_timezone_set('UTC');
 		debug($params, 'dark_params');
 		}
 	if ($error) {
