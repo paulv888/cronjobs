@@ -7,16 +7,17 @@ if (isset($_GET['key'])) {
 	    die('Not Authorized'); 
     }
 	$apikey = $_GET['key'];
-} else {
-    $apikey='6785157a-27e6-483f-a52c-d73b7529fa21';
-	$found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$apikey.'"');
-	if ($found) {
-		$username = $found['username'];
-	} else {
-	    die('Not Authorized'); 
-    }
-//	die('Not Authorized');
 }
+ // else {
+    // $apikey=API_KEY;
+	// $found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$apikey.'"');
+	// if ($found) {
+		// $username = $found['username'];
+	// } else {
+	    // die('Not Authorized'); 
+    // }
+//	die('Not Authorized');
+
 if (isset($_GET['name'])) {
 	if (!$remoteID = FetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`)="'.strtoupper($_GET['name']).'"')['id']) die('Invalid Remote');
 } else {

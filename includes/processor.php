@@ -219,7 +219,9 @@ function executeCommand($callerparams) {
 	$callerparams['selection'] = (array_key_exists('selection', $callerparams) ? $callerparams['selection'] : Null);
 	$callerparams['mouse'] = (array_key_exists('mouse', $callerparams) ? $callerparams['mouse'] : Null);
 
-	if (!headers_sent() && $callerparams['callerID'] == DEVICE_REMOTE) header('Content-type: application/json'); 
+	if (!headers_sent() && (($callerparams['callerID'] == DEVICE_REMOTE) || ($callerparams['callerID'] == DEVICE_REMOTE_HASS))) {
+		header('Content-type: application/json'); 
+	}
 
 	$feedback['messagetypeID'] = $callerparams['messagetypeID'];
 
@@ -304,12 +306,15 @@ function executeCommand($callerparams) {
 		break;
 	}
 
-	if ($callerparams['callerID'] == DEVICE_REMOTE) {
+	if ($callerparams['callerID'] == DEVICE_REMOTE)  {
 		$result = RemoteKeys($feedback, $callerparams);
 		$encode = true;
 	} elseif ($callerparams['callerID'] == DEVICE_REMOTE_TEXT) {
 		$result = RemoteKeys($feedback, $callerparams, true);
 		$encode = false;
+	} elseif ($callerparams['callerID'] == DEVICE_REMOTE_HASS) {
+		$result = outputResultProperties($feedback);
+		$encode = true;
 	} else {
 		$result = $feedback;
 	}
@@ -445,6 +450,44 @@ function RemoteKeys($in, $params, $onlyfilter = false) {
 		$feedback['message'] = '';
 	}
 	return array_map("unserialize", array_unique(array_map("serialize", $feedback)));
+}
+
+
+function findResultNode($array) {
+    foreach ($array as $key => $value) {
+        if ($key === 'result' && is_array($value)) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            $found = findResultNode($value);
+            if ($found !== null) {
+                return $found;
+            }
+        }
+    }
+    return null;
+}
+
+function outputResultProperties ($data) {
+	// Assume $data contains your full array
+	$resultNode = findResultNode($data);
+
+	$output = [];
+
+	if ($resultNode !== null) {
+		foreach ($resultNode as $name => $details) {
+			if (isset($details['value'])) {
+				// Cast numeric values properly
+				if (is_numeric($details['value'])) {
+					$output[$name] = $details['value'] + 0;
+				} else {
+					$output[$name] = $details['value'];
+				}
+			}
+		}
+	}
+	return $output;
 }
 
 ?>
