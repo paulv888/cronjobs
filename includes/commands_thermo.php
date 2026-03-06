@@ -24,12 +24,16 @@ function getThermoSettings(&$params) {
 		// Should I set $params['device']['type']['internal_type'] as well and do before UpdateCycle
 		if ($stat->tmode == 1) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_HEAT);
+			$properties['Mode']['value'] = 'heat';
 		}	elseif ($stat->tmode == 2) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_COOL);
+			$properties['Mode']['value'] = 'cool';
 		}	elseif ($stat->tmode == 3) {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_AUTO);
+			$properties['Mode']['value'] = 'auto';
 		} else {
 			UpdateThermType($params['deviceID'],DEV_TYPE_THERMOSTAT_CT30_OFF);
+			$properties['Mode']['value'] = 'off';
 		}
 
 		//Update Today/Yesterday runtimes from thermostat, TODO: duplicate with isRunning update

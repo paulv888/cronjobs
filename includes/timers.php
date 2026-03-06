@@ -120,7 +120,8 @@ function runTimerSteps($params) {
 				$step['callerID'] = $params['callerID'];
 				$step['messagetypeID'] = "MESS_TYPE_COMMAND";
                 if (array_key_exists('loglevel', $params)) $step['loglevel'] = $params['loglevel'];
-				$step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
+				// $step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
+				$step['debug'] = false;
 				if ($timer['runasync']) {
 					$getparams = http_build_query($step, '',' '); 
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;

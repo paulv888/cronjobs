@@ -806,6 +806,7 @@ function sendGenericHTTP(&$params) {
 
 	debug($params, 'params');
 
+	$feedback['commandvalue'] = $params['commandvalue'];
 	$targettype = $params['device']['connection']['targettype'];
 	$targettype_org = $params['device']['connection']['targettype'];
 	$feedback['Name'] = 'sendGenericHTTP - '.$targettype;
@@ -839,6 +840,7 @@ function sendGenericHTTP(&$params) {
 	{
 	case "POSTAPP":          // PHP - vlosite
 	case "POSTTEXT":         // Yahama AV & IrrigationCaddy at the moment
+	case "POSTURL":          // Web Arduino/ESP8266
 	case "POSTURL":          // Web Arduino/ESP8266
 	case "JSON":             // Wink
 	case "PUT":           // Dexa
@@ -898,7 +900,6 @@ function sendGenericHTTP(&$params) {
 			}
 		}
 			if (!is_array($feedback['result'])) $feedback['result'][] = $feedback['result'];
-			//if (array_key_exists('message',$feedback) && $feedback['message'] == "\n[]") unset($feedback['message']); //  TODO:: Some crap coming back from winkapi, fix later
 		break;
 	case "GET":          // Sony Cam at the moment
 		$tcomm = replaceCommandPlaceholders($params['command']['command'],$params);
@@ -1403,6 +1404,7 @@ function getStereoSettings(&$params) {
 	if (isset($result['error'])) return;;
 
    	$main = new SimpleXMLElement($result['result_raw']);
+	debug($main, 'main');
 
   
 	if (array_key_exists('error', $result)) {
@@ -1418,7 +1420,8 @@ function getStereoSettings(&$params) {
 		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
 		$properties['Status']['value'] =  ((string)$main->{$tcomm}->Basic_Status->Power_Control->Power == "Standby" ? "Off" : (string)$main->{$tcomm}->Basic_Status->Power_Control->Power);
 		$properties['Input']['value'] =  (string)$main->{$tcomm}->Basic_Status->Input->Input_Sel_Item_Info->Title;
-		$properties['Volume']['value'] =  (string)(int)(((int)($main->{$tcomm}->Basic_Status->Volume->Lvl->Val) + 800) / 6  ) ;
+		//{calculate___round((({commandvalue}*9.6)-800)/5)*5}
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->{$tcomm}->Basic_Status->Volume->Lvl->Val) + 800) / 9.6  ) ;
 		$properties['Muted']['value'] =  (string)$main->{$tcomm}->Basic_Status->Volume->Mute ;
 		if (isset($main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Enhancer )) $properties['Enhancer']['value'] =  (string)$main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Enhancer ;
 		if (isset($main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Straight )) $properties['Straight']['value'] =  (string)$main->{$tcomm}->Basic_Status->Surround->Program_Sel->Current->Straight ;
@@ -1470,7 +1473,7 @@ function volumeDownKey(&$params) {
 	} else {
 		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
 
-		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 6  ) ;
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 9.6  ) ;
 
 		$params['device']['properties'] = $properties;
 	}	
@@ -1518,7 +1521,7 @@ function volumeUpKey(&$params) {
 	} else {
 		$tcomm = replaceCommandPlaceholders("{commandvalue}",$params);
 
-		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 6  ) ;
+		$properties['Volume']['value'] =  (string)(int)(((int)($main->Main_Zone->Volume->Lvl->Val) + 800) / 9.6  ) ;
 
 		$params['device']['properties'] = $properties;
 	}	
@@ -1548,14 +1551,14 @@ function setDefaultVolume(&$params) {
 	{
 		case 0 : 
 		case 6 : 
-			$command['commandvalue'] = 40;
+			$command['commandvalue'] = 50;
 			break;
 		default :
 			$hour = intval(date("H"));
 			if ($hour > 6 and $hour <= 16) {
-				$command['commandvalue'] = 30;
-			} else {
 				$command['commandvalue'] = 40;
+			} else {
+				$command['commandvalue'] = 50;
 			}
 			break;
 	}
@@ -1914,5 +1917,14 @@ function switchMotionEye(&$params) {
 
 	return $feedback;
 
+}
+function getProperties($params) {
+
+	debug(" ", 'params');
+
+	$feedback['result'] = getDeviceProperties(Array( 'deviceID' => $params['deviceID']));
+
+	debug($feedback, 'feedback');
+	return $feedback;
 }
 ?>

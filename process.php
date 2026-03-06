@@ -1,10 +1,8 @@
-<?php 
+<?php
 require_once 'includes.php';
 
-if (isset($_GET['callerID'])) {
-	$_POST=$_GET;
-}
-// if (isset($_POST['apikey'])) {
+// move to header
+//if (isset($_POST['apikey'])) {
 	// $found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$_POST['apikey'].'"');
 	// if ($found) {
 		// $username = $found['username'];
@@ -16,48 +14,49 @@ if (isset($_GET['callerID'])) {
 	// die('Not Authorized');
 // }
 
+$params = array();
+if (isset($_GET['callerID'])) {
+	$params = $_GET;
+} elseif (isset($_POST['callerID'])) {
+	$params = $_POST;
+} else {
+	$json = str_replace(["\r", "\n"], '', file_get_contents('php://input'));
+	$params = json_decode($json, true);
+}
+debug($params, 'params');
+
 if (isset($argv)) {
-	// var_dump($argv);
 	foreach ($argv as $arg) {
 		$e=explode("=",$arg);
         if(count($e)==2) {
 			// No clue what this was for.... W'll see what breaks how... 
-			$_POST[$e[0]]=urldecode($e[1]);
+			$params[$e[0]]=urldecode($e[1]);
 		} else {
 			if ($e[0] == "ASYNC_THREAD") {
-				$_POST[$e[0]]=true;
+				$params[$e[0]]=true;
 				echo 'ASYNC_THREAD true'.CRLF;
 			}
 		}
 	}
 }
-if (isset($_POST['debug'])) {
-	define( 'DEBUG', TRUE );
-	$GLOBALS['debug'] = $_POST['debug'];
+
+if (isset($params['debug'])) {
+	if ($params['debug'] == true) $GLOBALS['debug'] = true;
 }
-debug($_POST, 'POST');
 
-
-$input = file_get_contents('php://input');
-// ob_start();
-// var_dump($input);
-// $result = ob_get_clean();
 $current = "";
 $headers = apache_request_headers();
 foreach ($headers as $header => $value) {
 	$current .= "$header: $value".CRLF;
 }
 debug($current, 'headers');
-
-$params = $_POST;
-debug($params, 'params');
+// print_r($headers);
 
 if (!headers_sent()) {
   if(!isset($_SESSION)) 
     { 
         session_start(); 
     } 
-	// unset($_SESSION['PARAMS']);
 	debug($_SESSION, 'Prev Session _SESSION');
 	if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 3600)) {
 		// last request was more than 30 minutes ago
@@ -76,9 +75,7 @@ if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_e
 $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
 debug($_SESSION, 'Current _SESSION');
 session_write_close();
-
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
-
 	debug($params, 'params');
 
 	$result = executeCommand($params);
