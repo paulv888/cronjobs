@@ -117,7 +117,7 @@ function loadRemoteDiv($divid, $params) {
 				}
 				echo ">";
 				if ($rowremotekeys['repeat_time'] == 0) {
-					$clicks = (is_null($rowremotekeys['commandIDdown'])  ? "click-up rem-button" : "click-down rem-button");
+					$clicks = (empty($rowremotekeys['commandIDdown'])  ? "click-up rem-button" : "click-down rem-button");
 				} else {
 					$clicks = "repeat-click-down rem-button";
 				}
