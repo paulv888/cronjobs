@@ -696,7 +696,7 @@ function sendInsteonCommand(&$params) {
 	debug($params['commandvalue'], '3. commandvalue');
 	if ($params['commandvalue']>0) $params['commandvalue']=255/100*$params['commandvalue'];
 	debug($params['commandvalue'], '4. commandvalue');
-	if ($params['commandvalue'] == NULL && $params['commandID'] == COMMAND_ON) $params['commandvalue']=255;		// Special case so satify the replace in on command
+	if (empty($params['commandvalue']) && $params['commandID'] == COMMAND_ON) $params['commandvalue']=255;		// Special case so satify the replace in on command
 	$cv_save = $params['commandvalue'];
 	$params['commandvalue'] = dec2hex($params['commandvalue'],2);
 	debug($params['commandvalue'], '5. commandvalue');
