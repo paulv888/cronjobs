@@ -83,6 +83,52 @@ function FetchRows($mysql) {
 
 }
 
+function PDOFetchRow($mysql, $params = []) {
+
+	$pdo = openDB();
+
+	debug($mysql, 'mysql');
+	if (!empty($params)) debug($params, 'params');
+
+ 	try
+	{
+		$stmt = $pdo->prepare($mysql);
+		$stmt->execute($params);
+		$rows = $stmt->fetch(PDO::FETCH_ASSOC);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($e, "PDOFetchRow", $mysql);
+		return false;
+	}
+
+	debug($rows, 'rows');
+	return (!empty($rows) ? $rows : false);
+}
+
+function PDOFetchRows($mysql, $params = []) {
+
+	$pdo = openDB();
+
+	debug($mysql, 'mysql');
+	if (!empty($params)) debug($params, 'params');
+
+ 	try
+	{
+		$stmt = $pdo->prepare($mysql);
+		$stmt->execute($params);
+		$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	} 
+	catch( Exception $e )
+	{
+		PDOError($e, "PDOFetchRows", $mysql);
+		return false;
+	}
+
+	debug($rows, 'rows');
+	return (!empty($rows) ? $rows : false);
+}
+
 function PDOExec($mysql) {
 
 	debug($mysql, 'mysql');

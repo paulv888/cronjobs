@@ -155,7 +155,7 @@ if(!window.scriptRemoteHasRun) {
 			callAjax (params) ;
 		});
 
-		//Drop downs, either be command or scheme, if scheme Scommand, if with command then key needed as well 
+		//Dropdowns, either be command or scheme, if scheme Scommand, if with command then key needed as well 
 		// Update same as latest button dropdown, allow S C or Value
 		jQuery('.controlselect-button').unbind("change");
 		jQuery('.controlselect-button').change( function(event){

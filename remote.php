@@ -19,9 +19,11 @@ if (isset($_GET['key'])) {
 //	die('Not Authorized');
 
 if (isset($_GET['name'])) {
-	if (!$remoteID = FetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`)="'.strtoupper($_GET['name']).'"')['id']) die('Invalid Remote');
+	$remote = PDOFetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`) = ?', [strtoupper($_GET['name'])]);
+	if (!$remote || empty($remote['id'])) die('Invalid Remote');
+	$remoteID = $remote['id'];
 } else {
-	$remoteID=1;
+	$remoteID = 1;
 }
 // header("Link: </templates/protostar-remote/css/template.css>; rel=preload; as=style");
 // header("Link: </media/com_fabrik/images/ajax-loader.gif>; rel=preload; as=image", false);
