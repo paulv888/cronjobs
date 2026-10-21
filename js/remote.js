@@ -10,7 +10,9 @@ if(!window.scriptRemoteHasRun) {
 			'GROUP_NO_SELECTED' : 0,
 			'DIM_NO_SELECTED' : 19,
 			'url' : '/ha/process.php',
-			'timer' : false
+			'timer' : false,
+			'darkStartHour' : 19,
+			'darkEndHour' : 7
 	};
 
 	var isMobile = {
@@ -32,6 +34,7 @@ if(!window.scriptRemoteHasRun) {
 
 	jQuery(document).ready(function(){
 
+		checkAndApplyTheme();
 		refreshDiv(true, true);
 		
 		// window.addEvent('domready', function() {
@@ -240,6 +243,7 @@ if(!window.scriptRemoteHasRun) {
 		});
 
 		jQuery(window).focus(function(){
+			checkAndApplyTheme();
 			refreshDiv(true, false);
 			VloRemote.timer = startTimer();
 			console.log('JQuery Re-Activate');
@@ -250,6 +254,8 @@ if(!window.scriptRemoteHasRun) {
 	});
 
 	function refreshDiv (showSpin, force) {
+
+		checkAndApplyTheme();
 
 		if (force || jQuery("#autorefresh").length == 0 || jQuery("#autorefresh").is(":checked")) {
 			console.log('refreshDiv');
@@ -455,5 +461,78 @@ if(!window.scriptRemoteHasRun) {
 				return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
 			}
 		}
+	}
+
+	function isDarkModeTime() {
+		var themeParam = getUrlParameter('theme');
+		if (themeParam === 'dark') return true;
+		if (themeParam === 'light') return false;
+
+		var currentHour = new Date().getHours();
+		if (VloRemote.darkStartHour > VloRemote.darkEndHour) {
+			// Night spans midnight (e.g. 19:00 to 07:00)
+			return (currentHour >= VloRemote.darkStartHour || currentHour < VloRemote.darkEndHour);
+		} else {
+			return (currentHour >= VloRemote.darkStartHour && currentHour < VloRemote.darkEndHour);
+		}
+	}
+
+	function applyDarkMode(isDark) {
+		var styleId = 'vlo-dark-mode-styles';
+		var themeMeta = jQuery('meta[name="theme-color"]');
+
+		if (isDark) {
+			jQuery('html').attr('data-bs-theme', 'dark');
+			jQuery('body').addClass('dark-mode');
+			if (themeMeta.length) {
+				themeMeta.attr('content', '#18191a');
+			}
+
+			if (!document.getElementById(styleId)) {
+				var css = [
+					'body.dark-mode { background-color: #18191a !important; color: #e4e6eb !important; }',
+					'body.dark-mode .keyscell { background-color: transparent !important; }',
+					'body.dark-mode td.keyscellempty, body.dark-mode .keyscellempty { background-color: #18191a !important; box-shadow: none !important; border-color: transparent !important; }',
+					'body.dark-mode #myTabContent, body.dark-mode .nav-tabs + #myTabContent, body.dark-mode .nav-tabs + .tab-content { background: #18191a !important; background-color: #18191a !important; border-color: #3e4042 !important; box-shadow: none !important; }',
+					'body.dark-mode #myTabContent .tab-pane { background-color: #18191a !important; }',
+					'body.dark-mode #myTabContent .table, body.dark-mode #myTabContent .table-rem-condensed { --bs-table-bg: transparent !important; --bs-table-accent-bg: transparent !important; background-color: transparent !important; color: #e4e6eb !important; }',
+					'body.dark-mode #myTab { border-bottom-color: #3e4042 !important; background-color: transparent !important; }',
+					'body.dark-mode #myTab > li:not(.active) { background-color: #242526 !important; }',
+					'body.dark-mode #myTab > li:not(.active) > a { background-color: #242526 !important; color: #adb5bd !important; }',
+					'body.dark-mode #myTab > li:not(.active) > a:hover { background-color: #3a3b3c !important; color: #ffffff !important; }',
+					'body.dark-mode .rem-button.button:not(.on):not(.off):not(.unknown):not(.btn-warning):not(.link-down):not(.link-warning) { background-color: #2e3033 !important; color: #e4e6eb !important; border-color: #44474d !important; }',
+					'body.dark-mode .rem-button.button:not(.on):not(.off):not(.unknown):not(.btn-warning):hover { background-color: #3e4247 !important; color: #ffffff !important; }',
+					'body.dark-mode .dropdown-menu, body.dark-mode ul.btndropdown { background-color: #242526 !important; border: 1px solid #3e4042 !important; }',
+					'body.dark-mode .dropdown-menu a, body.dark-mode .dropdown-item, body.dark-mode ul.btndropdown li a { background-color: #242526 !important; color: #e4e6eb !important; }',
+					'body.dark-mode .dropdown-menu a:hover, body.dark-mode .dropdown-item:hover, body.dark-mode ul.btndropdown li a:hover { background-color: #3a3b3c !important; color: #ffffff !important; }',
+					'body.dark-mode .controlselect, body.dark-mode .controlselect-button { background-color: #242526 !important; color: #e4e6eb !important; border: 1px solid #44474d !important; }',
+					'body.dark-mode .jump-button { background-color: #2e3033 !important; color: #e4e6eb !important; border-color: #44474d !important; }',
+					'body.dark-mode .form-check-label { color: #e4e6eb !important; }',
+					'body.dark-mode div#spinner { background-color: #242526 !important; border-color: #444 !important; color: #fff !important; }',
+					'body.dark-mode .myDebugOutputTitle, body.dark-mode .myDebugOutput, body.dark-mode .myDebugOutput pre { background-color: #242526 !important; color: #ccc !important; border-color: #444 !important; }'
+				].join('\n');
+
+				var style = document.createElement('style');
+				style.id = styleId;
+				style.type = 'text/css';
+				style.appendChild(document.createTextNode(css));
+				document.head.appendChild(style);
+			}
+		} else {
+			jQuery('html').removeAttr('data-bs-theme');
+			jQuery('body').removeClass('dark-mode');
+			if (themeMeta.length) {
+				themeMeta.attr('content', '#E9ECE5');
+			}
+			var existingStyle = document.getElementById(styleId);
+			if (existingStyle && existingStyle.parentNode) {
+				existingStyle.parentNode.removeChild(existingStyle);
+			}
+		}
+	}
+
+	function checkAndApplyTheme() {
+		var isDark = isDarkModeTime();
+		applyDarkMode(isDark);
 	}
 }
