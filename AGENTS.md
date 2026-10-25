@@ -31,8 +31,10 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1           # deploy
 ```
 
 - Additive copy, no `/MIR`: files that exist only on the server are never deleted.
-- Excluded: `config.php`, `logins.php`, `info.php`, `php_errors.log`, `test.php`,
+- Excluded: `logins.php`, `info.php`, `php_errors.log`, `test.php`,
   `.gitignore`, `deploy.ps1`, `.git`, `.vscode`, `log/`, `lastimage/`, `bin/`, `media/`.
+- `config.php` is deployed. It is tracked, holds only paths/subnets/flags, and the
+  repo copy overwrites any hand edit on the server.
 - `bin/` is excluded because SMB copies lose the Unix exec bit. Deploy those by hand,
   then `chmod +x` on the server.
 - Always run `-DryRun` and read the file list before a real deploy. It caught a
@@ -46,15 +48,17 @@ After deploying, verify over HTTP before calling it done:
 curl extension for HTTPS checks, with `CURLOPT_SSL_VERIFYPEER => false`.
 
 ## Never commit
-`logins.php`, `config.php`, `info.php`, `test.php`, `php_errors.log`,
-`bin/fireTVnetflixLogin.sh` — all covered by `.gitignore`.
+`logins.php`, `info.php`, `test.php`, `php_errors.log`,
+`bin/fireTVnetflixLogin.sh` — all covered by `.gitignore`. `config.php` is tracked
+on purpose because it holds no secrets; if it ever gains a password, rotate first,
+then `git rm --cached config.php`.
 
 Prefer explicit `git add <paths>`. Only use `git add -A` after reading `git status`,
 because this tree has a history of local debris sitting next to real code.
 
 ## Secrets
-- Live credentials live in `/etc/ha/config.php` and `/etc/ha/logins.php`, outside the
-  web root. Nothing in the repo should contain a password.
+- Live credentials live in `/etc/ha/logins.php`, outside the web root. Nothing in the
+  repo should contain a password; the tracked `config.php` holds none.
 - If a secret lands in a commit: **rotate it first**, then rewrite history. Rewriting
   alone does not undo the exposure; a public repo is scraped within minutes.
 - That leak already happened once (`bin/fireTVnetflixLogin.sh`, Netflix credentials).
