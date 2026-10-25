@@ -129,7 +129,7 @@ function PDOFetchRows($mysql, $params = []) {
 	return (!empty($rows) ? $rows : false);
 }
 
-function PDOExec($mysql) {
+function PDOExec($mysql, $params = []) {
 
 	debug($mysql, 'mysql');
 
@@ -137,7 +137,13 @@ function PDOExec($mysql) {
 
  	try
 	{
-		$rowCount = $pdo->exec($mysql);
+		if (empty($params)) {
+			$rowCount = $pdo->exec($mysql);
+		} else {
+			$stmt = $pdo->prepare($mysql);
+			$stmt->execute($params);
+			$rowCount = $stmt->rowCount();
+		}
 	} 
 	catch( Exception $e )
 	{
