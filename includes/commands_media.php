@@ -866,7 +866,7 @@ function readFFProbe($file) {
 
 	$feedback['Name'] = 'readFFProbe';
 	$feedback['result'] = array();
-	$params = '-v error -show_streams -show_entries stream=index,codec_type,codec_name,width,height,duration,channels -of default=noprint_wrappers=1 '.'"'.$file.'"';
+	$params = '-v error -show_streams -show_entries stream=index,codec_type,codec_name,width,height,duration,channels -of default=noprint_wrappers=1 '.escapeshellarg($file);
 	$cmd = getPath().'/bin/ffprobe.sh '.$params;
 	$feedback['commandstr'] = $cmd;
 	exec($cmd, $output, $exitCode);
@@ -909,7 +909,7 @@ function createThumbNail($file) {
 
 	$feedback['message'] = "No thumbnails created, kick of on srvmedia: </br>sudo ~/bin/spawn_create_thumbs";
 	$feedback['message'] = "";
-	$params = '"'.$file['dirname'].'" "'.$file['filename'].'" "'.$file['extension'].'"'." 1";
+	$params = escapeshellarg($file['dirname']).' '.escapeshellarg($file['filename']).' '.escapeshellarg($file['extension']).' 1';
 	$cmd = getPath().'/bin/createThumb.sh '.$params;
 	$feedback['commandstr'] = $cmd;
 	exec($cmd, $output, $exitCode);
@@ -2228,7 +2228,7 @@ function youtubeDL($url, $options = YT_VIDEO_ONLY) {
     $feedback['result'] = array();
 	if ($options == YT_GET_PLAYLIST) $textOptions = "-j --flat-playlist";
 	if ($options == YT_VIDEO_ONLY) $textOptions = "--no-playlist ";
-	$cmd = getPath().'/bin/youtube-dl.sh "'.$textOptions.'" "'.$url.'"';
+	$cmd = getPath().'/bin/youtube-dl.sh '.escapeshellarg($textOptions).' '.escapeshellarg($url);
 	$feedback['commandstr'] = $cmd;
     debug($cmd, 'command');
     exec($cmd, $output, $exitCode);
@@ -2400,7 +2400,7 @@ function moveMusicVideo($params) {
 		}
 
 		if (!array_key_exists('error', $feedback)) {
-			$cmd = 'mv -v "'.$infile.'" "'.$tofile.'"';
+			$cmd = 'mv -v '.escapeshellarg($infile).' '.escapeshellarg($tofile);
 			$feedback['commandstr'] = $cmd;
 			debug($cmd, 'cmd');
 			exec($cmd, $output, $exitCode);
