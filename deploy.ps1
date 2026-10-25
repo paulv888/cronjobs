@@ -68,7 +68,7 @@ $robocopyArgs = @(
     '/R:2', '/W:2',
     '/XD', '.git', '.vscode', 'log', 'lastimage', 'bin',
     '/XF', 'config.php', 'logins.php', 'info.php', 'php_errors.log', 'test.php',
-           '.gitignore', 'deploy.ps1',
+           '.gitignore', 'deploy.ps1', 'AGENTS.md',
     '/NJH', '/NJS', '/NP'
 )
 if ($DryRun) {
