@@ -34,9 +34,11 @@ Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
   re-POSTs to `auth.php` to extend the session. The user never sees a login screen
   mid-session.
 - **A11** When 30 days of inactivity is reached the session is dead and the user
-  must type their password again. The client calls `signOut()` on Firebase when the
-  server reports the session gone — otherwise Firebase's own persistence would
-  silently restore the login and defeat the 30-day rule.
+  must type their password again. The client calls `signOut()` on Firebase
+  automatically when the server reports the session gone — otherwise Firebase's own
+  persistence would silently restore the login and defeat the 30-day rule. It also
+  stops the poll timer, so an expired session does not produce a 401 every six
+  seconds, and then shows the login screen.
 - **A12** Authorization is server-side and revocable: sessions live in a table
   (`ha_sessions`), the cookie holds an opaque token whose hash is the key, and
   revoking a row denies the user on their very next request.
@@ -46,6 +48,12 @@ Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
   device's push token.
 - **A15** `auth.php` is internet-facing: rate-limited per source IP, and every
   failure is logged with the IP.
+- **A16** Every 401 carries a machine-readable `reason`: `no_session`,
+  `session_expired` or `user_disabled`. The client tells them apart, because only
+  the last two mean "sign out of Firebase and start again".
+- **A17** `remote.php` marks itself as the PWA host (`window.VLO_REMOTE_HOST =
+  'pwa'`). The Joomla embed leaves it unset, which is how the shared renderer knows
+  whether it may show a login in place or has to link out.
 
 ## B. Authorization in `process.php`
 
@@ -137,6 +145,11 @@ Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
 - **G3** Consequence to keep in mind: the grid's HTML is renderable by anyone who
   can load the Joomla page, while the controls only work for LAN callers. This is
   today's behaviour and it is not being changed.
+- **G4** Pressing a control in the embed with no session returns 401, and the embed
+  then offers a **Sign in** link that opens `/ha/remote.php?name=…` in a new tab. It
+  never renders a login form itself.
+- **G5** In the PWA the same 401 puts the sign-in in place instead of linking out,
+  so an expired session costs one password and not a lost page.
 
 ## Verification
 
