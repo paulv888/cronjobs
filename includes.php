@@ -7,6 +7,7 @@ include_once 'shared/shared_db.php';
 include_once 'shared/shared_file.php';
 include_once 'shared/shared_ha.php';
 include_once 'shared/shared_gen.php';
+include_once 'shared/shared_math.php';
 include_once 'shared/shared_placeholders.php';
 include_once 'includes/properties_factory.php';
 include_once 'includes/commands_factory.php';

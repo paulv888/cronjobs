@@ -40,6 +40,42 @@ if (isset($argv)) {
 	}
 }
 
+if (!is_array($params)) {
+	$params = array();
+}
+
+// ---------------------------------------------------------------------------
+// Normalise the numeric identifiers at the request boundary.
+//
+// Everything downstream concatenates these into SQL (processor.php,
+// shared_ha.php), and commandvalue is evaluated as arithmetic, so nothing
+// arriving from the caller is trusted as a string. Casting here covers every
+// code path that reads them.
+// ---------------------------------------------------------------------------
+$numericParams = array('callerID', 'deviceID', 'commandID', 'propertyID',
+	'schemeID', 'remotekeyID', 'alert_textID', 'playerID');
+foreach ($numericParams as $numericKey) {
+	if (isset($params[$numericKey]) && !is_array($params[$numericKey])) {
+		$params[$numericKey] = (int)$params[$numericKey];
+	}
+}
+if (isset($params['keys']) && is_array($params['keys'])) {
+	foreach ($params['keys'] as $keyIndex => $keyValue) {
+		if (!is_array($keyValue)) {
+			$params['keys'][$keyIndex] = (int)$keyValue;
+		}
+	}
+}
+
+// Raw SQL (executeQuery) is an internal capability. Timers, thermostat
+// maintenance and macro steps set this flag on their own arrays; a web caller
+// must never be able to claim it, or it could run any SQL it likes.
+// CLI is trusted here because the only CLI callers are cron and the async
+// threads that timers and macros spawn.
+if (php_sapi_name() !== 'cli') {
+	unset($params['sql_from_template']);
+}
+
 if (isset($params['debug'])) {
 	if ($params['debug'] == true) $GLOBALS['debug'] = true;
 }

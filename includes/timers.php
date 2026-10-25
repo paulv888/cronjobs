@@ -71,7 +71,7 @@ function RunTimers(){
 					$mysql="UPDATE `ha_timers` ".
 						" SET last_run_date = '". date("Y-m-d H:i:00")."' WHERE `ha_timers`.`id` = ".$timer['id'] ;
 					debug($mysql, 'mysql');
-					executeQuery(array( 'commandvalue' => $mysql));
+					executeQuery(array( 'commandvalue' => $mysql, 'sql_from_template' => true));
 				} else {
 					debug ('Skipped', 'Skipped');
 				}
@@ -122,6 +122,8 @@ function runTimerSteps($params) {
                 if (array_key_exists('loglevel', $params)) $step['loglevel'] = $params['loglevel'];
 				// $step['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 				$step['debug'] = false;
+				// A timer step's SQL comes from the stored step, never from the caller.
+				$step['sql_from_template'] = true;
 				if ($timer['runasync']) {
 					$getparams = http_build_query($step, '',' '); 
 					$cmd = 'nohup nice -n 10 /usr/bin/php -f '.getPath().'/process.php ASYNC_THREAD '.$getparams;

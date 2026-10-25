@@ -326,6 +326,8 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 
 				$stepValue = replaceCommandPlaceholders($stepValue, $params);		// Replace placeholders in commandvalue
 				$params['commandvalue'] = $stepValue;
+				// A step's SQL comes from the stored template, never from the caller.
+				$params['sql_from_template'] = true;
 				debug($stepValue, 'stepValue');
 
 				if ($step['step_async']) {			// Spawn it
@@ -335,6 +337,7 @@ function executeMacro($params) {      // its a scheme, process steps. Scheme set
 					$values['messagetypeID'] = "MESS_TYPE_SCHEME";
 					$values['commandvalue'] = (array_key_exists('commandvalue', $params) ? $params['commandvalue'] : null);
 					$values['schemeID'] = $params['schemeID'];
+					$values['sql_from_template'] = true;
 					$values['debug'] = (isset($GLOBALS['debug']) ? $GLOBALS['debug'] : 0);
 					$getparams = http_build_query($values, '',' ');
 
@@ -993,8 +996,15 @@ function calculateProperty(&$params) {
 	// 	{calculate___{property_position}+1
 	if (preg_match("/\{calculate___(.*?)\}/", $params['commandvalue'], $matches)) {
 		debug($matches, 'calculate matches');
-		$calcvalue = eval('return '.$matches[1].';');
-		$params['commandvalue'] = str_replace($matches[0], $calcvalue, $params['commandvalue']);
+
+		// Only plain arithmetic is evaluated. commandvalue is caller supplied, so
+		// the placeholder text must never reach PHP's compiler.
+		$calcvalue = calculateExpressionValue($matches[1]);
+		if ($calcvalue === null) {
+			error_log('calculateProperty: rejected calculate expression: '.substr($matches[1], 0, 200));
+		} else {
+			$params['commandvalue'] = str_replace($matches[0], $calcvalue, $params['commandvalue']);
+		}
 	}
 
 	debug($feedback, 'feedback');
@@ -1671,6 +1681,15 @@ function timelapsInfo(&$params) {
 function executeQuery($params) {
 
 	debug($params, 'params');
+
+	// Running raw SQL is an internal capability, not a request capability. Only
+	// timers, thermostat maintenance and macro steps set this flag, and the HTTP
+	// boundary strips it, so a crafted request can never reach the SQL below.
+	if (empty($params['sql_from_template'])) {
+		error_log('executeQuery refused: no template provenance (callerID='.(isset($params['callerID']) ? $params['callerID'] : '-').')');
+		$feedback['error'] = 'executeQuery refused: raw SQL is only allowed from internal templates';
+		return $feedback;
+	}
 
 	$mysql = $params['commandvalue'];
 	$mysql=str_replace("{DEVICE_SOMEONE_HOME}",DEVICE_SOMEONE_HOME,$mysql);

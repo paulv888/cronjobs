@@ -40,8 +40,14 @@ function replaceCommandPlaceholders($stepValue, $params) {
 	if (preg_match("/\{calculate___(.*?)\}/", $stepValue,$matches)) {
 		// debug($matches, 'calculate->matches');
 
-		$calcvalue = eval('return '.$matches[1].';');
-		$stepValue = str_replace($matches[0], $calcvalue, $stepValue);
+		// Only plain arithmetic is evaluated. The placeholder can carry text that
+		// came from a command value, so it must never reach PHP's compiler.
+		$calcvalue = calculateExpressionValue($matches[1]);
+		if ($calcvalue === null) {
+			error_log('replaceCommandPlaceholders: rejected calculate expression: '.substr($matches[1], 0, 200));
+		} else {
+			$stepValue = str_replace($matches[0], $calcvalue, $stepValue);
+		}
 	}
 
 	if (array_key_exists('mess_subject',$params)) $stepValue = str_replace("{mess_subject}",trim($params['mess_subject']),$stepValue);
