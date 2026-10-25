@@ -1,10 +1,8 @@
-# Updated July 27, 2012
-
-DirectoryIndex index.html
-
-# This prevents web browsers or spiders from seeing your .htaccess directives:
-<Files .htaccess>
-deny from all
-</Files>
-
-# End of file
+# These files are only ever include()d, never requested.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
