@@ -298,15 +298,26 @@ function PDOInsert($table, $fields){
 
 function PDOError($e, $function, $mysql) {
 
-	echo "<pre>";
-	echo "PDOError:".print_r($e);
-	echo CRLF."MySql: ".$mysql.CRLF;
-	echo "</pre>";
+	$message = ($e instanceof Exception) ? $e->getMessage() : print_r($e, true);
+
+	// PDOUpdate/PDOInsert pass table/fields/where as extra arguments, which the
+	// signature does not take. log them rather than drop them.
+	$extra = array_slice(func_get_args(), 3);
+	$context = empty($extra) ? '' : ' | context: '.json_encode($extra, JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
+
+	// Server-side only: a response must never carry SQL or a stack trace.
+	error_log('PDOError in '.$function.': '.$message.' | SQL: '.$mysql.$context);
+
+	if (isset($GLOBALS['debug'])) {
+		echo "<pre>PDOError: ".htmlspecialchars($message).CRLF.
+		     "MySql: ".htmlspecialchars($mysql).$context."</pre>";
+	}
+
 	$command = array(
 			'callerID' => 164,
 			'messagetypeID' => MESS_TYPE_SCHEME,
 			'schemeID'=>SCHEME_ALERT_PDO,
-			'commandvalue'=> substr($mysql, 0, 30).'| SQL: '.$mysql.'ERROR: <pre>'.prettyPrint(json_encode($e,JSON_UNESCAPED_SLASHES)).'</pre>'
+			'commandvalue'=> substr($mysql, 0, 30).' | ERROR: '.$message
 	);
 	$feedback['result'][] = executeCommand($command);
 	return;
