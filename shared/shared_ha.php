@@ -132,7 +132,7 @@ function setDevicePropertyValue($params, $propertyName) {
 
 	debug($deviceproperty, 'deviceproperty');
 
-	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.  $deviceproperty['deviceID'].' AND propertyID='.$deviceproperty['propertyID'].' order by updatedate desc limit 1';
+	$sql = 'SELECT * FROM `ha_properties_log`  WHERE deviceID='.(int)$deviceproperty['deviceID'].' AND propertyID='.(int)$deviceproperty['propertyID'].' order by updatedate desc limit 1';
 	if ($row = FetchRow($sql)) {
 
 		unset($deviceproperty['trend']);
@@ -213,7 +213,7 @@ function handleTriggers($params, $propertyID, $triggertype) {
 	debug($params, 'params');
 
 	$mysql = 'SELECT * FROM `ha_mf_monitor_triggers` ' .
-			'WHERE (`deviceID` = '. $params['deviceID']. ' AND propertyID = '.$propertyID.' AND `triggertype` = '.$triggertype.') ORDER BY sort';
+			'WHERE (`deviceID` = '.(int)$params['deviceID'].' AND propertyID = '.(int)$propertyID.' AND `triggertype` = '.(int)$triggertype.') ORDER BY sort';
 	$feedback =  array(); 
 
 	if ($triggerrows = FetchRows($mysql)) {
@@ -240,25 +240,25 @@ function getDevice($deviceID){
 	// Callers include device ingest endpoints, so the id is forced to an integer
 	// rather than trusted as text in the query below.
 	$deviceID = (int)$deviceID;
-	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse = 1';
+	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.(int)$deviceID.' AND inuse = 1';
 	if ($rowdevice = FetchRow($mysql)) {
-		$mysql='SELECT * FROM ha_mi_connection where id ='.$rowdevice['connectionID'];
-		$mysql='SELECT `id`, `name`, `targetaddress`, `targetport`, `targettype`, `page`, `timeout`, `video_link`, `admin_page`, `authentication`, `username`,  cast(aes_decrypt(`password`, "'.SECRET.'") as char(100)) as password, `api_key`, `semaphore`, `notes`, `pingport`, `updatedate` FROM `ha_mi_connection` WHERE `id` ='.$rowdevice['connectionID'];
+		$mysql='SELECT * FROM ha_mi_connection where id ='.(int)$rowdevice['connectionID'];
+		$mysql='SELECT `id`, `name`, `targetaddress`, `targetport`, `targettype`, `page`, `timeout`, `video_link`, `admin_page`, `authentication`, `username`,  cast(aes_decrypt(`password`, "'.SECRET.'") as char(100)) as password, `api_key`, `semaphore`, `notes`, `pingport`, `updatedate` FROM `ha_mi_connection` WHERE `id` ='.(int)$rowdevice['connectionID'];
 		if ($rowconn = FetchRow($mysql)) {
 			$rowdevice['connection'] = $rowconn;
 		}
-		$mysql = 'SELECT * FROM `ha_mf_device_types` WHERE id = '.$rowdevice['typeID'];
+		$mysql = 'SELECT * FROM `ha_mf_device_types` WHERE id = '.(int)$rowdevice['typeID'];
 		if ($rowtype = FetchRow($mysql)) {
 			$rowdevice['type'] = $rowtype;
 		}
 		if ($rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_HEAT || $rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_COOL  || $rowdevice['typeID']==DEV_TYPE_THERMOSTAT_CT30_OFF) {
-			$mysql = 'SELECT * FROM `ha_mf_devices_thermostat` WHERE `deviceID` = '.$deviceID; 
+			$mysql = 'SELECT * FROM `ha_mf_devices_thermostat` WHERE `deviceID` = '.(int)$deviceID; 
 			if ($rowthermostat = FetchRow($mysql)) {
 				$rowdevice['thermostat'] = $rowthermostat;
 			}
 		}
 		if (!empty($rowdevice['ipaddressID'])) {
-			$mysql = 'SELECT * FROM `ha_mf_device_ipaddress` WHERE id = '.$rowdevice['ipaddressID'];
+			$mysql = 'SELECT * FROM `ha_mf_device_ipaddress` WHERE id = '.(int)$rowdevice['ipaddressID'];
 			if ($rowaddress = FetchRow($mysql)) {
 				$rowdevice['ipaddress'] = $rowaddress;
 			}
@@ -391,22 +391,22 @@ function getDeviceProperties($deviceproperty){
 			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype`,  `p`.`primary_status`, `p`.`report_status`  FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
-			 WHERE dp.deviceID = '.$deviceproperty['deviceID'].' AND dp.propertyID = '.$deviceproperty['propertyID'].' ORDER BY p.sort')) {
+			 WHERE dp.deviceID = '.(int)$deviceproperty['deviceID'].' AND dp.propertyID = '.(int)$deviceproperty['propertyID'].' ORDER BY p.sort')) {
 			debug($rowproperty, ' Dev & Prop "');
 			if ($deviceproperty['propertyID'] == PROPERTY_LINK) {
 				if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
-						WHERE deviceID = '.$deviceproperty['deviceID'])) $rowproperty = array_merge($rowproperty, $link);
+						WHERE deviceID = '.(int)$deviceproperty['deviceID'])) $rowproperty = array_merge($rowproperty, $link);
 			}
 			debug($rowproperty, 'Merged');
 			return $rowproperty;
 		}
 	} elseif (array_key_exists('propertyID', $deviceproperty)) {		// Only PropertyID Used from upateTimer/Link to get all devices with timer set 
 		$result = Array();
-		if ($rowproperties = FetchRows('SELECT dp.*, p.description, `p`.`datatype`,  `p`.`primary_status`, `p`.`report_status` FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.$deviceproperty['propertyID'].'  ORDER BY p.sort')) {
+		if ($rowproperties = FetchRows('SELECT dp.*, p.description, `p`.`datatype`,  `p`.`primary_status`, `p`.`report_status` FROM ha_mf_device_properties dp JOIN ha_mi_properties p ON dp.propertyID = p.id WHERE propertyID = '.(int)$deviceproperty['propertyID'].'  ORDER BY p.sort')) {
 			foreach ($rowproperties AS $key => $prop) {
 				if ($propertyName == 'Link') {
 					if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
-						WHERE deviceID = '.$prop['deviceID'])) $rowproperties[$key] = array_merge($prop, $link);
+						WHERE deviceID = '.(int)$prop['deviceID'])) $rowproperties[$key] = array_merge($prop, $link);
 				}
 				$result[$prop['deviceID']][$propertyName] = $rowproperties[$key];
 			}
@@ -419,11 +419,11 @@ function getDeviceProperties($deviceproperty){
 			'SELECT dp.*, mp.active, mp.invertstatus, mp.toggleignore, `p`.`description`, `p`.`datatype`, `p`.`primary_status`, `p`.`report_status` FROM ha_mf_device_properties dp 
 			 LEFT JOIN ha_mf_monitor_property mp ON dp.propertyID = mp.propertyID AND dp.deviceID = mp.deviceID 
 			 JOIN ha_mi_properties p ON dp.propertyID = p.id 
-			 WHERE dp.deviceID = '.$deviceproperty['deviceID'].'  ORDER BY p.sort')) {
+			 WHERE dp.deviceID = '.(int)$deviceproperty['deviceID'].'  ORDER BY p.sort')) {
  			foreach ($rowproperties AS $key => $prop) {
 				if ($prop['description'] == 'Link') {
 					if ($link = FetchRow('SELECT active, linkmonitor, listenfor1, listenfor2, pingport, link_warning, link_timeout FROM `ha_mf_monitor_link` 
-						WHERE deviceID = '.$deviceproperty['deviceID'])) $rowproperties[$key] = array_merge($rowproperties[$key], $link);
+						WHERE deviceID = '.(int)$deviceproperty['deviceID'])) $rowproperties[$key] = array_merge($rowproperties[$key], $link);
 				}
 				$result[$prop['description']] = $rowproperties[$key];
 			}
@@ -444,7 +444,7 @@ function getStatusLink($devprop) {
 			$feedback['Status'] = $property['value'];
 			$feedback['PropertyID'] =$devprop['propertyID'];
 		}
-		if ($link = FetchRow('SELECT link, ln FROM `ha_vw_monitor_link_status` WHERE active = 1 AND deviceID = '.$devprop['deviceID'])) $feedback['Link'] = $link['link'] || $link['ln'];
+		if ($link = FetchRow('SELECT link, ln FROM `ha_vw_monitor_link_status` WHERE active = 1 AND deviceID = '.(int)$devprop['deviceID'])) $feedback['Link'] = $link['link'] || $link['ln'];
 		if (($property  = getDeviceProperties(Array( 'deviceID' => $devprop['deviceID'], 'description' => 'Timer Remaining')))) $feedback['Timer Remaining'] = $property['value'];
 		$feedback['DeviceID'] = $devprop['deviceID'];
 	}
@@ -472,7 +472,7 @@ function removeDevicePropertyByID($deviceproperty){
 //
 	debug($deviceproperty, 'deviceproperty');
 
-	$mysql = 'DELETE FROM `ha_mf_device_properties` WHERE(`deviceID` ='.$deviceproperty['deviceID'].' AND `propertyID`='.$deviceproperty['propertyID'].');';
+	$mysql = 'DELETE FROM `ha_mf_device_properties` WHERE(`deviceID` ='.(int)$deviceproperty['deviceID'].' AND `propertyID`='.(int)$deviceproperty['propertyID'].');';
 	PDOExec($mysql);
 	debug("true", 'true');
 	return true ;
@@ -516,8 +516,8 @@ function setDeviceID(&$log){
 	debug($log, 'log');
 
 	$deviceID = null;
-	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` ="'.$log['code'].'" AND `unit` ="'.$log['unit'].'"';
-	if ($rowdevice = FetchRow($mysql)) {
+	$mysql='SELECT `id`, `typeID` FROM `ha_mf_devices` WHERE `code` = ? AND `unit` = ?';
+	if ($rowdevice = PDOFetchRow($mysql, array($log['code'], $log['unit']))) {
 		$log['deviceID'] = $rowdevice['id'];
 		$log['typeID'] = $rowdevice['typeID'];
 		$deviceID = $rowdevice['id'];
@@ -569,7 +569,7 @@ function logEvent($log) {
 	if ($log['deviceID'] != 0) {
 		$log['typeID'] = getDevice($log['deviceID'])['typeID'];
 		$mysql = 'SELECT invertstatus FROM `ha_mf_monitor_property` ' .
-					' WHERE propertyID = 123 AND deviceID = '.$log['deviceID']; 
+					' WHERE propertyID = 123 AND deviceID = '.(int)$log['deviceID']; 
 		if ($rowdevice=FetchRow($mysql)) {
 			if ($rowdevice['invertstatus'] == '0') {
 				$log['data'] .= ' Inverted'; 
@@ -586,7 +586,7 @@ function logEvent($log) {
 
 	if (is_null($log['loglevel']))	{
 		if (!is_null($log['commandID'])) {
-			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.$log['commandID'];
+			$mysql='SELECT `loglevel` FROM `ha_mf_commands` WHERE `id` ='.(int)$log['commandID'];
 			if ($rowcommand=FetchRow($mysql)) {
 				$log['loglevel'] = $rowcommand['loglevel'];
 			}
@@ -610,7 +610,7 @@ function logEvent($log) {
 function getSchemeName($schemaID) {
 	debug($schemaID, 'schemaID');
 
-	$schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".$schemaID);
+	$schemarow = FetchRow("SELECT name FROM ha_remote_schemes WHERE id = ".(int)$schemaID);
 	$name = $schemarow['name'];
 	debug($name, 'name');
     return $name;
@@ -622,7 +622,9 @@ function listDeviceProperties($devices){
 //
 	debug($devices, 'devices');
 
-	if ($rows = FetchRows('SELECT propertyID FROM ha_mf_device_properties  WHERE deviceID IN ('.$devices.')')) {
+	$deviceIDs = array_values(array_filter(array_map('intval', explode(',', (string)$devices))));
+	$ph = implode(',', array_fill(0, count($deviceIDs), '?'));
+	if ($rows = PDOFetchRows('SELECT propertyID FROM ha_mf_device_properties  WHERE deviceID IN ('.$ph.')', $deviceIDs)) {
 		foreach ($rows AS $prop) {
 			$result[] = $prop['propertyID'];
 		}
@@ -648,7 +650,7 @@ function getCommand($commandID) {
 //
 	debug($commandID, 'commandID');
 
-	$mysql = "SELECT * FROM ha_mf_commands WHERE ha_mf_commands.id =".$commandID;
+	$mysql = "SELECT * FROM ha_mf_commands WHERE ha_mf_commands.id =".(int)$commandID;
 	if ($rowcommand = FetchRow($mysql)) {
 		debug($rowcommand, 'rowcommand');
 		return $rowcommand;
@@ -720,7 +722,7 @@ function checkConditions($rows, $params) {
 			$mysql = 'SELECT g.groupID as groupID, gr.description as group_description, d.id as deviceID, typeID, inuse FROM ha_mf_device_group g 
 					JOIN `ha_mf_devices` d ON g.deviceID = d.id 
 					JOIN `ha_mf_groups` gr ON g.groupID = gr.id 
-					WHERE groupID = '.$rowcond['cond_groupID']; 
+					WHERE groupID = '.(int)$rowcond['cond_groupID']; 
 			$groups = FetchRows($mysql);
 			//$groups = getGroup(array('commandvalue' => $rowcond['cond_groupID']));
 			// [getGroup] => Array (['result'][0] => Array ([groupselect] => Array ([DeviceID] => 1))
