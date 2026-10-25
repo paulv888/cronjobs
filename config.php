@@ -2,6 +2,8 @@
 define("MY_SUBNET", "192.168.2");
 define("MY_VPN_SUBNET", "192.168.10");
 
+define("ALEXA_REQUIRE_SIGNATURE", true);
+
 define("KODI_MUSIC_VIDEOS","smb://SRVMEDIA/media/My Music Videos");
 
 if (strtoupper(gethostname()) == "HOME") {
@@ -24,6 +26,9 @@ define("LOCAL_IMPORT", LOCAL_MUSIC_VIDEOS."/_XXX_import");
 
 define("PUBLIC_LASTIMAGEDIR", "/data/cameras/lastimage");
 define("PROCESS_REQUIRE_APIKEY", true);
+
+define("SSH_IDENTITY",    "/etc/ha/remote-jobs");
+define("SSH_KNOWN_HOSTS", "/etc/ha/known_hosts");
 
 define("SCHEME_ALERT_PDO", 309);
 define("COMMAND_SNAPSHOT", 450);

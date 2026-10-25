@@ -1,6 +1,6 @@
 <?php 
-include_once '/etc/ha/config.php' ;
 include_once '/etc/ha/logins.php' ;
+include_once 'config.php' ;
 include_once 'constants.php';
 include_once 'includes/remote.php';
 include_once 'shared/shared_db.php';
