@@ -61,6 +61,9 @@ because this tree has a history of local debris sitting next to real code.
 ## Secrets
 - Live credentials live in `/etc/ha/logins.php`, outside the web root. Nothing in the
   repo should contain a password; the tracked `config.php` holds none.
+- `/etc/ha/firebase-service-account.json` is a full Firebase project credential. It
+  stays outside the repo and must never be copied in, printed, or pasted into a
+  ticket. `config.php` stores only its path.
 - If a secret lands in a commit: **rotate it first**, then rewrite history. Rewriting
   alone does not undo the exposure; a public repo is scraped within minutes.
 - That leak already happened once (`bin/fireTVnetflixLogin.sh`, Netflix credentials).
@@ -88,20 +91,30 @@ because this tree has a history of local debris sitting next to real code.
   Keep them that way — don't reintroduce `'.$var.'` into those queries.
 
 ## Outstanding work
-- `remote.php` passes its page key in the URL (logs, referrers, history). Plan:
-  1. On a valid `?key=`, mint a PHP session (username + `sha256` of the key — not
-     the key), set an HttpOnly/SameSite=Strict/Secure cookie, 302 to the same URL
-     without the key. Binding the session to the key hash makes key rotation
-     invalidate it.
-  2. `process.php` accepts that session as a third auth branch, alongside the
-     `apikey` param (kept for LAN devices / cron / async threads, which send no
-     cookies) and `requestIsLocal()`.
-  3. Then remove `params.apikey` from `js/remote.js:266` and the `$apikey`
-     threading in `includes/remote.php:36`. Steps 1+2 ship together and need no
-     JS change.
-  Open question: `js/remote.js:349-350` substitutes `_apikey_` inside remote-key
-  text. Decide server-side render vs short-lived signed token once we know which
-  keys actually use the placeholder.
+- **`remote.php` becomes the PWA, with Firebase Auth identity.** Agreed plan:
+  1. Delete the page key. `ha_mi_remote_users` keeps its rows but `apikey` stops
+     being a credential. `requestIsLocal()` still lets the LAN and the Joomla
+     embed through with no login — that is what keeps the in-house dashboard
+     password-free, which is the agreed behaviour there.
+  2. Login is Firebase email/password. The client POSTs the Firebase ID token to
+     `auth.php`, which verifies it against Google's JWKS (cached on disk), mints a
+     PHP session (`HttpOnly; SameSite=Strict; Secure`) holding the `username` and
+     the Firebase `sub`, and `process.php` accepts that session as its only
+     non-local auth branch. `Authorization: Bearer <idToken>` is accepted too, so a
+     native app or a relocated shell needs no server change.
+  3. Remove `params.apikey` from `js/remote.js:266` and the `$apikey` threading in
+     `includes/remote.php:36`. The `_apikey_` open question is settled: only
+     `ha_remote_keys` 424 and 503 use it and both are links to `remote.php?name=…`,
+     so they become plain `/ha/remote.php?name=av` and the placeholder disappears.
+  4. `manifest.json` plus one service worker at `/ha/sw.js` (scope `/ha/`), reusing
+     the icons already in `images/` (192/512, apple-touch, favicons).
+- **Push (FCM HTTP v1) rides on the same login, not a later phase.** Web push needs
+  a recipient and a VAPID key pair, and there is one service worker per scope, so
+  the shell worker and the messaging worker must be the same file. Sending needs the
+  service-account JSON at `/etc/ha/firebase-service-account.json`, referenced by
+  path from `config.php` — the JWT/scope half already exists in
+  `Classes/RestClient.class.php:272`. `fcm_tokens` gains a user column; the five
+  June-2025 rows are stale.
 - `sp_properties.sql` now lives only in `bin/`. It is the source for the stored
   procedure still called by `commands_factory.php`; the copy in `includes/` was an
   older revision and was deleted.

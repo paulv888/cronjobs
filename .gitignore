@@ -13,6 +13,11 @@ fireTVnetflixLogin.sh
 # hostname test, no credentials. Real secrets live in /etc/ha/config.php.
 # If it ever gains a password, rotate first, then git rm --cached it.
 
+# Firebase service-account keys. They live in /etc/ha/ and are a full project
+# credential; this is a belt-and-braces guard against an accidental copy.
+*service-account*.json
+firebase-adminsdk*.json
+
 # Local tooling / editor
 .vscode/
 .DS_Store
