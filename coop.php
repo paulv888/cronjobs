@@ -16,24 +16,48 @@ define("MY_DEVICE_ID", 214);
 	 // 8/9/2015 Now receiving for Axis Cam
  */
 
-if (isset($_GET["Message"])) {
+function coopLog($line) {
+	@file_put_contents(__DIR__.'/log/arduino.log', date("Y-m-d H:i:s").": ".substr($line, 0, 500)."\n", FILE_APPEND | LOCK_EX);
+}
+
+function coopReject($reason) {
+	coopLog('REJECT '.$reason);
+	http_response_code(400);
+	header('Content-Type: text/plain');
+	echo "REJECTED\n";
+	exit;
+}
+
+if (isset($_GET["Message"]) && is_string($_GET["Message"])) {
 	$sdata=$_GET["Message"];
 } else {
 	$sdata = file_get_contents("php://input");
 }
 
-$file = 'log/arduino.log';
-$current = file_get_contents($file);
-$current .= date("Y-m-d H:i:s").": ".$sdata."\n";
-file_put_contents($file, $current);
+coopLog(substr((string)$sdata, 0, 500));
 
 if (!($sdata=="")) { 					//import_event
 	$rcv_message = json_decode($sdata, $assoc = TRUE);
 //print_r($rcv_message);
 
+	// LAN-only endpoint, but a LAN device is still untrusted input: reject
+	// anything that is not the expected shape before it reaches a query.
+	if (!is_array($rcv_message)) {
+		coopReject('body is not a JSON object');
+	}
+	if (!isset($rcv_message['Device']) || !is_numeric($rcv_message['Device']) || (int)$rcv_message['Device'] <= 0) {
+		coopReject('bad Device');
+	}
+	$rcv_message['Device'] = (int)$rcv_message['Device'];
+	$rcv_message['Command'] = (isset($rcv_message['Command']) && is_numeric($rcv_message['Command'])) ? (int)$rcv_message['Command'] : 0;
+	if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = 1;
+	$rcv_message['InOut'] = (int)$rcv_message['InOut'];
+	if (!isset($rcv_message['ExtData']) || !is_array($rcv_message['ExtData'])) {
+		$rcv_message['ExtData'] = array();
+	}
+
 	$message['deviceID'] = $rcv_message['Device'];
 	$message['commandID'] = $rcv_message['Command'];
-	if (!array_key_exists('InOut', $rcv_message)) $rcv_message['InOut'] = 1;
 	$message['inout'] = $rcv_message['InOut'];
 	if (!array_key_exists('Status', $rcv_message)) $rcv_message['Status'] = null;
 	if (array_key_exists('Value', $rcv_message)) {
@@ -42,6 +66,9 @@ if (!($sdata=="")) { 					//import_event
 		$message['data'] = $rcv_message['Status'];
 	}
 	$device = getDevice($message['deviceID']);
+	if (!$device) {
+		coopReject('unknown device '.$message['deviceID']);
+	}
 	$message['typeID'] = $device['typeID'];
 	//$message['message'] = $sdata;
 	$message['callerID'] = MY_DEVICE_ID;

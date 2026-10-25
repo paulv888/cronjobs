@@ -237,6 +237,9 @@ function handleTriggers($params, $propertyID, $triggertype) {
 function getDevice($deviceID){
 	debug($deviceID, 'deviceID');
 
+	// Callers include device ingest endpoints, so the id is forced to an integer
+	// rather than trusted as text in the query below.
+	$deviceID = (int)$deviceID;
 	$mysql='SELECT * FROM `ha_mf_devices` d	WHERE id ='.$deviceID.' AND inuse = 1';
 	if ($rowdevice = FetchRow($mysql)) {
 		$mysql='SELECT * FROM ha_mi_connection where id ='.$rowdevice['connectionID'];
@@ -365,6 +368,16 @@ function getDeviceProperties($deviceproperty){
 // If DeviceID given, then only that device, (or deviceList) 
 	debug($deviceproperty, 'deviceproperty');
 
+	// Identifiers may arrive from a device ingest endpoint; force them to ints
+	// so they cannot reach the queries below as text. isset() keeps an
+	// intentional null (meaning "not given") as null.
+	if (isset($deviceproperty['deviceID'])) {
+		$deviceproperty['deviceID'] = (int)$deviceproperty['deviceID'];
+	}
+	if (isset($deviceproperty['propertyID'])) {
+		$deviceproperty['propertyID'] = (int)$deviceproperty['propertyID'];
+	}
+
 	if (array_key_exists('description', $deviceproperty)) {			// Find property ID if description given
 		$propertyName = $deviceproperty['description'];
 		$deviceproperty['propertyID'] = getProperty($deviceproperty['description'])['id'];
@@ -473,20 +486,25 @@ function getProperty($key_description, $autocreate = true){
 //
 	debug($key_description, 'key_description');
 
+	if (!is_string($key_description) && !is_numeric($key_description)) {
+		debug('non-scalar key', 'getProperty return false');
+		return false;
+	}
+
 	if (is_numeric($key_description)) { 
-		$mysql='SELECT * FROM `ha_mi_properties` WHERE `id`='.(int)$key_description;
+		$rowproperty = PDOFetchRow('SELECT * FROM `ha_mi_properties` WHERE `id` = ?', array((int)$key_description));
 		$descriptiongiven=false;
 	} else {
-		$mysql='SELECT * FROM `ha_mi_properties` WHERE UCASE(description) ="'.strtoupper($key_description).'"';
+		// The description can come from device ingest (esp.php?param=), so bind it.
+		$rowproperty = PDOFetchRow('SELECT * FROM `ha_mi_properties` WHERE UCASE(description) = ?', array(strtoupper($key_description)));
 		$descriptiongiven=true;
 	}
-	if ($rowproperty = FetchRow($mysql)) {
+	if ($rowproperty) {
 		debug($rowproperty, 'rowproperty');
 		return $rowproperty;
 	} elseif ($descriptiongiven && $autocreate) {		// Create
 		$id = PDOinsert('ha_mi_properties', Array('description' => $key_description));
-		$mysql = 'SELECT * FROM `ha_mi_properties` WHERE `id`='.$id;;
-		$rows = FetchRow($mysql);
+		$rows = PDOFetchRow('SELECT * FROM `ha_mi_properties` WHERE `id` = ?', array((int)$id));
 		debug($rows, 'rows');
 		return $rows;
 	}

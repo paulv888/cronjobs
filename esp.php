@@ -2,43 +2,61 @@
 require_once 'includes.php';
 define("MY_DEVICE_ID", 272);
 /*
-	 Process can execute following commands
-	 1) Store data to HA_Database
-	 Called from
-	 1) esp8266 Hub
-	 Expecting
-	 1) Type
-	 2) Fields matching the above query
-	 // 8/9/2015 Now receiving for Axis Cam
+	 Receives one property value from an ESP8266 / ESP Easy unit.
+
+	 Called from: ESP Easy hub (HTTP GET on the local vhost only -- the public
+	              vhost denies this file).
+	 Expecting:   device=<int>  param=<property name>  value=<text>
+
+	 Everything here is caller supplied, so the identifiers are validated before
+	 they are used and the stored value is length limited.
  */
-$file = 'log/esp.log';
-$current = file_get_contents($file);
-if (empty($sdata)) {
-  $current .= date("Y-m-d H:i:s").":Get ".json_encode($_GET)."\n";
-  $sdata = json_encode($_GET);
-} else {
-  $current .= date("Y-m-d H:i:s").":Post ".$sdata."\n";
+
+$deviceID = (isset($_GET['device']) && is_string($_GET['device'])) ? trim($_GET['device']) : '';
+$param    = (isset($_GET['param'])  && is_string($_GET['param']))  ? trim($_GET['param'])  : '';
+$value    = (isset($_GET['value'])  && is_string($_GET['value']))  ? $_GET['value'] : '';
+
+function espLog($line) {
+	@file_put_contents(__DIR__.'/log/esp.log', date("Y-m-d H:i:s").": ".substr($line, 0, 500)."\n", FILE_APPEND | LOCK_EX);
 }
-file_put_contents($file, $current);
-$sdata = $_GET;
+
+function espReject($reason) {
+	espLog('REJECT '.$reason);
+	http_response_code(400);
+	header('Content-Type: text/plain');
+	echo "REJECTED\n";
+	exit;
+}
+
+if ($deviceID === '' || !ctype_digit($deviceID) || (int)$deviceID === 0) {
+	espReject('bad device ['.$deviceID.']');
+}
+if (!preg_match('/^[A-Za-z0-9 ._-]{1,64}$/', $param)) {
+	espReject('bad param ['.substr($param, 0, 80).']');
+}
+if (strlen($value) > 255) {
+	espReject('value too long ('.strlen($value).')');
+}
+
 // esp.php?device=270&param=Temperature&value=26.00
 // esp.php?device=291&param=Status&value=0
-if (!($sdata=="")) { 					//import_event
-	$rcv_message = $sdata;
-	$message['deviceID'] = $rcv_message['device'];
-	$message['inout'] = COMMAND_IO_RECV;
-	$message['commandID'] = COMMAND_SET_RESULT;
-	$properties = array();
-	$properties[str_replace('_', ' ', $rcv_message['param'])]['value'] = $rcv_message['value'];
-	$message['callerID'] = MY_DEVICE_ID;
-	$message['data'] = $rcv_message['value'];
-	$message['message'] = $sdata;
-	if ($message['inout'] == COMMAND_IO_RECV) {
-		$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
-		$properties['Link']['value'] = LINK_UP;
-		$device['properties'] = $properties;
-		$message['result'] = updateDeviceProperties(array( 'callerID' => $message['callerID'], 'deviceID' => $message['deviceID'] , 'commandID' => $message['commandID'], 'device' => $device));
-	}
-	logEvent($message);
-}
+espLog('Get '.json_encode($_GET));
+
+$message['deviceID'] = (int)$deviceID;
+$message['inout'] = COMMAND_IO_RECV;
+$message['commandID'] = COMMAND_SET_RESULT;
+$message['callerID'] = MY_DEVICE_ID;
+$message['data'] = $value;
+$message['message'] = json_encode($_GET);
+
+$properties = array();
+$properties[str_replace('_', ' ', $param)]['value'] = $value;
+$properties['Link']['value'] = LINK_UP;
+
+$device['previous_properties'] = getDeviceProperties(Array('deviceID' => $message['deviceID']));
+$device['properties'] = $properties;
+
+$message['result'] = updateDeviceProperties(array('callerID' => $message['callerID'], 'deviceID' => $message['deviceID'], 'commandID' => $message['commandID'], 'device' => $device));
+
+logEvent($message);
 ?>

@@ -155,22 +155,40 @@ function PDOUpsert($table, $fields, $where) {
 	debug($fields, $table.' fields');
 	debug($where, $table.' where');
 
-	$pdo = openDB();
-
-	$i=0;
-	foreach( $where as $key => $value ){
-		if ($i==0) {
-			$mysql = 'SELECT '.$key.' FROM '.$table.' WHERE  ';
-		} else {
-			$mysql.= " AND ";
-		}
-		$mysql.= '`'.$key.'` = "'.$value.'"';
-		$i++;
+	if (!is_array($where) || count($where) === 0) {
+		return PDOInsert($table, $fields);
 	}
+	if (!preg_match('/^[A-Za-z0-9_]+$/', (string)$table)) {
+		error_log('PDOUpsert: refusing suspicious table name: '.$table);
+		return false;
+	}
+
+	// Bind the WHERE values. Table and column names cannot be bound, so they are
+	// restricted to identifier characters and are only ever taken from code.
+	$conditions = array();
+	$params = array();
+	$selectColumns = array();
+	$first = true;
+	foreach( $where as $key => $value ){
+		if (!preg_match('/^[A-Za-z0-9_]+$/', (string)$key)) {
+			error_log('PDOUpsert: refusing suspicious column name: '.$key);
+			return false;
+		}
+		$conditions[] = '`'.$key.'` = ?';
+		// A null used to render as "" in the old string-built query; keep that
+		// behaviour so an upsert cannot start inserting duplicate rows.
+		$params[] = is_null($value) ? '' : $value;
+		if ($first) {
+			$selectColumns[] = '`'.$key.'`';
+			$first = false;
+		}
+	}
+
+	$mysql = 'SELECT '.implode(', ', $selectColumns).' FROM '.$table.' WHERE '.implode(' AND ', $conditions);
 
 	debug($mysql, 'mysql');
 	
-	if (FetchRow($mysql)) {
+	if (PDOFetchRow($mysql, $params)) {
 		PDOupdate($table, $fields, $where);
 	} else {
 		PDOinsert($table, $fields);
