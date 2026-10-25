@@ -1,0 +1,20 @@
+# Never commit these to a public repo.
+
+logins.php
+info.php
+php_errors.log
+test.php
+
+# config.php is currently tracked; ignoring it here has no effect on tracked
+# files. If you want it out of the repo: git rm --cached config.php
+# config.php
+
+# Local tooling / editor
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Runtime data and deployment byproducts
+log/
+lastimage/
+*.bak

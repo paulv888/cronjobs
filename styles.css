@@ -1,0 +1,14 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  margin: 2rem;
+  background-color: #f0f8ff;
+  color: #333;
+}
+form {
+  margin-top: 1rem;
+}
+input, button {
+  padding: 0.5rem;
+  margin: 0.2rem;
+}
