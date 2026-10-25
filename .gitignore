@@ -5,9 +5,13 @@ info.php
 php_errors.log
 test.php
 
-# config.php is currently tracked; ignoring it here has no effect on tracked
-# files. If you want it out of the repo: git rm --cached config.php
-# config.php
+# Netflix login script: adb input text with plaintext credentials.
+# Matches at any depth, so bin/fireTVnetflixLogin.sh is covered.
+fireTVnetflixLogin.sh
+
+# config.php is tracked on purpose: it holds only paths, subnets and a
+# hostname test, no credentials. Real secrets live in /etc/ha/config.php.
+# If it ever gains a password, rotate first, then git rm --cached it.
 
 # Local tooling / editor
 .vscode/
