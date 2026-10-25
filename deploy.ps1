@@ -93,7 +93,7 @@ $robocopyArgs = @(
     '/R:2', '/W:2',
     '/XD', '.git', '.vscode', 'log', 'lastimage', 'bin',
     '/XF', 'logins.php', 'info.php', 'php_errors.log', 'test.php',
-           '.gitignore', 'deploy.ps1', 'AGENTS.md', 'README.md',
+           '.gitignore', 'deploy.ps1', 'AGENTS.md', 'README.md', 'SPEC-remote-pwa.md',
     '/NJH', '/NJS', '/NP'
 )
 if ($DryRun) {
@@ -124,7 +124,7 @@ if ($Prune) {
     # Never prune these: they only ever exist on the server.
     $excludeDirs = @('.git', '.vscode', 'log', 'lastimage', 'bin', 'media')
     $excludeFiles = @('logins.php', 'info.php', 'php_errors.log', 'test.php',
-                      '.gitignore', 'deploy.ps1', 'AGENTS.md', 'README.md')
+                      '.gitignore', 'deploy.ps1', 'AGENTS.md', 'README.md', 'SPEC-remote-pwa.md')
 
     # What the copy above would leave behind: same tree, same exclusions.
     $expected = New-Object System.Collections.Hashtable ([System.StringComparer]::Ordinal)

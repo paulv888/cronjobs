@@ -91,23 +91,21 @@ because this tree has a history of local debris sitting next to real code.
   Keep them that way — don't reintroduce `'.$var.'` into those queries.
 
 ## Outstanding work
-- **`remote.php` becomes the PWA, with Firebase Auth identity.** Agreed plan:
-  1. Delete the page key. `ha_mi_remote_users` keeps its rows but `apikey` stops
-     being a credential. `requestIsLocal()` still lets the LAN and the Joomla
-     embed through with no login — that is what keeps the in-house dashboard
-     password-free, which is the agreed behaviour there.
-  2. Login is Firebase email/password. The client POSTs the Firebase ID token to
-     `auth.php`, which verifies it against Google's JWKS (cached on disk), mints a
-     PHP session (`HttpOnly; SameSite=Strict; Secure`) holding the `username` and
-     the Firebase `sub`, and `process.php` accepts that session as its only
-     non-local auth branch. `Authorization: Bearer <idToken>` is accepted too, so a
-     native app or a relocated shell needs no server change.
-  3. Remove `params.apikey` from `js/remote.js:266` and the `$apikey` threading in
-     `includes/remote.php:36`. The `_apikey_` open question is settled: only
-     `ha_remote_keys` 424 and 503 use it and both are links to `remote.php?name=…`,
-     so they become plain `/ha/remote.php?name=av` and the placeholder disappears.
-  4. `manifest.json` plus one service worker at `/ha/sw.js` (scope `/ha/`), reusing
-     the icons already in `images/` (192/512, apple-touch, favicons).
+- **`remote.php` becomes the PWA, with Firebase Auth identity.** The agreed
+  requirements are in `SPEC-remote-pwa.md`; that file is the contract, this is the
+  summary of what constrains everything else:
+  - LAN callers and the Joomla-embedded remotes stay unauthenticated. No login is
+    ever rendered for them.
+  - Remote users log in with Firebase email/password. The ID token is exchanged
+    once for a server-side session that slides on 30 days of inactivity and is
+    revocable in the database. The ID token itself lives 1 hour and is re-minted
+    silently.
+  - `apikey` stops being a credential everywhere and is deleted from the JS. The
+    `_apikey_` question is settled: only `ha_remote_keys` 424 and 503 use it and
+    both are links to `remote.php?name=…`, so they become plain
+    `/ha/remote.php?name=av`.
+  - Push is FCM HTTP v1 and shares the single service worker at `/ha/sw.js`;
+    there is one worker per scope.
 - **Push (FCM HTTP v1) rides on the same login, not a later phase.** Web push needs
   a recipient and a VAPID key pair, and there is one service worker per scope, so
   the shell worker and the messaging worker must be the same file. Sending needs the
