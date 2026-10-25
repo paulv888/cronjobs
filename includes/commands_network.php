@@ -93,9 +93,9 @@ function getDeviceList(&$params) {
 		$device['mac'] = $address['hwaddr'];
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
-				" WHERE mac='".$device['mac']."'";  
+				" WHERE mac = ?";
 		debug($device,'handle->device');
-		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
+		if ($rowdevice = PDOFetchRow($mysql, array($device['mac']))) {			// Update existing mac
 			if ($showlist) {
 					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$address['status'].'</td><td>'.$device['mac'].'</td></tr>';
 			}
@@ -103,7 +103,7 @@ function getDeviceList(&$params) {
 			if ($rowdevice['name'] <> $device['name'] || $rowdevice['ip'] <> $device['ip']) {		// Something changed
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
-					" WHERE ipaddressID =".$rowdevice['id'];  
+					" WHERE ipaddressID =".(int)$rowdevice['id'];  
 				if ($rowdev = FetchRow($mysql)) $deviceID = $rowdev['id']; else $deviceID = 0;
 				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
@@ -133,8 +133,8 @@ function getDeviceList(&$params) {
 		//
 		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
 				" ip = NULL " .  
-				" WHERE mac<>'".$device['mac']."' AND  ip='".$device['ip']."'";  
-		PDOExec($mysql);
+				" WHERE mac <> ? AND ip = ?";
+		PDOExec($mysql, array($device['mac'], $device['ip']));
     }
     if ($showlist) 
 		$feedback['message'] .= "</tbody></table>";
@@ -221,9 +221,9 @@ function getDeviceListPiHole(&$params) {
 		$device['mac'] = $address['hwaddr'];
 		$mysql="SELECT * ". 
 				" FROM  `ha_mf_device_ipaddress`" .  
-				" WHERE mac='".$device['mac']."'";  
+				" WHERE mac = ?";
 		debug($device,'handle->device');
-		if ($rowdevice = FetchRow($mysql)) {			// Update existing mac
+		if ($rowdevice = PDOFetchRow($mysql, array($device['mac']))) {			// Update existing mac
 			if ($showlist) {
 					$feedback['message'] .= '<tr><td>'.$device['name'].'</td><td>'.$device['ip'].'</td><td>'.$device['vendor'].'</td><td>'.$device['mac'].'</td></tr>';
 			}
@@ -231,7 +231,7 @@ function getDeviceListPiHole(&$params) {
 			if ($rowdevice['name'] <> $device['name'] || $rowdevice['ip'] <> $device['ip']) {		// Something changed
 				$mysql="SELECT * ". 
 					" FROM  `ha_mf_devices`" .  
-					" WHERE ipaddressID =".$rowdevice['id'];  
+					" WHERE ipaddressID =".(int)$rowdevice['id'];  
 				if ($rowdev = FetchRow($mysql)) $deviceID = $rowdev['id']; else $deviceID = 0;
 				$command = array('callerID' => $params['caller']['callerID'], 
 								'deviceID' => $deviceID, 
@@ -261,8 +261,8 @@ function getDeviceListPiHole(&$params) {
 		//
 		$mysql="UPDATE `ha_mf_device_ipaddress` SET ". 
 				" ip = NULL " .  
-				" WHERE mac<>'".$device['mac']."' AND  ip='".$device['ip']."'";  
-		PDOExec($mysql);
+				" WHERE mac <> ? AND ip = ?";
+		PDOExec($mysql, array($device['mac'], $device['ip']));
     }
     if ($showlist) 
 		$feedback['message'] .= "</tbody></table>";
@@ -669,7 +669,9 @@ function updateUnifi(&$params) {
 	debug($addresses, 'addresses');
 	$query = '';
 	foreach ($addresses as $address) {
-		$query .= 'db.user.findOneAndUpdate({"mac" : /^'.$address['hwaddr'].'$/i},{$set:{"name": "'.$address['name'].'"}});'."\n";
+		$mac = preg_replace('/[^0-9A-Fa-f:.\-]/', '', (string)$address['hwaddr']);
+		$name = json_encode((string)$address['name']);
+		$query .= 'db.user.findOneAndUpdate({"mac" : /^'.$mac.'$/i},{$set:{"name": '.$name.'}});'."\n";
 	}
 
 	$file = dirname(__DIR__).'/query.js';
