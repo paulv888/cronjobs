@@ -30,7 +30,9 @@ powershell -ExecutionPolicy Bypass -File .\deploy.ps1 -DryRun   # show the plan 
 powershell -ExecutionPolicy Bypass -File .\deploy.ps1           # deploy
 ```
 
-- Additive copy, no `/MIR`: files that exist only on the server are never deleted.
+- Additive copy, no `/MIR`: files that exist only on the server are never deleted
+  unless you pass `-Prune`, which lists them and removes them after confirmation.
+  `log/`, `lastimage/`, `media/` and `bin/` are never pruned.
 - Excluded: `logins.php`, `info.php`, `php_errors.log`, `test.php`,
   `.gitignore`, `deploy.ps1`, `.git`, `.vscode`, `log/`, `lastimage/`, `bin/`, `media/`.
 - `config.php` is deployed. It is tracked, holds only paths/subnets/flags, and the
