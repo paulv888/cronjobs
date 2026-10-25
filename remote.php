@@ -1,26 +1,28 @@
 <?php require_once 'includes.php';
-if (isset($_GET['key'])) {
-	$found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$_GET['key'].'"');
-	if ($found) {
-		$username = $found['username'];
-	} else {
-	    die('Not Authorized'); 
-    }
-	$apikey = $_GET['key'];
+
+header('Cache-Control: no-store');
+header('Referrer-Policy: same-origin');
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+
+// The page key is the only credential, so it is required for every request.
+$apikey = (isset($_GET['key']) && is_string($_GET['key'])) ? trim($_GET['key']) : '';
+$found = ($apikey !== '')
+	? PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?', [$apikey])
+	: false;
+
+if (!$found || empty($found['username'])) {
+	http_response_code(401);
+	die('Not Authorized');
 }
- // else {
-    // $apikey=API_KEY;
-	// $found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$apikey.'"');
-	// if ($found) {
-		// $username = $found['username'];
-	// } else {
-	    // die('Not Authorized'); 
-    // }
-//	die('Not Authorized');
+$username = $found['username'];
 
 if (isset($_GET['name'])) {
-	$remote = PDOFetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`) = ?', [strtoupper($_GET['name'])]);
-	if (!$remote || empty($remote['id'])) die('Invalid Remote');
+	$remote = PDOFetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`) = ?', [is_string($_GET['name']) ? strtoupper(trim($_GET['name'])) : '']);
+	if (!$remote || empty($remote['id'])) {
+		http_response_code(404);
+		die('Invalid Remote');
+	}
 	$remoteID = $remote['id'];
 } else {
 	$remoteID = 1;
@@ -35,11 +37,9 @@ if (isset($_GET['name'])) {
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <title>HA Remote</title>
-<meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no" />
-<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=3">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#E9ECE5"/>
-<link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/template.css" type="text/css" media="screen" /> 
 <link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/user.css" type="text/css" media="screen" /> 
 <link rel="stylesheet" href="/media/templates/site/mod-cassiopeia/css/global/colors_alternative.css" type="text/css" media="screen" /> 
@@ -47,16 +47,7 @@ if (isset($_GET['name'])) {
 <script src="/media/vendor/jquery/js/jquery.min.js"></script>
 <script async src="/templates/mod-cassiopeia/js/bstrap3.min.js"></script>
 <script src="<?php echo getPath(true);?>/js/remote.js"></script>
-<script>
-// if ('serviceWorker' in navigator) {
-  // navigator.serviceWorker.register('<?php echo getPath(true);?>/js/service-worker.js')
-    // .then(reg => console.log('Service worker registered:',reg))
-    // .catch(err => console.log('SW registration failed:',err));
-// }
-</script>
 </head>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 <body style="padding:0px;">
 <noscript>
     <div style="position: fixed; top: 0px; left: 0px; z-index: 3000; height: 100%; width: 100%; background-color: #E9ECE5">
@@ -64,14 +55,11 @@ if (isset($_GET['name'])) {
     </div>
 </noscript>
    <div id='system-message-container'></div>
-   <script src="js/app.js"></script>
 <?php
-   require_once 'includes.php'; 
-   echo '<div class="keyscell" style="background-color: #222; color:#fff"> '.greeting().' '.$username.'</div>';
+   echo '<div class="keyscell" style="background-color: #222; color:#fff"> '.greeting().' '.htmlspecialchars($username, ENT_QUOTES, 'UTF-8').'</div>';
    loadRemote($remoteID, $apikey);?>
    <div class=" row-fluid">
-   <!--div class="float-start" style="padding:2px"><button id="autorefresh" class="btn btn-success active" type="button" data-toggle="button">Auto Refresh</button></div-->
-   <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="flexSwitchCheckDefault">Auto Refresh</label></div>
+   <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="autorefresh">Auto Refresh</label></div>
    <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
 	</div>

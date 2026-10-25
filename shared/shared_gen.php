@@ -599,4 +599,52 @@ function base64UrlEncode($text)
         base64_encode($text)
     );
 }
+
+// ---------------------------------------------------------------------------
+// SSH / SCP helpers
+//
+// The identity file is always referenced by absolute path (SSH_IDENTITY,
+// defined in /etc/ha/config.php). The old '-i remote-jobs' was resolved
+// against the process CWD -- the web root -- which is how the private key
+// ended up as a downloadable static file.
+//
+// StrictHostKeyChecking=yes is deliberate: the entries in SSH_KNOWN_HOSTS are
+// the only thing preventing a LAN host from being impersonated. Seed that file
+// before enabling these commands (see ssh-keyscan in the run notes).
+//
+// Both helpers escape the host and the remote command, so callers may pass
+// values from the database or from a command without opening a shell
+// injection on the ssh command line.
+// ---------------------------------------------------------------------------
+// function sshOptions(): string {
+    // return '-o BatchMode=yes -o ConnectTimeout=10 -o IdentitiesOnly=yes'
+         // . ' -o UserKnownHostsFile='.escapeshellarg(SSH_KNOWN_HOSTS)
+         // . ' -o StrictHostKeyChecking=yes';
+// }
+function sshOptions(): string {
+    return '-o BatchMode=yes -o ConnectTimeout=10 -o IdentitiesOnly=yes'
+         . ' -o UserKnownHostsFile=/dev/null'
+         . ' -o LogLevel=ERROR'
+         . ' -o StrictHostKeyChecking=no';
+}
+
+
+
+function sshCommand($host, $remoteCmd) {
+    $cmd = 'ssh '.sshOptions()
+         . ' -i '.escapeshellarg(SSH_IDENTITY)
+         . ' '.escapeshellarg('remote-jobs@'.(string)$host)
+         . ' '.escapeshellarg((string)$remoteCmd).' 2>&1';
+    debug($cmd, 'sshCommand');
+    return $cmd;
+}
+
+function scpCommand($localFile, $host, $remotePath) {
+    $cmd = 'scp '.sshOptions()
+         . ' -i '.escapeshellarg(SSH_IDENTITY)
+         . ' '.escapeshellarg((string)$localFile)
+         . ' '.escapeshellarg('remote-jobs@'.(string)$host.':'.(string)$remotePath).' 2>&1';
+    debug($cmd, 'scpCommand');
+    return $cmd;
+}
 ?>

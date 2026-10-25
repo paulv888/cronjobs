@@ -31,7 +31,7 @@ function getDeviceList(&$params) {
 	$feedback['Name'] = 'getDeviceList';
 	$feedback['result'] = array();
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['ipaddress']['ip'].' -i remote-jobs \'/ip dhcp-server lease print detail terse without-paging where status!=conflict\'';
+	$cmd = sshCommand($params['device']['ipaddress']['ip'], '/ip dhcp-server lease print detail terse without-paging where status!=conflict');
 
 //address=192.168.2.11 mac-address=52:54:00:B9:1D:67 address-lists="" server=dhcp-lan dhcp-option="" status=bound expires-after=9m57s last-seen=3s active-address=192.168.2.11 active-mac-address=52:54:00:B9:1D:67 active-server=dhcp-lan host-name=vlosite 
 	debug($cmd, 'command');
@@ -156,7 +156,7 @@ function getDeviceListPiHole(&$params) {
 	$feedback['Name'] = 'getDeviceList';
 	$feedback['result'] = array();
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'cat /etc/pihole/dhcp.leases\'';
+	$cmd = sshCommand($params['device']['shortdesc'], 'cat /etc/pihole/dhcp.leases');
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -175,7 +175,7 @@ function getDeviceListPiHole(&$params) {
 	}
 	debug($addresses, 'addresses');
 
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'sqlite3 /etc/pihole/pihole-FTL.db "select n.id, a.ip, n.hwaddr, n.interface, a.name, n.firstSeen, max(a.lastSeen),n.numQueries, n.macVendor from network n left join network_addresses a on n.id = a.network_id group by n.id;"\'';
+	$cmd = sshCommand($params['device']['shortdesc'], 'sqlite3 /etc/pihole/pihole-FTL.db "select n.id, a.ip, n.hwaddr, n.interface, a.name, n.firstSeen, max(a.lastSeen),n.numQueries, n.macVendor from network n left join network_addresses a on n.id = a.network_id group by n.id;"');
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -281,9 +281,9 @@ function getDrives(&$params) {
         $feedback['Name'] = 'getDrives';
         $feedback['result'] = array();
         if ($hostName != 'firebox') {
-			$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs';
+			$cmd = sshCommand($hostName, 'df -Pkh --local --exclude-type=tmpfs --exclude-type=devtmpfs');
 		} else {
-			$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs df -Pkht ufs';
+			$cmd = sshCommand($hostName, 'df -Pkht ufs');
 		}
         debug($cmd, 'command');
 		$feedback['commandstr'] = $cmd;
@@ -325,7 +325,7 @@ function getDomInfo(&$params) {
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'getDomInfo';
         $feedback['result'] = array();
-		$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@kvm-host -i remote-jobs sudo /home/remote-jobs/bin/getdominfo '.$hostName;
+		$cmd = sshCommand('kvm-host', 'sudo /home/remote-jobs/bin/getdominfo '.escapeshellarg($hostName));
         debug($cmd, 'command');
         $output = shell_exec($cmd);
         debug($output, 'shell_exec');
@@ -369,8 +369,8 @@ function readNatSessions(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'readNatSessions';
 	$feedback['result'] = array();
-//	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip firewall connection  print detail terse where src-address~"192.168.2.50:*"\'';
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip firewall connection  print detail terse \'';
+//	$cmd = sshCommand($hostName, '/ip firewall connection  print detail terse where src-address~"192.168.2.50:*"');
+	$cmd = sshCommand($hostName, '/ip firewall connection  print detail terse ');
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -387,7 +387,7 @@ function getPublicIP(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'getPublicIP';
 	$feedback['result'] = array();
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs \'/ip dhcp-client print terse \'';
+	$cmd = sshCommand($hostName, '/ip dhcp-client print terse ');
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -408,7 +408,7 @@ function createBackup(&$params) {
         $deviceID = $params['device']['id'];
         $feedback['Name'] = 'createBackup';
         $feedback['result'] = array();
-		$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs /system backup save name backup.backup';
+		$cmd = sshCommand($params['device']['shortdesc'], '/system backup save name backup.backup');
         debug($cmd, 'command');
         $output = shell_exec($cmd);
         debug($output, 'shell_exec');
@@ -672,7 +672,7 @@ function updateUnifi(&$params) {
 		$query .= 'db.user.findOneAndUpdate({"mac" : /^'.$address['hwaddr'].'$/i},{$set:{"name": "'.$address['name'].'"}});'."\n";
 	}
 
-	$file = './query.js';
+	$file = dirname(__DIR__).'/query.js';
 	if (file_put_contents($file, $query) === false) {
 		$feedback['error'] = "Error writing query.js";	
 		debug($feedback, 'feedback');
@@ -680,7 +680,7 @@ function updateUnifi(&$params) {
 	}
 	$feedback['result'][] = $query;
 
-	$cmd = 'scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i remote-jobs ./query.js remote-jobs@'.$params['device']['shortdesc'].':~/query.js';
+	$cmd = scpCommand($file, $params['device']['shortdesc'], '~/query.js');
 	$feedback['commandstr'] = $cmd.CRLF;
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);
@@ -690,7 +690,7 @@ function updateUnifi(&$params) {
 	debug($lines, 'lines');
 
 	// ace is db
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$params['device']['shortdesc'].' -i remote-jobs \'mongo --port 27117 ace query.js\'';
+	$cmd = sshCommand($params['device']['shortdesc'], 'mongo --port 27117 ace query.js');
 	$feedback['commandstr'] .= $cmd;
 	debug($cmd, 'command');
 	$output = shell_exec($cmd);

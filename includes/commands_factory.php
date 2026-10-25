@@ -1854,7 +1854,7 @@ function refreshSAR(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'refreshSAR';
 	$feedback['result'] = array();
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/collect_sar';
+	$cmd = sshCommand($hostName, 'sudo /home/remote-jobs/bin/collect_sar');
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -1869,7 +1869,7 @@ function cleanDB(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'cleanDB';
 	$feedback['result'] = array();
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/purge-piholedb';
+	$cmd = sshCommand($hostName, 'sudo /home/remote-jobs/bin/purge-piholedb');
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -1884,7 +1884,8 @@ function createTimelapse(&$params) {
 	$deviceID = $params['device']['id'];
 	$feedback['Name'] = 'createTimelapse';
 	$feedback['result'] = array();
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo \'/home/remote-jobs/bin/create-mp4s '.$params['commandvalue'].'\'';
+	//$cmd = sshCommand($hostName, 'sudo /home/remote-jobs/bin/create-mp4s '.escapeshellarg($params['commandvalue']));
+	$cmd = sshCommand($hostName, 'sudo /home/remote-jobs/bin/create-mp4s '.escapeshellarg($params['commandvalue']));
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');
@@ -1908,7 +1909,7 @@ function switchMotionEye(&$params) {
 		$params['device']['properties']['Status']['value'] = STATUS_ON;
 		$onoff = 'on';
 	}
-	$cmd = 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no remote-jobs@'.$hostName.' -i remote-jobs sudo /home/remote-jobs/bin/meye '.$onoff;
+	$cmd = sshCommand($hostName, 'sudo /home/remote-jobs/bin/meye '.escapeshellarg($onoff));
 	$feedback['commandstr'] = $cmd;
 	$output = shell_exec($cmd);
 	debug($output, 'shell_exec');

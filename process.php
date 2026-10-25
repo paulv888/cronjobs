@@ -75,6 +75,41 @@ if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_e
 $_SESSION['LAST_ACTIVITY'] = time(); // update last activity time stamp
 debug($_SESSION, 'Current _SESSION');
 session_write_close();
+// ---------------------------------------------------------------------------
+// Authorization
+// The API key (ha_mi_remote_users.apikey) is required for any caller that is
+// not local. Cron jobs / async CLI threads, same-host callers, LAN device
+// callbacks and the in-house pages do not carry a key and stay allowed.
+// Set PROCESS_REQUIRE_APIKEY to false in config.php to disable this check.
+// ---------------------------------------------------------------------------
+if (!defined('PROCESS_REQUIRE_APIKEY')) define('PROCESS_REQUIRE_APIKEY', true);
+
+function requestIsLocal() {
+	if (php_sapi_name() === 'cli') return true;
+	$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
+	if (stripos($ip, '::ffff:') === 0) $ip = substr($ip, 7);
+	if (filter_var($ip, FILTER_VALIDATE_IP) === false) return false;
+	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return true;
+	if (isset($_SERVER['SERVER_ADDR']) && $ip === $_SERVER['SERVER_ADDR']) return true;
+	return false;
+}
+
+if (isset($params['apikey']) && is_string($params['apikey']) && $params['apikey'] !== '') {
+	$keyuser = PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?', [$params['apikey']]);
+	$authorized = !empty($keyuser);
+} else {
+	$authorized = requestIsLocal();
+}
+
+if (PROCESS_REQUIRE_APIKEY && !$authorized) {
+	$authIP = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli';
+	error_log('process.php: unauthorized request from '.$authIP.' messagetypeID='.(isset($params['messagetypeID']) ? $params['messagetypeID'] : '-'));
+	http_response_code(401);
+	header('Content-Type: application/json');
+	echo json_encode(array('error' => 'Not Authorized'));
+	exit;
+}
+
 if (isset($params["messagetypeID"]) && isset($params["callerID"])) {						// All have to tell where they are from.
 	debug($params, 'params');
 
