@@ -241,23 +241,26 @@ function findDuplicateByArtistTitle(&$params) {
 	// 
 	// Find artist title / exclude this video 
 	//
+	$artist = $params['file']['artist'];
+	$title  = $params['file']['title'];
 	$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos mv 
 				JOIN xbmc_path p ON mv.strPathID = p.id 
-				WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' %" OR artist LIKE "% '.$params['file']['artist']. '")  
-				AND title = "'.$params['file']['title'].'"';
-	if (!empty($params['file']['idFile'])) $mysql .= ' AND idFile != '.$params['file']['idFile'];
+				WHERE (`artist` = ? OR artist LIKE ? OR artist LIKE ?)  
+				AND title = ?';
+	$bind = array($artist, $artist.' %', '% '.$artist, $title);
+	if (!empty($params['file']['idFile'])) { $mysql .= ' AND idFile != ?'; $bind[] = $params['file']['idFile']; }
 	$mysql .=';';
 
 	// }
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
-	if ($mvids = FetchRows($mysql)) {
+	if ($mvids = PDOFetchRows($mysql, $bind)) {
 		if (!empty($mvids)) { // Found this artist & title, so duplicate
 			// Height 
-			$mysql = 'SELECT iVideoHeight FROM `xbmc_video_streamdetails` WHERE iStreamType = 0 AND `idFile` = '.$mvids[0]['idFile'];
+			$mysql = 'SELECT iVideoHeight FROM `xbmc_video_streamdetails` WHERE iStreamType = 0 AND `idFile` = ?';
 			$mvids[0]['height'] = '?';
 			$mvids[0]['file'] = mv_toLocal($mvids[0]['file']);
-			if ($row = FetchRow($mysql)) $mvids[0]['height'] = $row['iVideoHeight'];
+			if ($row = PDOFetchRow($mysql, array($mvids[0]['idFile']))) $mvids[0]['height'] = $row['iVideoHeight'];
 			if (!array_key_exists('idFile', $params['file'])) $params['file']['idFile'] = $mvids[0]['idFile'];
 			$feedback['result'][$params['file']['idFile']] = $mvids;
 			$feedback['error'] = "Duplicate";
@@ -334,14 +337,16 @@ function createThumbNails(&$params) {
 	// if () $feedback['error'] = "Not so good";
 
 	if (!empty($params['value_parts'][1])) {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE ?';
+		$bind = array($params['value_parts'][1].'%');
 	} else {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list';
+		$bind = array();
 	}
 
 	$feedback['message'] = '';
 	$count = 0;
-	if ($mvids = FetchRows($mysql)) {
+	if ($mvids = PDOFetchRows($mysql, $bind)) {
 		foreach ($mvids as $mvid) { // Itereate all
 			$file = $mvid;
 			$file_parts = mb_pathinfo(mv_toLocal($mvid['file']));
@@ -380,15 +385,17 @@ function createNFOs(&$params) {
 	// $feedback['message'] = "all good";
 	// if () $feedback['error'] = "Not so good";
 	if (!empty($params['value_parts'][1])) {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE "'.$params['value_parts'][1].'%"'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE file LIKE ?';
+		$bind = array($params['value_parts'][1].'%');
 	} else {
-		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list'; 
+		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list';
+		$bind = array();
 	}
 
 	// echo $mysql.CRLF;
 	$feedback['message'] = '';
 	$count = 0;
-	if ($mvids = FetchRows($mysql)) {
+	if ($mvids = PDOFetchRows($mysql, $bind)) {
 		foreach ($mvids as $mvid) { // Itereate all
 			$file = $mvid;
 			$file_parts = mb_pathinfo(mv_toLocal($mvid['file']));
@@ -694,13 +701,15 @@ function reverseArtistTitle(&$params) {
 
 	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 				JOIN xbmc_path p ON mv.strPathID = p.id 
-				WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" )';
-	if (!($mvids = FetchRows($mysql))) {	// Did not find this artist, check title if maybe reversed
+				WHERE (`artist` = ? OR artist LIKE ?)';
+	$bind = array($params['file']['artist'], $params['file']['artist'].' /%');
+	if (!($mvids = PDOFetchRows($mysql, $bind))) {	// Did not find this artist, check title if maybe reversed
 		$feedback['error'] = "Artist not found";
 		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
-					WHERE artist = "'.$params['file']['title']. '";';
-		if ($mvids = FetchRows($mysql)) {	// Did find title as artist	
+					WHERE artist = ?;';
+		$bind = array($params['file']['title']);
+		if ($mvids = PDOFetchRows($mysql, $bind)) {	// Did find title as artist	
 			$temp = $params['file']['artist'];
 			$params['file']['artist'] = $params['file']['title'];
 			$params['file']['title'] = $temp;
@@ -818,19 +827,21 @@ function findMoveTo(&$file) {
 
 		$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 					JOIN xbmc_path p ON mv.strPathID = p.id 
-					WHERE (`artist` = "'.$file['artist']. '" OR artist LIKE "'.$file['artist']. ' /%" )
-					AND genre = "'.$file['genre'].'";'; 
+					WHERE (`artist` = ? OR artist LIKE ?)
+					AND genre = ?;'; 
 		// echo $mysql.CRLF;
-
-		if ($mvids = FetchRows($mysql)) {		// Found this artist for this genre
+	
+		$bind = array($file['artist'], $file['artist'].' /%', $file['genre']);
+		if ($mvids = PDOFetchRows($mysql, $bind)) {		// Found this artist for this genre
 			// extract dir 
 			// Just get he first one? Care about majority?
 			findBestMatch($file, $mvids);
 		} else {								// Try to find artist
 			$mysql = 'SELECT * FROM xbmc_video_musicvideos_list mv 
 						JOIN xbmc_path p ON mv.strPathID = p.id 
-						WHERE (`artist` = "'.$file['artist']. '" OR artist LIKE "'.$file['artist']. ' /%");';
-			if ($mvids = FetchRows($mysql)) {		// Found this artist
+						WHERE (`artist` = ? OR artist LIKE ?);';
+			$bind = array($file['artist'], $file['artist'].' /%');
+			if ($mvids = PDOFetchRows($mysql, $bind)) {		// Found this artist
 				findBestMatch($file, $mvids);
 			} else {								// Must be new artist -> going to assorted for input genre
 				if (($key = array_search($file['genre'], $genres)) !== false) {
@@ -920,16 +931,18 @@ function searchTracksForAllArtist(&$params) {
 	$feedback['result'] = array();
 
 	if (!empty($params['commandvalue'])) {
-		$mysql = 'SELECT `id`,`name` FROM `xbmc_actor` WHERE (`id` >=  '.$params['value_parts'][0].' AND `id` <=  '.$params['value_parts'][1].')' ;
+		$mysql = 'SELECT `id`,`name` FROM `xbmc_actor` WHERE (`id` >= ? AND `id` <= ?)';
+		$bind = array($params['value_parts'][0], $params['value_parts'][1]);
 	} else {
 		$mysql = 'SELECT a.id , a.name FROM `vd_spotify_actor` s JOIN `xbmc_actor` a on s.actor_id = a.id WHERE s.`name`!=a.`name` and calc=-1';
+		$bind = array();
 		exit;
 		//$mysql = 'SELECT `id`,`name` FROM `xbmc_actor` WHERE 1' ;
 	}
 	$count = 0;
 	$result = Array();
 	$artist = Array();
-	if ($rows = FetchRows($mysql)) {
+	if ($rows = PDOFetchRows($mysql, $bind)) {
 		foreach ($rows as $row) { // Itereate all (till count of 4 found
 			$params['commandvalue'] = $row['id'];
 			$params['file']['artist'] = $row['name'];
@@ -948,11 +961,11 @@ function searchTracksForArtist(&$params) {
 	$feedback['result'] = array();
 
 	$artistID = $params['commandvalue'];
-	$mysql = 'SELECT `actor_id`,`artist`,`title` FROM `xbmc_actor_link` WHERE `actor_id`= '.$artistID;
+	$mysql = 'SELECT `actor_id`,`artist`,`title` FROM `xbmc_actor_link` WHERE `actor_id`= ?';
 	$count = 0;
 	$result = Array();
 	$artist = Array();
-	if ($rows = FetchRows($mysql)) {
+	if ($rows = PDOFetchRows($mysql, array($artistID))) {
 		foreach ($rows as $row) { // Itereate all (till count of 4 found
 			$params['commandvalue'] = $params['file']['artist'].' '.$row['title'];
 			$params['function'] = 'search';
@@ -1051,7 +1064,7 @@ function testSearchSpotify(&$params) {
 	$feedback['result'] = array();
 
 	$artistID = $params['commandvalue'];
-	$mysql = 'SELECT `actor_id`,`artist`,`title` FROM `xbmc_actor_link` WHERE `actor_id`= '.$artistID;
+	$mysql = 'SELECT `actor_id`,`artist`,`title` FROM `xbmc_actor_link` WHERE `actor_id`= '.(int)$artistID;
 	$count = 0;
 	$result = Array();
 	$artist = Array();
