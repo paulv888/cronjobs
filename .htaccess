@@ -1,0 +1,11 @@
+# Web root rules. Pulled out of the server and into the repo so a rebuild
+# keeps them. Deploying this file overwrites any hand edit on the server.
+
+Options -Indexes
+
+<FilesMatch "^(\.htaccess|\.user\.ini|remote-jobs|remote-test|logins\.php|firebase\.json)$">
+    Require all denied
+</FilesMatch>
+
+RedirectMatch 404 ^/ha/(log|bin|includes)/.*$
+RedirectMatch 404 ^/ha/.*\.(sql|bak|sh|md)$
