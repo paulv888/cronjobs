@@ -8,8 +8,8 @@
     the server (log/, lastimage/, .htaccess, media/, images/) is never deleted.
 
     Excluded on purpose:
-      config.php, logins.php   credentials now live in /etc/ha; deploying these
-                               would put them back under the web root
+      logins.php               holds credentials; deploying it would put them
+                               back under the web root
       info.php, php_errors.log, test.php
                                local debris, would be world readable
       .git, .vscode            never belongs on a web server
@@ -17,6 +17,10 @@
       bin                      SMB copies do not preserve the Unix exec bit,
                                and these .sh files are executed by PHP.
                                Deploy those by hand, then chmod +x on the server.
+
+    config.php IS deployed. It is the tracked environment file (paths, subnets,
+    feature flags) and holds no secrets. The repo copy is authoritative: a
+    hand edit on the server is overwritten by the next deploy.
 
     Every PHP file is syntax checked first and the deploy aborts on any error.
 
@@ -67,7 +71,7 @@ $robocopyArgs = @(
     '/E',
     '/R:2', '/W:2',
     '/XD', '.git', '.vscode', 'log', 'lastimage', 'bin',
-    '/XF', 'config.php', 'logins.php', 'info.php', 'php_errors.log', 'test.php',
+    '/XF', 'logins.php', 'info.php', 'php_errors.log', 'test.php',
            '.gitignore', 'deploy.ps1', 'AGENTS.md',
     '/NJH', '/NJS', '/NP'
 )
