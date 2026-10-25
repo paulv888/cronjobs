@@ -87,5 +87,6 @@ because this tree has a history of local debris sitting next to real code.
 - SQL-injection sweep: `includes/commands_media.php`, the remaining queries in
   `shared/shared_ha.php`, and shell strings in `includes/commands_network.php`.
 - `remote.php` passes its page key in the URL (logs, referrers, history).
-- `sp_properties.sql` exists twice (`bin/` and `includes/`). The procedure is still
-  called by `commands_factory.php`, so keep one copy and drop the other.
+- `sp_properties.sql` now lives only in `bin/`. It is the source for the stored
+  procedure still called by `commands_factory.php`; the copy in `includes/` was an
+  older revision and was deleted.
