@@ -84,7 +84,6 @@ because this tree has a history of local debris sitting next to real code.
 ## Outstanding work
 - SQL-injection sweep: `includes/commands_media.php`, the remaining queries in
   `shared/shared_ha.php`, and shell strings in `includes/commands_network.php`.
-- `PDOError` in `shared/shared_db.php` still echoes SQL and stack traces to the response.
 - `remote.php` passes its page key in the URL (logs, referrers, history).
-- Dead files still to remove: 8 Fabrik/router fragments in `includes/`, `media/jui/`,
-  `bin/test-utf-bom.sh`, `sp_properties.sql` copies.
+- `sp_properties.sql` exists twice (`bin/` and `includes/`). The procedure is still
+  called by `commands_factory.php`, so keep one copy and drop the other.
