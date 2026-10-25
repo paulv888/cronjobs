@@ -1,4 +1,5 @@
 <?php 
+include_once 'Classes/Alexa/SignatureVerifier.php';
 include_once 'Classes/Alexa/Request/Request.php';
 include_once 'Classes/Alexa/Request/IntentRequest.php';
 include_once 'Classes/Alexa/Request/LaunchRequest.php';
