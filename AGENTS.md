@@ -69,9 +69,9 @@ because this tree has a history of local debris sitting next to real code.
 - Don't create backup files inside the docroot; they become web-reachable.
 
 ## Current hardening state — do not undo
-- `alexa_skills.php` verifies Amazon's request signature
-  (`Classes/Alexa/SignatureVerifier.php`), enforces the app-ID allowlist and a 150s
-  timestamp window. Legacy `s3.amazonaws.com/echo.api` certificates are accepted.
+- The Alexa skills are decommissioned: `alexa_skills.php`, `includesAlexa.php`,
+  `Classes/Alexa/` and `includes/skill_*.php` were deleted. Disable the skills in the
+  Alexa developer console too, or Amazon keeps calling a 404.
 - No `eval()` anywhere: `{calculate___...}` is evaluated by `shared/shared_math.php`,
   a restricted arithmetic parser.
 - `process.php` casts numeric request identifiers at the boundary.
@@ -82,8 +82,7 @@ because this tree has a history of local debris sitting next to real code.
 - Public vhost denies `/ha/esp.php` and `/ha/coop.php` via `<LocationMatch>`.
 
 ## Outstanding work
-- SQL-injection sweep: `includes/skill_me.php`, `skill_tell.php`, `skill_kodi.php`
-  (Alexa slot text into `LIKE`), `includes/commands_media.php`, the remaining queries in
+- SQL-injection sweep: `includes/commands_media.php`, the remaining queries in
   `shared/shared_ha.php`, and shell strings in `includes/commands_network.php`.
 - `PDOError` in `shared/shared_db.php` still echoes SQL and stack traces to the response.
 - `remote.php` passes its page key in the URL (logs, referrers, history).
