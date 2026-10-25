@@ -1166,8 +1166,8 @@ function insertSpotArtist($artistID, $spot_artist) {
 	
 		// Update Genres Counts or insert new one
 	foreach ($spot_artist->genres as $genre) {
-		$mysql = 'SELECT * FROM `vd_spotify_genre` WHERE lookup ="'.$genre.'"'; 
-		if ($genre_row = FetchRow($mysql)) {
+		$mysql = 'SELECT * FROM `vd_spotify_genre` WHERE lookup = ?';
+	if ($genre_row = PDOFetchRow($mysql, array($genre))) {
 			PDOUpdate('vd_spotify_genre', array('uses' => $genre_row['uses']+1), array('id' => $genre_row['id']));
 		} else {
 			PDOInsert('vd_spotify_genre', array('lookup' => $genre,'description' => mb_convert_case($genre, MB_CASE_TITLE, 'UTF-8'),'uses' => $genre_row['uses']+1));
@@ -1175,15 +1175,16 @@ function insertSpotArtist($artistID, $spot_artist) {
 	}
 
 	// Find vd_spotify_actor id
-	$mysql = 'SELECT id FROM vd_spotify_actor WHERE actor_id = '.$artistID ; 
-	if (!($vd_spotify_actorID = FetchRow($mysql)['id'])) $vd_spotify_actorID = PDOInsert('vd_spotify_actor', Array('actor_id' => $artistID, 'name' => '*',  'matches' => 0));
+	$mysql = 'SELECT id FROM vd_spotify_actor WHERE actor_id = ?';
+	if (!($vd_spotify_actorID = PDOFetchRow($mysql, array($artistID))['id'])) $vd_spotify_actorID = PDOInsert('vd_spotify_actor', Array('actor_id' => $artistID, 'name' => '*',  'matches' => 0));
 	
 	debug($vd_spotify_actorID,'vd_spotify_actorID');
 	
 	// Find most used one and assign to artist
-	$genres = implode('","', $spot_artist->genres);
-	$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ("'.$genres.'") order by uses desc'; 
-	if ($SPgenre = FetchRow($mysql)) {
+	$genres = $spot_artist->genres;
+	$ph = implode(',', array_fill(0, count($genres), '?'));
+	$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ('.$ph.') order by uses desc'; 
+	if ($SPgenre = PDOFetchRow($mysql, $genres)) {
 		$genreID = $SPgenre['id'];
 	} else {
 		$genreID = 0;
@@ -1343,10 +1344,10 @@ function createArtistDirs(&$params) {
 
 //JOIN xbmc_path p ON mv.strPathID = p.id
 			$mysql = 'SELECT mv.* FROM xbmc_video_musicvideos_list mv 
-					WHERE (`artist` = "'.$params['file']['artist']. '" OR artist LIKE "'.$params['file']['artist']. ' /%" )  
-					AND genre = "'.$params['file']['genre'].'";'; 
-
-			if ($mvids = FetchRows($mysql)) {
+					WHERE (`artist` = ? OR artist LIKE ?)  
+					AND genre = ?;'; 
+			$bind = array($params['file']['artist'], $params['file']['artist'].' /%', $params['file']['genre']);
+			if ($mvids = PDOFetchRows($mysql, $bind)) {
 				foreach ($mvids as $mvid) {
 					$params['value_parts'][0] = $mvid['idFile'];
 					$params['value_parts'][1] = $new_dir;
@@ -1558,7 +1559,7 @@ function getNowPlaying(&$params) {
 			$properties['Thumbnail']['value'] = $result['result']['item']['thumbnail'];
 			if (array_key_exists('id', $result['result']['item'])) {
 				$properties['PlayingID']['value'] =  
-					FetchRow('select idFile from xbmc_video_musicvideos_list where idMVideo='.$result['result']['item']['id'])['idFile'];
+					PDOFetchRow('select idFile from xbmc_video_musicvideos_list where idMVideo=?', array((int)$result['result']['item']['id']))['idFile'];
 			}
 			$params['device']['properties'] = $properties;
 			$feedback['message'] = $properties['Playing']['value'];
@@ -1627,8 +1628,8 @@ function undoVideoImport(&$params) {
 		return $feedback;
 	}
 
-	$mysql = 'SELECT * FROM `vd_queue` WHERE id = '.$params['commandvalue'].' AND statusID = '.Q_IMPORT_SUCCESS;
-	if (!($row = FetchRow($mysql))) {
+	$mysql = 'SELECT * FROM `vd_queue` WHERE id = ? AND statusID = '.Q_IMPORT_SUCCESS;
+	if (!($row = PDOFetchRow($mysql, array($params['commandvalue'])))) {
 		$feedback['error'] = 'Error: could not find id: '.$params['commandvalue'].' in imported Status' ;
 		return $feedback;
 	}
@@ -1674,8 +1675,8 @@ function createMoveQueueItem($params) {
 	} else {
 		$to_dir = rtrim($params['value_parts'][1], '/');
 	}
-	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE `idFile` = '.$params['value_parts'][0].';'; 
-	if ($mvid = FetchRow($mysql)) {	
+	$mysql = 'SELECT * FROM xbmc_video_musicvideos_list WHERE `idFile` = ?;'; 
+	if ($mvid = PDOFetchRow($mysql, array($params['value_parts'][0]))) {	
 		debug($mvid, 'mvid');
 		$file_parts = mb_pathinfo(mv_toLocal($mvid['file']));
 		debug($file_parts, 'parts');
@@ -1812,8 +1813,8 @@ function addToQueue(&$params) {
 	}
 	$windowTitle = $result['result'][0];
 
-	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = "'.$windowTitle.'"';
-	if ($windowTitle <> "Playlist" && FetchRow($mysql)) {
+	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = ?';
+	if ($windowTitle <> "Playlist" && PDOFetchRow($mysql, array($windowTitle))) {
 		$feedback['error'] = 'Error: already in queue';
 		return $feedback;
 	}
@@ -1865,8 +1866,8 @@ function linkArtist(&$params) {
 
 	$newname = transliterate($windowTitle);
 
-	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = "'.$windowTitle.'"';
-	if (FetchRow($mysql)) {
+	$mysql = 'SELECT * FROM `vd_queue` WHERE window_title = ?';
+	if (PDOFetchRow($mysql, array($windowTitle))) {
 		$feedback['error'] = 'Error: already in queue';
 		return $feedback;
 	}
@@ -2011,9 +2012,9 @@ function handleDownloadQueue(&$params) {
 				PDOUpdate('vd_queue', array('statusID' => Q_PROCESSING) , array('id' => $row['id']));
 				//FIND ARTIST
 				// Has movie actors as well :(
-				$mysql = 'SELECT * FROM `xbmc_actor` WHERE `name` LIKE "'.$row['newname'].'"';
+				$mysql = 'SELECT * FROM `xbmc_actor` WHERE `name` LIKE ?';
 				$pretty_result = '<pre>SPOTART<br/>'.json_encode($row, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).'</pre>';
-				if ($actor = FetchRow($mysql)) {
+				if ($actor = PDOFetchRow($mysql, array($row['newname']))) {
 					PDOUpdate('vd_queue', array('statusID' => Q_VERIFY_SUCCESS, 'actor_id' => $actor['id'], 'artist' => $actor['name'], 'result' => $pretty_result) , array('id' => $row['id']));
 				} else {
 					PDOUpdate('vd_queue', array('statusID' => Q_VERIFY_FAILED, 'last_error' => 'Not Found', 'result' => $pretty_result) , array('id' => $row['id']));
@@ -2462,14 +2463,13 @@ function startPlaylistIntent(&$params) {
 	$feedback['result'] = array();
 	debug($params, 'params');
 
-	if ($playlist = FetchRow('SELECT * FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['commandvalue']).'"')) {
+	if ($playlist = PDOFetchRow('SELECT * FROM vd_playlists WHERE UCASE(`short`) = ?', array(strtoupper($params['commandvalue'])))) {
 		$playlistID = $playlist['id'];
 		$playlistDescription = $playlist['description'];
 
-		$mysql = 'SELECT file FROM `vd_playlist_files` f join xbmc_video_musicvideos_list m on f.idFile = m.idFile WHERE f.playlistID = '
-				  .$playlistID;
-				  
-		if ($rows = FetchRows($mysql)) {	// Has files
+		$mysql = 'SELECT file FROM `vd_playlist_files` f join xbmc_video_musicvideos_list m on f.idFile = m.idFile WHERE f.playlistID = ?';
+		
+		if ($rows = PDOFetchRows($mysql, array($playlistID))) {	// Has files
 			// Handle all at once
 			$tempparams = $params;
 			$tempparams['commandvalue'] = $rows;
@@ -2499,7 +2499,7 @@ function updatePlaylist(&$params) {
 	if (strtoupper($params['macro___commandvalue']) == '#REMOVE') {
 		$addMode = false;
 	} else {
-		$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['macro___commandvalue']).'"')['id'];
+		$playlistID = PDOFetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`) = ?', array(strtoupper($params['macro___commandvalue'])))['id'];
 		$addMode = true;
 	}
 		
@@ -2513,11 +2513,11 @@ function updatePlaylist(&$params) {
 		if ($addMode) {// Add it
 			$mysql = 'SELECT id FROM vd_playlist_files 
 				WHERE 
-				  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
-				  UCASE(`title`)="'.strtoupper($playingTitle).'" AND 
-				  `playlistID` ='. $playlistID.';' ;
-		  
-			$playlistFilesID = FetchRow($mysql)['id'] ;
+				  UCASE(`artist`) = ? AND 
+				  UCASE(`title`) = ? AND 
+				  `playlistID` = ?;' ;
+				
+			$playlistFilesID = PDOFetchRow($mysql, array(strtoupper($playingArtist), strtoupper($playingTitle), $playlistID))['id'] ;
 			debug($playlistFilesID);
 
 			if (!$playlistFilesID) { 
@@ -2536,13 +2536,13 @@ function updatePlaylist(&$params) {
 		} else {
 			$mysql = 'SELECT id FROM vd_playlist_files 
 				WHERE 
-				  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
-				  UCASE(`title`)="'.strtoupper($playingTitle).'"' ;
-		  
-			$playlistFilesID = FetchRow($mysql)['id'] ;
+				  UCASE(`artist`) = ? AND 
+				  UCASE(`title`) = ?' ;
+				
+			$playlistFilesID = PDOFetchRow($mysql, array(strtoupper($playingArtist), strtoupper($playingTitle)))['id'] ;
 			debug($playlistFilesID);
 			if ($playlistFilesID) { 
-				$mysql = 'DELETE FROM vd_playlist_files WHERE id = '.$playlistFilesID;
+				$mysql = 'DELETE FROM vd_playlist_files WHERE id = '.(int)$playlistFilesID;
 				debug($mysql);
 				$feedback['result'][] =  PDOExec($mysql) ." Rows affected";
 				$feedback['result'][] = PDOUpdate("xbmc_video_musicvideos_list", 
@@ -2569,7 +2569,7 @@ function removeFromFavorites(&$params) {
  
 // $params['macro___commandvalue'] = "Dance"; 
  
-	if (!$playlistID = FetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`)="'.strtoupper($params['macro___commandvalue']).'"')['id'])
+	if (!$playlistID = PDOFetchRow('SELECT id FROM vd_playlists WHERE UCASE(`short`) = ?', array(strtoupper($params['macro___commandvalue'])))['id'])
 		
 
 	$error = "";
@@ -2578,10 +2578,10 @@ function removeFromFavorites(&$params) {
 
 	$mysql = 'SELECT id FROM vd_playlist_files 
 		WHERE 
-		  UCASE(`artist`)="'.strtoupper($playingArtist).'" AND 
-		  UCASE(`title`)="'.strtoupper($playingTitle).'";';
-  
-	if (!$playlistFilesID = FetchRow($mysql)) { // Add it
+		  UCASE(`artist`) = ? AND 
+		  UCASE(`title`) = ?;';
+		
+	if (!$playlistFilesID = PDOFetchRow($mysql, array(strtoupper($playingArtist), strtoupper($playingTitle)))) { // Add it
 		PDOInsert("vd_playlist_files", 
 				array('playlistID' => $playlistID, 
 					'idFile' => $params['device']['previous_properties']['PlayingID']['value'],
@@ -2795,9 +2795,9 @@ exit;
 		foreach ($artists as $artist) { // Itereate all
 			$genres = $artist['filename'];
 			$genres = explode('|', $genres);
-			$genres = implode('","', $genres);
-			$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ("'.$genres.'") order by uses desc'; 
-			if ($spgenre = FetchRow($mysql)) {
+			$ph = implode(',', array_fill(0, count($genres), '?'));
+			$mysql = 'SELECT * FROM vd_spotify_genre WHERE lookup in ('.$ph.') order by uses desc'; 
+			if ($spgenre = PDOFetchRow($mysql, $genres)) {
 				PDOInsert('vd_spotify_actor_repeat_genres', array('parent_id' => $artist['id'], 'genres' => $spgenre['id']));
 			} else {
 				echo "Not found: ".$genre;
