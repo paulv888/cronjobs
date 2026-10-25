@@ -82,11 +82,26 @@ because this tree has a history of local debris sitting next to real code.
   `shared/shared_ha.php` and `shared/shared_db.php`.
 - Deleted: `gpslogger.php`, `garage.php`, `monitor_devices.php`.
 - Public vhost denies `/ha/esp.php` and `/ha/coop.php` via `<LocationMatch>`.
+- Request-derived SQL and shell arguments in `includes/commands_media.php`,
+  `shared/shared_ha.php` and `includes/commands_network.php` are bound parameters,
+  `(int)` casts or `escapeshellarg()`; `PDOExec()` takes an optional params array.
+  Keep them that way — don't reintroduce `'.$var.'` into those queries.
 
 ## Outstanding work
-- SQL-injection sweep: `includes/commands_media.php`, the remaining queries in
-  `shared/shared_ha.php`, and shell strings in `includes/commands_network.php`.
-- `remote.php` passes its page key in the URL (logs, referrers, history).
+- `remote.php` passes its page key in the URL (logs, referrers, history). Plan:
+  1. On a valid `?key=`, mint a PHP session (username + `sha256` of the key — not
+     the key), set an HttpOnly/SameSite=Strict/Secure cookie, 302 to the same URL
+     without the key. Binding the session to the key hash makes key rotation
+     invalidate it.
+  2. `process.php` accepts that session as a third auth branch, alongside the
+     `apikey` param (kept for LAN devices / cron / async threads, which send no
+     cookies) and `requestIsLocal()`.
+  3. Then remove `params.apikey` from `js/remote.js:266` and the `$apikey`
+     threading in `includes/remote.php:36`. Steps 1+2 ship together and need no
+     JS change.
+  Open question: `js/remote.js:349-350` substitutes `_apikey_` inside remote-key
+  text. Decide server-side render vs short-lived signed token once we know which
+  keys actually use the placeholder.
 - `sp_properties.sql` now lives only in `bin/`. It is the source for the stored
   procedure still called by `commands_factory.php`; the copy in `includes/` was an
   older revision and was deleted.
