@@ -5,6 +5,7 @@ include_once 'constants.php';
 include_once 'includes/remote.php';
 include_once 'shared/shared_db.php';
 include_once 'shared/shared_auth.php';
+include_once 'shared/shared_fcm.php';
 include_once 'shared/shared_file.php';
 include_once 'shared/shared_ha.php';
 include_once 'shared/shared_gen.php';
