@@ -145,6 +145,11 @@ if (php_sapi_name() === 'cli' || requestIsLocal()) {
 			$bearerReason = null;
 			$claims = firebaseVerifyIdToken($bearer, $bearerReason);
 			$candidate = $claims === null ? false : authUserFromClaims($claims);
+			if ($candidate !== false && haReauthRequired($candidate, $claims)) {
+				// Authenticated before the user's revocation cut-off: token is genuine but stale.
+				$candidate = false;
+				$authReason = 'reauth_required';
+			}
 			if ($candidate !== false) {
 				$authUser = $candidate;
 				$authReason = null;

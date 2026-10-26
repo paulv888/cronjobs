@@ -229,7 +229,7 @@ function authBearerToken() {
 // use.
 function authUserFromClaims($claims) {
 	if (empty($claims['email'])) return false;
-	$user = PDOFetchRow('SELECT id, username FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
+	$user = PDOFetchRow('SELECT id, username, sessions_cutoff FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
 		array($claims['email']));
 	return empty($user) ? false : $user;
 }
@@ -325,8 +325,31 @@ function haSessionRevoke($token) {
 }
 
 // Used when a person is disabled, and by logout-everywhere.
+//
+// Revoking the rows alone is not enough: the browser still holds a Firebase login,
+// so the next page load would silently exchange a fresh token for a fresh session
+// and be straight back in. Recording a cut-off makes the next exchange demand a real
+// password, because Firebase's `auth_time` claim only moves when the user actually
+// authenticates.
 function haSessionRevokeUser($userId) {
-	return PDOExec('UPDATE ha_sessions SET revoked = 1 WHERE user_id = ? AND revoked = 0', array((int)$userId));
+	$revoked = PDOExec('UPDATE ha_sessions SET revoked = 1 WHERE user_id = ? AND revoked = 0', array((int)$userId));
+	PDOExec('UPDATE ha_mi_remote_users SET sessions_cutoff = ? WHERE id = ?',
+		array(haSqlDate(time()), (int)$userId));
+	return $revoked;
+}
+
+// True when this identity authenticated before the user's cut-off, i.e. it predates
+// the last revocation and must not be honoured.
+function haReauthRequired($user, $claims) {
+	if (empty($user['sessions_cutoff'])) return false;
+	$cutoff = haSqlDateToUnix($user['sessions_cutoff']);
+	$authenticatedAt = isset($claims['auth_time']) ? (int)$claims['auth_time'] : 0;
+	return $authenticatedAt < $cutoff;
+}
+
+// A real sign-in has happened since the cut-off, so it can be cleared.
+function haReauthClear($userId) {
+	return PDOExec('UPDATE ha_mi_remote_users SET sessions_cutoff = NULL WHERE id = ?', array((int)$userId));
 }
 
 function haSessionCookieSend($token, $expiresUnix) {

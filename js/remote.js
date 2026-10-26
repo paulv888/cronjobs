@@ -279,6 +279,17 @@ if(!window.scriptRemoteHasRun) {
 				},
 				error: function(xhr, textStatus, error)
 				{
+					// 401 means the session is gone - revoked, expired or never
+					// established. Reload so the page can show the sign-in form; the
+					// guard stops a reload loop if the server keeps refusing.
+					if (xhr && xhr.status === 401) {
+						stopTimer();
+						if (!VloRemote.authRedirected) {
+							VloRemote.authRedirected = true;
+							window.location.reload();
+							return;
+						}
+					}
 					showError(textStatus+' '+error ,xhr.responseText);
 				},
 				complete: function()

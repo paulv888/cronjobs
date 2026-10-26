@@ -56,7 +56,8 @@ if (!window.scriptLoginHasRun) {
 		// If the server says the session is gone, drop Firebase's copy too, or it
 		// would silently sign the user straight back in and defeat the 30 day rule.
 		function handleRejection(reason) {
-			if (reason === 'session_expired' || reason === 'user_disabled' || reason === 'invalid_token') {
+			if (reason === 'session_expired' || reason === 'user_disabled' || reason === 'invalid_token'
+				|| reason === 'reauth_required') {
 				if (auth) auth.signOut();
 			}
 		}
@@ -76,7 +77,9 @@ if (!window.scriptLoginHasRun) {
 				}
 				setBusy(false);
 				handleRejection(result.body.reason);
-				if (result.status === 403) {
+				if (result.status === 403 && result.body.reason === 'reauth_required') {
+					setStatus('Your session was ended. Enter your password to continue.', true);
+				} else if (result.status === 403) {
 					setStatus('This account does not have access to the remote.', true);
 				} else {
 					setStatus('Please sign in.', false);
@@ -120,7 +123,9 @@ if (!window.scriptLoginHasRun) {
 				}
 				setBusy(false);
 				handleRejection(result.body.reason);
-				if (result.status === 403) {
+				if (result.status === 403 && result.body.reason === 'reauth_required') {
+					setStatus('Enter your password again to continue.', true);
+				} else if (result.status === 403) {
 					setStatus('This account does not have access to the remote.', true);
 				} else if (result.status === 429) {
 					setStatus('Too many attempts. Try again in a few minutes.', true);

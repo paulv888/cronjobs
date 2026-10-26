@@ -74,7 +74,7 @@ if ($claims === null) {
 // The email is verified at this point, but that only proves the account exists.
 // A local row must also exist and be in use: there is no self provisioning, and
 // turning someone off is `inuse = 0` rather than anything in the console.
-$user = PDOFetchRow('SELECT id, username FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
+$user = PDOFetchRow('SELECT id, username, sessions_cutoff FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
 	array($claims['email']));
 
 if (empty($user)) {
@@ -84,8 +84,19 @@ if (empty($user)) {
 		'message' => 'This account does not have access.'));
 }
 
+// A revocation happened after this identity authenticated. The token is genuine, but
+// it predates the cut-off, so only a fresh password will do. Without this a revoked
+// person simply reloads the page and is silently let back in.
+if (haReauthRequired($user, $claims)) {
+	haRateLimitFail($bucket);
+	error_log('auth.php: reauth required for ' . $user['username'] . ' from ' . $ip);
+	authRespond(403, array('ok' => false, 'reason' => 'reauth_required',
+		'message' => 'Sign in again with your password.'));
+}
+
 $token = haSessionCreate($user['id'], $user['username'], $claims['sub']);
 haSessionCookieSend($token, time() + HA_SESSION_IDLE_DAYS * 86400);
+haReauthClear($user['id']);
 haRateLimitClear($bucket);
 
 error_log('auth.php: login ' . $user['username'] . ' from ' . $ip);
