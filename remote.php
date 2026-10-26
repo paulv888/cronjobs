@@ -115,6 +115,13 @@ if ('serviceWorker' in navigator) {
 	.login-row input[type=submit][disabled] { opacity: .6; }
 	.login-status { display: none; font-size: .9rem; margin-bottom: 12px; }
 	.login-error { color: #b02a37; }
+	.login-google { width: 100%; padding: 11px; font-size: .95rem; background: #fff; color: #3c4043;
+		border: 1px solid #dadce0; border-radius: 6px; cursor: pointer; }
+	.login-google:hover { background: #f8f9fa; }
+	.login-google[disabled] { opacity: .6; }
+	.login-or { text-align: center; margin: 14px 0; position: relative; }
+	.login-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #e0e0e0; }
+	.login-or span { position: relative; background: #fff; padding: 0 10px; font-size: .8rem; color: #888; }
 	.signout-row { padding: 6px 10px; text-align: right; background-color: #222; }
 	.signout-row a { color: #9ecbff; font-size: .85rem; }
 	body.dark-mode .login-card { background: #242526; color: #e4e6eb; }
@@ -138,6 +145,15 @@ if ('serviceWorker' in navigator) {
        <p class="lead">Sign in once and this remote works from anywhere.</p>
        <div id="login-status" class="login-status"></div>
        <div id="login-restoring" style="display:none">Checking your session&hellip;</div>
+       <button type="button" id="login-google" class="login-google">
+         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="vertical-align:-3px;margin-right:8px">
+           <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+           <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+         </svg>Continue with Google
+       </button>
+       <div class="login-or"><span>or</span></div>
        <form id="login-form" novalidate>
          <div class="login-row">
            <label for="login-email">Email</label>

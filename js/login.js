@@ -33,6 +33,8 @@ if (!window.scriptLoginHasRun) {
 				button.disabled = state;
 				button.value = state ? 'Signing in...' : 'Sign in';
 			}
+			var google = el('login-google');
+			if (google) google.disabled = state;
 		}
 
 		// POST the token, and report both the HTTP status and the JSON body so the
@@ -111,12 +113,11 @@ if (!window.scriptLoginHasRun) {
 			return 'Sign-in failed' + (code ? ' (' + code + ')' : '.');
 		}
 
-		function signIn(email, password) {
+		// Once Firebase has a user, the only thing left is the exchange. Shared by the
+		// password form, the Google button and the silent session restore.
+		function finishSignIn(user) {
 			setBusy(true);
-			setStatus('', false);
-			auth.signInWithEmailAndPassword(email, password).then(function (credential) {
-				return exchange(credential.user, true);
-			}).then(function (result) {
+			return exchange(user, true).then(function (result) {
 				if (result.status === 200) {
 					reloadIntoRemote();
 					return;
@@ -132,7 +133,48 @@ if (!window.scriptLoginHasRun) {
 				} else {
 					setStatus(result.body.message || 'Sign-in was refused.', true);
 				}
+			}).catch(function () {
+				setBusy(false);
+				setStatus('Could not reach the server. Check the connection.', true);
+			});
+		}
+
+		function signIn(email, password) {
+			setBusy(true);
+			setStatus('', false);
+			auth.signInWithEmailAndPassword(email, password).then(function (credential) {
+				return finishSignIn(credential.user);
 			}).catch(function (error) {
+				setBusy(false);
+				setStatus(explain(error), true);
+			});
+		}
+
+		// Google, with a redirect fallback. Popups are blocked in iframes and are
+		// unreliable in an iOS standalone window, so a blocked popup becomes a full
+		// redirect; when the browser comes back the restore path finishes the job.
+		function signInWithGoogle() {
+			if (!auth) return;
+			setBusy(true);
+			setStatus('', false);
+
+			var provider = new firebase.auth.GoogleAuthProvider();
+			provider.setCustomParameters({ prompt: 'select_account' });
+
+			auth.signInWithPopup(provider).then(function (credential) {
+				return finishSignIn(credential.user);
+			}).catch(function (error) {
+				var code = (error && error.code) || '';
+				if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user'
+					|| code === 'auth/operation-not-supported-in-this-environment'
+					|| code === 'auth/cancelled-popup-request') {
+					if (code === 'auth/popup-closed-by-user') {
+						setBusy(false);
+						setStatus('Sign-in was cancelled.', false);
+						return;
+					}
+					return auth.signInWithRedirect(provider);
+				}
 				setBusy(false);
 				setStatus(explain(error), true);
 			});
@@ -191,6 +233,15 @@ if (!window.scriptLoginHasRun) {
 						return;
 					}
 					signIn(email.trim(), password);
+				});
+			}
+
+			var googleButton = el('login-google');
+			if (googleButton) {
+				googleButton.addEventListener('click', function (event) {
+					event.preventDefault();
+					if (busy) return;
+					signInWithGoogle();
 				});
 			}
 
