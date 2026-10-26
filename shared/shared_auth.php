@@ -21,6 +21,7 @@ if (!defined('HA_SESSION_COOKIE'))       define('HA_SESSION_COOKIE', 'ha_sid');
 if (!defined('HA_SESSION_IDLE_DAYS'))    define('HA_SESSION_IDLE_DAYS', 30);
 if (!defined('HA_SESSION_SLIDE_AFTER'))  define('HA_SESSION_SLIDE_AFTER', 600);  // seconds
 if (!defined('HA_TOKEN_LEEWAY'))         define('HA_TOKEN_LEEWAY', 60);          // clock skew
+if (!defined('HA_REQUIRE_VERIFIED_EMAIL')) define('HA_REQUIRE_VERIFIED_EMAIL', true);
 
 function haFirebaseProjectId() {
 	return defined('FIREBASE_PROJECT_ID') ? FIREBASE_PROJECT_ID : '';
@@ -163,6 +164,14 @@ function firebaseVerifyIdToken($idToken, &$reason = null) {
 	$reason = 'subject';
 	if (!is_string($claims['sub'] ?? '') || $claims['sub'] === '') return null;
 
+	// Access is granted by matching the account to a local user row, so the email
+	// has to be trustworthy. Public sign-up is open on a Firebase project by
+	// default, and the web api key ships in the client bundle, so anyone can create
+	// an account claiming any address. An unverified email proves nothing.
+	$reason = 'email_unverified';
+	if (!is_string($claims['email'] ?? '') || $claims['email'] === '') return null;
+	if (HA_REQUIRE_VERIFIED_EMAIL && empty($claims['email_verified'])) return null;
+
 	$reason = null;
 	return $claims;
 }
@@ -303,5 +312,41 @@ function haSessionPurge() {
 	$cutoff = haSqlDate(time() - 7 * 86400);
 	return PDOExec('DELETE FROM ha_sessions WHERE expires_at < ? OR (revoked = 1 AND last_seen < ?)',
 		array($cutoff, $cutoff));
+}
+
+// ------------------------------------------------------------- rate limiting
+// Failed logins only. Backed by a file keyed on the source IP, so it survives
+// process restarts and needs no table. Successes clear the counter, so a person
+// who fumbles a password twice is never locked out of their own house.
+function haRateLimitFile($bucket) {
+	return sys_get_temp_dir() . '/ha-rl-' . hash('sha256', $bucket) . '.json';
+}
+
+function haRateLimitState($file) {
+	if (!is_readable($file)) return array();
+	$raw = @file_get_contents($file);
+	$state = $raw === false ? null : json_decode($raw, true);
+	return is_array($state) ? $state : array();
+}
+
+function haRateLimitExceeded($bucket, $maxFailures = 10, $windowSeconds = 900) {
+	$now = time();
+	$failures = array_filter(haRateLimitState(haRateLimitFile($bucket)),
+		function ($t) use ($now, $windowSeconds) { return $t > $now - $windowSeconds; });
+	return count($failures) >= $maxFailures;
+}
+
+function haRateLimitFail($bucket, $windowSeconds = 900) {
+	$file = haRateLimitFile($bucket);
+	$now = time();
+	$failures = array_values(array_filter(haRateLimitState($file),
+		function ($t) use ($now, $windowSeconds) { return $t > $now - $windowSeconds; }));
+	$failures[] = $now;
+	$tmp = $file . '.' . getmypid();
+	if (@file_put_contents($tmp, json_encode($failures)) !== false) @rename($tmp, $file);
+}
+
+function haRateLimitClear($bucket) {
+	@unlink(haRateLimitFile($bucket));
 }
 ?>
