@@ -15,6 +15,13 @@
 - Public vhost: `https://home.vloons.com/ha/` (`/ha/` is an Alias; `.htaccess` active)
 - Local-only vhost: `http://192.168.2.11/` (port 80, source-IP gated to 192.168.2/10/25)
 - PHP: `C:\php83\php.exe`, on PATH — use `php -l <file>` for syntax checks
+- Diagnostics over SSH: `ssh -i $env:USERPROFILE\.ssh\dsh_key dsh@home` (`home` is
+  already in `known_hosts`). `dsh` is in the `syslog` group, so
+  `/var/log/apache2/error.log` and `journalctl -u apache2` are readable — that is
+  where PHP's `error_log()` output lands, through `proxy_fcgi`.
+- `dsh` has no sudo and **cannot write `/home/www/ha`**, so deployment stays on
+  Samba via `deploy.ps1` and SSH is read-only diagnostics. Server PHP is 8.3.6
+  against 8.3.22 locally; close enough for `php -l`.
 
 Two consequences of this workspace being the repo:
 - `git add` / `git commit` work without approval, because `.git` is inside the workspace.
