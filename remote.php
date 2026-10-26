@@ -79,6 +79,15 @@ $basePath = getPath(true);
 <script async src="/templates/mod-cassiopeia/js/bstrap3.min.js"></script>
 <script>window.VLO_REMOTE_HOST = 'pwa';</script>
 <script src="<?php echo $basePath; ?>/js/remote.js"></script>
+<script>
+// The worker handles the app shell cache and push. Its scope is the directory it
+// is served from, which is /ha/.
+if ('serviceWorker' in navigator) {
+	window.addEventListener('load', function () {
+		navigator.serviceWorker.register('<?php echo $basePath; ?>/sw.js').catch(function () {});
+	});
+}
+</script>
 <?php if ($username === null) { ?>
 <script>window.VLO_FIREBASE = <?php echo json_encode($firebaseConfig); ?>;</script>
 <script src="<?php echo $basePath; ?>/js/vendor/firebase-app-compat.js"></script>

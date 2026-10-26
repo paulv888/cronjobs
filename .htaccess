@@ -9,3 +9,20 @@ Options -Indexes
 
 RedirectMatch 404 ^/ha/(log|bin|includes)/.*$
 RedirectMatch 404 ^/ha/.*\.(sql|bak|sh|md)$
+
+# A service worker is cached aggressively by the browser and controls every later
+# request in its scope, so it must always be revalidated. Without this, a phone can
+# keep running an old worker for up to 24 hours after a deploy.
+<FilesMatch "^sw\.js$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+    </IfModule>
+</FilesMatch>
+
+# The manifest can be cached briefly; it changes far less often than the worker.
+<FilesMatch "^manifest\.json$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "public, max-age=3600"
+    </IfModule>
+</FilesMatch>

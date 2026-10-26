@@ -57,5 +57,5 @@ define("HA_SESSION_IDLE_DAYS", 30);
 // are treated as remote instead. It exists only so the login path can be tested
 // from the build machine, and it must be removed before this work is finished.
 define("TEST_FORCE_REMOTE", true);
-define("TEST_FORCE_REMOTE_IPS", array("192.168.2.84", "192.168.2.54", "192.168.10.248"));
+define("TEST_FORCE_REMOTE_IPS", array("192.168.2.84", "192.168.2.54", "192.168.10.246", "192.168.10.248"));
 ?>
