@@ -128,47 +128,6 @@ session_write_close();
 // ---------------------------------------------------------------------------
 if (!defined('PROCESS_REQUIRE_APIKEY')) define('PROCESS_REQUIRE_APIKEY', true);
 
-function requestIsLocal() {
-	if (php_sapi_name() === 'cli') return true;
-	$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
-	if (stripos($ip, '::ffff:') === 0) $ip = substr($ip, 7);
-
-	// Test hook, see SPEC-remote-pwa.md. A LAN request can never exercise the
-	// remote branch, so these addresses are deliberately treated as remote when the
-	// flag is on. Both constants are absent in a normal deployment.
-	if (defined('TEST_FORCE_REMOTE') && TEST_FORCE_REMOTE
-		&& defined('TEST_FORCE_REMOTE_IPS') && in_array($ip, TEST_FORCE_REMOTE_IPS, true)) {
-		return false;
-	}
-
-	if (filter_var($ip, FILTER_VALIDATE_IP) === false) return false;
-	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return true;
-	if (isset($_SERVER['SERVER_ADDR']) && $ip === $_SERVER['SERVER_ADDR']) return true;
-	return false;
-}
-
-function authBearerToken() {
-	$headers = function_exists('apache_request_headers') ? apache_request_headers() : array();
-	foreach ($headers as $name => $value) {
-		if (strcasecmp($name, 'Authorization') === 0 && is_string($value)) {
-			if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $value, $m)) return $m[1];
-		}
-	}
-	if (!empty($_SERVER['HTTP_AUTHORIZATION']) && is_string($_SERVER['HTTP_AUTHORIZATION'])) {
-		if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $_SERVER['HTTP_AUTHORIZATION'], $m)) return $m[1];
-	}
-	return '';
-}
-
-// Resolves a Firebase identity to a provisioned local user, the same rule auth.php
-// applies at login: the row has to exist and be in use.
-function authUserFromClaims($claims) {
-	if (empty($claims['email'])) return false;
-	$user = PDOFetchRow('SELECT id, username FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
-		array($claims['email']));
-	return empty($user) ? false : $user;
-}
-
 $authReason = 'no_session';
 $authUser = false;
 

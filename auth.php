@@ -41,6 +41,15 @@ if (is_array($body) && isset($body['idToken']) && is_string($body['idToken'])) {
 $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
 $bucket = 'auth|' . $ip;
 
+// Signing out. No token needed: the cookie is the credential, revoking it is
+// idempotent, and a stale cookie deserves the same answer as a live one.
+$action = (is_array($body) && isset($body['action']) && is_string($body['action'])) ? $body['action'] : '';
+if ($action === 'logout') {
+	haSessionRevoke(haSessionTokenFromRequest());
+	haSessionCookieClear();
+	authRespond(200, array('ok' => true, 'logged_out' => true));
+}
+
 if (haRateLimitExceeded($bucket)) {
 	error_log('auth.php: rate limited ' . $ip);
 	authRespond(429, array('ok' => false, 'reason' => 'rate_limited',

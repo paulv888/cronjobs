@@ -125,3 +125,8 @@ because this tree has a history of local debris sitting next to real code.
 - `sp_properties.sql` now lives only in `bin/`. It is the source for the stored
   procedure still called by `commands_factory.php`; the copy in `includes/` was an
   older revision and was deleted.
+- **Provisioning has to come before key removal.** A row's `email` is the login
+  identity and the existing people have none, so the legacy `?key=` page key and the
+  `apikey` parameter in `process.php` stay until each of them has an email and a
+  Firebase account. Deleting both is the last step, together with SPEC-remote-pwa.md
+  C1, C2 and B2.

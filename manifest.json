@@ -1,0 +1,17 @@
+{
+	"name": "HA Remote",
+	"short_name": "Remote",
+	"description": "House remote control",
+	"start_url": "/ha/remote.php",
+	"scope": "/ha/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#E9ECE5",
+	"theme_color": "#E9ECE5",
+	"icons": [
+		{ "src": "/ha/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/ha/images/icon-512.png", "sizes": "512x512", "type": "image/png" },
+		{ "src": "/ha/images/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+		{ "src": "/ha/images/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+	]
+}
