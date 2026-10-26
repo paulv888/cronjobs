@@ -54,8 +54,10 @@ define("HA_SESSION_IDLE_DAYS", 30);
 
 // Test hook, described in SPEC-remote-pwa.md. A request from the LAN can never
 // reach the remote authorization branch, so while this flag is on these addresses
-// are treated as remote instead. It exists only so the login path can be tested
-// from the build machine, and it must be removed before this work is finished.
-define("TEST_FORCE_REMOTE", true);
+// are treated as remote instead. Off: the login flow has been verified from a
+// genuinely external address, and leaving it on breaks the Joomla-embedded remotes,
+// which send no credential by design. Turn it on only while testing the
+// remote branch from the build machine.
+define("TEST_FORCE_REMOTE", false);
 define("TEST_FORCE_REMOTE_IPS", array("192.168.2.84", "192.168.2.54", "192.168.10.246", "192.168.10.248"));
 ?>
