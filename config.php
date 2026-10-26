@@ -51,4 +51,11 @@ define("FIREBASE_VAPID_KEY", "BFJqLVHHZvu6xsqKkQL9qtfUMV7vaNWX9-0Ezl8dzTBuZu-t5x
 // Remote sessions slide on this many days of inactivity. The ID token behind them
 // only lives an hour and is re-minted silently; this is the long stop.
 define("HA_SESSION_IDLE_DAYS", 30);
+
+// Test hook, described in SPEC-remote-pwa.md. A request from the LAN can never
+// reach the remote authorization branch, so while this flag is on these addresses
+// are treated as remote instead. It exists only so the login path can be tested
+// from the build machine, and it must be removed before this work is finished.
+define("TEST_FORCE_REMOTE", true);
+define("TEST_FORCE_REMOTE_IPS", array("192.168.2.54"));
 ?>

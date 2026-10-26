@@ -113,10 +113,18 @@ debug($_SESSION, 'Current _SESSION');
 session_write_close();
 // ---------------------------------------------------------------------------
 // Authorization
-// The API key (ha_mi_remote_users.apikey) is required for any caller that is
-// not local. Cron jobs / async CLI threads, same-host callers, LAN device
-// callbacks and the in-house pages do not carry a key and stay allowed.
-// Set PROCESS_REQUIRE_APIKEY to false in config.php to disable this check.
+//
+// Local callers (CLI, loopback and the LAN), the Joomla pages, LAN devices and the
+// async threads spawned by timers and macros are allowed without a credential.
+// Everyone else must present one of:
+//
+//   - the session cookie minted by auth.php, which is checked against ha_sessions
+//     and is therefore revocable server side, or
+//   - a Firebase ID token as `Authorization: Bearer <token>`, verified per request.
+//
+// The legacy `apikey` parameter is still honoured for the time being, because the
+// remote UI that replaces it has not shipped yet. It goes away with that change;
+// see SPEC-remote-pwa.md B2.
 // ---------------------------------------------------------------------------
 if (!defined('PROCESS_REQUIRE_APIKEY')) define('PROCESS_REQUIRE_APIKEY', true);
 
@@ -124,25 +132,91 @@ function requestIsLocal() {
 	if (php_sapi_name() === 'cli') return true;
 	$ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '';
 	if (stripos($ip, '::ffff:') === 0) $ip = substr($ip, 7);
+
+	// Test hook, see SPEC-remote-pwa.md. A LAN request can never exercise the
+	// remote branch, so these addresses are deliberately treated as remote when the
+	// flag is on. Both constants are absent in a normal deployment.
+	if (defined('TEST_FORCE_REMOTE') && TEST_FORCE_REMOTE
+		&& defined('TEST_FORCE_REMOTE_IPS') && in_array($ip, TEST_FORCE_REMOTE_IPS, true)) {
+		return false;
+	}
+
 	if (filter_var($ip, FILTER_VALIDATE_IP) === false) return false;
 	if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) return true;
 	if (isset($_SERVER['SERVER_ADDR']) && $ip === $_SERVER['SERVER_ADDR']) return true;
 	return false;
 }
 
-if (isset($params['apikey']) && is_string($params['apikey']) && $params['apikey'] !== '') {
-	$keyuser = PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?', [$params['apikey']]);
-	$authorized = !empty($keyuser);
-} else {
-	$authorized = requestIsLocal();
+function authBearerToken() {
+	$headers = function_exists('apache_request_headers') ? apache_request_headers() : array();
+	foreach ($headers as $name => $value) {
+		if (strcasecmp($name, 'Authorization') === 0 && is_string($value)) {
+			if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $value, $m)) return $m[1];
+		}
+	}
+	if (!empty($_SERVER['HTTP_AUTHORIZATION']) && is_string($_SERVER['HTTP_AUTHORIZATION'])) {
+		if (preg_match('/^\s*Bearer\s+(\S+)\s*$/i', $_SERVER['HTTP_AUTHORIZATION'], $m)) return $m[1];
+	}
+	return '';
 }
 
-if (PROCESS_REQUIRE_APIKEY && !$authorized) {
+// Resolves a Firebase identity to a provisioned local user, the same rule auth.php
+// applies at login: the row has to exist and be in use.
+function authUserFromClaims($claims) {
+	if (empty($claims['email'])) return false;
+	$user = PDOFetchRow('SELECT id, username FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
+		array($claims['email']));
+	return empty($user) ? false : $user;
+}
+
+$authReason = 'no_session';
+$authUser = false;
+
+if (php_sapi_name() === 'cli' || requestIsLocal()) {
+	$authUser = true;
+} else {
+	$sessionToken = haSessionTokenFromRequest();
+	if ($sessionToken !== '') {
+		$authUser = haSessionValidate($sessionToken, $authReason);
+	}
+
+	if (!$authUser) {
+		$bearer = authBearerToken();
+		if ($bearer !== '') {
+			$bearerReason = null;
+			$claims = firebaseVerifyIdToken($bearer, $bearerReason);
+			$candidate = $claims === null ? false : authUserFromClaims($claims);
+			if ($candidate !== false) {
+				$authUser = $candidate;
+				$authReason = null;
+			} else {
+				// Logged in with Firebase but not provisioned here.
+				$authReason = $claims === null ? 'invalid_token' : 'not_provisioned';
+			}
+		}
+	}
+
+	// Transitional: the old page key still works until the new remote UI ships.
+	if (!$authUser && isset($params['apikey']) && is_string($params['apikey']) && $params['apikey'] !== '') {
+		$keyuser = PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?',
+			array($params['apikey']));
+		if (!empty($keyuser)) {
+			$authUser = $keyuser;
+			$authReason = null;
+		} else {
+			$authReason = 'not_authorized';
+		}
+	}
+}
+
+if (PROCESS_REQUIRE_APIKEY && !$authUser) {
 	$authIP = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli';
-	error_log('process.php: unauthorized request from '.$authIP.' messagetypeID='.(isset($params['messagetypeID']) ? $params['messagetypeID'] : '-'));
+	error_log('process.php: unauthorized request from '.$authIP
+		.' messagetypeID='.(isset($params['messagetypeID']) ? $params['messagetypeID'] : '-')
+		.' reason='.$authReason);
 	http_response_code(401);
 	header('Content-Type: application/json');
-	echo json_encode(array('error' => 'Not Authorized'));
+	echo json_encode(array('error' => 'Not Authorized', 'reason' => $authReason));
 	exit;
 }
 
