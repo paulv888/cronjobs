@@ -1,0 +1,307 @@
+<?php
+// ---------------------------------------------------------------------------
+// Firebase ID token verification, and the remote PWA's server side sessions.
+//
+// Two separate things live here on purpose:
+//
+//   1. The Firebase ID token is proof of identity for one request. It lives one
+//      hour and is never stored. `firebaseVerifyIdToken()` turns it into claims or
+//      into a reason it was rejected.
+//   2. The session is what actually authorises `process.php`. It lives in
+//      `ha_sessions`, slides on inactivity, and is revoked server side. The cookie
+//      carries a random token; only its SHA-256 is stored, so a dump of that table
+//      cannot be replayed against us.
+//
+// Verification uses Google's published certificates for the `securetoken`
+// service account. That avoids hand-rolling a JWK-to-PEM converter, which is a
+// well known source of subtle bugs; the certificates are already PEM.
+// ---------------------------------------------------------------------------
+
+if (!defined('HA_SESSION_COOKIE'))       define('HA_SESSION_COOKIE', 'ha_sid');
+if (!defined('HA_SESSION_IDLE_DAYS'))    define('HA_SESSION_IDLE_DAYS', 30);
+if (!defined('HA_SESSION_SLIDE_AFTER'))  define('HA_SESSION_SLIDE_AFTER', 600);  // seconds
+if (!defined('HA_TOKEN_LEEWAY'))         define('HA_TOKEN_LEEWAY', 60);          // clock skew
+
+function haFirebaseProjectId() {
+	return defined('FIREBASE_PROJECT_ID') ? FIREBASE_PROJECT_ID : '';
+}
+
+// ------------------------------------------------------------------ base64url
+function haBase64UrlDecode($input) {
+	$remainder = strlen($input) % 4;
+	if ($remainder) $input .= str_repeat('=', 4 - $remainder);
+	return base64_decode(strtr($input, '-_', '+/'), true);
+}
+
+// ------------------------------------------------- Google's signing certificates
+// Cached to a file with the max-age Google sends, because a login must not depend
+// on an outbound round trip every time, and because a cached copy is what keeps
+// verification working if the house briefly loses the internet.
+function haFirebaseCerts($force = false) {
+	$cacheFile = sys_get_temp_dir() . '/ha-firebase-certs.json';
+	$now = time();
+
+	if (!$force && is_readable($cacheFile)) {
+		$cached = json_decode((string)file_get_contents($cacheFile), true);
+		if (is_array($cached) && !empty($cached['certs']) && isset($cached['expires']) && $cached['expires'] > $now) {
+			return $cached['certs'];
+		}
+	}
+
+	$ch = curl_init('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+	$options = array(
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_HEADER => true,
+		CURLOPT_CONNECTTIMEOUT => 3,
+		CURLOPT_TIMEOUT => 5,
+	);
+	// The server finds the system CA bundle on its own. A Windows dev box does not,
+	// so allow an explicit bundle without ever disabling verification.
+	if (defined('FIREBASE_CAINFO') && FIREBASE_CAINFO !== '') {
+		$options[CURLOPT_CAINFO] = FIREBASE_CAINFO;
+	}
+	curl_setopt_array($ch, $options);
+	$response = curl_exec($ch);
+	$status = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+	$headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+	$error = curl_error($ch);
+	curl_close($ch);
+
+	if ($status === 200 && $headerSize > 0) {
+		$headers = substr($response, 0, $headerSize);
+		$body = substr($response, $headerSize);
+		$certs = json_decode($body, true);
+		if (is_array($certs) && count($certs) > 0) {
+			$maxAge = 3600;
+			if (preg_match('/cache-control:[^\r\n]*max-age=(\d+)/i', $headers, $m)) {
+				$maxAge = max(300, (int)$m[1]);
+			}
+			$payload = json_encode(array('expires' => $now + $maxAge, 'certs' => $certs));
+			$tmp = $cacheFile . '.' . getmypid();
+			if (@file_put_contents($tmp, $payload) !== false) {
+				@rename($tmp, $cacheFile);
+			}
+			return $certs;
+		}
+	}
+
+	// Outbound fetch failed. A stale cache is better than locking everyone out.
+	if (is_readable($cacheFile)) {
+		$cached = json_decode((string)file_get_contents($cacheFile), true);
+		if (is_array($cached) && !empty($cached['certs'])) {
+			error_log('shared_auth: using stale Firebase certificates (' . ($error !== '' ? $error : 'HTTP ' . $status) . ')');
+			return $cached['certs'];
+		}
+	}
+	error_log('shared_auth: no Firebase certificates available (' . ($error !== '' ? $error : 'HTTP ' . $status) . ')');
+	return array();
+}
+
+function haFirebasePublicKey($keyId) {
+	$certs = haFirebaseCerts();
+	if (empty($certs[$keyId])) {
+		// The key may simply be new: refetch once, ignoring the cache.
+		$certs = haFirebaseCerts(true);
+	}
+	if (empty($certs[$keyId])) return false;
+
+	$certificate = openssl_x509_read($certs[$keyId]);
+	if ($certificate === false) return false;
+	$publicKey = openssl_pkey_get_public($certificate);
+	return $publicKey === false ? false : $publicKey;
+}
+
+// ------------------------------------------------------------- verification
+// Returns the claims array on success, or null with $reason set to one of
+// 'malformed', 'algorithm', 'unknown_key', 'signature', 'expired', 'not_yet_valid',
+// 'audience', 'issuer', 'subject'.
+function firebaseVerifyIdToken($idToken, &$reason = null) {
+	$reason = 'malformed';
+	if (!is_string($idToken) || $idToken === '') return null;
+
+	$parts = explode('.', $idToken);
+	if (count($parts) !== 3) return null;
+
+	$header = json_decode((string)haBase64UrlDecode($parts[0]), true);
+	$claims = json_decode((string)haBase64UrlDecode($parts[1]), true);
+	if (!is_array($header) || !is_array($claims)) return null;
+
+	$reason = 'algorithm';
+	if (($header['alg'] ?? '') !== 'RS256') return null;
+	if (empty($header['kid'])) return null;
+
+	$reason = 'unknown_key';
+	$publicKey = haFirebasePublicKey($header['kid']);
+	if ($publicKey === false) return null;
+
+	$reason = 'signature';
+	$signature = haBase64UrlDecode($parts[2]);
+	if ($signature === false || $signature === '') return null;
+	if (openssl_verify($parts[0] . '.' . $parts[1], $signature, $publicKey, OPENSSL_ALGO_SHA256) !== 1) {
+		return null;
+	}
+
+	$project = haFirebaseProjectId();
+	if ($project === '') {
+		$reason = 'audience';
+		return null;
+	}
+
+	$now = time();
+	$reason = 'expired';
+	if (!isset($claims['exp']) || (int)$claims['exp'] < $now - HA_TOKEN_LEEWAY) return null;
+
+	$reason = 'not_yet_valid';
+	if (!isset($claims['iat']) || (int)$claims['iat'] > $now + HA_TOKEN_LEEWAY) return null;
+
+	$reason = 'audience';
+	if (($claims['aud'] ?? '') !== $project) return null;
+
+	$reason = 'issuer';
+	if (($claims['iss'] ?? '') !== 'https://securetoken.google.com/' . $project) return null;
+
+	$reason = 'subject';
+	if (!is_string($claims['sub'] ?? '') || $claims['sub'] === '') return null;
+
+	$reason = null;
+	return $claims;
+}
+
+// --------------------------------------------------------------- date helpers
+// Sessions are stored in UTC so PHP's and MySQL's time zones can never disagree
+// about when a session expired.
+function haSqlDate($unixTime) {
+	return gmdate('Y-m-d H:i:s', (int)$unixTime);
+}
+
+function haSqlDateToUnix($sqlDate) {
+	return (int)strtotime($sqlDate . ' UTC');
+}
+
+// ------------------------------------------------------------------- sessions
+function haSessionTokenFromRequest() {
+	if (!empty($_COOKIE[HA_SESSION_COOKIE]) && is_string($_COOKIE[HA_SESSION_COOKIE])) {
+		return $_COOKIE[HA_SESSION_COOKIE];
+	}
+	return '';
+}
+
+function haSessionCreate($userId, $username, $firebaseUid) {
+	$token = bin2hex(random_bytes(32));
+	$now = time();
+	$ip = isset($_SERVER['REMOTE_ADDR']) ? substr($_SERVER['REMOTE_ADDR'], 0, 45) : null;
+	$agent = isset($_SERVER['HTTP_USER_AGENT']) ? substr($_SERVER['HTTP_USER_AGENT'], 0, 255) : null;
+
+	PDOExec('INSERT INTO ha_sessions
+	         (session_hash, user_id, username, firebase_uid, created_at, last_seen, expires_at, revoked, ip, user_agent)
+	         VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)',
+		array(
+			hash('sha256', $token),
+			(int)$userId,
+			$username,
+			(string)$firebaseUid,
+			haSqlDate($now),
+			haSqlDate($now),
+			haSqlDate($now + HA_SESSION_IDLE_DAYS * 86400),
+			$ip,
+			$agent,
+		));
+
+	return $token;
+}
+
+// Validates the cookie's token and slides the expiry. $reason is left null on
+// success, otherwise it carries the same vocabulary the clients switch on.
+function haSessionValidate($token, &$reason = null) {
+	$reason = 'no_session';
+	if (!is_string($token) || strlen($token) < 32) return null;
+
+	$row = PDOFetchRow('SELECT s.id, s.user_id, s.username, s.firebase_uid, s.last_seen, s.expires_at, s.revoked,
+	                           u.inuse AS user_inuse
+	                      FROM ha_sessions s
+	                 LEFT JOIN ha_mi_remote_users u ON u.id = s.user_id
+	                     WHERE s.session_hash = ? LIMIT 1',
+		array(hash('sha256', $token)));
+
+	if (empty($row)) return null;                       // unknown or already deleted
+
+	$reason = 'session_expired';
+	if ((int)$row['revoked'] === 1) return null;
+
+	// A disabled or removed user loses access on their next request, whatever the
+	// session says.
+	$reason = 'user_disabled';
+	if ((int)$row['user_inuse'] !== 1) {
+		haSessionRevokeById((int)$row['id']);
+		return null;
+	}
+
+	$reason = 'session_expired';
+	$now = time();
+	if (haSqlDateToUnix($row['expires_at']) <= $now) {
+		haSessionRevokeById((int)$row['id']);
+		return null;
+	}
+
+	// Slide, but not on every request: the remote polls every six seconds and a
+	// write per poll is pointless load.
+	if ($now - haSqlDateToUnix($row['last_seen']) > HA_SESSION_SLIDE_AFTER) {
+		PDOExec('UPDATE ha_sessions SET last_seen = ?, expires_at = ? WHERE id = ?',
+			array(haSqlDate($now), haSqlDate($now + HA_SESSION_IDLE_DAYS * 86400), (int)$row['id']));
+	}
+
+	$reason = null;
+	return array(
+		'id' => (int)$row['id'],
+		'user_id' => (int)$row['user_id'],
+		'username' => $row['username'],
+		'uid' => $row['firebase_uid'],
+	);
+}
+
+function haSessionRevokeById($sessionId) {
+	PDOExec('UPDATE ha_sessions SET revoked = 1 WHERE id = ?', array((int)$sessionId));
+}
+
+function haSessionRevoke($token) {
+	if (!is_string($token) || $token === '') return 0;
+	return PDOExec('UPDATE ha_sessions SET revoked = 1 WHERE session_hash = ?', array(hash('sha256', $token)));
+}
+
+// Used when a person is disabled, and by logout-everywhere.
+function haSessionRevokeUser($userId) {
+	return PDOExec('UPDATE ha_sessions SET revoked = 1 WHERE user_id = ? AND revoked = 0', array((int)$userId));
+}
+
+function haSessionCookieSend($token, $expiresUnix) {
+	if (headers_sent()) return false;
+	setcookie(HA_SESSION_COOKIE, $token, array(
+		'expires' => (int)$expiresUnix,
+		'path' => '/ha/',
+		'secure' => (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off'),
+		'httponly' => true,
+		'samesite' => 'Strict',
+	));
+	return true;
+}
+
+function haSessionCookieClear() {
+	if (headers_sent()) return false;
+	setcookie(HA_SESSION_COOKIE, '', array(
+		'expires' => time() - 3600,
+		'path' => '/ha/',
+		'secure' => (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off'),
+		'httponly' => true,
+		'samesite' => 'Strict',
+	));
+	return true;
+}
+
+// Housekeeping: drop sessions that have been dead for a while. Cheap, and keeps
+// the table from growing forever on a box that is never tidied.
+function haSessionPurge() {
+	$cutoff = haSqlDate(time() - 7 * 86400);
+	return PDOExec('DELETE FROM ha_sessions WHERE expires_at < ? OR (revoked = 1 AND last_seen < ?)',
+		array($cutoff, $cutoff));
+}
+?>

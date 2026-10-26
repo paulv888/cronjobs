@@ -46,4 +46,9 @@ define("FIREBASE_AUTH_DOMAIN", "vlo-remote-cf179.firebaseapp.com");
 define("FIREBASE_APP_ID", "1:948979009736:web:6d4d4fa5cf7c377f463dfd");
 define("FIREBASE_MESSAGING_SENDER_ID", "948979009736");
 define("FIREBASE_SERVICE_ACCOUNT", "/etc/ha/firebase-service-account.json");
+define("FIREBASE_VAPID_KEY", "BFJqLVHHZvu6xsqKkQL9qtfUMV7vaNWX9-0Ezl8dzTBuZu-t5xohuAEhqwq805SQrvYrlf4gXPuM15PLV3EW7xY");
+
+// Remote sessions slide on this many days of inactivity. The ID token behind them
+// only lives an hour and is re-minted silently; this is the long stop.
+define("HA_SESSION_IDLE_DAYS", 30);
 ?>
