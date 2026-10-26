@@ -68,9 +68,10 @@ because this tree has a history of local debris sitting next to real code.
 ## Secrets
 - Live credentials live in `/etc/ha/logins.php`, outside the web root. Nothing in the
   repo should contain a password; the tracked `config.php` holds none.
-- `/etc/ha/firebase-service-account.json` is a full Firebase project credential. It
-  stays outside the repo and must never be copied in, printed, or pasted into a
-  ticket. `config.php` stores only its path.
+- `/etc/ha/vlo-remote-cf179-firebase-adminsdk-fbsvc-0c7f3c9d96.json` — the Firebase
+  service account — is a full project credential. It stays outside the repo and must
+  never be copied in, printed, or pasted into a ticket. `config.php` stores only its
+  path, and the file must be mode 600: it shipped world-readable once.
 - If a secret lands in a commit: **rotate it first**, then rewrite history. Rewriting
   alone does not undo the exposure; a public repo is scraped within minutes.
 - That leak already happened once (`bin/fireTVnetflixLogin.sh`, Netflix credentials).
@@ -116,7 +117,8 @@ because this tree has a history of local debris sitting next to real code.
 - **Push (FCM HTTP v1) rides on the same login, not a later phase.** Web push needs
   a recipient and a VAPID key pair, and there is one service worker per scope, so
   the shell worker and the messaging worker must be the same file. Sending needs the
-  service-account JSON at `/etc/ha/firebase-service-account.json`, referenced by
+  service-account JSON at
+  `/etc/ha/vlo-remote-cf179-firebase-adminsdk-fbsvc-0c7f3c9d96.json`, referenced by
   path from `config.php` — the JWT/scope half already exists in
   `Classes/RestClient.class.php:272`. `fcm_tokens` gains a user column; the five
   June-2025 rows are stale.

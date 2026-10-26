@@ -107,7 +107,7 @@ Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
 - **E3** The browser's `machine_id` is a UUID generated once and kept in
   localStorage.
 - **E4** Sending uses FCM HTTP v1 with the service account at
-  `/etc/ha/firebase-service-account.json`; `config.php` holds the path only.
+  `/etc/ha/vlo-remote-cf179-firebase-adminsdk-fbsvc-0c7f3c9d96.json`; `config.php` holds the path only.
 - **E5** One helper sends to a user (all their tokens) or to all users. Tokens are
   deleted on `UNREGISTERED` or `INVALID_ARGUMENT`.
 - **E6** Tokens unseen for 90 days are pruned. The five June-2025 rows go now.

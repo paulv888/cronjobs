@@ -45,7 +45,7 @@ define("FIREBASE_API_KEY", "AIzaSyDzO5Rc21-FO23rP9A-w9Z3B-p3rJWqZUY");
 define("FIREBASE_AUTH_DOMAIN", "vlo-remote-cf179.firebaseapp.com");
 define("FIREBASE_APP_ID", "1:948979009736:web:6d4d4fa5cf7c377f463dfd");
 define("FIREBASE_MESSAGING_SENDER_ID", "948979009736");
-define("FIREBASE_SERVICE_ACCOUNT", "/etc/ha/firebase-service-account.json");
+define("FIREBASE_SERVICE_ACCOUNT", "/etc/ha/vlo-remote-cf179-firebase-adminsdk-fbsvc-0c7f3c9d96.json");
 define("FIREBASE_VAPID_KEY", "BFJqLVHHZvu6xsqKkQL9qtfUMV7vaNWX9-0Ezl8dzTBuZu-t5xohuAEhqwq805SQrvYrlf4gXPuM15PLV3EW7xY");
 
 // Remote sessions slide on this many days of inactivity. The ID token behind them
