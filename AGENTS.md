@@ -130,3 +130,11 @@ because this tree has a history of local debris sitting next to real code.
   `apikey` parameter in `process.php` stay until each of them has an email and a
   Firebase account. Deleting both is the last step, together with SPEC-remote-pwa.md
   C1, C2 and B2.
+- **Open: how the Joomla embed should reach the remote.** The System Status page does
+  `require_once '/home/www/ha/includes.php'; loadRemote(5);`, so the grid renders
+  server-side into Joomla while its buttons are authorised by the browser's LAN
+  address — it shows from anywhere, and every button 401s off-LAN. Undecided between
+  leaving it LAN-only, iframing `/ha/remote.php?name=…` so the embed runs its own
+  login (preferred), or letting the Joomla page mint a session for the logged-in
+  Joomla user (only safe if that page is itself access-controlled). The blocking
+  question is whether that page is gated by a Joomla login.
