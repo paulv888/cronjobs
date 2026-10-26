@@ -13,8 +13,8 @@ header('X-Frame-Options: SAMEORIGIN');
 //   - Anyone else needs the session cookie that auth.php mints after a Firebase
 //     sign-in. No session means the login form, not a refusal.
 //
-// The page key is still honoured while the shell is being swapped over; it goes
-// away together with the apikey parameter in process.php.
+// There is no page key any more: `?key=` is ignored, and the only credentials are
+// the session cookie and the LAN address.
 // ---------------------------------------------------------------------------
 $isLocal = requestIsLocal();
 $username = null;
@@ -28,15 +28,6 @@ if ($sessionToken !== '') {
 }
 
 if ($username === null && $isLocal) $username = 'Local';
-
-$apikey = '';
-if ($username === null) {
-	$apikey = (isset($_GET['key']) && is_string($_GET['key'])) ? trim($_GET['key']) : '';
-	if ($apikey !== '') {
-		$found = PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?', [$apikey]);
-		if (!empty($found['username'])) $username = $found['username'];
-	}
-}
 
 $remoteID = 1;
 if (isset($_GET['name'])) {
@@ -174,7 +165,7 @@ if ('serviceWorker' in navigator) {
 <?php if ($sessionUser) { ?>
    <div class="signout-row"><a href="#" onclick="if(window.VloAuth){event.preventDefault();window.VloAuth.signOut();}return false;">Sign out</a></div>
 <?php } ?>
-<?php   loadRemote($remoteID, $apikey); ?>
+<?php   loadRemote($remoteID); ?>
    <div class=" row-fluid">
    <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="autorefresh">Auto Refresh</label></div>
    <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 

@@ -1,5 +1,5 @@
 <?php
-function loadRemote($remoteID, $apikey = null) {
+function loadRemote($remoteID) {
 
 	if (isset($_SESSION) && array_key_exists('properties', $_SESSION) && array_key_exists('SelectedPlayer', $_SESSION['properties']) ) {
 		$params['SESSION']['properties']['SelectedPlayer'] = $_SESSION['properties']['SelectedPlayer'];
@@ -33,7 +33,6 @@ function loadRemote($remoteID, $apikey = null) {
 			echo '</ul>';
 			echo '<div id="myTabContent" class="tab-content">';
 		}
-		$params['apikey'] = $apikey;
 		loadRemotePaneContent($remoteID, $select, $params);
 		if (count($divs) > 1) echo '</div></div>';
 		echo '<div id="spinner">Executing...</div>';
@@ -80,7 +79,6 @@ function loadRemoteDiv($divid, $params) {
 				$status = '';
 				$link = '';
 				$booticon = null;
-				$rowremotekeys['inputoptions'] = str_replace('_apikey_', $params['apikey'], $rowremotekeys['inputoptions']);
 				$class = $rowremotekeys['class'];
 				($cellid = strlen($rowremotekeys['cellid']) > 0 ? $rowremotekeys['cellid'] : "");
 				if (!empty($rowremotekeys['deviceID'])) {

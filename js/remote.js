@@ -263,8 +263,6 @@ if(!window.scriptRemoteHasRun) {
 		var debug = getUrlParameter('debug');
 		if (typeof(debug) != "undefined") params.debug = debug;
 
-    	params.apikey = getUrlParameter('key');
-
 		if (isPoll) VloRemote.pollInFlight = true;
 
 		jQuery.ajax({
@@ -357,11 +355,6 @@ if(!window.scriptRemoteHasRun) {
 
 				if (typeof item.text !== 'undefined' && item.text !== null) {
 					var text = String(item.text);
-					if (text.search('_apikey_')>=0) {
-						text = text.replace('_apikey_', getUrlParameter('key') );
-						// console.log(text);
-					}
-
 					if (jQuery(this).find('.buttontext').length > 0) {  // User this for dropdowns where text is in buttontext
 						jQuery(this).find('.buttontext').html(text);
 						// console.log ("found"+this);

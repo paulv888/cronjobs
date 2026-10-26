@@ -25,7 +25,6 @@ define("LOCAL_RECYCLE", LOCAL_MUSIC_VIDEOS."/_XXX_recyclebin");
 define("LOCAL_IMPORT", LOCAL_MUSIC_VIDEOS."/_XXX_import");
 
 define("PUBLIC_LASTIMAGEDIR", "/data/cameras/lastimage");
-define("PROCESS_REQUIRE_APIKEY", true);
 
 define("SSH_IDENTITY",    "/etc/ha/remote-jobs");
 define("SSH_KNOWN_HOSTS", "/etc/ha/known_hosts");

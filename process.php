@@ -1,19 +1,6 @@
 <?php
 require_once 'includes.php';
 
-// move to header
-//if (isset($_POST['apikey'])) {
-	// $found  = FetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey`="'.$_POST['apikey'].'"');
-	// if ($found) {
-		// $username = $found['username'];
-	// } else {
-	    // die('Not Authorized'); 
-    // }
-	// $apikey = $_POST['apikey'];
-// } else {
-	// die('Not Authorized');
-// }
-
 $params = array();
 if (isset($_GET['callerID'])) {
 	$params = $_GET;
@@ -122,12 +109,9 @@ session_write_close();
 //     and is therefore revocable server side, or
 //   - a Firebase ID token as `Authorization: Bearer <token>`, verified per request.
 //
-// The legacy `apikey` parameter is still honoured for the time being, because the
-// remote UI that replaces it has not shipped yet. It goes away with that change;
-// see SPEC-remote-pwa.md B2.
+// There is no API key any more. The old `apikey` parameter was removed once every
+// person had a Firebase account and an email row.
 // ---------------------------------------------------------------------------
-if (!defined('PROCESS_REQUIRE_APIKEY')) define('PROCESS_REQUIRE_APIKEY', true);
-
 $authReason = 'no_session';
 $authUser = false;
 
@@ -160,20 +144,8 @@ if (php_sapi_name() === 'cli' || requestIsLocal()) {
 		}
 	}
 
-	// Transitional: the old page key still works until the new remote UI ships.
-	if (!$authUser && isset($params['apikey']) && is_string($params['apikey']) && $params['apikey'] !== '') {
-		$keyuser = PDOFetchRow('SELECT username FROM ha_mi_remote_users WHERE inuse = 1 and `apikey` = ?',
-			array($params['apikey']));
-		if (!empty($keyuser)) {
-			$authUser = $keyuser;
-			$authReason = null;
-		} else {
-			$authReason = 'not_authorized';
-		}
-	}
 }
-
-if (PROCESS_REQUIRE_APIKEY && !$authUser) {
+if (!$authUser) {
 	$authIP = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'cli';
 	error_log('process.php: unauthorized request from '.$authIP
 		.' messagetypeID='.(isset($params['messagetypeID']) ? $params['messagetypeID'] : '-')
