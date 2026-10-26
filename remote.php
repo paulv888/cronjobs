@@ -57,6 +57,14 @@ $firebaseConfig = array(
 	'messagingSenderId' => FIREBASE_MESSAGING_SENDER_ID,
 );
 $basePath = getPath(true);
+
+// The vhost caches .js for a week, so give each asset a version derived from its
+// own mtime. Without this a deploy can leave a browser running last week's script,
+// which is exactly the kind of bug that presents as "the page does nothing".
+$asset = function ($relative) use ($basePath) {
+	$version = @filemtime(__DIR__ . '/' . $relative);
+	return $basePath . '/' . $relative . ($version ? '?v=' . $version : '');
+};
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -78,7 +86,7 @@ $basePath = getPath(true);
 <script src="/media/vendor/jquery/js/jquery.min.js"></script>
 <script async src="/templates/mod-cassiopeia/js/bstrap3.min.js"></script>
 <script>window.VLO_REMOTE_HOST = 'pwa';</script>
-<script src="<?php echo $basePath; ?>/js/remote.js"></script>
+<script src="<?php echo $asset('js/remote.js'); ?>"></script>
 <script>
 // The worker handles the app shell cache and push. Its scope is the directory it
 // is served from, which is /ha/.
@@ -90,9 +98,9 @@ if ('serviceWorker' in navigator) {
 </script>
 <?php if ($username === null) { ?>
 <script>window.VLO_FIREBASE = <?php echo json_encode($firebaseConfig); ?>;</script>
-<script src="<?php echo $basePath; ?>/js/vendor/firebase-app-compat.js"></script>
-<script src="<?php echo $basePath; ?>/js/vendor/firebase-auth-compat.js"></script>
-<script src="<?php echo $basePath; ?>/js/login.js"></script>
+<script src="<?php echo $asset('js/vendor/firebase-app-compat.js'); ?>"></script>
+<script src="<?php echo $asset('js/vendor/firebase-auth-compat.js'); ?>"></script>
+<script src="<?php echo $asset('js/login.js'); ?>"></script>
 <style>
 	html, body { height: 100%; }
 	body.login-page { background-color: #E9ECE5; }
@@ -130,7 +138,7 @@ if ('serviceWorker' in navigator) {
        <p class="lead">Sign in once and this remote works from anywhere.</p>
        <div id="login-status" class="login-status"></div>
        <div id="login-restoring" style="display:none">Checking your session&hellip;</div>
-       <form id="login-form" novalidate style="display:none">
+       <form id="login-form" novalidate>
          <div class="login-row">
            <label for="login-email">Email</label>
            <input type="email" id="login-email" name="email" autocomplete="username" autocapitalize="none" spellcheck="false" />

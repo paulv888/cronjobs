@@ -148,23 +148,31 @@ if (!window.scriptLoginHasRun) {
 
 		window.VloAuth = { signOut: signOut };
 
+		// Anything that goes wrong before the form is usable has to be visible. The
+		// worst failure mode for this page is a blank card with no explanation.
+		window.addEventListener('error', function (event) {
+			if (event && event.message) setStatus('Page error: ' + event.message, true);
+		});
+
 		document.addEventListener('DOMContentLoaded', function () {
+			// The form is rendered visible by the server, so a script failure leaves
+			// something on screen instead of an empty card.
 			if (!config.apiKey) {
 				setStatus('Sign-in is not configured.', true);
-				showForm();
 				return;
 			}
-			if (!window.firebase) {
-				setStatus('The sign-in library did not load.', true);
-				showForm();
+			if (typeof window.firebase === 'undefined' || typeof firebase.auth !== 'function') {
+				setStatus('The sign-in library did not load. Reload the page.', true);
 				return;
 			}
 
-			firebase.initializeApp(config);
-			auth = firebase.auth();
-
-			// A returning user with a live server session should never see this form.
-			if (!attemptRestore()) showForm();
+			try {
+				firebase.initializeApp(config);
+				auth = firebase.auth();
+			} catch (error) {
+				setStatus('Sign-in could not start: ' + ((error && error.message) || error), true);
+				return;
+			}
 
 			var form = el('login-form');
 			if (form) {
@@ -179,6 +187,14 @@ if (!window.scriptLoginHasRun) {
 					}
 					signIn(email.trim(), password);
 				});
+			}
+
+			// A returning user with a live server session should never see the form.
+			if (auth.currentUser) {
+				if (form) form.style.display = 'none';
+				var restoring = el('login-restoring');
+				if (restoring) restoring.style.display = 'block';
+				attemptRestore();
 			}
 		});
 	})();
