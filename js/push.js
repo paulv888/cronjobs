@@ -75,13 +75,31 @@ if (!window.scriptPushHasRun) {
 		}
 
 		// One in-page rendering path, used by both the worker message and the SDK
-		// callback.
-		function showInPage(title, body) {
+		// callback. The banner is clickable and goes wherever the notification points,
+		// which is what tapping the tray notification would have done.
+		function showInPage(title, body, link) {
 			var box = el('system-message-container');
 			if (!box || !body) return;
+
+			var target = link || '/ha/remote.php';
+
 			var line = document.createElement('div');
 			line.className = 'alert alert-success';
+			line.style.cursor = 'pointer';
+			line.setAttribute('role', 'button');
+			line.setAttribute('tabindex', '0');
+			line.setAttribute('title', 'Open');
 			line.textContent = (title ? title + ': ' : '') + body;
+
+			function follow() { window.location.href = target; }
+			line.addEventListener('click', follow);
+			line.addEventListener('keydown', function (event) {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					follow();
+				}
+			});
+
 			box.innerHTML = '';
 			box.appendChild(line);
 		}
@@ -178,7 +196,7 @@ if (!window.scriptPushHasRun) {
 				navigator.serviceWorker.addEventListener('message', function (event) {
 					var data = event.data || {};
 					if (data.type !== 'ha-push') return;
-					showInPage(data.title, data.body);
+					showInPage(data.title, data.body, data.link);
 				});
 			}
 
@@ -186,7 +204,8 @@ if (!window.scriptPushHasRun) {
 				messaging.onMessage(function (payload) {
 					var note = payload.notification || {};
 					var data = payload.data || {};
-					showInPage(data.title || note.title, data.body || note.body);
+					var link = data.link || note.link || ((payload.fcmOptions || {}).link) || '';
+					showInPage(data.title || note.title, data.body || note.body, link);
 				});
 			} catch (error) { /* older SDK, ignore */ }
 
