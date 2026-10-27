@@ -157,14 +157,39 @@ function createAlert(&$params) {
 
 	$saveparams =  $params;
 
-	$mysql = 'SELECT a.description as description, s.deviceID as deviceID, s.alert_textID as alert_textID FROM `ha_alerts_catalog` a 
-					LEFT JOIN `ha_alert_subscriptions` s ON a.id = s.alert_catalogID 
-				WHERE a.ID = "'.$params['alert_catalogID'].'"';
+	$mysql = 'SELECT a.description as description, s.deviceID as deviceID, s.alert_textID as alert_textID,
+	                 d.typeID as deviceTypeID
+	            FROM `ha_alerts_catalog` a
+	            LEFT JOIN `ha_alert_subscriptions` s ON a.id = s.alert_catalogID
+	            LEFT JOIN `ha_mf_devices` d ON d.id = s.deviceID
+	           WHERE a.ID = ?';
 
 	$feedback['result'] = Array();
-	if ($subscribers = FetchRows($mysql)) {
+	if ($subscribers = PDOFetchRows($mysql, array((int)$params['alert_catalogID']))) {
 		foreach ($subscribers as $step) {
 			$description = $step['description'];
+
+			// A phone is a subscriber like any other, but it cannot render a
+			// COMMAND_SEND_MESSAGE itself. It gets a push, built from the same
+			// alert_text the other devices use.
+			if ((int)$step['deviceTypeID'] === HA_DEVICE_TYPE_MOBILE) {
+				$alertText = null;
+				if (!empty($step['alert_textID'])) {
+					$alertText = FetchRow('SELECT subject, message FROM ha_alert_text WHERE id = '
+						.(int)$step['alert_textID']);
+				}
+				$subject = alertResolveText(
+					!empty($alertText['subject']) ? $alertText['subject'] : $description, $saveparams);
+				$text = alertResolveText(!empty($alertText['message']) ? $alertText['message'] : '', $saveparams);
+
+				$feedback['result']['createAlerts_'.$step['deviceID']] = sendAlertToDevice(array(
+					'deviceID' => $step['deviceID'],
+					'mess_subject' => $subject,
+					'mess_text' => $text,
+					'alert_catalogID' => $params['alert_catalogID'],
+				));
+				continue;
+			}
 
 			$params['deviceID'] =  $step['deviceID'];
 			$params['messagetypeID'] = "MESS_TYPE_COMMAND";

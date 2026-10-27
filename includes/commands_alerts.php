@@ -14,6 +14,10 @@
 // `fcm_tokens.device_id` is filled at registration by push.php.
 // ---------------------------------------------------------------------------
 
+// ha_mf_device_types row for Mobile. A subscriber of this type cannot render a
+// message itself, so it gets a push instead of a COMMAND_SEND_MESSAGE.
+if (!defined('HA_DEVICE_TYPE_MOBILE')) define('HA_DEVICE_TYPE_MOBILE', 23);
+
 // Pull the pieces out of the same message shape sendBullet() accepts.
 function alertParseMessage($text) {
 	$text = (string)$text;
@@ -34,6 +38,19 @@ function alertParseMessage($text) {
 	$body = trim(html_entity_decode(strip_tags($text), ENT_QUOTES, 'UTF-8'));
 
 	return array('body' => $body, 'link' => $link, 'image' => $image);
+}
+
+// Turn an alert_text template into notification text: fill in what placeholders we
+// can, and drop the ones we cannot rather than showing "{caller___device___error}".
+function alertResolveText($template, $params) {
+	$text = (string)$template;
+	if ($text === '') return '';
+	if (strpos($text, '{') !== false && is_array($params)) {
+		$text = replacePropertyPlaceholders($text, $params);
+		$text = preg_replace('/\{[a-z0-9_]*\}/i', '', $text);
+	}
+	$text = preg_replace('/[ \t]+/', ' ', $text);
+	return trim($text);
 }
 
 // Every token registered for one ha_mf_devices row.
