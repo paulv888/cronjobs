@@ -279,22 +279,10 @@ if (!window.scriptLoginHasRun) {
 				return;
 			}
 
-			// Arriving from the Sign out button: the server session is already gone,
-			// but Firebase still holds a login, and the restore path below would
-			// silently sign the person straight back in. Clear it, then drop the flag
-			// from the URL so a later sign-in does not trip over it.
-			if (/[?&]signedout=1(&|$)/.test(window.location.search)) {
-				auth.signOut();
-				setStatus('You have signed out.', false);
-				if (window.history && window.history.replaceState) {
-					var kept = window.location.search.replace(/^\?/, '').split('&').filter(function (part) {
-						return part && part.indexOf('signedout=') !== 0;
-					});
-					window.history.replaceState({}, document.title,
-						window.location.pathname + (kept.length ? '?' + kept.join('&') : ''));
-				}
-				return;
-			}
+			// Arriving from the Sign out button. Handled *after* the listeners are
+			// wired, further down: returning here would leave the card inert, which is
+			// exactly what made Continue with Google unresponsive.
+			var justSignedOut = /[?&]signedout=1(&|$)/.test(window.location.search);
 
 			var form = el('login-form');
 			if (form) {
@@ -354,8 +342,21 @@ if (!window.scriptLoginHasRun) {
 				});
 			}
 
-			// A returning user with a live server session should never see the form.
-			if (auth.currentUser) {
+			if (justSignedOut) {
+				// The server row is already gone. Firebase still holds a login and the
+				// restore path would silently sign the person straight back in, so clear
+				// it, then drop the flag so a later sign-in does not trip over it.
+				auth.signOut();
+				setStatus('You have signed out.', false);
+				if (window.history && window.history.replaceState) {
+					var kept = window.location.search.replace(/^\?/, '').split('&').filter(function (part) {
+						return part && part.indexOf('signedout=') !== 0;
+					});
+					window.history.replaceState({}, document.title,
+						window.location.pathname + (kept.length ? '?' + kept.join('&') : ''));
+				}
+			} else if (auth.currentUser) {
+				// A returning user with a live server session should never see the form.
 				if (form) form.style.display = 'none';
 				var restoring = el('login-restoring');
 				if (restoring) restoring.style.display = 'block';
