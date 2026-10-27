@@ -138,7 +138,16 @@ self.addEventListener('push', function (event) {
 	var image = data.image || payload.image || '';
 	if (image) options.image = image;
 
-	event.waitUntil(self.registration.showNotification(title, options));
+	// Show it, and also tell any window that is already open, so an app in front
+	// renders it in-page instead of the user having to leave the app to see it.
+	event.waitUntil(Promise.all([
+		self.registration.showNotification(title, options),
+		self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+			list.forEach(function (client) {
+				client.postMessage({ type: 'ha-push', title: title, body: body, link: link });
+			});
+		})
+	]));
 });
 
 self.addEventListener('notificationclick', function (event) {

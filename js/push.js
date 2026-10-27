@@ -74,6 +74,18 @@ if (!window.scriptPushHasRun) {
 			});
 		}
 
+		// One in-page rendering path, used by both the worker message and the SDK
+		// callback.
+		function showInPage(title, body) {
+			var box = el('system-message-container');
+			if (!box || !body) return;
+			var line = document.createElement('div');
+			line.className = 'alert alert-success';
+			line.textContent = (title ? title + ': ' : '') + body;
+			box.innerHTML = '';
+			box.appendChild(line);
+		}
+
 		function registration() {
 			if (!('serviceWorker' in navigator)) return Promise.reject(new Error('no service worker'));
 			return navigator.serviceWorker.ready;
@@ -159,17 +171,21 @@ if (!window.scriptPushHasRun) {
 
 			showRow();
 
-			// Foreground: the tab is open, so show it in the page instead of the tray.
+			// The worker posts here for any message it receives, which is how an open
+			// app shows an alert without the user leaving the app.
+			if ('serviceWorker' in navigator) {
+				navigator.serviceWorker.addEventListener('message', function (event) {
+					var data = event.data || {};
+					if (data.type !== 'ha-push') return;
+					showInPage(data.title, data.body);
+				});
+			}
+
 			try {
 				messaging.onMessage(function (payload) {
 					var note = payload.notification || {};
 					var data = payload.data || {};
-					var text = data.body || note.body || '';
-					var title = data.title || note.title || 'Home';
-					var box = el('system-message-container');
-					if (box && text) {
-						box.innerHTML = '<div class="alert alert-success">' + title + ': ' + text + '</div>';
-					}
+					showInPage(data.title || note.title, data.body || note.body);
 				});
 			} catch (error) { /* older SDK, ignore */ }
 
