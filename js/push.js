@@ -17,6 +17,22 @@ if (!window.scriptPushHasRun) {
 		var messaging = null;
 		var busy = false;
 
+		// Remembered across loads. Registration only happens on a click, or as a quiet
+		// token refresh for someone who already opted in - never just because the
+		// browser happens to report that permission was granted.
+		var ENABLED_KEY = 'vlo-push-enabled';
+
+		function optedIn() {
+			try { return window.localStorage.getItem(ENABLED_KEY) === '1'; } catch (error) { return false; }
+		}
+
+		function markOptedIn(state) {
+			try {
+				if (state) window.localStorage.setItem(ENABLED_KEY, '1');
+				else window.localStorage.removeItem(ENABLED_KEY);
+			} catch (error) { /* storage blocked */ }
+		}
+
 		function el(id) { return document.getElementById(id); }
 
 		function setStatus(message, isError) {
@@ -68,6 +84,7 @@ if (!window.scriptPushHasRun) {
 					if (!result || result.ok !== true) {
 						throw new Error((result && result.reason) || 'refused');
 					}
+					markOptedIn(true);
 					setStatus('Alerts are on for this phone.', false);
 					hideButton();
 					return true;
@@ -113,6 +130,7 @@ if (!window.scriptPushHasRun) {
 		// Taking the token away with the session: the next person on this phone must
 		// not inherit the previous user's alerts.
 		function unregister() {
+			markOptedIn(false);
 			var id = machineId();
 			if (!id) return Promise.resolve();
 			return post({ action: 'unregister', machineId: id }).catch(function () { return null; });
@@ -158,16 +176,22 @@ if (!window.scriptPushHasRun) {
 				});
 			}
 
-			if (window.Notification && window.Notification.permission === 'granted') {
-				// Already allowed: re-register quietly, in case the token rotated.
+			if (window.Notification && window.Notification.permission === 'denied') {
+				markOptedIn(false);
+				setStatus('Notifications are blocked for this site. Allow them in the browser settings.', true);
+			} else if (optedIn()) {
+				// They turned this on before: refresh the token quietly, and fall back to
+				// the button if that fails.
 				saveToken().catch(function () {
+					markOptedIn(false);
 					setStatus('', false);
 					var b = el('push-enable');
 					if (b) b.style.display = '';
 				});
-			} else if (window.Notification && window.Notification.permission === 'denied') {
-				setStatus('Notifications are blocked for this site. Allow them in the browser settings.', true);
 			}
+			// Otherwise the button stays, and nothing happens until it is pressed - even
+			// if the browser already allows notifications.
+
 		});
 	})();
 }
