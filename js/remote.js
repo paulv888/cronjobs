@@ -500,6 +500,43 @@ if(!window.scriptRemoteHasRun) {
 		applyDarkMode(isDark);
 	}
 
+	// Compatibility shim. The Fabrik JS actions on the Joomla site call
+	// callAjaxSync() by name, and it was removed in the "Hardened" commit while
+	// those actions were still using it. It blocks on purpose, exactly as before, so
+	// a Fabrik button that continues after the call still sees the reply.
+	//
+	// The apikey line is gone: process.php no longer accepts one, and a request from
+	// the website is authorised by the session cookie or the LAN address.
+	window.callAjaxSync = function (params) {
+
+		if (!params) return;
+
+		jQuery('#system-message-container').html('');
+		jQuery('#spinner').show();
+
+		var debug = getUrlParameter('debug');
+		if (typeof debug !== 'undefined') params.debug = debug;
+
+		var now = new Date();
+		params.time = +now.getTime();
+
+		jQuery.ajax({
+			dataType: 'json',
+			url: VloRemote.url,
+			method: 'post',
+			data: params,
+			timeout: 0,
+			async: false,
+			success: function (data) {
+				processData(data);
+				jQuery('#spinner').hide();
+			},
+			error: function (xhr, textStatus, error) {
+				showError(textStatus + ' ' + error, xhr.responseText);
+				jQuery('#spinner').hide();
+			}
+		});
+	};
 	// Signing out has to clear both halves: the server row and the browser's
 	// Firebase state. Without the second, the login page would silently restore
 	// the session on the next load and the button would look broken.
