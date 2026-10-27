@@ -118,16 +118,20 @@ self.addEventListener('push', function (event) {
 	var body = data.body || note.body || payload.body || '';
 	var link = data.link || payload.link || (payload.fcmOptions && payload.fcmOptions.link) || SCOPE + 'remote.php';
 
-	event.waitUntil(
-		self.registration.showNotification(title, {
-			body: body,
-			icon: '/ha/images/icon-192.png',
-			badge: '/ha/images/icon-192.png',
-			tag: data.tag || 'ha-remote',
-			renotify: false,
-			data: { link: link }
-		})
-	);
+	var options = {
+		body: body,
+		icon: '/ha/images/icon-192.png',
+		badge: '/ha/images/icon-192.png',
+		tag: data.tag || 'ha-remote',
+		renotify: false,
+		data: { link: link }
+	};
+
+	// An alert may carry a camera snapshot; the browser shows it large.
+	var image = data.image || payload.image || '';
+	if (image) options.image = image;
+
+	event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', function (event) {

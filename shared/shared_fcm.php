@@ -157,7 +157,11 @@ function fcmSendToToken($token, $title, $body = '', $link = '/ha/remote.php', $d
 function fcmTokensForUser($userId) {
 	$rows = PDOFetchRows('SELECT fcm_token FROM fcm_tokens WHERE user_id = ? AND fcm_token <> ""', array((int)$userId));
 	$tokens = array();
-	foreach ((array)$rows as $row) $tokens[] = $row['fcm_token'];
+	if (is_array($rows)) {
+		foreach ($rows as $row) {
+			if (!empty($row['fcm_token'])) $tokens[] = $row['fcm_token'];
+		}
+	}
 	return $tokens;
 }
 
@@ -174,8 +178,11 @@ function fcmSendToUser($userId, $title, $body = '', $link = '/ha/remote.php', $d
 function fcmSendToAll($title, $body = '', $link = '/ha/remote.php', $data = array()) {
 	$rows = PDOFetchRows('SELECT fcm_token FROM fcm_tokens WHERE fcm_token <> ""');
 	$results = array();
-	foreach ((array)$rows as $row) {
-		$results[] = fcmSendToToken($row['fcm_token'], $title, $body, $link, $data);
+	if (is_array($rows)) {
+		foreach ($rows as $row) {
+			if (empty($row['fcm_token'])) continue;
+			$results[] = fcmSendToToken($row['fcm_token'], $title, $body, $link, $data);
+		}
 	}
 	return $results;
 }

@@ -75,17 +75,22 @@ if ($machineId === '' || strlen($machineId) > 36) {
 	pushRespond(400, array('ok' => false, 'reason' => 'bad_machine_id'));
 }
 
+// Which ha_mf_devices row this phone is. That is what sendAlertToDevice() targets,
+// so a message can be addressed to a device rather than a person.
+$owner = PDOFetchRow('SELECT device_id FROM ha_mi_remote_users WHERE id = ?', array((int)$user['user_id']));
+$deviceId = empty($owner['device_id']) ? null : (int)$owner['device_id'];
+
 // fcm_tokens has no unique key on (user_id, machine_id), so update first and
 // insert only when nothing matched.
 $existing = PDOFetchRow('SELECT id FROM fcm_tokens WHERE user_id = ? AND machine_id = ? LIMIT 1',
 	array((int)$user['user_id'], $machineId));
 
 if (!empty($existing['id'])) {
-	PDOExec('UPDATE fcm_tokens SET fcm_token = ?, update_date = NOW() WHERE id = ?',
-		array($fcmToken, (int)$existing['id']));
+	PDOExec('UPDATE fcm_tokens SET fcm_token = ?, device_id = ?, update_date = NOW() WHERE id = ?',
+		array($fcmToken, $deviceId, (int)$existing['id']));
 	pushRespond(200, array('ok' => true, 'updated' => true));
 }
 
-PDOExec('INSERT INTO fcm_tokens (user_id, machine_id, fcm_token, update_date) VALUES (?, ?, ?, NOW())',
-	array((int)$user['user_id'], $machineId, $fcmToken));
+PDOExec('INSERT INTO fcm_tokens (user_id, device_id, machine_id, fcm_token, update_date) VALUES (?, ?, ?, ?, NOW())',
+	array((int)$user['user_id'], $deviceId, $machineId, $fcmToken));
 pushRespond(200, array('ok' => true, 'inserted' => true));
