@@ -8,7 +8,7 @@
 // The API is never cached. A stale status readout is worse than a slow one.
 // Bump this whenever the shell changes: activation deletes every other cache, so a
 // new name is what guarantees today's files replace last week's.
-const VERSION = 'ha-remote-v3';
+const VERSION = 'ha-remote-v4';
 const SCOPE = '/ha/';
 
 const SHELL = [
@@ -151,7 +151,7 @@ self.addEventListener('push', function (event) {
 		self.registration.showNotification(title, options),
 		self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
 			list.forEach(function (client) {
-				client.postMessage({ type: 'ha-push', title: title, body: body, link: link });
+				client.postMessage({ type: 'ha-push', title: title, body: body, link: link, image: image });
 			});
 		})
 	]));

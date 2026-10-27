@@ -75,11 +75,11 @@ if (!window.scriptPushHasRun) {
 		}
 
 		// One in-page rendering path, used by both the worker message and the SDK
-		// callback. The banner is clickable and goes wherever the notification points,
-		// which is what tapping the tray notification would have done.
-		function showInPage(title, body, link) {
+		// callback. The banner carries the same image the notification does, and the
+		// whole thing is clickable - it goes wherever the notification points.
+		function showInPage(title, body, link, image) {
 			var box = el('system-message-container');
-			if (!box || !body) return;
+			if (!box || (!body && !image)) return;
 
 			var target = link || '/ha/remote.php';
 
@@ -89,7 +89,20 @@ if (!window.scriptPushHasRun) {
 			line.setAttribute('role', 'button');
 			line.setAttribute('tabindex', '0');
 			line.setAttribute('title', 'Open');
-			line.textContent = (title ? title + ': ' : '') + body;
+
+			if (body) {
+				var text = document.createElement('div');
+				text.textContent = (title ? title + ': ' : '') + body;
+				line.appendChild(text);
+			}
+
+			if (image) {
+				var picture = document.createElement('img');
+				picture.src = image;
+				picture.alt = '';
+				picture.style.cssText = 'display:block;max-width:100%;height:auto;margin-top:8px;border-radius:6px';
+				line.appendChild(picture);
+			}
 
 			function follow() { window.location.href = target; }
 			line.addEventListener('click', follow);
@@ -196,7 +209,7 @@ if (!window.scriptPushHasRun) {
 				navigator.serviceWorker.addEventListener('message', function (event) {
 					var data = event.data || {};
 					if (data.type !== 'ha-push') return;
-					showInPage(data.title, data.body, data.link);
+					showInPage(data.title, data.body, data.link, data.image);
 				});
 			}
 
@@ -205,7 +218,8 @@ if (!window.scriptPushHasRun) {
 					var note = payload.notification || {};
 					var data = payload.data || {};
 					var link = data.link || note.link || ((payload.fcmOptions || {}).link) || '';
-					showInPage(data.title || note.title, data.body || note.body, link);
+					var picture = data.image || note.image || '';
+					showInPage(data.title || note.title, data.body || note.body, link, picture);
 				});
 			} catch (error) { /* older SDK, ignore */ }
 
