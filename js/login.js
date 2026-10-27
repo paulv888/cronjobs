@@ -198,8 +198,13 @@ if (!window.scriptLoginHasRun) {
 				: 'Sign in once and this remote works from anywhere.';
 			if (submit) submit.value = signup ? 'Create account' : 'Sign in';
 			if (toggle) toggle.textContent = signup ? 'I already have an account' : 'Create an account';
+			var confirmRow = el('login-confirm-row');
+			if (confirmRow) confirmRow.style.display = signup ? 'block' : 'none';
 			if (google) google.style.display = signup ? 'none' : '';
 			if (or) or.style.display = signup ? 'none' : '';
+			// Leaving sign-up mode must not carry a half-typed confirmation along.
+			var confirm = el('login-password2');
+			if (confirm && !signup) confirm.value = '';
 			setStatus('', false);
 		}
 
@@ -303,10 +308,31 @@ if (!window.scriptLoginHasRun) {
 						return;
 					}
 					if (mode === 'signup') {
+						var confirm = (el('login-password2') || {}).value || '';
+						if (password !== confirm) {
+							setStatus('The two passwords do not match.', true);
+							return;
+						}
 						signUp(email.trim(), password);
 					} else {
 						signIn(email.trim(), password);
 					}
+				});
+			}
+
+			var reveal = el('login-reveal');
+			if (reveal) {
+				reveal.addEventListener('click', function (event) {
+					event.preventDefault();
+					var showing = reveal.getAttribute('aria-pressed') === 'true';
+					var next = showing ? 'password' : 'text';
+					['login-password', 'login-password2'].forEach(function (id) {
+						var input = el(id);
+						if (input) input.setAttribute('type', next);
+					});
+					reveal.textContent = showing ? 'Show' : 'Hide';
+					reveal.setAttribute('aria-pressed', showing ? 'false' : 'true');
+					reveal.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
 				});
 			}
 

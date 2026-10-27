@@ -97,24 +97,33 @@ if ('serviceWorker' in navigator) {
 	body.login-page { background-color: #E9ECE5; }
 	.login-wrap { max-width: 380px; margin: 0 auto; padding: 24px 16px calc(24px + env(safe-area-inset-bottom)); }
 	.login-card { background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
-	.login-card h1 { font-size: 1.25rem; margin: 0 0 4px; }
-	.login-card p.lead { font-size: .9rem; color: #666; margin: 0 0 16px; }
-	.login-row { margin-bottom: 12px; }
-	.login-row label { display: block; font-size: .85rem; margin-bottom: 4px; color: #444; }
-	.login-row input[type=email], .login-row input[type=password] { width: 100%; padding: 10px; font-size: 1rem; border: 1px solid #ccc; border-radius: 6px; }
-	.login-row input[type=submit] { width: 100%; padding: 12px; font-size: 1rem; border: 0; border-radius: 6px; background: #0d6efd; color: #fff; }
+	/* 16px base: anything smaller makes iOS Safari zoom the page when a field is
+	   focused, and this card is used one-handed on a phone. */
+	.login-wrap { font-size: 16px; }
+	.login-card h1 { font-size: 1.55rem; margin: 0 0 6px; }
+	.login-card p.lead { font-size: 1rem; line-height: 1.4; color: #555; margin: 0 0 18px; }
+	.login-row { margin-bottom: 14px; }
+	.login-row label { display: block; font-size: 1rem; margin-bottom: 6px; color: #333; }
+	.login-row input[type=email], .login-row input[type=password], .login-row input[type=text] {
+		width: 100%; padding: 13px 12px; font-size: 16px; border: 1px solid #bbb; border-radius: 8px; }
+	.password-wrap { position: relative; }
+	.password-wrap input { padding-right: 4.9em; }
+	.password-reveal { position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+		background: none; border: 0; color: #0d6efd; font-size: .95rem; padding: 8px 10px; cursor: pointer; }
+	.login-row input[type=submit] { width: 100%; padding: 15px; font-size: 1.1rem; border: 0; border-radius: 8px; background: #0d6efd; color: #fff; }
 	.login-row input[type=submit][disabled] { opacity: .6; }
-	.login-status { display: none; font-size: .9rem; margin-bottom: 12px; }
+	.login-status { display: none; font-size: 1rem; line-height: 1.4; margin-bottom: 14px; }
 	.login-error { color: #b02a37; }
-	.login-google { width: 100%; padding: 11px; font-size: .95rem; background: #fff; color: #3c4043;
-		border: 1px solid #dadce0; border-radius: 6px; cursor: pointer; }
+	.login-google { width: 100%; padding: 13px; font-size: 1rem; background: #fff; color: #3c4043;
+		border: 1px solid #dadce0; border-radius: 8px; cursor: pointer; }
 	.login-google:hover { background: #f8f9fa; }
 	.login-google[disabled] { opacity: .6; }
-	.login-or { text-align: center; margin: 14px 0; position: relative; }
-	.login-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #e0e0e0; }
-	.login-or span { position: relative; background: #fff; padding: 0 10px; font-size: .8rem; color: #888; }
-	.login-alt { margin: 14px 0 0; text-align: center; font-size: .85rem; }
+	.login-or { text-align: center; margin: 16px 0; position: relative; }
+	.login-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #ddd; }
+	.login-or span { position: relative; background: #fff; padding: 0 12px; font-size: .9rem; color: #777; }
+	.login-alt { margin: 18px 0 0; text-align: center; font-size: 1rem; }
 	.login-alt a { color: #0d6efd; text-decoration: none; }
+	#login-restoring { font-size: 1rem; margin-bottom: 14px; }
 	body.dark-mode .login-card { background: #242526; color: #e4e6eb; }
 	body.dark-mode .login-card p.lead { color: #adb5bd; }
 	body.dark-mode .login-row label { color: #adb5bd; }
@@ -152,7 +161,14 @@ if ('serviceWorker' in navigator) {
          </div>
          <div class="login-row">
            <label for="login-password">Password</label>
-           <input type="password" id="login-password" name="password" autocomplete="current-password" />
+           <div class="password-wrap">
+             <input type="password" id="login-password" name="password" autocomplete="current-password" />
+             <button type="button" id="login-reveal" class="password-reveal" aria-label="Show password" aria-pressed="false">Show</button>
+           </div>
+         </div>
+         <div class="login-row" id="login-confirm-row" style="display:none">
+           <label for="login-password2">Confirm password</label>
+           <input type="password" id="login-password2" name="password2" autocomplete="new-password" />
          </div>
          <div class="login-row">
            <input type="submit" id="login-submit" value="Sign in" />
