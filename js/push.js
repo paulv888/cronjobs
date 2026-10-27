@@ -101,18 +101,19 @@ if (!window.scriptPushHasRun) {
 						throw new Error((result && result.reason) || 'refused');
 					}
 					markOptedIn(true);
-					setStatus('Alerts are on for this phone.', false);
 					hideButton();
 					return true;
 				});
 			});
 		}
 
+		// Enabled: the bar has nothing left to say, so it goes away entirely rather
+		// than leaving an empty strip under the greeting.
 		function hideButton() {
 			var button = el('push-enable');
 			if (button) button.style.display = 'none';
 			var row = el('push-row');
-			if (row) row.style.display = 'block';
+			if (row) row.style.display = 'none';
 		}
 
 		function showRow() {
