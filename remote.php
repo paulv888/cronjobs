@@ -94,7 +94,11 @@ $asset = function ($relative) use ($basePath) {
 // is served from, which is /ha/.
 if ('serviceWorker' in navigator) {
 	window.addEventListener('load', function () {
-		navigator.serviceWorker.register('<?php echo $basePath; ?>/sw.js').catch(function () {});
+		navigator.serviceWorker.register('<?php echo $basePath; ?>/sw.js').then(function (reg) {
+			// Ask for a new worker on every load instead of waiting for the browser's
+			// own schedule; install calls skipWaiting, so it takes over immediately.
+			if (reg && reg.update) reg.update().catch(function () {});
+		}).catch(function () {});
 	});
 }
 </script>
