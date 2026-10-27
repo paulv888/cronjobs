@@ -78,6 +78,12 @@ $asset = function ($relative) use ($basePath) {
 <script async src="/templates/mod-cassiopeia/js/bstrap3.min.js"></script>
 <script>window.VLO_REMOTE_HOST = 'pwa';</script>
 <script src="<?php echo $asset('js/remote.js'); ?>"></script>
+<?php if ($sessionUser) { ?>
+<script>window.VLO_FIREBASE = <?php echo json_encode($firebaseConfig); ?>; window.VLO_VAPID = <?php echo json_encode(FIREBASE_VAPID_KEY); ?>;</script>
+<script src="<?php echo $asset('js/vendor/firebase-app-compat.js'); ?>"></script>
+<script src="<?php echo $asset('js/vendor/firebase-messaging-compat.js'); ?>"></script>
+<script src="<?php echo $asset('js/push.js'); ?>"></script>
+<?php } ?>
 <script>
 // The worker handles the app shell cache and push. Its scope is the directory it
 // is served from, which is /ha/.
@@ -123,6 +129,10 @@ if ('serviceWorker' in navigator) {
 	.login-or span { position: relative; background: #fff; padding: 0 12px; font-size: .9rem; color: #777; }
 	.login-alt { margin: 18px 0 0; text-align: center; font-size: 1rem; }
 	.login-alt a { color: #0d6efd; text-decoration: none; }
+	.push-row { display: none; padding: 8px 10px; background: #2b2b2b; color: #ddd; font-size: 1rem; }
+	.push-row input[type=button] { margin-right: 8px; }
+	.push-status { display: inline-block; vertical-align: middle; }
+	.push-error { color: #ffb3b3; }
 	#login-restoring { font-size: 1rem; margin-bottom: 14px; }
 	body.dark-mode .login-card { background: #242526; color: #e4e6eb; }
 	body.dark-mode .login-card p.lead { color: #adb5bd; }
@@ -179,6 +189,12 @@ if ('serviceWorker' in navigator) {
    </div>
 <?php } else { ?>
    <div class="keyscell" style="background-color: #222; color:#fff"> <?php echo greeting().' '.htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></div>
+<?php if ($sessionUser) { ?>
+   <div class="push-row" id="push-row">
+     <input type="button" class="btn btn-info" id="push-enable" value="Enable alerts" />
+     <span class="push-status" id="push-status"></span>
+   </div>
+<?php } ?>
 <?php   loadRemote($remoteID); ?>
    <div class=" row-fluid">
    <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="autorefresh">Auto Refresh</label></div>

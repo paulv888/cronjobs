@@ -505,11 +505,21 @@ if(!window.scriptRemoteHasRun) {
 	// the session on the next load and the button would look broken.
 	function signOut() {
 		stopTimer();
-		fetch('/ha/auth.php', {
-			method: 'POST',
-			credentials: 'same-origin',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ action: 'logout' })
+
+		// Hand the push token back while the session still works, so the next person
+		// on this phone does not inherit these alerts. push.php needs the session, so
+		// this has to finish before the logout call.
+		var unregister = (window.VloPush && window.VloPush.unregister)
+			? window.VloPush.unregister()
+			: Promise.resolve();
+
+		unregister.catch(function () { return null; }).then(function () {
+			return fetch('/ha/auth.php', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'logout' })
+			});
 		}).catch(function () { return null; }).then(function () {
 			window.location.href = '/ha/remote.php?signedout=1';
 		});
