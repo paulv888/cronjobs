@@ -8,7 +8,7 @@
 // The API is never cached. A stale status readout is worse than a slow one.
 // Bump this whenever the shell changes: activation deletes every other cache, so a
 // new name is what guarantees today's files replace last week's.
-const VERSION = 'ha-remote-v2';
+const VERSION = 'ha-remote-v3';
 const SCOPE = '/ha/';
 
 const SHELL = [
@@ -59,6 +59,11 @@ self.addEventListener('fetch', function (event) {
 	var url = new URL(request.url);
 	if (url.origin !== self.location.origin) return;
 	if (NEVER_CACHE.indexOf(url.pathname) !== -1) return;
+
+	// A frame embedded by another page - the Joomla site loads /ha/remote.php in an
+	// iframe - is not the app shell. Intercepting a frame navigation is what leaves
+	// it stuck at (pending) in the network panel, so let the browser fetch it.
+	if (request.destination === 'iframe' || request.destination === 'frame') return;
 
 	// Navigations: always try the network, because the page is rendered from the
 	// database and a cached copy would show buttons that do nothing.
