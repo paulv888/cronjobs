@@ -6,7 +6,9 @@
 // rather than in a firebase-messaging-sw.js.
 //
 // The API is never cached. A stale status readout is worse than a slow one.
-const VERSION = 'ha-remote-v1';
+// Bump this whenever the shell changes: activation deletes every other cache, so a
+// new name is what guarantees today's files replace last week's.
+const VERSION = 'ha-remote-v2';
 const SCOPE = '/ha/';
 
 const SHELL = [
