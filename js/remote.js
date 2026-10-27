@@ -414,6 +414,18 @@ if(!window.scriptRemoteHasRun) {
 		}
 	}
 
+	// Dark mode belongs to remote.php opened on its own. The main Joomla site
+	// loads this same script for the remotes embedded in its pages, so applying
+	// the theme there would turn the whole website dark at night.
+	function isDirectRemotePage() {
+		if (window.VLO_REMOTE_HOST !== 'pwa') return false;
+		try {
+			return window.self === window.top;
+		} catch (e) {
+			return false;
+		}
+	}
+
 	function isDarkModeTime() {
 		var themeParam = getUrlParameter('theme');
 		if (themeParam === 'dark') return true;
@@ -483,6 +495,7 @@ if(!window.scriptRemoteHasRun) {
 	}
 
 	function checkAndApplyTheme() {
+		if (!isDirectRemotePage()) return;
 		var isDark = isDarkModeTime();
 		applyDarkMode(isDark);
 	}
