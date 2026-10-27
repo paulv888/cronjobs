@@ -122,8 +122,10 @@ self.addEventListener('push', function (event) {
 		body: body,
 		icon: '/ha/images/icon-192.png',
 		badge: '/ha/images/icon-192.png',
-		tag: data.tag || 'ha-remote',
-		renotify: false,
+		tag: data.tag || 'ha-remote-' + Date.now(),
+		// renotify is only honoured with a tag, and without it a repeat alert with the
+		// same tag replaces the old one in silence.
+		renotify: true,
 		data: { link: link }
 	};
 

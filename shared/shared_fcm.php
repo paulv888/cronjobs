@@ -103,6 +103,13 @@ function fcmSendToToken($token, $title, $body = '', $link = '/ha/remote.php', $d
 	$access = fcmAccessToken();
 	if ($access === false) return array(0, array('error' => 'no_access_token'));
 
+	// FCM will not accept a relative fcm_options.link; it has to be an absolute URL,
+	// and a bare '/ha/remote.php' silently produces a push the browser cannot open.
+	$absoluteLink = (string)$link;
+	if ($absoluteLink !== '' && $absoluteLink[0] === '/' && defined('PUBLIC_BASE_URL')) {
+		$absoluteLink = rtrim(PUBLIC_BASE_URL, '/') . $absoluteLink;
+	}
+
 	// Data-only: the worker renders it.
 	$payload = array(
 		'message' => array(
@@ -110,11 +117,11 @@ function fcmSendToToken($token, $title, $body = '', $link = '/ha/remote.php', $d
 			'data' => array_merge(array(
 				'title' => (string)$title,
 				'body' => (string)$body,
-				'link' => (string)$link,
+				'link' => $absoluteLink,
 			), array_map('strval', $data)),
 			'webpush' => array(
 				'headers' => array('Urgency' => 'high'),
-				'fcm_options' => array('link' => (string)$link),
+				'fcm_options' => array('link' => $absoluteLink),
 			),
 		),
 	);
