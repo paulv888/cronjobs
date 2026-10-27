@@ -352,6 +352,53 @@ function haReauthClear($userId) {
 	return PDOExec('UPDATE ha_mi_remote_users SET sessions_cutoff = NULL WHERE id = ?', array((int)$userId));
 }
 
+// ------------------------------------------------------------ access requests
+// Anyone can register an account and verify an address; that only proves they own
+// the inbox. Joining the remote is a row with `method = 'PENDING'` and `inuse = 0`,
+// which the admin turns into access by setting `inuse = 1` (the Fabrik form does
+// that; haAccessRequestApprove is the same thing in code).
+if (!defined('HA_MAX_PENDING_REQUESTS')) define('HA_MAX_PENDING_REQUESTS', 25);
+
+function haAccessRequestCreate($email) {
+	if (!is_string($email) || $email === '') return false;
+
+	$existing = PDOFetchRow('SELECT id FROM ha_mi_remote_users WHERE email = ?', array($email));
+	if (!empty($existing)) return false;   // already pending, or deliberately off
+
+	// A verified email costs nothing, so unanswered requests are capped. Without
+	// this the table becomes somewhere for anyone to leave a row.
+	$pending = PDOFetchRow('SELECT COUNT(*) AS n FROM ha_mi_remote_users WHERE inuse = 0 AND UCASE(method) = ?',
+		array('PENDING'));
+	if ((int)$pending['n'] >= HA_MAX_PENDING_REQUESTS) {
+		error_log('shared_auth: pending request cap reached, dropped ' . $email);
+		return false;
+	}
+
+	// The row needs a display name. The local part of the address is a sensible
+	// default and the admin can rename it when approving.
+	$name = strstr($email, '@', true);
+	if ($name === false || $name === '') $name = $email;
+
+	$inserted = PDOExec('INSERT INTO ha_mi_remote_users (username, email, inuse, method, apikey, secret)
+	                     VALUES (?, ?, 0, ?, "", "")',
+		array(substr($name, 0, 50), $email, 'PENDING'));
+
+	return $inserted > 0;
+}
+
+function haAccessRequestApprove($email, $username = null) {
+	$row = PDOFetchRow('SELECT id FROM ha_mi_remote_users WHERE email = ?', array($email));
+	if (empty($row)) return false;
+	PDOExec('UPDATE ha_mi_remote_users SET inuse = 1, method = ?, username = COALESCE(?, username) WHERE id = ?',
+		array('FIREBASE', $username, (int)$row['id']));
+	return true;
+}
+
+function haAccessRequestsPending() {
+	return PDOFetchRows('SELECT id, username, email FROM ha_mi_remote_users
+	                      WHERE inuse = 0 AND UCASE(method) = ? ORDER BY id', array('PENDING'));
+}
+
 function haSessionCookieSend($token, $expiresUnix) {
 	if (headers_sent()) return false;
 	setcookie(HA_SESSION_COOKIE, $token, array(

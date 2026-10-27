@@ -71,17 +71,36 @@ if ($claims === null) {
 		'message' => 'Sign-in could not be verified.'));
 }
 
-// The email is verified at this point, but that only proves the account exists.
-// A local row must also exist and be in use: there is no self provisioning, and
-// turning someone off is `inuse = 0` rather than anything in the console.
-$user = PDOFetchRow('SELECT id, username, sessions_cutoff FROM ha_mi_remote_users WHERE inuse = 1 AND email = ?',
-	array($claims['email']));
+// The email is verified at this point. That proves the caller controls the inbox,
+// but not that they may use the remote: a local row has to say so.
+//
+// Someone who verifies an address we have never seen is a request to join, not a
+// login. Record it as a pending row so the admin has something to approve, and say
+// so plainly instead of "not authorised".
+$user = PDOFetchRow('SELECT id, username, inuse, method, sessions_cutoff
+                       FROM ha_mi_remote_users WHERE email = ?', array($claims['email']));
 
 if (empty($user)) {
+	$recorded = haAccessRequestCreate($claims['email']);
 	haRateLimitFail($bucket);
-	error_log('auth.php: no provisioned user for ' . $claims['email'] . ' from ' . $ip);
-	authRespond(403, array('ok' => false, 'reason' => 'not_provisioned',
-		'message' => 'This account does not have access.'));
+	error_log('auth.php: access request from ' . $claims['email'] . ' (' . $ip . ')'
+		. ($recorded ? ' recorded' : ' not recorded'));
+	authRespond(403, array('ok' => false, 'reason' => 'pending_approval',
+		'message' => 'Your account is waiting for approval.'));
+}
+
+// A row that exists but is not in use is either a pending request or someone who
+// was switched off. Both are 403, but they mean different things to the person.
+if ((int)$user['inuse'] !== 1) {
+	haRateLimitFail($bucket);
+	if (strtoupper((string)$user['method']) === 'PENDING') {
+		error_log('auth.php: pending approval for ' . $claims['email'] . ' from ' . $ip);
+		authRespond(403, array('ok' => false, 'reason' => 'pending_approval',
+			'message' => 'Your account is waiting for approval.'));
+	}
+	error_log('auth.php: disabled user ' . $user['username'] . ' from ' . $ip);
+	authRespond(403, array('ok' => false, 'reason' => 'user_disabled',
+		'message' => 'This account has been disabled.'));
 }
 
 // A revocation happened after this identity authenticated. The token is genuine, but

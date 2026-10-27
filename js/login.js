@@ -15,6 +15,7 @@ if (!window.scriptLoginHasRun) {
 		var config = window.VLO_FIREBASE || {};
 		var auth = null;
 		var busy = false;
+		var mode = 'signin';
 
 		function el(id) { return document.getElementById(id); }
 
@@ -31,7 +32,7 @@ if (!window.scriptLoginHasRun) {
 			var button = el('login-submit');
 			if (button) {
 				button.disabled = state;
-				button.value = state ? 'Signing in...' : 'Sign in';
+				button.value = state ? 'Working...' : (mode === 'signup' ? 'Create account' : 'Sign in');
 			}
 			var google = el('login-google');
 			if (google) google.disabled = state;
@@ -124,7 +125,9 @@ if (!window.scriptLoginHasRun) {
 				}
 				setBusy(false);
 				handleRejection(result.body.reason);
-				if (result.status === 403 && result.body.reason === 'reauth_required') {
+				if (result.status === 403 && result.body.reason === 'pending_approval') {
+					setStatus('Your account is waiting for approval.', false);
+				} else if (result.status === 403 && result.body.reason === 'reauth_required') {
 					setStatus('Enter your password again to continue.', true);
 				} else if (result.status === 403) {
 					setStatus('This account does not have access to the remote.', true);
@@ -148,6 +151,56 @@ if (!window.scriptLoginHasRun) {
 				setBusy(false);
 				setStatus(explain(error), true);
 			});
+		}
+
+		// Self registration. The account is created and a verification link is sent;
+		// nothing is granted until the address is verified and the request approved.
+		// Signing out immediately keeps an unverified session from looking like progress.
+		function signUp(email, password) {
+			setBusy(true);
+			setStatus('', false);
+			auth.createUserWithEmailAndPassword(email, password).then(function (credential) {
+				return credential.user.sendEmailVerification();
+			}).then(function () {
+				return auth.signOut();
+			}).then(function () {
+				setBusy(false);
+				setMode('signin');
+				setStatus('Account created. Check ' + email + ' for the verification link, then sign in.', false);
+			}).catch(function (error) {
+				setBusy(false);
+				setStatus(explainSignUp(error), true);
+			});
+		}
+
+		function explainSignUp(error) {
+			var code = (error && error.code) || '';
+			if (code === 'auth/email-already-in-use') return 'That email already has an account. Sign in instead.';
+			if (code === 'auth/weak-password') return 'Choose a password of at least 6 characters.';
+			if (code === 'auth/invalid-email') return 'That email address is not valid.';
+			if (code === 'auth/too-many-requests') return 'Too many attempts. Try again in a few minutes.';
+			if (code === 'auth/network-request-failed') return 'Cannot reach the sign-in service.';
+			return 'Could not create the account' + (code ? ' (' + code + ')' : '.');
+		}
+
+		function setMode(next) {
+			mode = next;
+			var signup = next === 'signup';
+			var title = el('login-title');
+			var lead = el('login-lead');
+			var submit = el('login-submit');
+			var toggle = el('login-toggle');
+			var google = el('login-google');
+			var or = el('login-or');
+			if (title) title.textContent = signup ? 'Create account' : 'Sign in';
+			if (lead) lead.textContent = signup
+				? 'Register, verify your email, then wait to be approved.'
+				: 'Sign in once and this remote works from anywhere.';
+			if (submit) submit.value = signup ? 'Create account' : 'Sign in';
+			if (toggle) toggle.textContent = signup ? 'I already have an account' : 'Create an account';
+			if (google) google.style.display = signup ? 'none' : '';
+			if (or) or.style.display = signup ? 'none' : '';
+			setStatus('', false);
 		}
 
 		// Google, with a redirect fallback. Popups are blocked in iframes and are
@@ -249,7 +302,20 @@ if (!window.scriptLoginHasRun) {
 						setStatus('Enter your email and password.', true);
 						return;
 					}
-					signIn(email.trim(), password);
+					if (mode === 'signup') {
+						signUp(email.trim(), password);
+					} else {
+						signIn(email.trim(), password);
+					}
+				});
+			}
+
+			var toggleLink = el('login-toggle');
+			if (toggleLink) {
+				toggleLink.addEventListener('click', function (event) {
+					event.preventDefault();
+					if (busy) return;
+					setMode(mode === 'signup' ? 'signin' : 'signup');
 				});
 			}
 

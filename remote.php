@@ -113,6 +113,8 @@ if ('serviceWorker' in navigator) {
 	.login-or { text-align: center; margin: 14px 0; position: relative; }
 	.login-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #e0e0e0; }
 	.login-or span { position: relative; background: #fff; padding: 0 10px; font-size: .8rem; color: #888; }
+	.login-alt { margin: 14px 0 0; text-align: center; font-size: .85rem; }
+	.login-alt a { color: #0d6efd; text-decoration: none; }
 	body.dark-mode .login-card { background: #242526; color: #e4e6eb; }
 	body.dark-mode .login-card p.lead { color: #adb5bd; }
 	body.dark-mode .login-row label { color: #adb5bd; }
@@ -130,8 +132,8 @@ if ('serviceWorker' in navigator) {
 <?php if ($username === null) { ?>
    <div class="login-wrap">
      <div class="login-card">
-       <h1>Sign in</h1>
-       <p class="lead">Sign in once and this remote works from anywhere.</p>
+       <h1 id="login-title">Sign in</h1>
+       <p class="lead" id="login-lead">Sign in once and this remote works from anywhere.</p>
        <div id="login-status" class="login-status"></div>
        <div id="login-restoring" style="display:none">Checking your session&hellip;</div>
        <button type="button" id="login-google" class="login-google">
@@ -142,7 +144,7 @@ if ('serviceWorker' in navigator) {
            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
          </svg>Continue with Google
        </button>
-       <div class="login-or"><span>or</span></div>
+       <div class="login-or" id="login-or"><span>or</span></div>
        <form id="login-form" novalidate>
          <div class="login-row">
            <label for="login-email">Email</label>
@@ -156,6 +158,7 @@ if ('serviceWorker' in navigator) {
            <input type="submit" id="login-submit" value="Sign in" />
          </div>
        </form>
+       <p class="login-alt"><a href="#" id="login-toggle">Create an account</a></p>
      </div>
    </div>
 <?php } else { ?>
