@@ -150,3 +150,10 @@ because this tree has a history of local debris sitting next to real code.
   `config.php` is the default destination for `sendBullet()`.
 - The operator side of all of this — onboarding, killing sessions, disabling a user,
   enabling alerts, and the troubleshooting order — lives in `MANUAL.md`.
+- **Apache's logrotate never reloads Apache, so the logs go stale overnight.** The
+  files are renamed at 00:00 but every worker keeps writing to the rotated inode:
+  `vlosite-access.log` sits at 0 bytes while `.log.1` grows, and the re-created files
+  come back as `root:adm` where `dsh` cannot read them. Anything reading `*.log` —
+  including **fail2ban** — sees nothing. A `sudo systemctl reload apache2` fixes it
+  until the next midnight; the real fix is a `postrotate` block. This blocked
+  diagnosis twice in one session, so check it first when logs look empty.
