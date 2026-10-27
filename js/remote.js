@@ -506,20 +506,18 @@ if(!window.scriptRemoteHasRun) {
 	function signOut() {
 		stopTimer();
 
-		// Hand the push token back while the session still works, so the next person
-		// on this phone does not inherit these alerts. push.php needs the session, so
-		// this has to finish before the logout call.
-		var unregister = (window.VloPush && window.VloPush.unregister)
-			? window.VloPush.unregister()
-			: Promise.resolve();
-
-		unregister.catch(function () { return null; }).then(function () {
-			return fetch('/ha/auth.php', {
-				method: 'POST',
-				credentials: 'same-origin',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'logout' })
-			});
+		// The push registration is deliberately left alone: signing out ends the
+		// session, not the phone's subscription. The per-user vlo-push-enabled flag
+		// survives too, so signing back in finds the token still valid and asks
+		// nothing.
+		//
+		// window.VloPush.unregister() exists for an explicit "turn off alerts" action;
+		// it is not called here.
+		fetch('/ha/auth.php', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'logout' })
 		}).catch(function () { return null; }).then(function () {
 			window.location.href = '/ha/remote.php?signedout=1';
 		});
