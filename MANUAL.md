@@ -70,6 +70,10 @@ UPDATE ha_mi_remote_users
 
 `username` is only a display name — the greeting on the remote.
 
+**Set `method` as well as `inuse`.** Only `inuse` is checked at sign-in, so a row
+with `inuse = 1` works even if it still says `PENDING` — but it will keep appearing
+in anything that reads the queue by method. Both, or the label lies.
+
 Keep the queue short. Unanswered requests are capped at
 `HA_MAX_PENDING_REQUESTS` (25 in `shared/shared_auth.php`); past that, new requests
 are logged and dropped, and the person is told they are pending when nothing was
