@@ -119,8 +119,6 @@ function haDeviceTokens($deviceID) {	$deviceID = (int)$deviceID;
 // Send one message to one phone. Returns the same $feedback shape as the other
 // command functions, so it can be dropped into a command handler unchanged.
 function sendAlertToDevice($params) {
-	debug($params, 'params');
-	
 	$feedback = array('Name' => 'sendAlertToDevice', 'result' => array(), 'commandstr' => '');
 
 	$deviceID = isset($params['deviceID']) ? (int)$params['deviceID'] : 0;
