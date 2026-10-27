@@ -221,6 +221,23 @@ if (!window.scriptLoginHasRun) {
 				return;
 			}
 
+			// Arriving from the Sign out button: the server session is already gone,
+			// but Firebase still holds a login, and the restore path below would
+			// silently sign the person straight back in. Clear it, then drop the flag
+			// from the URL so a later sign-in does not trip over it.
+			if (/[?&]signedout=1(&|$)/.test(window.location.search)) {
+				auth.signOut();
+				setStatus('You have signed out.', false);
+				if (window.history && window.history.replaceState) {
+					var kept = window.location.search.replace(/^\?/, '').split('&').filter(function (part) {
+						return part && part.indexOf('signedout=') !== 0;
+					});
+					window.history.replaceState({}, document.title,
+						window.location.pathname + (kept.length ? '?' + kept.join('&') : ''));
+				}
+				return;
+			}
+
 			var form = el('login-form');
 			if (form) {
 				form.addEventListener('submit', function (event) {

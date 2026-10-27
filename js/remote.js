@@ -486,4 +486,21 @@ if(!window.scriptRemoteHasRun) {
 		var isDark = isDarkModeTime();
 		applyDarkMode(isDark);
 	}
+
+	// Signing out has to clear both halves: the server row and the browser's
+	// Firebase state. Without the second, the login page would silently restore
+	// the session on the next load and the button would look broken.
+	function signOut() {
+		stopTimer();
+		fetch('/ha/auth.php', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action: 'logout' })
+		}).catch(function () { return null; }).then(function () {
+			window.location.href = '/ha/remote.php?signedout=1';
+		});
+	}
+
+	window.VloRemoteSignOut = signOut;
 }

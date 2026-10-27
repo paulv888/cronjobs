@@ -113,8 +113,6 @@ if ('serviceWorker' in navigator) {
 	.login-or { text-align: center; margin: 14px 0; position: relative; }
 	.login-or::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid #e0e0e0; }
 	.login-or span { position: relative; background: #fff; padding: 0 10px; font-size: .8rem; color: #888; }
-	.signout-row { padding: 6px 10px; text-align: right; background-color: #222; }
-	.signout-row a { color: #9ecbff; font-size: .85rem; }
 	body.dark-mode .login-card { background: #242526; color: #e4e6eb; }
 	body.dark-mode .login-card p.lead { color: #adb5bd; }
 	body.dark-mode .login-row label { color: #adb5bd; }
@@ -162,14 +160,16 @@ if ('serviceWorker' in navigator) {
    </div>
 <?php } else { ?>
    <div class="keyscell" style="background-color: #222; color:#fff"> <?php echo greeting().' '.htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></div>
-<?php if ($sessionUser) { ?>
-   <div class="signout-row"><a href="#" onclick="if(window.VloAuth){event.preventDefault();window.VloAuth.signOut();}return false;">Sign out</a></div>
-<?php } ?>
 <?php   loadRemote($remoteID); ?>
    <div class=" row-fluid">
    <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="autorefresh">Auto Refresh</label></div>
+<?php if ($sessionUser) { ?>
+   <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info" value="Sign out"
+                onClick="if(window.VloRemoteSignOut){window.VloRemoteSignOut();}" /></div>
+<?php } else { ?>
    <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
                 onClick="window.location.reload()" /></div>
+<?php } ?>
 	</div>
 	<div id="myDebug" class="debug" style="display:none"></div>
 <?php } ?>
