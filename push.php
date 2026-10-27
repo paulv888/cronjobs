@@ -82,6 +82,13 @@ $deviceId = empty($owner['device_id']) ? null : (int)$owner['device_id'];
 
 // fcm_tokens has no unique key on (user_id, machine_id), so update first and
 // insert only when nothing matched.
+//
+// One token, one row. The installed app and the browser tab have separate storage,
+// so the same browser can register the same FCM token under two machine ids; without
+// this, that is two rows and every alert arrives twice.
+PDOExec('DELETE FROM fcm_tokens WHERE fcm_token = ? AND machine_id <> ?',
+	array($fcmToken, $machineId));
+
 $existing = PDOFetchRow('SELECT id FROM fcm_tokens WHERE user_id = ? AND machine_id = ? LIMIT 1',
 	array((int)$user['user_id'], $machineId));
 
