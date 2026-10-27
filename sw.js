@@ -16,6 +16,7 @@ const SHELL = [
 	'/ha/images/icon-512.png',
 	'/ha/images/apple-touch-icon.png',
 	'/ha/images/favicon-32x32.png',
+	'/ha/images/badge-72.png',
 	'/ha/js/remote.js',
 	'/ha/js/login.js',
 	'/ha/js/vendor/firebase-app-compat.js',
@@ -118,10 +119,14 @@ self.addEventListener('push', function (event) {
 	var body = data.body || note.body || payload.body || '';
 	var link = data.link || payload.link || (payload.fcmOptions && payload.fcmOptions.link) || SCOPE + 'remote.php';
 
+	// Absolute URLs. A relative icon is ignored by some platforms, which is what
+	// leaves the notification showing the browser's own icon instead of ours.
+	var origin = self.location.origin;
+
 	var options = {
 		body: body,
-		icon: '/ha/images/icon-192.png',
-		badge: '/ha/images/icon-192.png',
+		icon: origin + '/ha/images/icon-192.png',
+		badge: origin + '/ha/images/badge-72.png',
 		tag: data.tag || 'ha-remote-' + Date.now(),
 		// renotify is only honoured with a tag, and without it a repeat alert with the
 		// same tag replaces the old one in silence.
