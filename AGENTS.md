@@ -157,3 +157,14 @@ because this tree has a history of local debris sitting next to real code.
   including **fail2ban** — sees nothing. A `sudo systemctl reload apache2` fixes it
   until the next midnight; the real fix is a `postrotate` block. This blocked
   diagnosis twice in one session, so check it first when logs look empty.
+- **TODO: an alert's image must be a unique copy, not the rolling lastimage file.**
+  Camera alerts currently point at the live snapshot (`O-Door.jpg`, `O-Door_500.jpg`,
+  rewritten by every capture), so a notification still sitting in the tray ends up
+  showing a *later* photo than the alert it belongs to — and once the camera fires
+  again, the picture in the notification no longer matches the event at all. On send,
+  copy the image to a unique name (alert id or timestamp) under a public directory and
+  point the notification at that copy. Needs a retention rule with it, or that
+  directory grows forever — delete copies older than a few days. Touch points:
+  `sendAlertToDevice()` / `alertPublicImageUrl()` in `includes/commands_alerts.php`,
+  plus the two producers that hand over rolling paths, `cameras.php` motion alerts and
+  scheme 378 (`storeCamImage` → `createAlert`).
