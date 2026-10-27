@@ -20,16 +20,20 @@ if (!window.scriptPushHasRun) {
 		// Remembered across loads. Registration only happens on a click, or as a quiet
 		// token refresh for someone who already opted in - never just because the
 		// browser happens to report that permission was granted.
-		var ENABLED_KEY = 'vlo-push-enabled';
+		// Per person, not per phone: two people sharing a handset must not inherit each
+		// other's choice. Kept across a sign-out, so logging back in does not ask again.
+		function enabledKey() {
+			return 'vlo-push-enabled:' + (window.VLO_USER || '');
+		}
 
 		function optedIn() {
-			try { return window.localStorage.getItem(ENABLED_KEY) === '1'; } catch (error) { return false; }
+			try { return window.localStorage.getItem(enabledKey()) === '1'; } catch (error) { return false; }
 		}
 
 		function markOptedIn(state) {
 			try {
-				if (state) window.localStorage.setItem(ENABLED_KEY, '1');
-				else window.localStorage.removeItem(ENABLED_KEY);
+				if (state) window.localStorage.setItem(enabledKey(), '1');
+				else window.localStorage.removeItem(enabledKey());
 			} catch (error) { /* storage blocked */ }
 		}
 
@@ -130,7 +134,8 @@ if (!window.scriptPushHasRun) {
 		// Taking the token away with the session: the next person on this phone must
 		// not inherit the previous user's alerts.
 		function unregister() {
-			markOptedIn(false);
+			// The token goes, the preference stays: this person still wants alerts on
+			// this phone, and the next sign-in re-registers without asking.
 			var id = machineId();
 			if (!id) return Promise.resolve();
 			return post({ action: 'unregister', machineId: id }).catch(function () { return null; });

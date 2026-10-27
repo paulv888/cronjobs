@@ -79,7 +79,7 @@ $asset = function ($relative) use ($basePath) {
 <script>window.VLO_REMOTE_HOST = 'pwa';</script>
 <script src="<?php echo $asset('js/remote.js'); ?>"></script>
 <?php if ($sessionUser) { ?>
-<script>window.VLO_FIREBASE = <?php echo json_encode($firebaseConfig); ?>; window.VLO_VAPID = <?php echo json_encode(FIREBASE_VAPID_KEY); ?>;</script>
+<script>window.VLO_FIREBASE = <?php echo json_encode($firebaseConfig); ?>; window.VLO_VAPID = <?php echo json_encode(FIREBASE_VAPID_KEY); ?>; window.VLO_USER = <?php echo json_encode($username); ?>;</script>
 <script src="<?php echo $asset('js/vendor/firebase-app-compat.js'); ?>"></script>
 <script src="<?php echo $asset('js/vendor/firebase-messaging-compat.js'); ?>"></script>
 <script src="<?php echo $asset('js/push.js'); ?>"></script>
