@@ -1,6 +1,6 @@
 # Remote PWA — functional specification
 
-Status: implemented, except the push client wiring and the Joomla embed decision (G).
+Status: implemented. The Joomla embed is settled (an iframe, see G) and push is live.
 Scope: `/ha/remote.php` (the remote UI), `process.php` (its API), push notifications.
 Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
 

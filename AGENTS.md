@@ -131,11 +131,22 @@ because this tree has a history of local debris sitting next to real code.
   from `auth.php`, or `requestIsLocal()` (CLI, LAN, and the Joomla embed). The two
   remote links that used `_apikey_` were rewritten to `/ha/remote.php?name=av` and
   `?name=wifi`, and the `apikey` column is blank on every row.
-- **Open: how the Joomla embed should reach the remote.** The System Status page does
-  `require_once '/home/www/ha/includes.php'; loadRemote(5);`, so the grid renders
-  server-side into Joomla while its buttons are authorised by the browser's LAN
-  address — it shows from anywhere, and every button 401s off-LAN. Undecided between
-  leaving it LAN-only, iframing `/ha/remote.php?name=…` so the embed runs its own
-  login (preferred), or letting the Joomla page mint a session for the logged-in
-  Joomla user (only safe if that page is itself access-controlled). The blocking
-  question is whether that page is gated by a Joomla login.
+- **The Joomla embed is an iframe now.** `<iframe src="/ha/remote.php?name=main">`,
+  which renders and authorises itself exactly as a standalone visit, so the Joomla
+  page needs no `includes.php` and no `loadRemote()`. Two traps: never mark it
+  `loading="lazy"` (a lazy frame below the fold is never fetched and looks like a
+  hung request), and give it an explicit height. Frame navigations are excluded from
+  the service worker for the same reason — a frame is not the app shell.
+- **Push is live and Pushbullet is retired.** `sendAlertToDevice($params)` posts to
+  one `ha_mf_devices` Mobile row; `createAlert()` routes a Mobile subscriber to push
+  and every other type to `COMMAND_SEND_MESSAGE`. `sendBullet()` is now a shim over
+  the push path, kept because device command rows still name it. The subscription
+  rows moved from device 276 to the phones, and `includesPushbullet.php` plus
+  `Classes/Pushbullet/` are deleted. Revoke `PUSHBULLET_TOKEN` at pushbullet.com;
+  the define is already gone from `logins.php`.
+- **`push.php` requires a real identity** — session or bearer, no LAN bypass, because
+  a token filed against `user_id = 0` can never be matched to a device. A phone at
+  home signs in with `/ha/remote.php?login=1` to get one. `ALERT_DEVICE_ID` in
+  `config.php` is the default destination for `sendBullet()`.
+- The operator side of all of this — onboarding, killing sessions, disabling a user,
+  enabling alerts, and the troubleshooting order — lives in `MANUAL.md`.
