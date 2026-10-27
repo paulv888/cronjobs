@@ -47,6 +47,9 @@ define("FIREBASE_MESSAGING_SENDER_ID", "948979009736");
 define("FIREBASE_SERVICE_ACCOUNT", "/etc/ha/vlo-remote-cf179-firebase-adminsdk-fbsvc-0c7f3c9d96.json");
 // Used to turn the relative links the remote passes around into the absolute URLs
 // web push requires.
+// The ha_mf_devices row (a Mobile device) that receives alerts now that Pushbullet
+// is gone. It must be a phone: sendAlertToDevice targets its device_id.
+define("ALERT_DEVICE_ID", 390);
 define("PUBLIC_BASE_URL", "https://home.vloons.com");
 
 define("FIREBASE_VAPID_KEY", "BFJqLVHHZvu6xsqKkQL9qtfUMV7vaNWX9-0Ezl8dzTBuZu-t5xohuAEhqwq805SQrvYrlf4gXPuM15PLV3EW7xY");

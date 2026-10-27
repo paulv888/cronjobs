@@ -30,5 +30,5 @@ include_once 'Classes/RestClient.class.php';
 include_once 'Classes/TCPClient.php';
 include_once 'Classes/insteon_decoder.class.php';
 include_once 'Classes/sockettransport.class.php';
-include_once 'includesPushbullet.php';
+// Pushbullet removed: alerts go out through shared_fcm.php now.
 ?>

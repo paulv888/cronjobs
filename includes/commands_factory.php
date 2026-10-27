@@ -682,23 +682,15 @@ function sendBullet($params) {
 
 	debug($params, 'params');
 
-	try {
-		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-		switch ($type) {
-		case 'LINK':
-			$pb->channel(PUSH_CHANNEL)->pushLink($params['mess_subject'], $output[0]['href'], $text);
-			break;
-		case 'IMAGE':	
-			$pb->channel(PUSH_CHANNEL)->pushFile($output,null,$params['value_parts'][0],$params['value_parts'][1]);
-			break;
-		case 'NOTE':
-			$pb->channel(PUSH_CHANNEL)->pushNote($params['mess_subject'], $params['mess_text']);
-			break;
-		}
-	} catch (Exception $e) {
-		$feedback['error'] = 'Error: '.$e->getMessage();
-		echo $e->getMessage().CRLF;
-	}
+	// Pushbullet is gone: the same message goes to the phone named by
+	// ALERT_DEVICE_ID. The parsing above still decides note, link or image.
+	$pushParams = $params;
+	$pushParams['deviceID'] = ALERT_DEVICE_ID;
+	if ($type === 'LINK' && !empty($output[0]['href'])) $pushParams['link'] = $output[0]['href'];
+
+	$result = sendAlertToDevice($pushParams);
+	$feedback['result'] = $result['result'];
+	if (!empty($result['error'])) $feedback['error'] = $result['error'];
 
 	debug($feedback, 'feedback');
     return $feedback;

@@ -281,10 +281,14 @@ function uploadPictures($camera) {
 			closedir($handle);
 		}
 	        sort($files);
- 		$pb = new Pushbullet\Pushbullet(PUSHBULLET_TOKEN);
-		for ($i = 1; $i <= 3; $i++) {
-			if (array_key_exists($i, $files)) $pb->channel(PUSH_CHANNEL)->pushFile($dir.$targetdir."/".$files[$i],null,"Motion on ".$camera['description'],$files[$i]);
-		}
+		// One notification rather than three attachments: a push carries a single
+		// image, and the phone does not need every frame of the burst.
+		sendAlertToDevice(array(
+			'deviceID' => ALERT_DEVICE_ID,
+			'mess_subject' => 'Motion on ' . $camera['description'],
+			'mess_text' => count($files) . ' images captured.',
+			'link' => '/ha/remote.php',
+		));
 	}
 	return;
 }
