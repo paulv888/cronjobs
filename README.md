@@ -36,3 +36,8 @@ Currently interfacing to:
        IB              API              Stock ORders            Get/JSON
        Amazon          FireTV Stick     Media Player            ADB`
        Amazon          Alexa            Voice Service           Post/JSON
+
+Remote access (logins, adding and removing people)
+=================================================
+
+See [MANUAL.md](MANUAL.md).
