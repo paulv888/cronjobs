@@ -688,6 +688,10 @@ function sendBullet($params) {
 	$pushParams['deviceID'] = ALERT_DEVICE_ID;
 	if ($type === 'LINK' && !empty($output[0]['href'])) $pushParams['link'] = $output[0]['href'];
 
+	// The old code pushed the file itself. A notification cannot carry a file, so
+	// hand over its public URL instead; alertPublicImageUrl() does the mapping.
+	if ($type === 'IMAGE' && !empty($output)) $pushParams['image'] = $output;
+
 	$result = sendAlertToDevice($pushParams);
 	$feedback['result'] = $result['result'];
 	if (!empty($result['error'])) $feedback['error'] = $result['error'];

@@ -31,6 +31,11 @@ function alertParseMessage($text) {
 			$image = $m[1];
 		}
 	}
+	// A bare image URL in the text counts too: not everything that produces a
+	// message bothers to wrap it in an <img>.
+	if ($image === '' && preg_match('#https?://[^\s"\'<>]+\.(?:jpe?g|png|gif|webp)(?:\?[^\s"\'<>]*)?#i', $text, $m)) {
+		$image = $m[0];
+	}
 	if (preg_match('/<a[^>]+href\s*=\s*["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is', $text, $m)) {
 		$link = $m[1];
 	}
@@ -46,6 +51,11 @@ function alertResolveText($template, $params) {
 	$text = (string)$template;
 	if ($text === '') return '';
 	if (strpos($text, '{') !== false && is_array($params)) {
+		// The same engine the rest of the app uses for macro and alert text: it fills
+		// {value_parts___N}, {caller___...}, {now}, {last___result___...} and
+		// {calculate___...}. Without it, alert 57's whole message is placeholders.
+		$text = replaceCommandPlaceholders($text, $params);
+		// Whatever is left may still be a device property lookup.
 		$text = replacePropertyPlaceholders($text, $params);
 		$text = preg_replace('/\{[a-z0-9_]*\}/i', '', $text);
 	}
@@ -53,9 +63,36 @@ function alertResolveText($template, $params) {
 	return trim($text);
 }
 
+// A notification's image has to be an absolute, publicly reachable URL. Anything
+// relative - a lastimage path, a filesystem path from a camera result - renders as
+// no image at all, silently.
+function alertPublicImageUrl($path) {
+	$path = trim((string)$path);
+	if ($path === '') return '';
+	if (preg_match('#^https?://#i', $path)) return $path;
+
+	$base = defined('PUBLIC_BASE_URL') ? rtrim(PUBLIC_BASE_URL, '/') : '';
+	$localDir = defined('LOCAL_LASTIMAGEDIR') ? rtrim(LOCAL_LASTIMAGEDIR, '/') : '';
+	$publicDir = defined('PUBLIC_LASTIMAGEDIR') ? rtrim(PUBLIC_LASTIMAGEDIR, '/') : '';
+
+	// A filesystem path under the lastimage directory maps onto its public twin.
+	if ($localDir !== '' && strpos($path, $localDir) === 0) {
+		return $base . $publicDir . substr($path, strlen($localDir));
+	}
+
+	// Anything else that is already rooted at the site.
+	if ($path[0] === '/') return $base . $path;
+
+	// A bare filename, which is what a camera result usually carries.
+	if (preg_match('/^[^\/]+\.(jpe?g|png|gif|webp)$/i', $path)) {
+		return $base . $publicDir . '/' . $path;
+	}
+
+	return $path;   // relative to nothing we know; leave it alone
+}
+
 // Every token registered for one ha_mf_devices row.
-function haDeviceTokens($deviceID) {
-	$deviceID = (int)$deviceID;
+function haDeviceTokens($deviceID) {	$deviceID = (int)$deviceID;
 	if ($deviceID <= 0) return array();
 
 	$rows = PDOFetchRows('SELECT fcm_token FROM fcm_tokens
@@ -82,6 +119,8 @@ function haDeviceTokens($deviceID) {
 // Send one message to one phone. Returns the same $feedback shape as the other
 // command functions, so it can be dropped into a command handler unchanged.
 function sendAlertToDevice($params) {
+	debug($params, 'params');
+	
 	$feedback = array('Name' => 'sendAlertToDevice', 'result' => array(), 'commandstr' => '');
 
 	$deviceID = isset($params['deviceID']) ? (int)$params['deviceID'] : 0;
@@ -100,7 +139,7 @@ function sendAlertToDevice($params) {
 	$link = !empty($params['link']) ? (string)$params['link'] : $parsed['link'];
 	if ($link === '') $link = '/ha/remote.php';
 
-	$image = !empty($params['image']) ? (string)$params['image'] : $parsed['image'];
+	$image = !empty($params['image']) ? alertPublicImageUrl($params['image']) : alertPublicImageUrl($parsed['image']);
 
 	if ($subject === '' && $body === '') {
 		$feedback['error'] = 'Nothing to send: mess_subject and mess_text were both empty.';
