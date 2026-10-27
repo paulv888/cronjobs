@@ -28,28 +28,31 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 $body = json_decode((string)file_get_contents('php://input'), true);
 if (!is_array($body)) $body = $_POST;
 
-// Same credential rules as process.php: a session, or a bearer token. Local callers
-// are allowed too, so the in-house pages can register a device without a login.
+// A token has to belong to somebody, so unlike process.php there is no local
+// bypass here: a session or a bearer token, or nothing. Treating a LAN caller as an
+// anonymous "Local" user was registering tokens against user 0, which can never be
+// matched to a device. A phone at home gets a session with ?login=1.
 $user = false;
 $reason = 'no_session';
 
-if (php_sapi_name() === 'cli' || requestIsLocal()) {
-	$user = array('id' => 0, 'user_id' => 0, 'username' => 'Local');
-} else {
-	$token = haSessionTokenFromRequest();
-	if ($token !== '') $user = haSessionValidate($token, $reason);
-	if (!$user) {
-		$bearer = authBearerToken();
-		if ($bearer !== '') {
-			$claims = firebaseVerifyIdToken($bearer, $reason);
-			if ($claims !== null) $user = authUserFromClaims($claims);
-		}
+$token = haSessionTokenFromRequest();
+if ($token !== '') $user = haSessionValidate($token, $reason);
+
+if (!$user) {
+	$bearer = authBearerToken();
+	if ($bearer !== '') {
+		$claims = firebaseVerifyIdToken($bearer, $reason);
+		if ($claims !== null) $user = authUserFromClaims($claims);
 	}
 }
 
 if (!$user) {
 	pushRespond(401, array('ok' => false, 'reason' => $reason));
 }
+
+// haSessionValidate carries both id (session) and user_id; authUserFromClaims only
+// the user. Normalise so the rest of this file can rely on user_id.
+if (!isset($user['user_id'])) $user['user_id'] = $user['id'];
 
 $action = isset($body['action']) && is_string($body['action']) ? $body['action'] : 'register';
 

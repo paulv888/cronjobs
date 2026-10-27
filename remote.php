@@ -27,7 +27,12 @@ if ($sessionToken !== '') {
 	if ($sessionUser) $username = $sessionUser['username'];
 }
 
-if ($username === null && $isLocal) $username = 'Local';
+// A LAN caller is normally trusted and never asked to sign in. ?login=1 overrides
+// that, which is how a phone at home gets a session - and push registration needs a
+// session to know whose device it is.
+$forceLogin = isset($_GET['login']) && $_GET['login'] !== '0';
+
+if ($username === null && $isLocal && !$forceLogin) $username = 'Local';
 
 $remoteID = 1;
 if (isset($_GET['name'])) {
