@@ -89,18 +89,21 @@ if (empty($user)) {
 		'message' => 'Your account is waiting for approval.'));
 }
 
-// A row that exists but is not in use is either a pending request or someone who
-// was switched off. Both are 403, but they mean different things to the person.
-if ((int)$user['inuse'] !== 1) {
+// A row that exists but is not active is either a pending request or a blocked
+// account. There is no separate "disabled" message: if the row is still here, the
+// person is told they are suspended and to contact the administrator.
+if ((int)$user['inuse'] !== HA_USER_ACTIVE) {
 	haRateLimitFail($bucket);
-	if (strtoupper((string)$user['method']) === 'PENDING') {
+
+	if (haUserBlockReason($user) === 'pending_approval') {
 		error_log('auth.php: pending approval for ' . $claims['email'] . ' from ' . $ip);
 		authRespond(403, array('ok' => false, 'reason' => 'pending_approval',
-			'message' => 'Your account is waiting for approval.'));
+			'message' => haUserBlockMessage($user)));
 	}
-	error_log('auth.php: disabled user ' . $user['username'] . ' from ' . $ip);
-	authRespond(403, array('ok' => false, 'reason' => 'user_disabled',
-		'message' => 'This account has been disabled.'));
+
+	error_log('auth.php: suspended user ' . $user['username'] . ' from ' . $ip);
+	authRespond(403, array('ok' => false, 'reason' => 'user_suspended',
+		'message' => HA_USER_SUSPENDED_MESSAGE));
 }
 
 // A revocation happened after this identity authenticated. The token is genuine, but

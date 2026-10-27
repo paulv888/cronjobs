@@ -284,11 +284,12 @@ function haSessionValidate($token, &$reason = null) {
 	$reason = 'session_expired';
 	if ((int)$row['revoked'] === 1) return null;
 
-	// A disabled or removed user loses access on their next request, whatever the
-	// session says.
-	$reason = 'user_disabled';
+	// A blocked or removed user loses access on their next request, whatever the
+	// session says. There is one message for a blocked account: see
+	// includes/commands_users.php.
 	if ((int)$row['user_inuse'] !== 1) {
 		haSessionRevokeById((int)$row['id']);
+		$reason = 'user_suspended';
 		return null;
 	}
 
