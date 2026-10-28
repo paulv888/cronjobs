@@ -252,6 +252,36 @@ function pilotLocate($path, $topMargin = 0.10, $bottomMargin = 0.10, $growRatio 
 }
 
 //
+// Puts a box of a fixed size around the centre of a located region. Calibration
+// finds where the flame is; the size is fixed, because both thresholds are means
+// of this box and a box that changes size changes what the numbers mean.
+//
+// The box slides to stay inside the frame rather than being clipped or shrunk, so
+// its size is the same whatever the camera does.
+//
+function pilotRoiFixedSize($around, $width, $height) {
+
+	$cx = ($around['x0'] + $around['x1']) / 2;
+	$cy = ($around['y0'] + $around['y1']) / 2;
+
+	$width  = min(1.0, max(0.01, $width));
+	$height = min(1.0, max(0.01, $height));
+
+	$x0 = $cx - $width / 2;
+	$y0 = $cy - $height / 2;
+
+	if ($x0 < 0) $x0 = 0.0;
+	if ($x0 + $width > 1.0) $x0 = 1.0 - $width;
+	if ($y0 < 0) $y0 = 0.0;
+	if ($y0 + $height > 1.0) $y0 = 1.0 - $height;
+
+	return array(
+		'x0' => $x0, 'x1' => $x0 + $width,
+		'y0' => $y0, 'y1' => $y0 + $height,
+	);
+}
+
+//
 // Prints an ROI array as the four numbers PILOT_ROI wants.
 //
 function pilotRoiString($roi) {

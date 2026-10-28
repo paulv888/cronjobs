@@ -41,8 +41,42 @@ define("PILOT_ROI",       Array('x0' => 0.364, 'x1' => 0.461, 'y0' => 0.456, 'y1
 
 define("PILOT_ROI_PROPERTY", "Pilot ROI");	// holds x0,x1,y0,y1 as fractions
 
-define("PILOT_THRESHOLD", 40.0);	// ROI mean: shed dark ~7, this box lit ~101
+// Calibration finds the flame's position; the box around it is always this size.
+// Fixed size matters: the thresholds are means of this box, so a box that grows
+// or shrinks would change what the numbers mean. Measured on the live frames:
+//
+//   no flame (dark glass)   14.8   -> Status 0
+//   pilot only              58.7   -> Status 1
+//   burner running         157.3   -> Status 1, and running
+//
+define("PILOT_ROI_WIDTH",  0.177);	// 0.526 - 0.349
+define("PILOT_ROI_HEIGHT", 0.368);	// 0.784 - 0.416
+
+define("PILOT_THRESHOLD",  40.0);	// flame of any kind present
+define("BURNER_THRESHOLD", 108.0);	// midway between pilot 58.7 and burner 157.3
 define("PILOT_MAX_AGE",   1800);	// never judge a local frame older than this
+
+//
+// Three states from one mean. Only two of them reach Status - flame or no flame.
+// "running" is measured and reported; recording it is a separate decision.
+//
+function pilotState($mean) {
+	if (!is_numeric($mean) || $mean < PILOT_THRESHOLD) return 'off';
+	if ($mean >= BURNER_THRESHOLD) return 'running';
+	return 'pilot';
+}
+
+// Which Status value a state carries.
+function pilotStateStatus($state) {
+	return ($state === 'off') ? '0' : '1';
+}
+
+// The words for a message.
+function pilotStateLabel($state) {
+	if ($state === 'running') return 'Pilot on, burner running';
+	if ($state === 'pilot')   return 'Pilot on';
+	return 'Pilot off';
+}
 
 //
 // The frame to measure: the command's value, or the default when it is empty.
@@ -99,19 +133,25 @@ function pilotCheck(&$params) {
 		return $feedback;
 	}
 
-	$feedback['commandstr'] = sprintf("%s roi mean %.1f threshold %.1f (%s roi) -> pilot %s",
-		pilotName($image), $detail['mean'], PILOT_THRESHOLD, $roiSource, ($lit ? 'on' : 'off'));
+	$state = pilotState($detail['mean']);
+
+	$feedback['commandstr'] = sprintf("%s roi mean %.1f  (off<%.0f, running>=%.0f) (%s roi) -> %s",
+		pilotName($image), $detail['mean'], PILOT_THRESHOLD, BURNER_THRESHOLD,
+		$roiSource, pilotStateLabel($state));
 
 	// Stored by processCommand() afterwards. Only a change writes and only a
-	// change fires triggers, so a steady pilot is silent.
-	$params['device']['properties']['Status']['value'] = ($lit ? 'On' : 'Off');
+	// change fires triggers, so a steady pilot is silent. Two states only: a
+	// running burner is still "On".
+	$params['device']['properties']['Status']['value'] = pilotStateStatus($state);
 
 	$feedback['result']['image'] = $image;
 	$feedback['result']['roi_source'] = $roiSource;
 	$feedback['result']['mean'] = round($detail['mean'], 1);
 	$feedback['result']['age'] = $detail['age'];
+	$feedback['result']['state'] = $state;
+	$feedback['result']['running'] = ($state === 'running');
 	$feedback['result']['status'] = $params['device']['properties']['Status']['value'];
-	$feedback['message'] = ($lit ? 'Pilot on' : 'Pilot off').sprintf(' (roi mean %.1f)', $detail['mean']);
+	$feedback['message'] = pilotStateLabel($state).sprintf(' (roi mean %.1f)', $detail['mean']);
 
 	debug($feedback, 'feedback');
 	return $feedback;
@@ -142,22 +182,30 @@ function pilotCalibrate(&$params) {
 		return $feedback;
 	}
 
+	// Where the flame is decides the position; the size is fixed, so the numbers
+	// mean the same thing at every calibration.
+	$roi = pilotRoiFixedSize($located['roi'], PILOT_ROI_WIDTH, PILOT_ROI_HEIGHT);
+
 	$current = pilotMeanBrightness($image, pilotRoi($params));
+	$mean = pilotMeanBrightness($image, $roi);
 
 	// Stored by processCommand() afterwards, and read back by pilotCheck().
-	$params['device']['properties'][PILOT_ROI_PROPERTY]['value'] = pilotRoiCsv($located['roi']);
+	$params['device']['properties'][PILOT_ROI_PROPERTY]['value'] = pilotRoiCsv($roi);
 
 	$feedback['result']['image'] = $image;
-	$feedback['result']['roi'] = $located['roi'];
+	$feedback['result']['located'] = $located['roi'];
+	$feedback['result']['roi'] = $roi;
 	$feedback['result']['previous_roi_mean'] = (is_null($current) ? null : round($current, 1));
-	$feedback['result']['mean'] = round($located['mean'], 1);
+	$feedback['result']['mean'] = (is_null($mean) ? null : round($mean, 1));
+	$feedback['result']['state'] = pilotState($mean);
 	$feedback['result']['peak'] = round($located['peak'], 1);
 	$feedback['result']['stored'] = $params['device']['properties'][PILOT_ROI_PROPERTY]['value'];
-	$feedback['result']['define'] = 'define("PILOT_ROI", '.pilotRoiString($located['roi']).');';
+	$feedback['result']['define'] = 'define("PILOT_ROI", '.pilotRoiString($roi).');';
 
-	$feedback['message'] = 'Pilot at '.pilotRoiCsv($located['roi'])
-		.sprintf(', mean %.1f (was %.1f); stored as %s',
-			$located['mean'], (is_null($current) ? 0 : $current), PILOT_ROI_PROPERTY);
+	$feedback['message'] = sprintf('%s at %s (fixed %.3fx%.3f), mean %s (was %.1f); stored as %s',
+		pilotStateLabel(pilotState($mean)), pilotRoiCsv($roi), PILOT_ROI_WIDTH, PILOT_ROI_HEIGHT,
+		(is_null($mean) ? 'n/a' : sprintf('%.1f', $mean)), (is_null($current) ? 0 : $current),
+		PILOT_ROI_PROPERTY);
 
 	debug($feedback, 'feedback');
 	return $feedback;
