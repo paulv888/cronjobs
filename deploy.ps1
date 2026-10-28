@@ -122,7 +122,7 @@ if ($DryRun) {
 # ---------------------------------------------------------------------- prune
 if ($Prune) {
     # Never prune these: they only ever exist on the server.
-    $excludeDirs = @('.git', '.vscode', 'log', 'lastimage', 'bin', 'media')
+    $excludeDirs = @('.git', '.vscode', 'log', 'lastimage', 'bin', 'media', 'tmp')
     $excludeFiles = @('logins.php', 'info.php', 'php_errors.log', 'test.php',
                       '.gitignore', 'deploy.ps1', 'AGENTS.md', 'README.md', 'SPEC-remote-pwa.md', 'MANUAL.md')
 

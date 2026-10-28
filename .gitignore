@@ -24,6 +24,7 @@ firebase-adminsdk*.json
 Thumbs.db
 
 # Runtime data and deployment byproducts
+tmp/
 log/
 lastimage/
 *.bak

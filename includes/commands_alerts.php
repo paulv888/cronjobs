@@ -91,6 +91,88 @@ function alertPublicImageUrl($path) {
 	return $path;   // relative to nothing we know; leave it alone
 }
 
+// ---------------------------------------------------------- image snapshots
+// Camera alerts point at rolling files that the next capture overwrites, so a
+// notification still sitting in the tray ends up showing a later photo than the
+// alert it belongs to. Before an alert goes out, copy the image to /ha/tmp under a
+// unique name and point the alert at that copy instead.
+if (!defined('ALERT_SNAPSHOT_DIR'))   define('ALERT_SNAPSHOT_DIR', '/tmp');       // web path
+if (!defined('ALERT_SNAPSHOT_KEEP'))  define('ALERT_SNAPSHOT_KEEP', 7);           // days
+if (!defined('ALERT_SNAPSHOT_MAX'))   define('ALERT_SNAPSHOT_MAX', 10485760);     // 10 MB
+
+function alertSnapshotPath() {
+	// includes/ lives one level below the web root.
+	return dirname(__DIR__) . ALERT_SNAPSHOT_DIR;
+}
+
+// Where a public URL lives on disk.
+function alertLocalPathForUrl($url) {
+	$path = parse_url((string)$url, PHP_URL_PATH);
+	if (!is_string($path) || $path === '') return false;
+
+	$appRoot = dirname(__DIR__);
+	$docRoot = defined('DOCUMENT_ROOT') ? rtrim(DOCUMENT_ROOT, '/') : $appRoot;
+
+	// /ha/... is this application, everything else is the Joomla root.
+	if (strpos($path, '/ha/') === 0) return $appRoot . substr($path, 3);
+
+	return $docRoot . $path;
+}
+
+// Keep the directory from growing forever: drop copies older than the keep window.
+function alertSnapshotPurge($dir) {
+	$keep = (int)ALERT_SNAPSHOT_KEEP;
+	if ($keep <= 0) return 0;
+	$cutoff = time() - $keep * 86400;
+	$removed = 0;
+	foreach ((array)glob($dir . '/alert-*') as $file) {
+		if (is_file($file) && filemtime($file) < $cutoff && @unlink($file)) $removed++;
+	}
+	return $removed;
+}
+
+// Returns the public URL of the copy, or the original URL if it could not be made.
+function alertSnapshotImage($url) {
+	$url = trim((string)$url);
+	if ($url === '') return '';
+
+	// Already a snapshot.
+	if (defined('ALERT_SNAPSHOT_DIR') && strpos($url, '/ha' . ALERT_SNAPSHOT_DIR . '/') !== false) return $url;
+
+	$source = alertLocalPathForUrl($url);
+	if ($source === false || !is_file($source) || !is_readable($source)) {
+		error_log('alertSnapshotImage: no readable source for ' . $url . ' (' . var_export($source, true) . ')');
+		return $url;
+	}
+
+	$ext = strtolower(pathinfo($source, PATHINFO_EXTENSION));
+	if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif', 'webp'), true)) {
+		error_log('alertSnapshotImage: refusing non-image ' . $source);
+		return $url;
+	}
+	if (filesize($source) > ALERT_SNAPSHOT_MAX) {
+		error_log('alertSnapshotImage: too large ' . $source);
+		return $url;
+	}
+
+	$dir = alertSnapshotPath();
+	if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+		error_log('alertSnapshotImage: cannot create ' . $dir);
+		return $url;
+	}
+	alertSnapshotPurge($dir);
+
+	$name = 'alert-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)) . '.' . $ext;
+	if (!@copy($source, $dir . '/' . $name)) {
+		error_log('alertSnapshotImage: copy failed ' . $source . ' -> ' . $dir . '/' . $name);
+		return $url;
+	}
+	@chmod($dir . '/' . $name, 0644);
+
+	$base = defined('PUBLIC_BASE_URL') ? rtrim(PUBLIC_BASE_URL, '/') : '';
+	return $base . '/ha' . ALERT_SNAPSHOT_DIR . '/' . $name;
+}
+
 // Every token registered for one ha_mf_devices row.
 function haDeviceTokens($deviceID) {	$deviceID = (int)$deviceID;
 	if ($deviceID <= 0) return array();
@@ -138,6 +220,19 @@ function sendAlertToDevice($params) {
 	if ($link === '') $link = '/ha/remote.php';
 
 	$image = !empty($params['image']) ? alertPublicImageUrl($params['image']) : alertPublicImageUrl($parsed['image']);
+
+	// Take our own copy before sending. The source is usually a rolling file that the
+	// next capture rewrites, which would leave the notification showing a later
+	// picture than the event it reported.
+	if ($image !== '') {
+		$originalImage = $image;
+		$snapshot = alertSnapshotImage($originalImage);
+		if ($snapshot !== $originalImage) {
+			$image = $snapshot;
+			// When the alert's tap target is the picture itself, follow it to the copy.
+			if ($link === $originalImage) $link = $snapshot;
+		}
+	}
 
 	if ($subject === '' && $body === '') {
 		$feedback['error'] = 'Nothing to send: mess_subject and mess_text were both empty.';
