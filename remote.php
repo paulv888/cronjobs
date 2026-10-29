@@ -34,6 +34,25 @@ $forceLogin = isset($_GET['login']) && $_GET['login'] !== '0';
 
 if ($username === null && $isLocal && !$forceLogin) $username = 'Local';
 
+// Two lines that make a "why was I logged out?" answerable from the log alone.
+// Deliberately quiet: an anonymous LAN render is normal and is not logged.
+//
+// They go to log/remote-auth.log rather than error_log(), because PHP's error log
+// here is /var/log/php8.3-fpm.log, mode 0600 - which is not readable by the account
+// that does the diagnosis.
+$diagIp = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
+$diagLine = '';
+if ($sessionToken !== '' && $sessionUser === null) {
+	// A cookie arrived and was refused: the reason is the whole point.
+	$diagLine = sprintf('session refused ip=%s reason=%s', $diagIp, $sessionReason);
+} elseif ($sessionToken === '' && !$isLocal) {
+	// No cookie and no LAN bypass: this person is about to see the login card.
+	$diagLine = sprintf('no session cookie ip=%s', $diagIp);
+}
+if ($diagLine !== '') {
+	@error_log(date('Y-m-d H:i:s') . ' remote.php: ' . $diagLine . PHP_EOL, 3, __DIR__ . '/log/remote-auth.log');
+}
+
 $remoteID = 1;
 if (isset($_GET['name'])) {
 	$remote = PDOFetchRow('SELECT id FROM ha_remote_remotes WHERE UCASE(`description`) = ?',
@@ -197,7 +216,12 @@ if ('serviceWorker' in navigator) {
      </div>
    </div>
 <?php } else { ?>
-   <div class="keyscell" style="background-color: #222; color:#fff"> <?php echo greeting().' '.htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></div>
+   <div class="keyscell" style="background-color: #222; color:#fff"> <?php echo greeting().' '.htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?>
+<?php if ($sessionUser === null && $isLocal) { ?>
+     <a href="?login=1" style="float:right; padding-right:8px; color:#9ecbff; text-decoration:none; font-weight:normal"
+        title="The LAN works without a login, but alerts and use from outside need one">Local access &ndash; sign in</a>
+<?php } ?>
+   </div>
 <?php if ($sessionUser) { ?>
    <div class="push-row" id="push-row">
      <input type="button" class="btn btn-info" id="push-enable" value="Enable alerts" />

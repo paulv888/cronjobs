@@ -273,6 +273,29 @@ The remote's bottom-right button reads **Sign out** for anyone with a session an
 **Refresh** for LAN callers, who have no session to end. Under the greeting, an
 **Enable alerts** bar appears until the phone is registered, then disappears.
 
+When a LAN caller has **no session**, the greeting ends in `Local` and a small
+**Local access – sign in** link appears next to it (`?login=1`). That is the only
+on-screen way to tell, because the LAN works without a login: at home a dead session
+looks exactly like a working one, and it is not noticed until the phone leaves the
+WiFi. If someone says they were logged out, check the greeting first, then
+`log/remote-auth.log`.
+
+## Session diagnostics
+
+`remote.php` writes one line to `log/remote-auth.log` when a session cookie is
+refused, or when a non-LAN caller arrives with no cookie at all:
+
+```
+2026-10-29 18:54:17 remote.php: session refused ip=192.168.2.54 reason=no_session
+```
+
+The reasons are `no_session` (unrecognised or deleted), `session_expired` (past
+`expires_at`), and `user_suspended` (`inuse = 0`).
+An anonymous LAN render is normal and deliberately not logged, so the file stays
+quiet. It exists because PHP's own error log here is `/var/log/php8.3-fpm.log`,
+mode 0600, which the diagnosing account cannot read.
+
+
 ## The Joomla embed
 
 The System Status page loads the remote in an iframe:
