@@ -34,24 +34,35 @@ $forceLogin = isset($_GET['login']) && $_GET['login'] !== '0';
 
 if ($username === null && $isLocal && !$forceLogin) $username = 'Local';
 
-// Two lines that make a "why was I logged out?" answerable from the log alone.
-// Deliberately quiet: an anonymous LAN render is normal and is not logged.
+// One line per page render, so a session that vanishes can be seen happening:
+// whether the cookie arrived at all, what happened to it, and how the page was
+// reached. The old version only spoke when the cookie was missing off-LAN, which
+// could not tell "cookie refused" from "cookie never sent" - and the phone drops it
+// mid-session, on the LAN, with no logout in the log.
 //
-// They go to log/remote-auth.log rather than error_log(), because PHP's error log
-// here is /var/log/php8.3-fpm.log, mode 0600 - which is not readable by the account
-// that does the diagnosis.
+// It goes to log/remote-auth.log rather than error_log(), because PHP's error log
+// here is /var/log/php8.3-fpm.log, mode 0600, unreadable by the account that
+// diagnoses.
 $diagIp = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
-$diagLine = '';
-if ($sessionToken !== '' && $sessionUser === null) {
-	// A cookie arrived and was refused: the reason is the whole point.
-	$diagLine = sprintf('session refused ip=%s reason=%s', $diagIp, $sessionReason);
-} elseif ($sessionToken === '' && !$isLocal) {
-	// No cookie and no LAN bypass: this person is about to see the login card.
-	$diagLine = sprintf('no session cookie ip=%s', $diagIp);
+$diagRef = isset($_SERVER['HTTP_REFERER']) && preg_match('#/index\.php#', $_SERVER['HTTP_REFERER'])
+	? 'iframe' : 'direct';
+
+if ($sessionToken === '') {
+	$diagState = 'nocookie';
+	$diagReason = '-';
+} elseif ($sessionUser !== null) {
+	$diagState = 'ok';
+	$diagReason = '-';
+} else {
+	$diagState = 'refused';
+	$diagReason = (string)$sessionReason;
 }
-if ($diagLine !== '') {
-	@error_log(date('Y-m-d H:i:s') . ' remote.php: ' . $diagLine . PHP_EOL, 3, __DIR__ . '/log/remote-auth.log');
-}
+
+$diagLine = sprintf('ip=%s cookie=%d state=%s reason=%s net=%s ref=%s',
+	$diagIp, $sessionToken === '' ? 0 : 1, $diagState, $diagReason,
+	$isLocal ? 'lan' : 'wan', $diagRef);
+
+@error_log(date('Y-m-d H:i:s') . ' remote.php: ' . $diagLine . PHP_EOL, 3, __DIR__ . '/log/remote-auth.log');
 
 $remoteID = 1;
 if (isset($_GET['name'])) {
