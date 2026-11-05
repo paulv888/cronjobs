@@ -58,8 +58,13 @@ if ($sessionToken === '') {
 	$diagReason = (string)$sessionReason;
 }
 
-$diagLine = sprintf('ip=%s cookie=%d state=%s reason=%s net=%s ref=%s',
-	$diagIp, $sessionToken === '' ? 0 : 1, $diagState, $diagReason,
+// ha_sid is HttpOnly, so the page cannot report it. ha_probe is set by JavaScript
+// and readable, which separates 'the browser dropped every cookie' from 'the browser
+// dropped ours'.
+$diagProbe = isset($_COOKIE['ha_probe']) ? 1 : 0;
+
+$diagLine = sprintf('ip=%s cookie=%d probe=%d state=%s reason=%s net=%s ref=%s',
+	$diagIp, $sessionToken === '' ? 0 : 1, $diagProbe, $diagState, $diagReason,
 	$isLocal ? 'lan' : 'wan', $diagRef);
 
 @error_log(date('Y-m-d H:i:s') . ' remote.php: ' . $diagLine . PHP_EOL, 3, __DIR__ . '/log/remote-auth.log');
@@ -251,5 +256,15 @@ if ('serviceWorker' in navigator) {
 	</div>
 	<div id="myDebug" class="debug" style="display:none"></div>
 <?php } ?>
+<script>
+(function () {
+	// Purely diagnostic: ha_sid is HttpOnly and cannot be read here, but if this
+	// cookie also disappears after the app is closed, the browser is clearing all
+	// cookies rather than something being wrong with ours.
+	if (document.cookie.indexOf('ha_probe=') === -1) {
+		document.cookie = 'ha_probe=1; path=/; max-age=2592000; SameSite=Lax';
+	}
+})();
+</script>
 </body>
 </html>
