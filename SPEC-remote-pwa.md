@@ -23,7 +23,7 @@ Out of scope: `esp.php`, `coop.php`, the Joomla site itself.
   matched on a new `email` column. Revoking a person stays a database edit.
 - **A7** The ID token is exchanged **once** for a server-side session. It is not
   carried on every request.
-- **A8** The session cookie is `HttpOnly`, `SameSite=Strict`, path `/ha/`, 30-day
+- **A8** The session cookie is `HttpOnly`, `SameSite=Lax`, path `/ha/`, 30-day
   max-age, and `Secure` only when the request is HTTPS.
 
 ### Session lifetime and revocation

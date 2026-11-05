@@ -400,6 +400,13 @@ function haAccessRequestsPending() {
 	                      WHERE inuse = 0 AND UCASE(method) = ? ORDER BY id', array('PENDING'));
 }
 
+// Lax, not Strict. A Strict cookie is withheld when the page is opened by a
+// top-level navigation that did not start on this site - which is exactly what
+// reopening the Android app from the launcher is. The cookie is still in the jar,
+// but it is not sent, so the server sees no session and the person gets a login
+// card every time they kill and reopen the app. Lax still withholds cookies from
+// cross-site POSTs, which is the CSRF exposure that matters here: every endpoint is
+// a POST.
 function haSessionCookieSend($token, $expiresUnix) {
 	if (headers_sent()) return false;
 	setcookie(HA_SESSION_COOKIE, $token, array(
@@ -407,7 +414,7 @@ function haSessionCookieSend($token, $expiresUnix) {
 		'path' => '/ha/',
 		'secure' => (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off'),
 		'httponly' => true,
-		'samesite' => 'Strict',
+		'samesite' => 'Lax',
 	));
 	return true;
 }
@@ -419,7 +426,7 @@ function haSessionCookieClear() {
 		'path' => '/ha/',
 		'secure' => (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off'),
 		'httponly' => true,
-		'samesite' => 'Strict',
+		'samesite' => 'Lax',
 	));
 	return true;
 }
