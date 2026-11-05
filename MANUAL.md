@@ -269,9 +269,14 @@ subscription stays. `window.VloPush.unregister()` exists for an explicit
 
 ## Front-of-house
 
-The remote's bottom-right button reads **Sign out** for anyone with a session and
-**Refresh** for LAN callers, who have no session to end. Under the greeting, an
-**Enable alerts** bar appears until the phone is registered, then disappears.
+The bottom-right button is **Refresh**, always, whoever you are. It used to read
+**Sign out** when a session existed and **Refresh** when one did not, which meant the
+same corner tap logged people out on WiFi and refreshed them off it — they would
+sign out by accident, then need a password the moment they left the house. Signing
+out now lives next to the name at the top, and asks for confirmation.
+
+Under the greeting, an **Enable alerts** bar appears until the phone is registered,
+then disappears.
 
 When a LAN caller has **no session**, the greeting ends in `Local` and a small
 **Local access – sign in** link appears next to it (`?login=1`). That is the only

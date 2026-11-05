@@ -220,6 +220,10 @@ if ('serviceWorker' in navigator) {
 <?php if ($sessionUser === null && $isLocal) { ?>
      <a href="?login=1" style="float:right; padding-right:8px; color:#9ecbff; text-decoration:none; font-weight:normal"
         title="The LAN works without a login, but alerts and use from outside need one">Local access &ndash; sign in</a>
+<?php } elseif ($sessionUser) { ?>
+     <a href="#" onclick="if(confirm('Sign out of the remote?')){if(window.VloRemoteSignOut){window.VloRemoteSignOut();}}return false;"
+        style="float:right; padding-right:8px; color:#9ecbff; text-decoration:none; font-weight:normal"
+        title="Ends this session on this device">Sign out</a>
 <?php } ?>
    </div>
 <?php if ($sessionUser) { ?>
@@ -231,13 +235,8 @@ if ('serviceWorker' in navigator) {
 <?php   loadRemote($remoteID); ?>
    <div class=" row-fluid">
    <div class="float-start form-check form-switch">  <input checked="checked" class="form-check-input" type="checkbox" role="switch" id="autorefresh" />  <label class="form-check-label" for="autorefresh">Auto Refresh</label></div>
-<?php if ($sessionUser) { ?>
-   <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info" value="Sign out"
-                onClick="if(window.VloRemoteSignOut){window.VloRemoteSignOut();}" /></div>
-<?php } else { ?>
-   <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info"  value="Refresh" 
+   <div class="float-end" style="padding:2px"><input type="button" class="btn btn-info" value="Refresh"
                 onClick="window.location.reload()" /></div>
-<?php } ?>
 	</div>
 	<div id="myDebug" class="debug" style="display:none"></div>
 <?php } ?>
